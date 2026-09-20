@@ -1,0 +1,31 @@
+# 26_measurement_jetson_vla
+
+Real measurements of flow-matching Vision-Language-Action (VLA) models on an **NVIDIA Jetson AGX Orin
+64GB**, for a computer-architecture research project on processing-in-memory (LPDDR5-PIM) acceleration of
+the VLA *action expert*. The research side has so far used only analytic GPU numbers; this repository
+replaces them with measured ones.
+
+Two agents work in this repository and nobody else:
+
+| who | where it runs | writes | never writes |
+|---|---|---|---|
+| **on-device agent** | on the Jetson | `env/ bench/ results/ reports/ STATUS.md`, status lines at the end of `tasks/*.md` | `README.md AGENTS.md CLAUDE.md docs/ analysis/`, task bodies |
+| **research-side agent** (jetson-owner) | on the research server (no GPU) | `README.md AGENTS.md CLAUDE.md docs/ tasks/ analysis/` | the on-device agent's side |
+
+Data moves only through this git remote. Both sides `git pull --rebase` before every push.
+
+**If you are the on-device agent, read [`AGENTS.md`](AGENTS.md) now.**
+
+| path | content |
+|---|---|
+| `AGENTS.md` | your instructions: role, rules, workflow, reporting |
+| `docs/00_context.md` | what the research claims and which of its numbers you are replacing |
+| `docs/01_measurement_plan.md` | experiments E0–E10: definition, sweeps, priority, outputs |
+| `docs/02_protocol.md` | how to measure, tool commands (nsys, Nsight Compute, tegrastats), result schema |
+| `tasks/` | one file per task, in priority order; claim, do, report |
+| `env/` | how the device was set up: scripts, exact versions, pins |
+| `bench/` | the measurement harness you write |
+| `results/` | one directory per run: `meta.json`, tidy CSVs, `summary.md` |
+| `reports/` | your analysis per experiment |
+| `STATUS.md` | your running state: what is done, what is blocked, what you need |
+| `analysis/` | research-side post-processing of your results |
