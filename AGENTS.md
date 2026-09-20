@@ -13,6 +13,15 @@ everything the other side needs must be in a committed file.
 3. `docs/02_protocol.md` — the measurement rules and the result schema. It is binding.
 4. `tasks/` — the work queue. Then `STATUS.md` — your own notes from earlier sessions.
 
+## Prerequisites the human sets up once (check them first; if one is missing, say so in `STATUS.md`)
+- **JetPack 6.x (L4T r36.x, CUDA 12.x, Python 3.10 system)**. JetPack 5 cannot run `torch.compile`; do not
+  reflash yourself — report it and stop at T001.
+- Passwordless `sudo` for `nvpmodel`, `jetson_clocks`, `tegrastats` and reading `/sys/kernel/debug`.
+- A git identity and push access to this repository (deploy key or token), and network access to GitHub,
+  PyPI / the Jetson wheel index, Hugging Face and the openpi checkpoint bucket.
+- ≥ 150 GB free on NVMe for environments, checkpoints and raw traces.
+If a push fails, keep working: commit locally, note it at the top of `STATUS.md`, retry at the end of each task.
+
 ## What you write, and what you never touch
 - Yours: `env/`, `bench/`, `results/`, `reports/`, `STATUS.md`, and **one appended status block at the end
   of a task file**.
@@ -46,7 +55,8 @@ everything the other side needs must be in a committed file.
   `.sqlite` traces (keep them under `raw/` on the device, record path + sha256 + size in `meta.json`),
   no tokens or credentials. Commit the exported CSV summaries.
 - **Stay within the device**: do not flash a different JetPack, change boot configuration or overclock
-  without a task that says so. Installing user-space packages, Python environments and Docker images is
+  without a task that says so. **Never answer "yes" to a reboot prompt** (some `nvpmodel` mode changes ask for
+  one): a reboot ends your session. Power-mode sweeps are scheduled last and described in the protocol. Installing user-space packages, Python environments and Docker images is
   expected — record what you install in `env/`.
 - Work autonomously. Ordinary obstacles (a package that will not build on aarch64, a missing wheel, an
   out-of-memory error) are yours to solve: try the documented alternatives in the task, record what you

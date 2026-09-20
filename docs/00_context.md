@@ -34,7 +34,7 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | action-expert time **per denoising step** | 136 ms | derived | E3 (the most important single number) |
 | action-expert share of latency vs N | 59.1 % (N = 4), 78.3 % (N = 10) | derived | E3 sweep over N |
 | `torch.compile` gain on Orin | 1.51× (Thor's) → ≈ 90 ms/step | transplanted | **E4** (biggest gap in our evidence) |
-| GPU streaming-multiprocessor utilisation in the AE phase | 22 % | paper Fig. 5 | E5 |
+| GPU utilisation in the AE phase (the paper's "SM utilisation"; you report tegrastats `GR3D_FREQ` % and the nsys kernel-busy fraction) | 22 % | paper Fig. 5 | E5 |
 | where the ≈ 43× over the floor goes: kernel time vs launch gaps vs idle | unknown | — | E5 |
 | per-kernel launch overhead | 20 µs (we sweep 5–50) | **assumed** | E2, E5 |
 | achieved fraction of peak bandwidth / FLOPs on small kernels | 0.7 / 0.4 | **assumed** | E1, E2 |
@@ -42,7 +42,7 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | arithmetic intensity of an AE layer | 60 (ours) vs 64.5 (paper) FLOPs/B | analytic | E6 |
 | token count where the GPU stops being launch-bound (our "S ≈ 16 crossover") | analytic | — | E2 sweep over S |
 | real prefix length P | 816 (paper implies 841) | **assumed** | E3 (print it) |
-| SoC power during the AE phase | 20 W (we sweep 15–30) | **assumed** | E7 |
+| module power during the AE phase (sum of the rails in protocol §4) | 20 W (we sweep 15–30) | **assumed** | E7 |
 | energy per denoising step, measured stack | 3,335 mJ | 136 ms × 20 W + DRAM model | E7 |
 | closed-loop quality vs number of denoising steps and vs *stale* steps | paper Table 7 | paper | E8 |
 | is 2 × floor really out of reach for the best engineered stack? | assumed yes | — | E10 |
@@ -54,6 +54,13 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | SmolVLA (and a second π0 implementation) | github.com/huggingface/lerobot | `a16f34c085c9597fcbdb9fde395a3334d78df716` | LIBERO env `src/lerobot/envs/libero.py`; compile flags in `examples/rtc/eval_dataset.py` (`use_torch_compile`, `torch_compile_mode`, …) |
 | GR00T N1.7 (optional) | github.com/NVIDIA/Isaac-GR00T | `376ba890cff8c9de64d71d982772a9c36185fdd7` | has Orin support: `scripts/activate_orin.sh`, `scripts/deployment/orin/`, and `scripts/deployment/benchmark_inference.py` (eager / compile / TensorRT, per-component timing) |
 If a pinned commit does not run on the Jetson, use the nearest one that does and record the hash and why.
+
+**Environment reality (plan for it).** The three repositories pin different stacks: openpi wants Python ≥ 3.11 with
+a specific torch and also JAX; lerobot wants a newer Python again; GR00T's Orin path uses the system Python 3.10
+with NVIDIA's Jetson wheels. On the Jetson, GPU-enabled PyTorch comes from NVIDIA's JetPack wheels / containers
+(and the community Jetson wheel index for JetPack 6 + CUDA 12.6), not from PyPI. Use **one environment per
+model**, relax the repositories' torch / Python pins to what the Jetson wheels provide, and record every deviation
+in `env/`. The measured software stack is part of the result.
 
 Expert dimensions for cross-checking what you observe: π0 / π0.5 — 18 layers, hidden 1024, S = 51 / 50,
 311 M expert parameters, 623 MB per step. SmolVLA — 16 expert layers (8 self + 8 cross), hidden 720,

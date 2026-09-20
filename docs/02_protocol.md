@@ -1,8 +1,12 @@
 # 02 — Measurement protocol (binding)
 
 ## 1. Device state — record for every run, fix before every run
-- Power mode: `sudo nvpmodel -q`. Default for all experiments: **MAXN** (`sudo nvpmodel -m 0`) followed by
-  `sudo jetson_clocks`. E7 repeats selected points at the 50 W, 30 W and 15 W modes.
+- Power mode: `sudo nvpmodel -q --verbose` lists the modes and their ids on this board (on AGX Orin typically
+  0 = MAXN, 1 = 15 W, 2 = 30 W, 3 = 50 W — **confirm, do not assume**). Default for all experiments: **MAXN**
+  followed by `sudo jetson_clocks`. E7 repeats selected points at the other modes. Switching between MAXN and a
+  capped mode can require a reboot: do all MAXN work first, run the mode sweep as the **last** item of a session,
+  write "next: resume E7 at mode <id>" in `STATUS.md` before switching, and if a reboot is demanded stop and leave
+  it to the human (never confirm the prompt yourself).
 - Save `sudo jetson_clocks --show`, `cat /etc/nv_tegra_release`, `dpkg -l | grep -E 'nvidia-jetpack|cuda-toolkit|tensorrt|cudnn'`,
   `nvcc --version`, `python -c "import torch;print(torch.__version__, torch.version.cuda)"`, kernel version, and the EMC
   (memory) clock: `sudo cat /sys/kernel/debug/bpmp/debug/clk/emc/rate` (expect 3,199 MHz = LPDDR5-6400).
@@ -12,7 +16,9 @@
 
 ## 2. Timing
 - Batch size 1, bf16 weights and activations unless a task says otherwise, fixed seeds, fixed inputs
-  (a real LIBERO observation saved once to `bench/fixtures/`, not random tensors, so token counts are real).
+  (one real LIBERO observation — camera images, robot state, language prompt — saved once to `bench/fixtures/`
+  as PNG + JSON, not random tensors, so token counts are real; take it from the published LIBERO dataset on
+  Hugging Face so that this does not depend on installing the simulator, and record the dataset, episode and frame).
 - GPU time with CUDA events (`torch.cuda.Event(enable_timing=True)`) around each region, synchronised only at
   region boundaries; also wall-clock end to end. Do not time with profilers attached: profile in separate runs.
 - ≥ 20 warm-up iterations (for `torch.compile`: until no recompilation is reported, and log the compile time),
@@ -20,17 +26,30 @@
 - Regions (use the same names as NVTX ranges): `preprocess`, `vision`, `vlm_prefix` (prefill that builds the
   KV cache), `ae_total`, `ae_step[i]` for each denoising step, and inside one representative step
   `ae_layer[j]`; `postprocess`. If the code fuses regions so they cannot be separated, say which.
-- Sweep the number of denoising steps by the model's own config knob, not by editing loops.
+- Sweep the number of denoising steps with the model's own parameter, not by editing loops: in openpi's PyTorch
+  model it is the `num_steps` argument of `sample_actions`; in lerobot it is `num_steps` in the policy config.
+- **Per-step time has two definitions; report both and label them.** (a) *Instrumented*: CUDA events / NVTX around
+  each denoising step — valid in eager mode. (b) *Slope*: run the full N sweep and fit total action-expert (or
+  end-to-end) latency = a + b·N; b is the ms per denoising step, a the fixed cost. Under `torch.compile` and CUDA
+  graphs, events inside the compiled region cause graph breaks or disappear, so (b) is the primary number there;
+  additionally measure a variant that compiles only the single-step function (`denoise_step`) and loops in Python.
+- Known property, to be reported and **not fixed**: openpi's denoising loop tests a GPU tensor each iteration
+  (`while time >= -dt/2`), which forces a CPU–GPU sync per step and a graph break. That is part of the software
+  stack we are characterising. If you also measure a patched loop, report it as a separate, labelled variant.
 
 ## 3. Profilers
 - **Nsight Systems**: `nsys profile -t cuda,nvtx,osrt,cublas,cudnn --cuda-memory-usage=true -o raw/<run>/<name> --capture-range=cudaProfilerApi python bench/...`
   with `torch.cuda.profiler.start()/stop()` around ~10 steady-state inferences. Then export and commit the CSVs:
-  `nsys stats -r cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_api_sum,nvtx_sum,cuda_kern_exec_sum -f csv -o results/<run>/nsys raw/<run>/<name>.nsys-rep`
-  and the full kernel trace for one inference (`-r cuda_gpu_trace`). From the trace compute, per NVTX region:
+  `nsys stats -r cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_api_sum,nvtx_sum,nvtx_kern_sum,nvtx_gpu_proj_trace,cuda_kern_exec_sum -f csv -o results/<run>/nsys raw/<run>/<name>.nsys-rep`
+  and the full kernel trace for one inference (`-r cuda_gpu_trace`). `nvtx_sum` covers CPU ranges only; the
+  kernels-per-region attribution comes from `nvtx_kern_sum` / `nvtx_gpu_proj_trace`. Report names differ between
+  nsys versions: run `nsys stats --help-reports` and record the version and the names you used. For compiled
+  runs add `--cuda-graph-trace=node`, otherwise kernels replayed inside CUDA graphs are invisible. From the trace compute, per NVTX region:
   number of kernels, summed kernel time, **GPU idle time = region time − union of kernel intervals**, the
   distribution of gaps between consecutive kernels, top-20 kernels by time with their launch grids, memcpy time.
-- **Nsight Compute** (`ncu`, the user's name for the Nsight Compute CLI): use it on one action-expert step to get
-  per-kernel metrics. On Tegra many hardware counters are unavailable; try, record exactly what is and is not
+- **Nsight Compute** (optional, after nsys works): the CLI is `nv-nsight-cu-cli` (package `nsight-compute`), e.g.
+  `nv-nsight-cu-cli --mode=profile-kernel -o raw/<run>/ncu python bench/<one_ae_step>.py`; use it on one
+  action-expert step to get per-kernel metrics. On Tegra many hardware counters are unavailable; try, record exactly what is and is not
   exposed, and fall back to **analytic FLOPs and bytes per kernel (from tensor shapes) ÷ measured kernel time**
   to get achieved FLOP/s and GB/s.
 - `torch.profiler` with `record_shapes=True, with_flops=True` is a welcome cross-check; export
@@ -39,7 +58,10 @@
 ## 4. Power and energy
 - `sudo tegrastats --interval 100 --logfile raw/<run>/tegrastats.log` (10 Hz) or read the INA3221 rails directly
   from sysfs at ≥ 10 Hz if finer. Rails to keep: `VDD_GPU_SOC`, `VDD_CPU_CV`, `VIN_SYS_5V0`, `VDDQ_VDD2_1V8AO`
-  (the memory rail — we care about it specifically). Convert to a tidy CSV (`t_s, rail, mW`).
+  (the memory rail — we care about it specifically). Convert to a tidy CSV (`t_s, rail, mW`). Always report each
+  rail separately **and** their sum as "module power" (`VDD_GPU_SOC + VDD_CPU_CV + VIN_SYS_5V0 + VDDQ_VDD2_1V8AO`;
+  check the rail list of this carrier board and say if it differs). GPU utilisation = tegrastats `GR3D_FREQ` %,
+  logged in the same file. Raw tegrastats logs stay under `raw/`; the tidy CSV is committed.
 - Measure 60 s of idle baseline in the same power mode before each power run.
 - Because one inference is shorter than the sampling period, measure power on a **loop of back-to-back
   inferences ≥ 60 s**, and separately on loops that run only the prefix and only the action expert, so the
