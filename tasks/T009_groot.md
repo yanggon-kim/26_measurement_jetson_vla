@@ -4,7 +4,7 @@ Model: GR00T N1.7, github.com/NVIDIA/Isaac-GR00T at the pinned commit (`docs/00_
 blocks, hidden 1536, S = 41, N = 4. Use its Orin path (`scripts/activate_orin.sh`, `scripts/deployment/orin/`), its
 published checkpoint (record name, source, sha256) and a fixture observation in its own input format (record the
 dataset, episode, frame). If the model cannot be installed or does not fit, document exactly what failed and mark
-the task blocked — do not substitute another model.
+the task blocked — do not substitute another model. E11 for this model is a separate task, T012.
 1. E3 / E4 as T002 / T003: regions per protocol §2 (`vision`, `vlm_prefix` = the backbone, `ae_step[i]` = one DiT
    denoising step, `ae_layer[j]` = one DiT block); N ∈ {1, 2, 4, 6, 8, 10}; `torch.compile` modes as T003. Also run
    the repository's own `scripts/deployment/benchmark_inference.py` (eager / compile; TensorRT modes belong to

@@ -2,6 +2,9 @@
 
 Model: π0 (openpi PyTorch, same checkpoint and harness as T002/T003). Modes: eager and the best compiled mode of
 T003. N = 4 and N = 10. MAXN + `jetson_clocks`.
+T010 (E11) runs before this task: reuse its `bench/phase_loops.py` (prefix-only / action-expert-only / full loops) for
+step 4, and if its nsys captures (`results/<date>_E11f_pi0_pipelining/raw/`) cover a configuration of step 1, analyse
+that capture here instead of taking a new one (reference it in `meta.json.notes`; do not copy the `.nsys-rep`).
 0. Physical floor per region → `floor.csv` (protocol §9), before any profiling.
 1. E5 / nsys (protocol §3.1): capture window = 1–3 steady-state inferences; commit the `.nsys-rep` (and the
    `.sqlite` if under 50 MB compressed) under `raw/` per protocol §3.5 / §6; export the CSVs; compute kernels per step, kernel time vs region time, GPU idle
