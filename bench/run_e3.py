@@ -71,11 +71,11 @@ def floor_rows(model_bytes: dict, tokens: dict, layers: int = 18) -> list[dict]:
 
 
 def run_one(policy, batch, n_steps: int, warmup: int, timed: int,
-            fine_layers: bool) -> tuple[dict, list[dict], dict]:
+            fine_layers: bool, layers_in_step: int = 0) -> tuple[dict, list[dict], dict]:
     policy.config.num_inference_steps = n_steps
     policy.model.config.num_inference_steps = n_steps
 
-    rec = R.Recorder(enable_layers=fine_layers, layers_in_step=0)
+    rec = R.Recorder(enable_layers=fine_layers, layers_in_step=layers_in_step)
     undo = R.instrument(policy, rec)
     try:
         with torch.inference_mode():
@@ -129,8 +129,13 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=100)
     ap.add_argument("--date", default=time.strftime("%Y%m%d", time.gmtime()))
-    ap.add_argument("--fine-layers", action="store_true", default=True,
-                    help="also time ae_layer[j] inside step 0")
+    ap.add_argument("--fine-layers", dest="fine_layers", action="store_true", default=True,
+                    help="also time ae_layer[j] inside one step (default: on)")
+    ap.add_argument("--no-fine-layers", dest="fine_layers", action="store_false",
+                    help="disable ae_layer[j] timing — the control for the step-0 offset, "
+                         "since ae_layer instrumentation lands on that step alone")
+    ap.add_argument("--layers-in-step", type=int, default=0,
+                    help="which denoising step carries the ae_layer[j] events")
     args = ap.parse_args()
     steps = [int(x) for x in args.steps.split(",")]
 
@@ -153,7 +158,7 @@ def main() -> int:
         print(f"\n=== N={n}  warmup {args.warmup}, timed {args.timed} ===", flush=True)
         t0 = time.time()
         summary, rows, extra = run_one(policy, batch, n, args.warmup, args.timed,
-                                       args.fine_layers)
+                                       args.fine_layers, args.layers_in_step)
         print(f"  {time.time()-t0:.0f}s  "
               f"e2e {summary['e2e_wall']['median_ms']:.1f} ms  "
               f"ae_total {summary['ae_total']['median_ms']:.1f} ms  "
@@ -197,6 +202,10 @@ def main() -> int:
             "tokens_detail": tokens,
             "region_parameter_bytes": mbytes,
             "batch": 1, "n_warmup": args.warmup, "n_timed": args.timed,
+            "seed": "not set — sample_noise draws from the global RNG each iteration. "
+                    "Latency is shape-determined, so this does not affect the timings; "
+                    "the model INPUT (the fixture) is fixed.",
+            "ae_layer_instrumented_step": args.layers_in_step if args.fine_layers else None,
             "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
             "jetson_clocks": f"applied before the run; GPU locked "
                              f"{gate['gpu_min_freq_hz']}..{gate['gpu_max_freq_hz']} Hz, "

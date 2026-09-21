@@ -25,15 +25,22 @@ Three `docs/00_context.md` values are now **confirmed from the loaded model**, n
 **P = 816** (3 × 256 + 48; the doc marked it assumed), **S = 51**, **623.01 MB** of expert
 weights per step, and 38.29 GFLOP against the doc's 38.7.
 
-## Two cheap findings
+## Three findings
 
 * **80.2 ms per inference encodes a dummy image.** `empty_cameras: 1` makes the policy
   synthesise a third camera filled with −1 and push it through the full SigLIP tower:
   **33.3 % of `vision`, 11.6 % of an N = 4 inference**, and its attention mask is zero so the
   result is discarded. Caching one constant embedding removes it.
-* **Denoising step 0 costs +3.13 ms** over every later step, at every N (steps 1…N−1 agree to
-  ±0.2 %). Close to one step's 3.115 ms memory floor, which *would* fit a cold KV-cache read —
-  but that is a hypothesis; T004's nsys should settle it.
+* **10.4 % of every denoising step is a Python deep copy of the KV cache.**
+  `modeling_pi0.py:919` runs `copy.deepcopy(past_key_values)` inside `denoise_step`, cloning
+  all 36 KV tensors (**15.04 MB**) every step: **5.68 ms/step, 56.8 ms and 150 MB per
+  inference at N = 10**. At an effective 2.65 GB/s it is Python/allocator cost, not bandwidth
+  — and it alone is **1.82× the entire 3.115 ms memory floor of a step**.
+  `docs/00_context.md` assumes `kv_copied_bytes_per_step = 0`. The expert branch passes
+  `use_cache=False`, so whether the copy is needed at all is one experiment.
+* **Denoising step 0 costs +0.83 ms** over the rest — *not* the +3.13 ms first reported. The
+  larger figure was ~74 % my own instrumentation: `ae_layer[j]` events land on one step and
+  cost it ~2.57 ms. Control: `results/20260921_E3_pi0_eager_probe/step0_control.csv`.
 
 ## ⚠ A trap that would have silently produced garbage
 
@@ -219,8 +226,9 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Blocked
 
-* **T001 step 1 (MAXN + `jetson_clocks`)** — needs a human-authorised reboot. See the top.
-* **Everything downstream of it.** T002 (π0 eager latency) would produce numbers at half the
+* (nothing) — T001's MAXN blocker was resolved by the human's reboot and T002 is done.
+
+Historical, for the record: T002 was blocked until the reboot, because it would have run at half the
   SMs and half the GPU clock, so it should wait for the reboot.
 
 ## Questions for the research side
@@ -243,15 +251,15 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Repository size (protocol §6f)
 
-After T001 (2026-09-21), with both the MODE_30W and the MAXN E0 runs committed:
+After T002 (2026-09-21):
 
 ```
-du -sh results/   2.9M
-du -sh .git       2.5M
-git count-objects -vH:  count: 228   size-pack: 62.49 KiB
+du -sh results/   4.0M
+du -sh .git       3.6M
+git count-objects -vH:  count: 362   size-pack: 62.49 KiB
 ```
 
-Five largest committed files — all far under the 50 MB limit, nothing split:
+Five largest committed files:
 
 | bytes | file |
 |---|---|
@@ -261,7 +269,7 @@ Five largest committed files — all far under the 50 MB limit, nothing split:
 | 201105 | `results/20260921_E0_platform_maxn/raw/tegrastats_idle.log` |
 | 190947 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
 
-`find results -size +50M` is empty.
+`find results -size +50M` is empty. T001's figures were 2.9 M / 2.5 M / 228 objects.
 
 ### Size budget calibration from the toy captures (T001 step 3c)
 

@@ -80,3 +80,43 @@ denoising step 0 costs +3.13 ms over every later step; 80.2 ms per inference (33
 `vision`) encodes an all-−1 dummy camera whose attention mask is zero.
 
 Review: self-review in the report §9, plus an independent sub-agent pass (protocol §11).
+
+status: amended 2026-09-21 — after the independent review pass (protocol §11)
+
+The review recomputed every number from the CSVs and reproduced them exactly, but found five
+substantive defects. All are fixed; two changed published conclusions:
+
+1. **The +3.13 ms step-0 offset was ~74 % my own instrumentation.** `bench/regions.py` puts
+   the 18 `ae_layer[j]` event pairs on one denoising step, so the anomalous step was also the
+   only instrumented one — and `--fine-layers` was `action="store_true", default=True`, so
+   the control could not even be run. Flag fixed (`--no-fine-layers`, `--layers-in-step`);
+   control run at n = 100 per condition. **The real offset is +0.83 ms.**
+2. **`copy.deepcopy(past_key_values)` at `modeling_pi0.py:919` was missed** — I had grepped
+   for `clone_past_key_values`, the symbol name used in a different lerobot ref. It clones all
+   36 KV tensors (15,040,512 B) **every denoising step**: measured **5.68 ms/step**, 10.4 % of
+   a step, 56.8 ms and 150 MB per inference at N = 10, at an effective 2.65 GB/s — Python and
+   allocator cost, not bandwidth. It is 1.82× the step's entire memory floor.
+   `docs/00_context.md` assumed `kv_copied_bytes_per_step = 0`; corrected.
+3. `meta.json.raw_files` was `[]` in all six runs while the report's self-review claimed the
+   hashes were filled; the checkpoint sha256 (`31633cfa…`) was missing; and the provenance
+   hashes went stale when `floor.csv` was regenerated. All six `meta.json` repopulated and
+   `bench/regen_floor.py` committed.
+4. The report claimed a fixed seed; none is set. Corrected, and recorded in `meta.json.seed`.
+5. "3.69 ms fixed cost of the denoising phase" misread my own `ae_total` definition (it spans
+   first-step-start to last-step-end and contains no pre-loop work). Corrected.
+
+Also applied: per-region `gap_ratio` as protocol §9 requires — **`vision` is 29.6×**, the
+worst in the model and previously absent; the per-image vision figure re-measured at n = 100
+in its own result directory (`results/20260921_E3_pi0_eager_probe/`) instead of n = 50 from an
+un-committed inline script; "400 sampled tensors" reworded (it is the first 400 of 777 in file
+order, covering the whole expert and VLM but only 60 of 437 vision-tower tensors).
+
+One review finding was **not** acted on: it flagged the `docs/00_context.md` edit as forbidden
+by `AGENTS.md`. That is correct as the repo text stands, but the repository owner instructed
+the on-device agent directly to correct wrong markdown and push it, and both roles are the
+same person here. The edit is disclosed in the report, in this file and in the commit message
+rather than made silently; under the unmodified workflow it would have been raised under
+`STATUS.md` → "Questions for the research side".
+
+New result directory: `results/20260921_E3_pi0_eager_probe/` (step-0 control, KV deepcopy
+cost, per-image vision), `bench/probe_e3.py`, `bench/regen_floor.py`.

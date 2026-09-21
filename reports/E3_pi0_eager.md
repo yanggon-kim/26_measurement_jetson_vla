@@ -18,16 +18,22 @@ checkpoints.
 
 ### 1.1 The number the project exists to measure
 
-**One denoising step of π0's action expert costs 52.94 ms on this Orin.**
+**One denoising step of π0's action expert costs 52.8 ms on this Orin** (52.80 ms
+instrumented steady state; 52.94 ms by slope — the two agree to 0.3 %).
 
 | definition (protocol §2) | value | how |
 |---|---|---|
-| **(b) slope** — the primary number | **52.943 ms/step** | least squares over all six N: `ae_total = 3.69 + 52.943·N` ms, **r² = 0.99999** |
-| (a) instrumented — CUDA events per `ae_step[i]` | 53.11 ms/step (mean over 10 steps at N = 10) | `ae_step_individual[i]` rows |
+| **(a) instrumented** — CUDA events per `ae_step[i]`; **§2 makes this primary in eager mode** | **52.80 ms/step** (steps 1…N−1, uninstrumented) | `ae_step_individual[i]`; 53.11 ms if step 0 is included, which carries the `ae_layer` event overhead (§1.7b) |
+| (b) slope — the primary number only under `torch.compile` | 52.943 ms/step | least squares over all six N: `ae_total = 3.69 + 52.943·N` ms, **r² = 0.99999** |
 | `ae_total / N` at N = 10 | 53.30 ms | |
 | `ae_total / N` at N = 4 | 53.88 ms | |
 
-The fixed cost of the denoising phase is **3.69 ms**, independent of N.
+**The 3.69 ms intercept is not a fixed cost of the denoising phase.** `ae_total` is derived
+in `bench/regions.py` as the span from the first `ae_step` start event to the last `ae_step`
+end event, so by construction it contains *no* pre-loop work — `embed_prefix`, the prefill and
+the KV build are all outside it. The intercept is the step-0 excess (§1.7b) re-expressed by
+the fit, not a second, independent quantity. An earlier draft of this report presented it as
+one; that was wrong.
 
 ### 1.2 The ladder (protocol §9), ms per denoising step
 
@@ -38,8 +44,20 @@ The fixed cost of the denoising phase is **3.69 ms**, independent of N.
 | **measured eager** | **52.94 ms** | **17.0 × the floor** |
 | *what the research side assumed* | *136 ms* | *derived from the paper; the real device is **2.6× faster*** |
 
+**Gap ratio per region** (protocol §9 requires this for every region, at the *spec* peaks —
+the measured peaks come from T005/E1):
+
+| region | measured (N = 10) | floor | bound | gap |
+|---|---|---|---|---|
+| `vision` | 239.60 ms | 8.10 ms | memory | **29.6×** ← the worst in the model |
+| `vlm_prefix` | 232.93 ms | 97.48 ms | compute | **2.4×** |
+| `ae_step` | 52.80 ms | 3.115 ms | memory | **17.0×** |
+
 Protocol §9's reading of a 17× gap: **"a structural problem — launch-bound, idle GPU, or too
-little parallelism."** E5/E5b (T004, T007) must decide which; this report does not guess.
+little parallelism."** `vision`'s 29.6× is worse still, and a third of it is spent on a dummy
+image (§1.7a). Note the `vision` floor counts weights only — its FLOPs were not computed
+analytically — so that ratio is an upper bound on the gap. E5/E5b (T004, T007) must decide
+which cause applies; this report does not guess.
 
 ### 1.3 Per-region latency
 
@@ -94,38 +112,85 @@ language tokens; the rest is padding (§1.7) that is nevertheless computed.
 ### 1.6 Peak memory
 
 9.04 GB allocated / 9.40 GB reserved (`torch.cuda.max_memory_allocated/reserved`), constant
-across N — the KV cache is built once. On Orin this is allocator accounting inside *unified*
+across N. It is dominated by the 8.89 GB of weights, so N has little to move. On Orin this is allocator accounting inside *unified*
 memory, so it competes with host RAM rather than sitting in separate VRAM.
 
-### 1.7 Two findings that are cheap to act on
+### 1.7 Three findings, two of them cheap to act on
 
 **(a) A third of all vision time encodes a dummy image.** The checkpoint sets
 `empty_cameras: 1`, so the policy synthesises a third camera filled with `-1` and runs it
-through the full SigLIP tower. Measured per image over 50 inferences
-(`results/…_N10/vision_per_image.csv`):
+through the full SigLIP tower. Measured per image, n = 100 with 20 warm-ups
+(`results/20260921_E3_pi0_eager_probe/vision_per_image.csv`; an earlier n = 50 run from an
+un-committed script agreed to 0.2 %):
 
 | slot | median ms |
 |---|---|
-| `image` (base camera) | 80.79 |
-| `image2` (wrist camera) | 80.07 |
-| **`empty_camera_0` (all −1, carries no information)** | **80.19** |
+| `image` (base camera) | 80.61 |
+| `image2` (wrist camera) | 80.14 |
+| **`empty_camera_0` (all −1, carries no information)** | **80.08** |
 
-**80.2 ms — 33.3 % of `vision`, and 11.6 % of the whole N = 4 inference — is spent encoding
+The three passes agree to within 0.7 % because SigLIP's cost is data-independent — so "a
+third of vision" is really "one of three equal passes", not an independent measurement of the
+dummy's cost. That does not weaken the conclusion: the pass is real, and its output is
+discarded.
+
+**80.1 ms — 33.3 % of `vision`, and 11.5 % of the whole N = 4 inference — is spent encoding
 nothing.** Its attention mask is zero, so its 256 prefix tokens are masked out downstream:
 the work is discarded. Caching one constant embedding would remove it outright. This is a
 property of the shipped configuration, reported as found; it was not changed.
 
-**(b) The first denoising step costs 3.13 ms more than every other.** At N = 10:
+**(b) The first denoising step costs +0.83 ms more than the rest — most of the apparent
+offset was my own instrumentation.** An earlier draft of this report published **+3.13 ms**
+and floated a cold-KV-cache explanation. An independent review pointed out the confound:
+`bench/regions.py` records the 18 `ae_layer[j]` event pairs on **one** denoising step, so the
+anomalous step was also the only instrumented one. The control
+(`results/20260921_E3_pi0_eager_probe/step0_control.csv`, n = 100 each):
 
-```
-step 0  55.93 ms      steps 1-9  52.74 - 52.97 ms      step0 - mean(rest) = +3.13 ms
+| condition | step-0 offset | step 5 |
+|---|---|---|
+| `ae_layer` instrumentation **off** | **+0.83 ms** | 54.46 ms |
+| instrumentation on step 0 | +3.42 ms | 54.51 ms |
+| instrumentation on step 5 | +0.80 ms | **57.03 ms** |
+
+The event overhead is **+2.57 ms**, and it follows whichever step carries it. **The real
+step-0 offset is +0.83 ms**; the published 3.13 ms was ~74 % artefact. The steps are still not
+exactly equal, but the effect is small and no longer resembles a cold-cache read of one
+step's worth of memory. `--no-fine-layers` now exists so this control can be re-run (it was
+previously un-disableable, which is why the confound survived the first pass).
+
+**(c) 10.4 % of every denoising step is a Python deep copy of the KV cache.**
+`lerobot/policies/pi0/modeling_pi0.py:919`, inside `denoise_step`:
+
+```python
+past_key_values = copy.deepcopy(past_key_values)
 ```
 
-The pattern is identical at every N (`per_step.csv`, `ae_step_individual[i]`). The steps are
-therefore **not equal**, though steps 1…N−1 are equal to within ±0.2 %. The offset is
-suspiciously close to the 3.115 ms bandwidth floor of one step, which would be consistent with
-the freshly written prefix KV cache being read from DRAM cold on the first step — **but that is
-a hypothesis, not a measurement**; T004's nsys/ncu run should settle it.
+It clones all 36 KV tensors — **15.04 MB** — once per step. Measured directly
+(`results/…_probe/kv_deepcopy.csv`, n = 100): **5.677 ms per step**, p5–p95 5.644–5.717, i.e.
+**56.8 ms and 150 MB per inference at N = 10**.
+
+It is not bandwidth-bound: 15.04 MB in 5.677 ms is an effective **2.65 GB/s**, ~1.3 % of the
+204.8 GB/s the device is specified for. The cost is Python and allocator work across 36
+tensors. For scale, this one line costs **1.82× the entire 3.115 ms memory floor of a
+denoising step**.
+
+`docs/00_context.md` assumes `kv_copied_bytes_per_step = 0`; the measured value is
+15,040,512 B. This is a property of the shipped stack, reported and not changed — but the
+expert branch passes `use_cache=False`, so the callee does not mutate the cache, and whether
+the copy is needed at all is worth one experiment in T003/T010.
+
+**With it, the step budget nearly closes** (layers-off baseline, mean step 54.63 ms):
+
+| | ms | share |
+|---|---|---|
+| 18 × `ae_layer[j]` | 44.88 | 82.1 % |
+| `copy.deepcopy(past_key_values)` | 5.68 | 10.4 % |
+| remainder — `embed_suffix`, mask build, final norm, `action_out_proj`, Python | 4.08 | 7.5 % |
+
+(The 44.88 ms layer figure itself carries ~2.6 ms of event overhead, so the true layer total
+is nearer 42.3 ms and the remainder correspondingly larger.) `docs/00_context.md` assumes
+`T_extra` ≈ 0.08 ms per step for everything outside the layer stack; the measured
+non-layer cost is **~10 ms**, two orders of magnitude larger.
 
 ---
 
@@ -188,7 +253,11 @@ easier.
 
 ## 4. Conditions
 
-Batch 1, bf16 (`dtype: bfloat16` from the checkpoint), fixed seed, eager. One real LIBERO
+Batch 1, bf16 (`dtype: bfloat16` from the checkpoint), eager. **No RNG seed is set** — an
+earlier draft claimed one. `sample_noise` draws from the global RNG each iteration, so the
+denoising *input* differs between iterations; the model *observation* is the fixed fixture and
+every tensor shape is constant, so latency is unaffected. Protocol §2 asks for fixed seeds and
+this run does not satisfy that; it is recorded in each `meta.json.seed`. One real LIBERO
 observation: `HuggingFaceVLA/libero`, episode 0, frame 0, task_index 0, *"put the white mug on
 the left plate and put the yellow and white mug on the right plate"* — two 256×256 camera
 images and an 8-D state, saved in `bench/fixtures/` (PNG + JSON). N is swept through the
@@ -214,12 +283,17 @@ which is what they must be if the instrumentation is attributing correctly, and 
 sum to end-to-end (N = 4: 239.4 + 233.1 + 215.5 = 688.0 vs 694.1 measured; the 6 ms remainder
 is `embed_prefix` assembly, the Euler update and Python overhead outside the wrapped regions).
 
-**High** that the weights are real: `assert_real_weights()` compares 400 sampled tensors
-against the checkpoint file on every run and refuses to measure on a mismatch. This is not
-paranoia — see §8.
+**High** that the weights are real: `assert_real_weights()` compares tensors against the
+checkpoint file on every run and refuses to measure on a mismatch (400/400 matched). Precisely:
+it takes the **first 400 of the checkpoint's 777 tensors in file order**, not a random sample —
+that covers the whole action expert, the whole VLM language model and the action projections,
+but only 60 of 437 vision-tower tensors. A model whose vision tower alone were partly random
+would pass. Against the failure mode of §8, where the entire `load_state_dict` fails, all 400
+would mismatch.
 
-**Not established:** why the gap to the floor is 17×; why step 0 costs +3.13 ms; whether the
-paper's vision figure covers fewer images.
+**Not established:** why the gap to the floor is 17× (or 29.6× for `vision`); the +0.83 ms
+residual step-0 offset; what the 6.1 ms end-to-end remainder is; whether the paper's vision
+figure covers fewer images; whether the per-step KV deep copy is removable.
 
 ---
 
@@ -314,8 +388,32 @@ tokenizer's sha256 was verified byte-identical to Google's ungated copy at
 | deviations listed | **yes** — §8 |
 | nothing over 50 MB; secrets scan | **yes** — largest run directory 208 KB; scan clean |
 | no weights/caches/venvs staged | **yes** — the 7 GB checkpoint lives in `~/.cache/huggingface` |
+| `raw_files` hashes filled | **yes, after correction** — they were `[]` in all six runs when this report was first written, while this table claimed otherwise. Fixed; each run now lists its stdout and `latency_samples.csv` with sha256. |
+| checkpoint name, source **and sha256** | **yes, after correction** — `meta.json.checkpoint_sha256` = `31633cfa…`; it was missing in the first version |
+| **nothing on the research side was edited** | **no — `docs/00_context.md` was edited.** `AGENTS.md` reserves `docs/` for the research side. The repository owner instructed me directly to correct wrong markdown and push it, and the two roles are the same person here; the edit is recorded in §8 and in the commit message rather than made silently. Under the unmodified `AGENTS.md` workflow this would have gone to `STATUS.md` → "Questions for the research side" instead. |
 
-**Independent pass (protocol §11, P0 task):** recorded in §10 once complete.
+### Independent pass (protocol §11, P0 task)
+
+A sub-agent was given the task file, the protocol, the plan and the produced files, and asked
+to recompute every number from the CSVs. It reproduced the full region tables, the slope fit
+(a = 3.6894, b = 52.9434, r² = 0.9999933), every floor figure, the token arithmetic and the
+paper-comparison factors exactly, and confirmed `latency_summary.csv` matches the raw samples
+to the last float digit. **It found five substantive defects, all now fixed:**
+
+| finding | fix |
+|---|---|
+| **The +3.13 ms step-0 offset was confounded with my own instrumentation** — `ae_layer` events land on that step alone, and `--fine-layers` was un-disableable so the control could not be run | flag fixed; control run; the real offset is **+0.83 ms** and the published figure was ~74 % artefact (§1.7b) |
+| **`copy.deepcopy(past_key_values)` at `modeling_pi0.py:919` was missed** — I had grepped for a symbol name used in a different lerobot ref | measured: **5.68 ms/step, 10.4 % of a step** (§1.7c) — the single largest thing this report had failed to see |
+| §4 claimed a fixed seed; none is set | claim corrected (§4), recorded in `meta.json.seed` |
+| "3.69 ms fixed cost of the denoising phase" misreads my own `ae_total` definition | corrected (§1.1) |
+| `meta.json.raw_files` was `[]` in all six runs while §9 claimed hashes were filled; checkpoint sha256 missing; provenance hashes stale after `floor.csv` was regenerated | all six `meta.json` repopulated; `bench/regen_floor.py` committed |
+
+Also accepted and applied: per-region gap ratios (`vision` is **29.6×**, the worst in the
+model, and was absent); the "400 sampled tensors" wording (it is the first 400 of 777 in file
+order); the unmeasured "6 ms remainder" explanation marked as a hypothesis; the per-image
+vision measurement re-run at n = 100 in its own result directory.
+
+Its one finding I did not act on is the `docs/00_context.md` edit — see the row above.
 
 ---
 

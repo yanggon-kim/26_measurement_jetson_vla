@@ -101,10 +101,26 @@ model's default N = 10 the expert reaches only 52.7 %. The hypothesis that it is
 **17× gap to its own floor**, and from N = 10 where it is half the frame, not from a claimed
 59–78 % share.
 
-Two costs worth knowing before modelling anything: **80.2 ms of every inference encodes a
-dummy image** (`empty_cameras: 1` pushes an all-−1 third camera through SigLIP, 33.3 % of
-`vision`, and its attention mask is zero so the result is discarded), and **denoising step 0
-costs +3.13 ms** over every later step.
+Three costs worth knowing before modelling anything.
+
+**80.1 ms of every inference encodes a dummy image** — `empty_cameras: 1` pushes an all-−1
+third camera through SigLIP (33.3 % of `vision`), and its attention mask is zero, so the
+result is discarded.
+
+**`kv_copied_bytes_per_step` is not 0.** `modeling_pi0.py:919` runs
+`copy.deepcopy(past_key_values)` inside `denoise_step`: all 36 KV tensors, **15,040,512 B**,
+cloned **every** step, measured at **5.68 ms/step** — 10.4 % of a step, and 1.82× the step's
+whole 3.115 ms memory floor. It is Python/allocator cost (2.65 GB/s effective), not
+bandwidth. The hybrid model's `t_kv_materialise` / `kv_copied_bytes_per_step` assumptions of
+zero should be revised. (LeRobot-specific; openpi's loop does not do this.)
+
+**Denoising step 0 costs +0.83 ms** over the rest. An earlier version of this section said
++3.13 ms; that figure was ~74 % measurement artefact and is withdrawn.
+
+**`T_extra` ≈ 0.08 ms per step is out by two orders of magnitude.** Of a 54.63 ms step, the
+18 expert layers account for ~44.9 ms (itself carrying ~2.6 ms of event overhead); the rest —
+KV deep copy, `embed_suffix`, mask construction, final norm, `action_out_proj`, Python — is
+**~10 ms**.
 
 **Implementation used.** E3 measured **LeRobot's π0** (`lerobot @ f0d2b37beb`, checkpoint
 `lerobot/pi0_libero_finetuned_v044`), not openpi's PyTorch port — the openpi route costs a

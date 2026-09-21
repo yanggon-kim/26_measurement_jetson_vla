@@ -1,0 +1,154 @@
+{
+  "experiment": "E3",
+  "task": "T002",
+  "kind": "follow-up probes",
+  "date_utc": "2026-09-21T22:54:14Z",
+  "model": "pi0 (LeRobot implementation)",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "weight_integrity": {
+    "checked": 400,
+    "matched": 400,
+    "checkpoint_file_sha256_source": "huggingface_hub cache",
+    "verdict": "real weights"
+  },
+  "precision": "bfloat16",
+  "compile_mode": null,
+  "num_denoise_steps": 10,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "prefix_tokens": 816,
+  "suffix_tokens": 51,
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_hz": 1300500000,
+  "gate": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0"
+  },
+  "torch": "2.8.0",
+  "cuda": "12.6",
+  "transformers": "5.3.0",
+  "bench_commit": "cfc98cd2f15163625085935edfb30d22d72698ff",
+  "bench_files_sha256": {
+    "analyze_e3.py": "3b491c033b47e2f27b992278862db29624241adb0de7f12c0500610d7baf9285",
+    "collect_platform.py": "8d0993d0142fd6190a49d838c5b33405c53835021e15364f9364228385952458",
+    "common.py": "26600ae14fbeea95dc1aa64824979005a30e92c94c7dde398aa3cb77cc5517d5",
+    "fetch_fixture.py": "544a9c9efb9959733f0844702cd5df172a751bb59772f4d4d980bd4f5edab7ba",
+    "finalize_raw.py": "f59d628a1a5ea220c0879da785f08251f93e6dff4c01ea6b3d3621b74fdfda45",
+    "gpu_clock_probe.py": "115200b2b26d3127e8bd583a65d480faad6338b477acaa003076c006cee4837a",
+    "hw_constants.py": "90dc6cb69469496494230ac28163c6ed23ee3683efa3446e3112298deaaa6576",
+    "make_meta_e0.py": "7e3581494c5913bf2ef6e17fd5e920e0f45f289ec2b8462571f7048f3fc4c6ce",
+    "measure_preprocess.py": "eb2e3ecfd23d68da9e4953181117da46e65bb7f43f68ece8a9c0fac34f92c686",
+    "ncu_columns.py": "d09d747491e214ea940a43b819232b82358717094f02e80396a575c767625051",
+    "ncu_toy.py": "5cf3a61be8b12482ecbd4bc0816a71b4ba6bb1f5aa06156168b2753f43f1b8d4",
+    "pi0_common.py": "a63ad5c47bd0d4634a4b87daef3056e3d705a7d012ea4e377d7b540a04eb97b0",
+    "probe_e3.py": "fd9f38f9a1a11dfbf6039b7f545f762da79740c0730e659c8b33311d8d971ee7",
+    "regions.py": "76231880f704a458c3c4459956fe719c8853db6cb3a90d52ce7fcf381b59d6b0",
+    "run_e3.py": "0b503651c847f1ca8607f622f4ec7064a2a0ed98fe9559571a1cf6288c45c5ad",
+    "verify_stack.py": "c6ad5d8ec9a8dc5169045579a76a1af747347f3797455e1ea5bc2bdb5426c793"
+  },
+  "command": "python bench/probe_e3.py --outdir results/20260921_E3_pi0_eager_probe --warmup 20 --timed 100",
+  "step0_control": {
+    "layers_off": {
+      "medians_ms": [
+        55.3724,
+        54.6958,
+        54.602,
+        54.5774,
+        54.5177,
+        54.4613,
+        54.5195,
+        54.4991,
+        54.5094,
+        54.5328
+      ],
+      "step0_minus_mean_rest_ms": 0.8263
+    },
+    "layers_on_step0": {
+      "medians_ms": [
+        57.9636,
+        54.7169,
+        54.546,
+        54.5958,
+        54.5409,
+        54.5053,
+        54.5415,
+        54.5005,
+        54.4451,
+        54.515
+      ],
+      "step0_minus_mean_rest_ms": 3.4183
+    },
+    "layers_on_step5": {
+      "medians_ms": [
+        55.7476,
+        54.7969,
+        54.6736,
+        54.7061,
+        54.7381,
+        57.0294,
+        54.678,
+        54.6362,
+        54.6517,
+        54.6452
+      ],
+      "step0_minus_mean_rest_ms": 0.797
+    }
+  },
+  "kv_deepcopy": {
+    "tensors": 36,
+    "bytes": 15040512,
+    "ms": {
+      "median_ms": 5.6768,
+      "mean_ms": 5.6785,
+      "p5_ms": 5.6438,
+      "p95_ms": 5.7171,
+      "min_ms": 5.637,
+      "max_ms": 5.7513,
+      "n": 100
+    },
+    "source": "lerobot/policies/pi0/modeling_pi0.py:919, copy.deepcopy(past_key_values) inside denoise_step"
+  },
+  "vision_per_image": {
+    "observation.images.image (base camera)": {
+      "median_ms": 80.6132,
+      "mean_ms": 80.6117,
+      "p5_ms": 80.562,
+      "p95_ms": 80.6642,
+      "min_ms": 80.5379,
+      "max_ms": 80.683,
+      "n": 100
+    },
+    "observation.images.image2 (wrist camera)": {
+      "median_ms": 80.138,
+      "mean_ms": 80.1401,
+      "p5_ms": 80.1021,
+      "p95_ms": 80.1758,
+      "min_ms": 80.0909,
+      "max_ms": 80.1944,
+      "n": 100
+    },
+    "empty_camera_0 (synthesised, all -1, attention mask 0)": {
+      "median_ms": 80.0815,
+      "mean_ms": 80.0744,
+      "p5_ms": 80.009,
+      "p95_ms": 80.1292,
+      "min_ms": 79.7407,
+      "max_ms": 80.1477,
+      "n": 100
+    }
+  },
+  "throttled": false,
+  "notes": [
+    "Probes run after the main sweep to close three gaps an independent review found: the step-0 offset was confounded with ae_layer instrumentation, the per-step KV deepcopy was missed, and the first per-image vision measurement used n=50 from an un-committed script."
+  ]
+}
