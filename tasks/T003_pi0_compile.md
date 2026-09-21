@@ -5,9 +5,10 @@ Same harness as T002 with `pytorch_compile_mode` ∈ {`default`, `reduce-overhea
 definition of per-step time, protocol §2) and N ∈ {4, 10} for the others; plus the variant that compiles only the
 single-step function. Record compile time, graph breaks, recompiles, whether CUDA graphs
 were used, steady-state latency per region, peak memory.
-`max-autotune` on this GPU: Inductor is expected to log "Not enough SMs to use max_autotune_gemm mode" (protocol
-§12; T013 records the threshold), i.e. the mode runs without Triton GEMM templates. Measure and report it **as it
-is** — that is the stack a user gets. Additionally, at N ∈ {4, 10} only, one labelled variant
+`max-autotune` on this GPU: Inductor logs "Not enough SMs to use max_autotune_gemm mode" (`min_sms = 68`, the Orin
+has 16; T001 at MAXN), i.e. the mode runs without Triton GEMM templates. Measure and report it **as it is**, named
+as you proposed — "max-autotune (= default + CUDA graphs + ATen autotuning on this device)" — that is the stack a
+user gets. Additionally, at N ∈ {4, 10} only, one labelled variant
 `compile_mode = max-autotune+gemm_templates_forced`, in which that size check is overridden before compilation
 (candidate route: replace the checking function in `torch/_inductor/utils.py` — the one that logs the message —
 with one that returns `True`, in the benchmark process only, never by editing the installed package; use whichever

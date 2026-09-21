@@ -9,8 +9,8 @@
   `sudo jetson_clocks`. **The human sets MAXN once (it persists across reboots); you never confirm a reboot prompt
   and never use `nvpmodel --force`.**
 - **Gate at the start of every session and before every measured or profiled run:** `nvpmodel -q` reports `MAXN`,
-  `torch.cuda.get_device_properties(0).multi_processor_count` equals the MAXN value recorded by T013 (16 is derived
-  from `TPC_PG_MASK = 0`, not yet observed), `sudo jetson_clocks` has been applied **before** the run (it does not
+  `torch.cuda.get_device_properties(0).multi_processor_count` is 16 (observed at MAXN,
+  `results/20260921_E0_platform_maxn/`), `sudo jetson_clocks` has been applied **before** the run (it does not
   persist across reboots), and the GPU `devfreq` `cur_freq` is recorded next to the run (`bench/gpu_clock_probe.py`).
   If the mode is not MAXN, no latency, occupancy, bandwidth, FLOP/s or power task starts: write it at the top of
   `STATUS.md` and do only work that does not depend on the GPU configuration (environment set-up, checkpoint
@@ -150,14 +150,14 @@ an ncu export page; the `raw/` directory of §3.5 is a different thing.)
   never `sudo -E`, which would carry token variables, §3.5); keep root's compile caches in their own `scratch/`
   directories so that no root-owned file lands in your user caches or in the repository; `chown -R` what the run
   wrote before committing. Record the exact command in `meta.json`.
-- **Clock control.** ncu's `--clock-control` defaults to `base`, which pins the SM clock (305.70 MHz in T001) below
-  what the workload sees; the other value this version offers is `none` (`env/tool_help/ncu_help.txt`). ncu
-  `Duration` is never a latency (§2 gives latency), but clock also changes the *ratios* we care about: at a lower
-  SM clock a fixed memory latency costs fewer cycles, so memory stalls are under-stated. T013 runs the toy kernel
-  with both values at MAXN + `jetson_clocks`. From then on use **`--clock-control none` with `jetson_clocks`
-  applied** if T013 shows that ncu's `SM Frequency` then equals the locked GPU frequency and the metrics are
-  populated; otherwise stay with `base` and state in every report which clock the ncu metrics were taken at. Always
-  record ncu's `SM Frequency` and the `devfreq` `cur_freq` per run.
+- **Clock control — check ncu's clock against the real one in every run.** ncu's `--clock-control` defaults to
+  `base` (the other value this version offers is `none`, `env/tool_help/ncu_help.txt`). T001 found: at MAXN with
+  `jetson_clocks` applied, `base` gives `SM Frequency` 1.29 GHz against the locked and measured 1,300.5 MHz — they
+  agree, keep the default; with unlocked clocks in `MODE_30W` ncu ran at 305.70 MHz while the workload saw up to
+  612 MHz. This matters beyond `Duration` (never a latency, §2): at a lower SM clock a fixed memory latency costs
+  fewer cycles, so memory stalls are under-stated. Rule: apply `jetson_clocks` first; record ncu's `SM Frequency`
+  and the `devfreq` `cur_freq` for every ncu run in `meta.json`; if they differ by more than 2 %, the capture is
+  not used — find out why (clocks not locked, throttling), fix, capture again, or report it as a deviation.
 - **Parse with `csv.DictReader`**, never by splitting on commas: kernel names contain commas.
 - If, and only if, ncu exposes no usable counters on this device after the steps above, document the failure
   and fall back to **analytic FLOPs and bytes per kernel (from tensor shapes) ÷ measured kernel time**.
@@ -397,7 +397,7 @@ RTX 4070 Ti SUPER: 44.1 TFLOP/s bf16, 672 GB/s, 66 SMs, ridge ≈ 66 FLOP/B, 48 
 `results/<date>_E0_platform/hw_constants.json` (E0/E1, tasks T001/T005):
 - SM count: `torch.cuda.get_device_properties(0).multi_processor_count` — **it depends on the power mode** (8 in
   `MODE_30W`, where 4 of 8 TPCs are power-gated; T001): record it per mode, as T001's `hw_constants.json` does, and
-  take the MAXN value from an observation at MAXN (T013), not from the mask; compute capability and the
+  the MAXN value, 16, is the one observed in `results/20260921_E0_platform_maxn/`; compute capability and the
   architecture string used by `cuobjdump` (we expect 8.7 → `sm_87`; confirm from the device, do not assume);
 - peak memory bandwidth and peak bf16 / fp16 / fp32 / int8 throughput: measured in E1;
 - ridge point = measured peak FLOP/s ÷ measured peak bytes/s;
@@ -477,8 +477,8 @@ kernels (E5b); (9) roofline points (E6); (10) root-cause chain (§10); (11) self
 | tegrastats log has two sessions in it | `--logfile` appends; delete the file first (§4) |
 | memory rail missing from tegrastats | expected on this board; sample the four rails from sysfs (§4) |
 | `torch.cuda.is_available()` false after a `pip install` in a model environment | pip replaced the Jetson CUDA wheel with PyPI's CPU-only `torch…+cpu` (it prefers a manylinux wheel over the index's `linux_aarch64` one). Install the three CUDA wheels by full URL with `--no-deps` (`env/setup.sh`), install model repositories with `--no-deps`, and **re-check `torch.__version__`, `torch.version.cuda` and `is_available()` after every install step** |
-| Inductor logs "Not enough SMs to use max_autotune_gemm mode" | Inductor's `is_big_gpu` check (`torch/_inductor/utils.py`) compares `multi_processor_count` with a fixed minimum (68 for CUDA devices in the PyTorch sources the research side can read; read the value in the installed file and record it). The Orin has at most 16, so **expect this at MAXN too**: `max-autotune` then runs without Triton GEMM templates (ATen / cuBLAS GEMM, other autotuning and CUDA graphs still apply). It is a property of the stack: report it; see T003 for the labelled override variant |
-| SM count is 8, GPU stops at 612 MHz | the board is in `MODE_30W`; §1 gate — no measurement until the human has set MAXN |
+| Inductor logs "Not enough SMs to use max_autotune_gemm mode" | Inductor's `is_big_gpu` check (`torch/_inductor/utils.py`) compares `multi_processor_count` with a fixed minimum (`min_sms = 68` for CUDA devices; confirmed in the installed torch 2.8.0 by T001 at MAXN). The Orin has 16, so it fires **in every power mode**: `max-autotune` then runs without Triton GEMM templates (ATen / cuBLAS GEMM, other autotuning and CUDA graphs still apply). It is a property of the stack: report it; see T003 for the labelled override variant |
+| SM count is 8, GPU stops at 612 MHz | the board is in `MODE_30W` (its state before 2026-09-21); §1 gate — no measurement until the human has set MAXN again |
 | nsys "option parsing failure" | use `-f true`, not `--force-overwrite`; drop `--cuda-memory-usage` if it is reported ambiguous |
 | ncu CSV columns misaligned | kernel names contain commas: parse with `csv.DictReader` |
 | `flash-attn` will not build | `pip install wheel` first, then `pip install flash-attn --no-build-isolation`; needs ~5 GB of temporary space and a torch whose CUDA version matches `nvcc`; on aarch64 expect a long source build — if it fails, run with PyTorch SDPA and record that |

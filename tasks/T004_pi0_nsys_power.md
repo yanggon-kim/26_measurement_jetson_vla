@@ -9,7 +9,7 @@ that capture here instead of taking a new one (reference it in `meta.json.notes`
 1. E5 / nsys (protocol §3.1): capture window = 1–3 steady-state inferences; commit the `.nsys-rep` (and the
    `.sqlite` if under 50 MB compressed) under `raw/` per protocol §3.5 / §6; export the CSVs; compute kernels per step, kernel time vs region time, GPU idle
    fraction, gap histogram, top-20 kernels → `kernels_per_region.csv`.
-2. E5 / ncu (protocol §3.2–3.3; on this device: `sudo $(which ncu)`, the clock-control value T013 selected, stall
+2. E5 / ncu (protocol §3.2–3.3; on this device: `sudo $(which ncu)`, the per-run clock check of §3.2, stall
    reasons from the `raw` page, no DRAM counters — off-chip bytes from the L2 sysmem-miss sectors): write `bench/ncu_target.py` and `bench/parse_ncu.py`
    (`docs/03_instruction_level_analysis.md` §11 items 1–2). One filtered run per region, in this order:
    `ae_layer[0]/`, `ae_step[0]/`, `vlm_prefix/`, `vision/`; eager at N = 4 first, then the best compiled mode.

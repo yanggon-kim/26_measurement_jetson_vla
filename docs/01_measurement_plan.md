@@ -17,12 +17,12 @@ task whose dependencies are done:
 | order | task | experiments | priority | depends on |
 |---|---|---|---|---|
 | 1 | T001 | E0 bring-up | P0 | — |
-| 1b | **T013** | **E0 again at MAXN** + ncu clock-control check (needs the human's reboot into MAXN) | P0 | T001 |
-| 2 | T002 | E3 π0 eager (step 1–3 preparation may run before T013; **no timed run before T013 is done**) | P0 | T001, T013 |
+| — | T013 | withdrawn (the MAXN record was completed inside T001); never claim | — | — |
+| 2 | T002 | E3 π0 eager | P0 | T001 |
 | 3 | T003 | E4 π0 compiled | P0 | T002 |
 | 4 | **T010** | **E11 π0** | P1 | T003 |
 | 5 | T004 | E5, E6, E7 π0 | P1 | T003 |
-| 6 | T005 | E1, E2 | P1 | T013 |
+| 6 | T005 | E1, E2 | P1 | T001 |
 | 7 | T007 | E5b π0 | P1 | T004, T005 |
 | 8 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
 | 9 | **T011** | **E11 π0.5 + SmolVLA** | P2 | T006 (step 1), T010 |
@@ -79,7 +79,8 @@ recompilations, steady-state latency per region, peak memory, and whether CUDA g
 Report the speed-up per region against E3, and **ms per denoising step** — this replaces our 90 ms estimate.
 T001 showed that every mode compiles on this stack (torch 2.8.0 + triton 3.4.0). Known limit to report, not to
 fix: Inductor refuses Triton GEMM templates under `max-autotune` when the GPU has fewer SMs than a fixed minimum
-(protocol §12) — expected on the Orin at MAXN too; T003 adds one labelled override variant.
+(protocol §12; `min_sms = 68` against the Orin's 16, confirmed at MAXN by T001) — so `max-autotune` here means
+"default + CUDA graphs + ATen autotuning" and is presented as such; T003 adds one labelled override variant.
 If Triton / Inductor does not work on the device's PyTorch build, document exactly what fails, try NVIDIA's
 JetPack PyTorch container and the newest available wheel, and report the best working configuration.
 
