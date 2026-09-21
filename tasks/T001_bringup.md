@@ -16,17 +16,22 @@ Goal: a working, recorded software stack on the Jetson and the E0 platform recor
    b. `nsys profile` on a toy script and `nsys stats` CSV export.
    c. **A toy filtered `ncu` run**: a script that warms up, then between `cudaProfilerStart/Stop` runs one bf16
       `torch.nn.functional.linear` with x `[51, 1024]`, W `[4096, 1024]` inside the NVTX range `toy`:
-      `ncu --set full --nvtx --nvtx-include "toy/" --profile-from-start off -o raw/<run>/ncu_toy -f python bench/ncu_toy.py`
-      (never unfiltered). Export both pages (`ncu --import raw/<run>/ncu_toy.ncu-rep --csv --page details`, and
+      `ncu --set full --nvtx --nvtx-include "toy/" --profile-from-start off -o results/<run>/raw/ncu_toy -f python bench/ncu_toy.py`
+      (never unfiltered). Export both pages (`ncu --import results/<run>/raw/ncu_toy.ncu-rep --csv --page details`, and
       `--page raw`) into the E0 result directory, save the header and the distinct metric names to
       `ncu/columns.txt`, and state which metrics of protocol §3.3 are present, absent or empty on this device
       (SM occupancy, pipe utilisation, stall reasons, LSU request counters). Note the run time and report size.
+      Commit the raw files of steps b and c (`.nsys-rep`, `.ncu-rep`, command logs) under the E0 directory's
+      `raw/` per protocol §3.5 / §6 (install `zstd` if missing), and record in `STATUS.md` the uncompressed and
+      `zstd -19` sizes of the toy `.nsys-rep` and `.ncu-rep`: they calibrate the size budget of later tasks.
       On `ERR_NVGPUCTRPERM` apply the fix in protocol §12.
    d. `hw_constants.json` (protocol §8): SM count (`multi_processor_count`), compute capability and the `sm_`
       architecture string (expected `sm_87` — confirm, e.g. from `cuobjdump --list-text` on the cuBLAS library
       PyTorch loads). Peaks are added by T005.
 4. Verify `tegrastats` rails listed in protocol §4 exist on this carrier board; record the exact rail names.
-Acceptance: E0 result directory (incl. the toy ncu exports, `ncu/columns.txt`, `hw_constants.json`), `env/` reproducible
+Acceptance: E0 result directory (incl. the toy ncu exports, `ncu/columns.txt`, `hw_constants.json`, and `raw/`
+with the toy `.nsys-rep` / `.ncu-rep` listed in `meta.json.raw_files`), repository-size lines in `STATUS.md`
+(protocol §6f), `env/` reproducible
 (incl. `env/tool_help/`), a line in `STATUS.md` with the versions that work and which ncu metrics this Orin exposes.
 
 status: claimed 2026-09-21
