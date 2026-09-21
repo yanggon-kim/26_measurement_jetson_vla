@@ -1,0 +1,75 @@
+[
+  {
+    "path": "raw/jetson_clocks_show_locked_30W.txt",
+    "sha256": "87ca1cb1eca5c3128170fcd5e5c9d9ec97e4c7da5383ae7eb70c8eac766a7a65",
+    "bytes": 2074,
+    "kind": "other",
+    "produced_by": "sudo jetson_clocks --show (after sudo jetson_clocks; MODE_30W)",
+    "secrets_scan": "clean",
+    "committed": true
+  },
+  {
+    "path": "raw/ncu_toy.ncu-rep.zst",
+    "sha256": "6d1b8873c2e559660eac2df1c2f398aeb49f196af2e6ae77139d347858daf3ce",
+    "bytes": 92396,
+    "kind": "ncu-rep",
+    "produced_by": "sudo /usr/local/cuda/bin/ncu --set full --nvtx --nvtx-include \"toy/\" --profile-from-start off -o ncu_toy -f $VENV/bin/python bench/ncu_toy.py",
+    "secrets_scan": "clean",
+    "committed": true,
+    "compression": {
+      "tool": "zstd 19",
+      "level": 19,
+      "command": "zstd -19 -T0 -q -f results/20260921_E0_platform/raw/ncu_toy.ncu-rep -o results/20260921_E0_platform/raw/ncu_toy.ncu-rep.zst"
+    },
+    "original": {
+      "name": "ncu_toy.ncu-rep",
+      "sha256": "9aa6965c8fed6e611dfda0506cd385326fc9e17af313eaeb480902bee63c3aed",
+      "bytes": 7072411
+    }
+  },
+  {
+    "path": "raw/ncu_toy.stdout.log",
+    "sha256": "86c614b32c7b3b7f113dd743c4d3c47c9a52a19e2c2b50f911a4cdac45baf0b9",
+    "bytes": 395,
+    "kind": "stdout",
+    "produced_by": "stdout/stderr of the ncu command above",
+    "secrets_scan": "clean",
+    "committed": true
+  },
+  {
+    "path": "raw/nsys_toy.nsys-rep",
+    "sha256": "82442ade56e38472f4a73f625611da9df137c88a26e59378cb1f5158eb574836",
+    "bytes": 108402,
+    "kind": "nsys-rep",
+    "produced_by": "nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi -f true -o nsys_toy $VENV/bin/python bench/ncu_toy.py --iters 3",
+    "secrets_scan": "clean",
+    "committed": true
+  },
+  {
+    "path": "raw/nsys_toy.sqlite",
+    "sha256": "4e079a1f58a10061386631df98ff071bc1a6c33c41d371a20ec7bc600ca2fc00",
+    "bytes": 536576,
+    "kind": "nsys-sqlite",
+    "produced_by": "nsys stats -r ... -f csv -o results/20260921_E0_platform/nsys/toy <nsys_toy.nsys-rep> (sqlite generated as a side effect)",
+    "secrets_scan": "clean",
+    "committed": true
+  },
+  {
+    "path": "raw/nsys_toy.stdout.log",
+    "sha256": "2508118e8ecd932cbf22db179cdcd699c0ee019475d99e82732f9053abd76cc1",
+    "bytes": 1124,
+    "kind": "stdout",
+    "produced_by": "stdout/stderr of the nsys profile command above",
+    "secrets_scan": "clean",
+    "committed": true
+  },
+  {
+    "path": "raw/tegrastats_idle.log",
+    "sha256": "af6994924f01c8f407de7316d007e1f78e8e34d7e10e31c0b37ac39e8d66e99c",
+    "bytes": 177285,
+    "kind": "tegrastats",
+    "produced_by": "timeout 62 tegrastats --interval 100 --logfile results/20260921_E0_platform/raw/tegrastats_idle.log",
+    "secrets_scan": "clean",
+    "committed": true
+  }
+]
