@@ -1,4 +1,12 @@
-# T002 — π0 end-to-end, eager (E3)  · priority P0 · depends on: T001
+# T002 — π0 end-to-end, eager (E3)  · priority P0 · depends on: T001, T013 (for step 4)
+
+**Power-mode gate (protocol §1).** Steps 1–3 (environment, checkpoint, conversion, fixture, instrumentation, one
+untimed smoke inference) may be done in any power mode, also while T013 waits for the human's reboot. **Step 4 —
+every timed run — only at MAXN + `jetson_clocks`, after T013.** Environment: start from `env/setup.sh`'s three
+Jetson CUDA wheels (torch 2.8.0 / torchvision 0.23.0 / triton 3.4.0, by full URL, `--no-deps`) in a **new** venv
+for openpi; install openpi and its dependencies so that pip cannot replace torch (protocol §12: the CPU-only-wheel
+trap; re-check `torch.version.cuda` and `is_available()` after each step). If openpi's PyTorch path needs a torch
+version other than 2.8.0, record what it asks for, try 2.8.0 first, and report what had to change.
 
 Goal: measured π0 latency per region and **per denoising step** on this device.
 1. Clone openpi at the pinned commit (docs/00_context.md); use the **PyTorch** model in its own environment

@@ -5,6 +5,16 @@ Same harness as T002 with `pytorch_compile_mode` ∈ {`default`, `reduce-overhea
 definition of per-step time, protocol §2) and N ∈ {4, 10} for the others; plus the variant that compiles only the
 single-step function. Record compile time, graph breaks, recompiles, whether CUDA graphs
 were used, steady-state latency per region, peak memory.
+`max-autotune` on this GPU: Inductor is expected to log "Not enough SMs to use max_autotune_gemm mode" (protocol
+§12; T013 records the threshold), i.e. the mode runs without Triton GEMM templates. Measure and report it **as it
+is** — that is the stack a user gets. Additionally, at N ∈ {4, 10} only, one labelled variant
+`compile_mode = max-autotune+gemm_templates_forced`, in which that size check is overridden before compilation
+(candidate route: replace the checking function in `torch/_inductor/utils.py` — the one that logs the message —
+with one that returns `True`, in the benchmark process only, never by editing the installed package; use whichever
+route works on the installed version and record exactly what you did). Report whether Triton GEMM templates were
+then chosen for the action-expert projections (Inductor's autotune log / `output_code`), and the latency. If the
+override does not work, record the error; it does not block the task. The ladder's "best compiled" row uses
+unmodified modes only; the forced variant is reported beside it.
 Acceptance: `reports/E4_pi0_compile.md` with the speed-up per region vs T002 and the completed ladder
 (floor → eager → best compiled, ms per denoising step). If compilation fails on this stack, the report documents
 the failure precisely and the best configuration that does work.
