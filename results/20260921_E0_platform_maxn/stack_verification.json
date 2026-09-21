@@ -1,0 +1,194 @@
+{
+  "date_utc": "2026-09-21T21:02:53Z",
+  "argv": [
+    "bench/verify_stack.py",
+    "--out",
+    "results/20260921_E0_platform_maxn/stack_verification.json",
+    "--samples-csv",
+    "results/20260921_E0_platform_maxn/latency_samples_compile_probe.csv"
+  ],
+  "env_vars": {
+    "TORCHINDUCTOR_CACHE_DIR": "/home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T001maxn/ic",
+    "TRITON_CACHE_DIR": "/home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T001maxn/tc"
+  },
+  "torch": "2.8.0",
+  "torch_cuda": "12.6",
+  "cuda_available": true,
+  "arch_list": [
+    "sm_87"
+  ],
+  "device": {
+    "name": "Orin",
+    "sm_count": 16,
+    "compute_capability": "8.7",
+    "total_memory_bytes": 65879891968
+  },
+  "bf16_gemm": {
+    "name": "bf16_gemm_2048",
+    "ok": true,
+    "dtype": "torch.bfloat16",
+    "shape": [
+      2048,
+      2048
+    ],
+    "max_rel_err_vs_fp32": 0.0030282200314104557,
+    "finite": true
+  },
+  "dtypes": {
+    "bfloat16": {
+      "ok": true,
+      "finite": true
+    },
+    "float16": {
+      "ok": true,
+      "finite": true
+    },
+    "float32": {
+      "ok": true,
+      "finite": true
+    },
+    "int8__int_mm": {
+      "ok": true,
+      "dtype": "torch.int32"
+    }
+  },
+  "triton": "3.4.0",
+  "compile": [
+    {
+      "backend": "inductor",
+      "mode": null,
+      "label": "backend=inductor",
+      "compile_and_first_call_s": 2.856,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.004694835748523474,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.30713601410388947,
+        "mean_ms": 0.313121600151062,
+        "p5_ms": 0.29926079213619233,
+        "p95_ms": 0.32412478774785997,
+        "min_ms": 0.29254400730133057,
+        "max_ms": 0.6771199703216553,
+        "n": 100
+      }
+    },
+    {
+      "backend": "inductor",
+      "mode": "default",
+      "label": "backend=inductor,mode=default",
+      "compile_and_first_call_s": 0.077,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.004694835748523474,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.3073759973049164,
+        "mean_ms": 0.31037599995732307,
+        "p5_ms": 0.29693919569253924,
+        "p95_ms": 0.326097609102726,
+        "min_ms": 0.18486399948596954,
+        "max_ms": 0.561024010181427,
+        "n": 100
+      }
+    },
+    {
+      "backend": "inductor",
+      "mode": "reduce-overhead",
+      "label": "backend=inductor,mode=reduce-overhead",
+      "compile_and_first_call_s": 0.587,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.004694835748523474,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.2710079997777939,
+        "mean_ms": 0.27439615994691846,
+        "p5_ms": 0.26120320707559586,
+        "p95_ms": 0.2922304108738899,
+        "min_ms": 0.13494400680065155,
+        "max_ms": 0.6054080128669739,
+        "n": 100
+      }
+    },
+    {
+      "backend": "inductor",
+      "mode": "max-autotune",
+      "label": "backend=inductor,mode=max-autotune",
+      "compile_and_first_call_s": 1.543,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.004694835748523474,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.2675839960575104,
+        "mean_ms": 0.273199999332428,
+        "p5_ms": 0.2598959967494011,
+        "p95_ms": 0.2989935964345932,
+        "min_ms": 0.25760000944137573,
+        "max_ms": 0.34463998675346375,
+        "n": 100
+      }
+    },
+    {
+      "backend": "inductor",
+      "mode": "max-autotune-no-cudagraphs",
+      "label": "backend=inductor,mode=max-autotune-no-cudagraphs",
+      "compile_and_first_call_s": 1.081,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.004694835748523474,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.3260959982872009,
+        "mean_ms": 0.32873343989253045,
+        "p5_ms": 0.3203343883156776,
+        "p95_ms": 0.34248639941215514,
+        "min_ms": 0.19180800020694733,
+        "max_ms": 0.5616000294685364,
+        "n": 100
+      }
+    },
+    {
+      "backend": "aot_eager",
+      "mode": null,
+      "label": "backend=aot_eager",
+      "compile_and_first_call_s": 0.101,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.0,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.4652639925479889,
+        "mean_ms": 0.4691859206557274,
+        "p5_ms": 0.4547232136130333,
+        "p95_ms": 0.488321590423584,
+        "min_ms": 0.4422079920768738,
+        "max_ms": 0.6281279921531677,
+        "n": 100
+      }
+    },
+    {
+      "backend": "eager",
+      "mode": null,
+      "label": "backend=eager",
+      "compile_and_first_call_s": 0.052,
+      "ok": true,
+      "max_rel_err_vs_eager": 0.0,
+      "finite": true,
+      "steady_state_ms": {
+        "median_ms": 0.25731199979782104,
+        "mean_ms": 0.25856703974306583,
+        "p5_ms": 0.24910079687833786,
+        "p95_ms": 0.2662639930844307,
+        "min_ms": 0.12124799937009811,
+        "max_ms": 0.531328022480011,
+        "n": 100
+      }
+    }
+  ],
+  "compile_working": [
+    "backend=inductor",
+    "backend=inductor,mode=default",
+    "backend=inductor,mode=reduce-overhead",
+    "backend=inductor,mode=max-autotune",
+    "backend=inductor,mode=max-autotune-no-cudagraphs",
+    "backend=aot_eager",
+    "backend=eager"
+  ],
+  "torch_compile_inductor_works": true
+}
