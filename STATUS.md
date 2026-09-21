@@ -2,6 +2,23 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ⛳ STANDING ITEM — E7 capped power modes need two human reboots (do not lose this)
+
+The owner has committed to two reboots for the capped-mode half of E7 and asked to be
+reminded. **These are required, not optional** (they override the research side's
+"optional" in `docs/04_research_answers.md` answer 3).
+
+| mode | how | status |
+|---|---|---|
+| MAXN | current | done / in progress with every task |
+| `MODE_50W` (id 3) | same TPC mask as MAXN → try `sudo nvpmodel -m 3` with **no** reboot, as the last item of a MAXN session | agent can do unattended |
+| **`MODE_30W` (id 2)** | **needs a human reboot** — `sudo nvpmodel -m 2`, confirm, then `sudo jetson_clocks` | **PENDING — ask the owner** |
+| **`MODE_15W` (id 1)** | **needs a human reboot** — same procedure | **PENDING — ask the owner** |
+
+The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGENTS.md`).
+After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
+power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
+
 ## Headline after T002 (E3): the action expert is **not** the dominant phase
 
 **π0, LeRobot implementation, eager, MAXN: one denoising step costs 52.94 ms** (slope fit over

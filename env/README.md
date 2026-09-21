@@ -453,3 +453,24 @@ the Gemma weights ship inside the π0 checkpoint.
 If the gate is ever a problem, Google publishes the identical file ungated at
 `https://storage.googleapis.com/big_vision/paligemma_tokenizer.model` — verified
 byte-identical, sha256 `8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6`.
+
+---
+
+## 11. Passwordless sudo (2026-09-21)
+
+`AGENTS.md` lists passwordless `sudo` as a human prerequisite; it was missing through T001 and
+T002, where it was worked around with a session-only `SUDO_ASKPASS` helper in `/tmp` — which
+`/tmp` clearing wipes on every reboot. The owner installed a rule on 2026-09-21:
+
+```
+/etc/sudoers.d/99-jetson-agent   (mode 440)
+yanggon ALL=(ALL) NOPASSWD: /usr/bin/jetson_clocks, /usr/sbin/nvpmodel, /usr/bin/tegrastats, \
+                            /usr/local/cuda/bin/ncu, /bin/chown, /bin/sh
+```
+
+That covers everything the measurement tasks need: `jetson_clocks` after every boot, the E7
+power-mode queries, `tegrastats` logging, **`ncu` (which needs root on this device — T001)**,
+`chown` of root-owned `.ncu-rep` files before export, and `sh -c` for `/sys/kernel/debug`
+reads, `perf_event_paranoid` and `apt`. No password is stored anywhere in this repository.
+
+Verified: `sudo -n` succeeds for all five without a prompt.
