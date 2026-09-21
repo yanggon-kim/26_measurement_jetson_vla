@@ -107,20 +107,20 @@ def no_per_step_deepcopy(policy):
     replace copy.deepcopy with identity *while denoise_step runs* — measured as a labelled
     variant, never as the default.
     """
+    import types
     import lerobot.policies.pi0.modeling_pi0 as M
-    saved = M.copy.deepcopy
 
-    class _Shim:
-        @staticmethod
-        def deepcopy(x):
-            return x
+    def _identity(x):
+        return x
 
-    M.copy = _Shim  # module-level `import copy` inside modeling_pi0
+    shim = types.ModuleType("copy_shim")
+    shim.deepcopy = _identity          # a plain function dynamo can inline
+    saved = M.copy
+    M.copy = shim
     try:
         yield
     finally:
-        import copy as _c
-        M.copy = _c
+        M.copy = saved
 
 
 def compile_policy(policy, mode: str, variant: str):
