@@ -14,12 +14,18 @@ everything the other side needs must be in a committed file.
    methods of E11 and the `model_inputs.csv` hand-off format. It is
    binding; where any other guide or habit differs, the protocol wins.
 4. `docs/03_instruction_level_analysis.md` — the procedure for E5b (read it when you reach an E5b task).
-5. `tasks/` — the work queue. Then `STATUS.md` — your own notes from earlier sessions.
+5. `docs/04_research_answers.md` — the research side's answers to your `STATUS.md` questions, newest first.
+6. `tasks/` — the work queue. Then `STATUS.md` — your own notes from earlier sessions.
 
 ## Prerequisites the human sets up once (check them first; if one is missing, say so in `STATUS.md`)
 - **JetPack 6.x (L4T r36.x, CUDA 12.x, Python 3.10 system)**. JetPack 5 cannot run `torch.compile`; do not
   reflash yourself — report it and stop at T001.
-- Passwordless `sudo` for `nvpmodel`, `jetson_clocks`, `tegrastats` and reading `/sys/kernel/debug`.
+- Passwordless `sudo` for `nvpmodel`, `jetson_clocks`, `tegrastats`, reading `/sys/kernel/debug`, and — because
+  `ncu` needs root on this device (T001) — for `ncu` and `chown`. If it is missing, a session-only password
+  through a `SUDO_ASKPASS` helper kept **outside** the repository is acceptable; never write a password into any
+  file of this repository, a command line that is logged, or `meta.json`.
+- **The power mode is MAXN, set by the human** (it needs a reboot and persists). Check it at the start of every
+  session (protocol §1 gate); `sudo jetson_clocks` is yours to apply each session, before any run.
 - A git identity and push access to this repository (deploy key or token), and network access to GitHub,
   PyPI / the Jetson wheel index, Hugging Face and the openpi checkpoint bucket.
 - ≥ 150 GB free on NVMe for environments, checkpoints and scratch space for uncompressed traces.
