@@ -34,7 +34,9 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | action-expert time **per denoising step** | 136 ms | derived | E3 (the most important single number) |
 | action-expert share of latency vs N | 59.1 % (N = 4), 78.3 % (N = 10) | derived | E3 sweep over N |
 | `torch.compile` gain on Orin | 1.51× (Thor's) → ≈ 90 ms/step | transplanted | **E4** (biggest gap in our evidence) |
-| GPU utilisation in the AE phase (the paper's "SM utilisation"; you report tegrastats `GR3D_FREQ` % and the nsys kernel-busy fraction) | 22 % | paper Fig. 5 | E5 |
+| GPU utilisation in the AE phase — the paper's "SM utilisation": streaming-multiprocessor (SM) occupancy as Nsight Compute (`ncu`) reports it; you report ncu SM occupancy / activity per region, with tegrastats `GR3D_FREQ` only as a coarse cross-check | 22 % | paper Fig. 5 | E5 |
+| per-pipe utilisation (LSU / FMA / ALU / …) and warp-stall reasons in `vision`, `vlm_prefix`, `ae_step` | unknown | — | E5 |
+| what the dominant action-expert kernels stall on, at instruction level (memory loads vs compute vs launch), vs S and under `torch.compile` | asserted "memory-bound", never shown | — | **E5b** |
 | where the ≈ 43× over the floor goes: kernel time vs launch gaps vs idle | unknown | — | E5 |
 | per-kernel launch overhead | 20 µs (we sweep 5–50) | **assumed** | E2, E5 |
 | achieved fraction of peak bandwidth / FLOPs on small kernels | 0.7 / 0.4 | **assumed** | E1, E2 |
@@ -54,6 +56,8 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | SmolVLA (and a second π0 implementation) | github.com/huggingface/lerobot | `a16f34c085c9597fcbdb9fde395a3334d78df716` | LIBERO env `src/lerobot/envs/libero.py`; compile flags in `examples/rtc/eval_dataset.py` (`use_torch_compile`, `torch_compile_mode`, …) |
 | GR00T N1.7 (optional) | github.com/NVIDIA/Isaac-GR00T | `376ba890cff8c9de64d71d982772a9c36185fdd7` | has Orin support: `scripts/activate_orin.sh`, `scripts/deployment/orin/`, and `scripts/deployment/benchmark_inference.py` (eager / compile / TensorRT, per-component timing) |
 If a pinned commit does not run on the Jetson, use the nearest one that does and record the hash and why.
+All four models go through the full set of experiments (E3, E4, E5, E5b, E6, E7); π0 first, then π0.5 and
+SmolVLA, then GR00T N1.7. "Optional" for GR00T means "last", not "skipped if it runs".
 
 **Environment reality (plan for it).** The three repositories pin different stacks: openpi wants Python ≥ 3.11 with
 a specific torch and also JAX; lerobot wants a newer Python again; GR00T's Orin path uses the system Python 3.10
@@ -65,3 +69,7 @@ in `env/`. The measured software stack is part of the result.
 Expert dimensions for cross-checking what you observe: π0 / π0.5 — 18 layers, hidden 1024, S = 51 / 50,
 311 M expert parameters, 623 MB per step. SmolVLA — 16 expert layers (8 self + 8 cross), hidden 720,
 S = 50, N = 10, 98 M parameters. GR00T N1.7 — 16 DiT blocks, hidden 1536, S = 41, N = 4, 692 M parameters.
+
+**Hardware constants are the Orin's own.** 204.8 GB/s, ≈ 42 TFLOP/s bf16 and the ≈ 208 FLOP/B ridge are our
+expectations for this SoC, to be verified in E0/E1; constants you may know from profiling guides for desktop
+GPUs (bandwidth, TFLOP/s, SM count, ridge, warps per SM) do not apply here (protocol §8).

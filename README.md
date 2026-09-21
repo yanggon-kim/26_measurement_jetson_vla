@@ -20,8 +20,10 @@ Data moves only through this git remote. Both sides `git pull --rebase` before e
 |---|---|
 | `AGENTS.md` | your instructions: role, rules, workflow, reporting |
 | `docs/00_context.md` | what the research claims and which of its numbers you are replacing |
-| `docs/01_measurement_plan.md` | experiments E0–E10: definition, sweeps, priority, outputs |
-| `docs/02_protocol.md` | how to measure, tool commands (nsys, Nsight Compute, tegrastats), result schema |
+| `docs/01_measurement_plan.md` | experiments E0–E10 and E5b: definition, sweeps, priority, outputs |
+| `docs/02_protocol.md` | how to measure, tool commands (`nsys`, `ncu`, tegrastats), SM-occupancy utilisation metric, result schema, file mapping, physical floor, review |
+| `docs/03_instruction_level_analysis.md` | E5b: SASS-level analysis of the dominant action-expert kernels, and the scripts to write for it |
+| `docs/reference_scripts/` | read-only reference implementations for E5b; the on-device agent copies and adapts them into `bench/` |
 | `tasks/` | one file per task, in priority order; claim, do, report |
 | `env/` | how the device was set up: scripts, exact versions, pins |
 | `bench/` | the measurement harness you write |
