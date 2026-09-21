@@ -198,9 +198,12 @@ average over the captured launches, keep n):
   Writes are stores **plus** reductions **plus** atomics; counting only `op_st` under-reports writes. Also keep
   the global / local / shared breakdown of loads: for our claim the question is how much of the LSU activity
   is *global* loads (weights) versus *shared* loads (tiles already staged);
-- warp-stall reasons as exported (protocol §3.3), `Executed Ipc Active`, `Achieved Occupancy`,
-  `Achieved Active Warps Per SM`, `Memory Throughput`, `DRAM Throughput`, `L2 Hit Rate`,
-  `gpc__cycles_active.avg.per_warp`.
+- warp-stall reasons as exported (protocol §3.3 — **on this Orin: the 18
+  `smsp__average_warps_issue_stalled_<reason>_per_issue_active.ratio` columns of the `raw` page**; the `details`
+  page has none), `Executed Ipc Active`, `Achieved Occupancy`, `Achieved Active Warps Per SM`, `Memory Throughput`
+  (**L2 throughput on this device, not DRAM**), `L2 Hit Rate`, the off-chip bytes from the L2 sysmem-miss sectors
+  (protocol §3.3; the Orin has **no** `DRAM Throughput` or any `dram__*` counter), and `gpc__cycles_active.avg.per_warp`
+  (absent here: derive per protocol §3.3 or mark not measurable).
 If a named counter is absent on the Orin, say so and use the nearest exported one (record its name); if targeted
 collection is needed, `ncu --metrics <comma-separated metric names>` with the usual filter collects named
 metrics only.
@@ -220,7 +223,12 @@ metrics only.
 
 For each target, a table `inner-loop instruction(s) → stall reason → measured share → evidence`, covering every
 stall reason above 5 %. Interpretation: long scoreboard ≥ 60 % is the signature of a **memory-latency-bound**
-kernel; `DRAM Throughput` ≥ 90 % of peak is **memory-bandwidth-bound**; the two can coexist. Math-pipe throttle
+kernel; achieved off-chip bandwidth ≥ 90 % of the Orin's peak is **memory-bandwidth-bound** (desktop guides read
+this from `DRAM Throughput`; **on the Orin that counter does not exist** — use analytic bytes, and the L2
+sysmem-miss bytes of protocol §3.3 next to them, ÷ the kernel's nsys duration, against the E1-measured peak); the
+two can coexist. The stall table of this Orin has reasons the list above does not name (`imc_miss`,
+`branch_resolving`, `no_instruction`, `membar`, `selected`, `sleeping`, `tex_throttle`): report any of them above
+5 % under its exported name and say that its cause is not documented here rather than guessing one. Math-pipe throttle
 > 10 % indicates a compute-bound region. High barrier + low occupancy at small S indicates **too little
 parallel work for the SMs** — a third possibility that matters for skinny kernels; check the launch grid
 (`grid × block` threads ÷ SM count) and `Achieved Active Warps Per SM`.
@@ -289,7 +297,9 @@ for desktop GPUs, not validated on Orin): copy them into `bench/`, adapt, and co
    `{ID_kernelname: {Metric Name: {value, unit, section}}}`; raw page → per-`ID` pipe columns and LSU op counts;
    numeric parsing strips `,` and `%`. Output: `ncu/kernels.csv` and `ncu/region_utilisation.csv` (protocol
    §3.3) and `ncu/parsed.json` = `{run_id: {kernel_short: {duration, n_launches, pipe_utilization: {lsu_active_pct,
-   fma_active_pct, alu_active_pct, xu_active_pct, adu_active_pct, cbu_active_pct, fp16_active_pct, *_elapsed_pct},
+   fma_active_pct, alu_active_pct, xu_active_pct, adu_active_pct, cbu_active_pct, fp16_active_pct (null on this
+   Orin — no such column; add `tensor_hmma: {<exported sm__pipe_tensor_op_hmma_cycles_active.* name>: value}`),
+   *_elapsed_pct (only `lsu`, `xu` exist here)},
    pipe_lsu_split: {load_pct, write_pct, store_pct, atomic_pct, load_global_pct, load_local_pct,
    load_shared_pct, store_global_pct, store_shared_pct, atomic_global_pct, atomic_shared_pct,
    load_to_write_ratio, op_request_counts}, stalls: {...}, occupancy: {...}, classification}}}`.

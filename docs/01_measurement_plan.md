@@ -17,11 +17,12 @@ task whose dependencies are done:
 | order | task | experiments | priority | depends on |
 |---|---|---|---|---|
 | 1 | T001 | E0 bring-up | P0 | — |
-| 2 | T002 | E3 π0 eager | P0 | T001 |
+| 1b | **T013** | **E0 again at MAXN** + ncu clock-control check (needs the human's reboot into MAXN) | P0 | T001 |
+| 2 | T002 | E3 π0 eager (step 1–3 preparation may run before T013; **no timed run before T013 is done**) | P0 | T001, T013 |
 | 3 | T003 | E4 π0 compiled | P0 | T002 |
 | 4 | **T010** | **E11 π0** | P1 | T003 |
 | 5 | T004 | E5, E6, E7 π0 | P1 | T003 |
-| 6 | T005 | E1, E2 | P1 | T001 |
+| 6 | T005 | E1, E2 | P1 | T013 |
 | 7 | T007 | E5b π0 | P1 | T004, T005 |
 | 8 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
 | 9 | **T011** | **E11 π0.5 + SmolVLA** | P2 | T006 (step 1), T010 |
@@ -76,6 +77,9 @@ Modes: `default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs
 alone, and the whole policy if it works. Record: compile time, number of graph breaks (`TORCH_LOGS=graph_breaks`),
 recompilations, steady-state latency per region, peak memory, and whether CUDA graphs were actually used.
 Report the speed-up per region against E3, and **ms per denoising step** — this replaces our 90 ms estimate.
+T001 showed that every mode compiles on this stack (torch 2.8.0 + triton 3.4.0). Known limit to report, not to
+fix: Inductor refuses Triton GEMM templates under `max-autotune` when the GPU has fewer SMs than a fixed minimum
+(protocol §12) — expected on the Orin at MAXN too; T003 adds one labelled override variant.
 If Triton / Inductor does not work on the device's PyTorch build, document exactly what fails, try NVIDIA's
 JetPack PyTorch container and the newest available wheel, and report the best working configuration.
 
@@ -88,7 +92,9 @@ model's default N (π0, SmolVLA: 10; GR00T: 4):
 2. **ncu**, per protocol §3.2–3.3, one filtered run per region — `vision/`, `vlm_prefix/`, `ae_step[0]/` (and
    `ae_layer[0]/` first, as the small case): **SM occupancy and activity** per kernel and per region
    (`kernel_weighted` and `region_weighted`), **per-pipe utilisation** (`pipe_lsu`, `pipe_fma`, `pipe_alu`,
-   `pipe_xu`, `pipe_adu`, `pipe_cbu`, `pipe_fp16`), **warp-stall reasons**, SM and memory throughput,
+   `pipe_xu`, `pipe_adu`, `pipe_cbu`; on this Orin there is no `pipe_fp16` column — keep the exported
+   `sm__pipe_tensor_op_hmma_cycles_active.*` columns instead), **warp-stall reasons** (raw page on this Orin,
+   protocol §3.3), SM and memory (= L2, protocol §3.3) throughput, off-chip bytes from the L2 sysmem-miss sectors,
    the memory-bound / compute-bound / balanced split of kernel time. Never unfiltered; one step, not N steps.
    Outputs: `ncu/*_details.csv`, `ncu/*_raw.csv` (full exports), `ncu/columns.txt`, `ncu/kernels.csv`,
    `ncu/region_utilisation.csv`, and the raw `.nsys-rep` / `.ncu-rep` under `raw/` (protocol §3.5, §6).
@@ -111,7 +117,10 @@ Outputs: `results/<date>_E5b_<model>_<mode>_<short>/` and `reports/E5b_<model>.m
 
 ## E6 — Roofline points
 For `vision`, `vlm_prefix` and `ae_step` of each model, and for the E5b target kernels: FLOPs and bytes moved —
-analytic from shapes, **and** from ncu's SM / memory throughput where exported — ÷ measured time → achieved
+analytic from shapes (always; the primary rows), **and** from ncu where exported — on this Orin that means FLOPs
+from the SM throughput counters and **off-chip bytes from the L2 sysmem-miss sectors** (protocol §3.3; there are no
+DRAM counters, and ncu's `Memory Throughput` is L2 throughput and is *not* a roofline x- or y-value) — ÷ measured
+time (nsys kernel time or §2 region time, never ncu `Duration`) → achieved
 FLOP/s and GB/s, arithmetic intensity (FLOPs per byte). Place them against the **Orin's own** roof (measured
 peaks from E1 and the spec values, protocol §8 — not any other GPU's). Output a CSV we can plot:
 `model, region_or_kernel, flops, bytes, ms, intensity, achieved_TFLOPps, achieved_GBps, pct_peak_compute, pct_peak_bw, source`
@@ -120,8 +129,11 @@ with `source` ∈ {`analytic`, `ncu`}, plus the floor and gap ratio of protocol 
 ## E7 — Power and energy
 Per protocol §4 for each model (π0 first; eager and best compiled), at the paper's N and the model's default N: mean power per rail for idle, prefix-only loop,
 action-expert-only loop, full inference loop; energy per inference and per denoising step, total and above idle.
-Repeat the full-inference point at MAXN, 50 W, 30 W, 15 W with the latency at each mode. The power-mode sweep is required for π0;
-for the other models MAXN is required and the capped modes are optional.
+Power is sampled from sysfs for all four rails (protocol §4; tegrastats omits the memory rail on this board).
+MAXN is required for every model. Capped modes (answer to question 3 of 2026-09-21; rules in protocol §1): for π0
+try `MODE_50W` without a reboot as the last item of the last MAXN session; `MODE_30W` / `MODE_15W` need one human
+reboot each and are measured only if a later task announces such a session — they are **optional** and block
+nothing. For the other models the capped modes are optional.
 
 ## E8 — LIBERO closed loop
 Using openpi's `examples/libero` (policy server + client) and lerobot's LIBERO environment: success rate on
