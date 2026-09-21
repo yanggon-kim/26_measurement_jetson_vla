@@ -177,23 +177,23 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Repository size (protocol §6f)
 
-After T001 (2026-09-21):
+After T001 (2026-09-21), with both the MODE_30W and the MAXN E0 runs committed:
 
 ```
-du -sh results/   1.5M
-du -sh .git       1.9M
-git count-objects -vH:  count: 176   size-pack: 62.49 KiB
+du -sh results/   2.9M
+du -sh .git       2.5M
+git count-objects -vH:  count: 228   size-pack: 62.49 KiB
 ```
 
 Five largest committed files — all far under the 50 MB limit, nothing split:
 
 | bytes | file |
 |---|---|
-| 794 544 | `env/tool_help/ncu_query_metrics.txt` (every metric ncu offers on this GPU) |
-| 536 576 | `results/20260921_E0_platform/raw/nsys_toy.sqlite` |
-| 190 947 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
-| 108 402 | `results/20260921_E0_platform/raw/nsys_toy.nsys-rep` |
-| 92 396 | `results/20260921_E0_platform/raw/ncu_toy.ncu-rep.zst` (7.07 MB → 0.09 MB, `zstd -19`) |
+| 794544 | `env/tool_help/ncu_query_metrics.txt` |
+| 536576 | `results/20260921_E0_platform/raw/nsys_toy.sqlite` |
+| 528384 | `results/20260921_E0_platform_maxn/raw/nsys_toy.sqlite` |
+| 201105 | `results/20260921_E0_platform_maxn/raw/tegrastats_idle.log` |
+| 190947 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
 
 `find results -size +50M` is empty.
 
@@ -204,6 +204,7 @@ Five largest committed files — all far under the 50 MB limit, nothing split:
 | `nsys_toy.nsys-rep` | 3 inferences of one `F.linear`, 6 kernels | 108 402 B | 41 708 B | 2.6× |
 | `nsys_toy.sqlite` | derived from the above | 536 576 B | 53 989 B | 9.9× |
 | `ncu_toy.ncu-rep` | **1 kernel**, `--set full`, 30 replay passes | **7 072 411 B** | **92 396 B** | **76.5×** |
+| `ncu_toy.ncu-rep` (MAXN) | same, 16 SMs | 7 107 467 B | 92 232 B | 77.1× |
 
 Only the `.ncu-rep` was committed compressed (protocol §6b: > 1 MB); the other two are
 under 1 MB and are committed as-is.
