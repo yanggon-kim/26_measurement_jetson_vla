@@ -2,6 +2,65 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## Headline after T002 (E3): the action expert is **not** the dominant phase
+
+**π0, LeRobot implementation, eager, MAXN: one denoising step costs 52.94 ms** (slope fit over
+N ∈ {1,2,4,6,8,10}, r² = 0.99999). The research ladder assumes 136 ms — the real device is
+**2.6× faster** than assumed, and **17.0× the 3.115 ms bandwidth floor**.
+
+The phase split contradicts the working hypothesis. At the paper's N = 4 the action expert is
+the *smallest* of the three phases, and `vision` is the largest:
+
+| phase | paper (Orin, N=4) | measured here, N=4 | measured, N=10 |
+|---|---|---|---|
+| `vision` | 110 ms (12 %) | **239.4 ms (34.5 %)** | 239.6 ms (23.7 %) |
+| `vlm_prefix` | 258 ms (28 %) | 233.1 ms (33.6 %) | 232.9 ms (23.0 %) |
+| `ae_total` | 543 ms (59 %) | **215.5 ms (31.1 %)** | 533.0 ms (52.7 %) |
+| end-to-end | 920 ms | **694.1 ms** | 1011.6 ms |
+
+The expert *is* memory-bound as predicted (floor 3.115 ms memory vs 0.912 ms compute) — it
+just is not the biggest phase. Full report: `reports/E3_pi0_eager.md`.
+
+Three `docs/00_context.md` values are now **confirmed from the loaded model**, not assumed:
+**P = 816** (3 × 256 + 48; the doc marked it assumed), **S = 51**, **623.01 MB** of expert
+weights per step, and 38.29 GFLOP against the doc's 38.7.
+
+## Two cheap findings
+
+* **80.2 ms per inference encodes a dummy image.** `empty_cameras: 1` makes the policy
+  synthesise a third camera filled with −1 and push it through the full SigLIP tower:
+  **33.3 % of `vision`, 11.6 % of an N = 4 inference**, and its attention mask is zero so the
+  result is discarded. Caching one constant embedding removes it.
+* **Denoising step 0 costs +3.13 ms** over every later step, at every N (steps 1…N−1 agree to
+  ±0.2 %). Close to one step's 3.115 ms memory floor, which *would* fit a cold KV-cache read —
+  but that is a hypothesis; T004's nsys should settle it.
+
+## ⚠ A trap that would have silently produced garbage
+
+PyPI `lerobot==0.4.4` matches the checkpoint's `_v044` name and would have loaded a
+**randomly initialised model**: it needs a patched transformers fork, it lacks the
+`lm_head → embed_tokens` alias fix this checkpoint requires (the weight exists only as a
+safetensors metadata alias, which `load_file` does not reconstruct), and
+`PI0Policy.from_pretrained` **catches load failures and returns the model anyway** with only a
+printed warning. A random π0 still runs and still yields plausible latencies.
+Pinned `lerobot @ f0d2b37beb` instead, and `bench/pi0_common.py:assert_real_weights()` now
+refuses to measure unless 400 sampled tensors match the checkpoint file.
+`transformers` is pinned to **5.3.0 exactly** — 5.4.0 moved a `× √hidden_size` rescale that
+this ref still applies itself, which would scale every prefix embedding by ≈ 45, silently.
+
+## Route change: LeRobot's π0, not openpi's (owner decision)
+
+`tasks/T002_pi0_eager.md` prescribed openpi's PyTorch port. It was researched in full and
+rejected on setup cost — 12 GB orbax/OCDBT conversion, a mandatory JAX import, a
+`transformers == "4.53.2"` string-equality check with five files copied over site-packages,
+and a `requires-python >=3.11` gate — none of which measures anything. LeRobot's port is the
+same architecture (the model prints *"a direct port of the OpenPI implementation"*), with a
+ready-made PyTorch checkpoint. **The weights are a different fine-tune**, so the paper
+comparison is across implementations *and* checkpoints; that is stated in the report.
+The openpi route stays open and is the obvious way to test whether the phase-split
+disagreement is implementation or measurement. `docs/00_context.md` and the task file were
+updated to match.
+
 ## Device is at MAXN — measurement can proceed
 
 The human rebooted into **MAXN (id 0)** on 2026-09-21 and it is persisted
@@ -124,6 +183,13 @@ rail is only in sysfs at `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon4/in2_*
 target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Done
+
+* **T002 (E3) — π0 end-to-end latency, eager.** Six result directories
+  `results/20260921_E3_pi0_eager_N{1,2,4,6,8,10}/` · Report: `reports/E3_pi0_eager.md` ·
+  Environment: `env/setup_pi0.sh`, `env/requirements_pi0.txt`, `env/README.md` §10 ·
+  Fixture: `bench/fixtures/` (HuggingFaceVLA/libero ep 0 frame 0) ·
+  Harness: `bench/pi0_common.py`, `regions.py`, `run_e3.py`, `analyze_e3.py`,
+  `fetch_fixture.py`, `measure_preprocess.py`.
 
 * **T001 (E0) — bring-up and platform record. COMPLETE, all four steps.** Step 1 (MAXN +
   `jetson_clocks`) was satisfied after the human authorised the reboot on 2026-09-21.

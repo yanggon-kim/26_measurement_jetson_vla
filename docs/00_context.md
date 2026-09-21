@@ -23,16 +23,17 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 |---|---|---|---|
 | bandwidth floor | 3.15 ms | 629 MB of weights (+KV) ÷ 204.8 GB/s | analytic |
 | "optimistic bound" | 6.30 ms | 2 × floor, a stand-in for a perfect software stack | **assumed** |
-| compiled stack | ≈ 90 ms | 136 ms ÷ 1.51, the paper's `torch.compile` gain on *Jetson Thor* | **estimate, never measured on Orin** |
-| measured stack | 136 ms | the paper's 543 ms action-expert phase ÷ N = 4 | **derived**, the paper gives no per-step time |
+| compiled stack | ≈ 90 ms | 136 ms ÷ 1.51, the paper's `torch.compile` gain on *Jetson Thor* | **estimate, never measured on Orin** — E4 / T003 replaces it |
+| ~~measured stack~~ | ~~136 ms~~ | the paper's 543 ms action-expert phase ÷ N = 4 | **superseded**: derived, and 2.6× too slow |
+| **measured stack (eager)** | **52.94 ms** | **T002 / E3, `reports/E3_pi0_eager.md`** — slope fit over N ∈ {1,2,4,6,8,10}, r² = 0.99999, MAXN, LeRobot π0 | **measured on this Orin**, 17.0× the floor |
 
 ## Numbers you replace or validate
 | quantity | what we use today | source | your measurement |
 |---|---|---|---|
-| π0 end-to-end latency on Orin | 920 ms (N = 4) | paper Table 1 | E3 |
-| phase split vision / VLM / action expert | 110 / 258 / 543 ms = 12 / 28 / 59 % | paper Fig. 5 | E3 |
-| action-expert time **per denoising step** | 136 ms | derived | E3 (the most important single number) |
-| action-expert share of latency vs N | 59.1 % (N = 4), 78.3 % (N = 10) | derived | E3 sweep over N |
+| π0 end-to-end latency on Orin | ~~920 ms (N = 4)~~ → **measured 694.1 ms** | paper Table 1 | **E3 done** |
+| phase split vision / VLM / action expert | ~~110 / 258 / 543 ms = 12 / 28 / 59 %~~ → **measured 239.4 / 233.1 / 215.5 ms = 34.5 / 33.6 / 31.1 % at N = 4** | paper Fig. 5 | **E3 done — the split is the big disagreement, see below** |
+| action-expert time **per denoising step** | ~~136 ms~~ → **measured 52.94 ms** | derived | **E3 done** (the most important single number) |
+| action-expert share of latency vs N | ~~59.1 % (N = 4), 78.3 % (N = 10)~~ → **measured 31.1 % (N = 4), 52.7 % (N = 10)** | derived | **E3 done** |
 | `torch.compile` gain on Orin | 1.51× (Thor's) → ≈ 90 ms/step | transplanted | **E4** (biggest gap in our evidence) |
 | GPU utilisation in the AE phase — the paper's "SM utilisation": streaming-multiprocessor (SM) occupancy as Nsight Compute (`ncu`) reports it; you report ncu SM occupancy / activity per region, with tegrastats `GR3D_FREQ` only as a coarse cross-check | 22 % | paper Fig. 5 | E5 |
 | per-pipe utilisation (LSU / FMA / ALU / …) and warp-stall reasons in `vision`, `vlm_prefix`, `ae_step` | unknown | — | E5 |
@@ -43,7 +44,7 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | peak memory bandwidth and bf16 throughput | 204.8 GB/s, 42 TFLOP/s | NVIDIA spec | E1 |
 | arithmetic intensity of an AE layer | 60 (ours) vs 64.5 (paper) FLOPs/B | analytic | E6 |
 | token count where the GPU stops being launch-bound (our "S ≈ 16 crossover") | analytic | — | E2 sweep over S |
-| real prefix length P | 816 (paper implies 841) | **assumed** | E3 (print it) |
+| real prefix length P | 816 | ~~assumed~~ → **measured 816** = 3 images × 256 + 48 language tokens (only 533 valid) | **E3 done — the assumption was right** |
 | module power during the AE phase (sum of the rails in protocol §4) | 20 W (we sweep 15–30) | **assumed** | E7 |
 | energy per denoising step, measured stack | 3,335 mJ | 136 ms × 20 W + DRAM model | E7 |
 | closed-loop quality vs number of denoising steps and vs *stale* steps | paper Table 7 | paper | E8 |
@@ -89,6 +90,29 @@ measures them; its `model_inputs.csv` (protocol §13.8) is what the research sid
 | `host_layer_slowdown`, `prefix_slowdown` key `host_segments` | the assumption that host segments and the next frame's prefix do not delay each other on one GPU | 1.0 **[ASSUMPTION]** |
 | `cpu_util` | the assumption that the CPU is free to drive the memory-side command stream | not modelled |
 | `p_mean_W` (`<phase>/<rail>`) | GPU / module power charged to the host segments and to the prefix in the energy model | 20 W |
+
+## What E3 (T002) changed, 2026-09-21
+
+**The action expert does not dominate π0's latency on this Orin.** At the paper's N = 4 it is
+the *smallest* of the three phases (31.1 %) and `vision` is the largest (34.5 %); even at the
+model's default N = 10 the expert reaches only 52.7 %. The hypothesis that it is
+**memory-bound** is confirmed independently (floor 3.115 ms memory vs 0.912 ms compute), but
+"dominates latency" is not supported. The PIM case should be argued from the expert's
+**17× gap to its own floor**, and from N = 10 where it is half the frame, not from a claimed
+59–78 % share.
+
+Two costs worth knowing before modelling anything: **80.2 ms of every inference encodes a
+dummy image** (`empty_cameras: 1` pushes an all-−1 third camera through SigLIP, 33.3 % of
+`vision`, and its attention mask is zero so the result is discarded), and **denoising step 0
+costs +3.13 ms** over every later step.
+
+**Implementation used.** E3 measured **LeRobot's π0** (`lerobot @ f0d2b37beb`, checkpoint
+`lerobot/pi0_libero_finetuned_v044`), not openpi's PyTorch port — the openpi route costs a
+12 GB orbax conversion, a mandatory JAX import, a `transformers == "4.53.2"` string-equality
+check and a Python ≥ 3.11 gate, none of which measures anything. LeRobot's is a direct port of
+the same architecture, but **the weights are a different fine-tune**, so the paper comparison
+is across implementations *and* checkpoints. Running openpi later is the obvious way to test
+whether the phase-split disagreement above is implementation or measurement.
 
 ## Models (pins used by the research side)
 | model | repository | commit | notes |

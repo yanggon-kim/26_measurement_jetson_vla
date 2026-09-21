@@ -26,3 +26,57 @@ comparison with 920 ms / 110-258-543 ms, and the first two rows of the ladder (f
 If π0 does not fit or run, fall back in this order: lerobot's π0 implementation, then SmolVLA, and say so.
 
 status: claimed 2026-09-21
+
+status: done 2026-09-21
+
+- Result directories: `results/20260921_E3_pi0_eager_N{1,2,4,6,8,10}/`
+- Report: `reports/E3_pi0_eager.md`
+- Environment: `env/setup_pi0.sh`, `env/requirements_pi0.txt`, `env/README.md` §10
+- Fixture: `bench/fixtures/` — `HuggingFaceVLA/libero`, episode 0, frame 0, task_index 0
+- Harness commit: see each run's `meta.json.bench_commit` + `bench_files_sha256`
+
+Headline: **52.94 ms per denoising step** (slope over N ∈ {1,2,4,6,8,10}, r² = 0.99999),
+against the ladder's assumed 136 ms and a 3.115 ms bandwidth floor — 17.0× the floor.
+End-to-end 694.1 ms at N = 4, 1011.6 ms at N = 10. P = 816, S = 51, both measured.
+
+**Deviation 1 — LeRobot's π0 instead of openpi's PyTorch port.** Step 1 of this task
+prescribed openpi. Researched in full and rejected on setup cost, none of which measures
+anything: a 12 GB orbax/OCDBT checkpoint to convert on-device; a mandatory JAX install
+(`openpi.models.gemma` imports `jax`/`flax.linen` at module level even on the PyTorch path);
+a `transformers.__version__ == "4.53.2"` string-equality check enforced at model construction
+with five files to copy over site-packages; and a `requires-python >=3.11` gate on a
+Python-3.10-only device. LeRobot's implementation is a direct port of the same architecture
+(the model prints so on load) with a ready-made PyTorch checkpoint. **The weights are a
+different fine-tune**, which is stated wherever the paper comparison appears. The openpi
+route stays available and is the natural cross-check on the phase-split disagreement.
+`docs/00_context.md` and this file were updated to match (owner decision).
+
+**Deviation 2 — the JAX conversion and its fallback were not needed**, since no conversion was
+done. For the record: `jaxlib==0.5.3` *does* have a cp310 aarch64 wheel, so the openpi route
+is feasible on this device if it is ever wanted.
+
+**Deviation 3 — `compile_model` and `gradient_checkpointing` overridden before construction.**
+The checkpoint ships `compile_model: true, compile_mode: "max-autotune"`;
+`PI0Pytorch.__init__` compiles `sample_actions` the moment it sees that, so overriding after
+`from_pretrained` is too late and T002 would have measured a compiled model with its NVTX
+ranges swallowed.
+
+**Deviation 4 — protocol §2's "known property" does not apply.** §2 says openpi's denoising
+loop tests a GPU tensor each iteration (`while time >= -dt/2`), forcing a CPU–GPU sync per
+step, and that this is to be reported and not fixed. LeRobot's loop is a plain
+`for step in range(num_steps)` with Python floats and has no such sync. The 52.94 ms/step is
+therefore not inflated by per-step syncs.
+
+**A trap worth recording for every future model environment.** PyPI `lerobot==0.4.4` matches
+the checkpoint's `_v044` name and would have produced a **randomly initialised model**: it
+needs a patched transformers fork, it lacks the `lm_head → embed_tokens` alias fix this
+checkpoint requires, and `PI0Policy.from_pretrained` catches load failures and returns the
+model anyway with only a printed warning. A random π0 runs and yields plausible latencies.
+`bench/pi0_common.py:assert_real_weights()` now refuses to measure unless 400 sampled tensors
+match the checkpoint file.
+
+Findings for T003/T004: the 17× gap to the floor (protocol §9 calls that structural);
+denoising step 0 costs +3.13 ms over every later step; 80.2 ms per inference (33.3 % of
+`vision`) encodes an all-−1 dummy camera whose attention mask is zero.
+
+Review: self-review in the report §9, plus an independent sub-agent pass (protocol §11).
