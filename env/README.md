@@ -34,13 +34,14 @@ a future session needs either passwordless sudo or the password again. See `STAT
 
 ---
 
-## 2. Power mode — the device is **not** at MAXN
+## 2. Power mode — now at MAXN (after a human-authorised reboot)
 
 | | |
 |---|---|
-| mode at bring-up | **`MODE_30W` (id 2)** — the board's configured default (`PM_CONFIG DEFAULT=2`) |
-| protocol requirement | MAXN (id 0) + `jetson_clocks` for every experiment |
-| blocker | switching to MAXN **requires a reboot** on this board: `nvpmodel -m 0` prints `NVPM WARN: Reboot required for changing to this power mode: 0` and prompts. Per `AGENTS.md` the prompt was declined, so the mode did not change. |
+| mode at bring-up | `MODE_30W` (id 2) — the board's configured default (`PM_CONFIG DEFAULT=2`) |
+| **mode now** | **MAXN (id 0)**, persisted (`/var/lib/nvpmodel/status` = `pmode:0000`) |
+| how | switching to MAXN **requires a reboot** on this board: `nvpmodel -m 0` prints `NVPM WARN: Reboot required for changing to this power mode: 0` and prompts. Per `AGENTS.md` the agent declined it; the human ran the command and confirmed the reboot on 2026-09-21. |
+| note | declining that prompt does **not** stage the change — `nvpmodel` reports `optMask is 1, no request for power mode` and `/var/lib/nvpmodel/status` is left untouched. Answer `YES`, or use `--force`. |
 
 The modes of this board (`/etc/nvpmodel.conf`, exported to
 `results/20260921_E0_platform/nvpmodel_modes.csv`) — the protocol's expected id mapping is
@@ -53,17 +54,18 @@ The modes of this board (`/etc/nvpmodel.conf`, exported to
 | 2 | MODE_30W | 8 | 240 | **4 (→ 8 SMs)** | 612 MHz | uncapped |
 | 3 | MODE_50W | 8 | 0 | 8 (→ 16 SMs) | 816 MHz | uncapped |
 
-**Consequence, and it is large:** in `MODE_30W` the GPU runs with **half its SMs power-gated
-and its clock capped at 612 MHz**. `torch.cuda.get_device_properties(0).multi_processor_count`
-reports **8**, not 16, and `jetson_clocks --show` prints `Active GPU TPCs: 4`. Inductor
-refuses `max-autotune` GEMM templates with *"Not enough SMs to use max_autotune_gemm mode"*.
-**No latency, bandwidth, occupancy or power number taken in this mode belongs on the
-ladder of `docs/00_context.md`.** Everything in `results/20260921_E0_platform/` is a
-tool-and-stack verification record, not a measurement of the Orin's capability.
+**At MAXN** (`results/20260921_E0_platform_maxn/`): `TPC_PG_MASK` 0, **8 of 8 TPCs**, CUDA
+reports **16 SMs**, GPU locked at **1 300.5 MHz** (confirmed under load), 12 CPU cores, EMC
+3 199 MHz. Idle module power 11 012 mW, tj 41.9 °C.
 
-`jetson_clocks` itself works (verified, `raw/jetson_clocks_show_locked_30W.txt`): it locked
-all 8 online CPUs to 1 728 MHz, the GPU to 612/612 MHz and EMC to 3 199 MHz, and
-`jetson_clocks --fan` works.
+**What MODE_30W cost, for reference** (`results/20260921_E0_platform/`): 4 of 8 TPCs,
+**8 SMs**, GPU capped at 612 MHz, 8 CPU cores, idle module power 8 522 mW. The same toy
+bf16 GEMM took **185.4 µs** there against **54.6 µs** at MAXN — 3.4×. **No latency,
+bandwidth, occupancy or power number from the 30 W run belongs on the ladder of
+`docs/00_context.md`**; that directory is a tool-and-stack verification record only.
+
+`jetson_clocks` works in both modes and is now applied **before** every capture, with
+`jetson_clocks --fan`. It does **not** survive a reboot.
 
 ---
 
@@ -129,10 +131,26 @@ The 4.7e-3 relative difference is Inductor's bf16 GeLU/`addmm` fusion, not a fai
 (bf16 has ~3 decimal digits). A plain bf16 2048³ GEMM differs from an fp32 reference by
 4.2e-3, the same order.
 
+### ⚠ `max-autotune` never uses Triton GEMM templates on this GPU
 With a cold Inductor cache the run logs **`torch/_inductor/utils.py:1446] [0/0] Not enough
-SMs to use max_autotune_gemm mode`** (captured in
-`results/20260921_E0_platform/raw/verify_stack.stdout.log`, line 3) — a consequence of the
-8-SM `MODE_30W` state, not of the stack. Re-verify at MAXN.
+SMs to use max_autotune_gemm mode`**. This was first read as an artefact of the 8-SM
+`MODE_30W` state — **that was wrong**: it still fires at MAXN with 16 SMs
+(`results/20260921_E0_platform_maxn/raw/verify_stack.stdout.log`, line 3). The cause is a
+hard-coded threshold in `torch/_inductor/utils.py`:
+
+```python
+min_sms = 16 if device.type == "xpu" else 68  # 3080
+avail_sms = prop.multi_processor_count
+if avail_sms < min_sms:
+    log.warning("Not enough SMs to use max_autotune_gemm mode", ...)
+    return False
+```
+
+Orin has **16** SMs against a required **68**, in every power mode. So `max-autotune` falls
+back to ATen/cuBLAS for GEMMs — the autotune log compares only `addmm` against
+`bias_addmm`, both ATen. **E4 must read "max-autotune" on this device as "default + CUDA
+graphs + ATen autotuning", not as template autotuning.** No Jetson Orin will ever clear
+that threshold.
 
 Also verified to run: bf16, fp16, fp32 matmul and int8 via `torch._int_mm`
 (Orin has INT8 tensor cores and no FP8).

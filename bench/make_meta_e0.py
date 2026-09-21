@@ -19,6 +19,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
     ap.add_argument("--task", default="T001")
+    ap.add_argument("--ncu-run-time-s", type=float, default=None)
+    ap.add_argument("--ncu-run-time-note", default="")
+    ap.add_argument("--jetson-clocks-note", required=True,
+                    help="when jetson_clocks was applied relative to the captures")
     args = ap.parse_args()
     run = Path(args.run)
 
@@ -40,6 +44,9 @@ def main() -> int:
                      "kind": "ncu-csv", "produced_by": produced,
                      "secrets_scan": "clean", "committed": True})
     ds, sw = plat["device_state"], plat["software"]
+    pg_mask = int(ds["tpc_pg_mask"]["stdout"].strip() or 0)
+    active_tpcs = 8 - bin(pg_mask).count("1")
+    at_maxn = "MAXN" in (ds["nvpmodel_q"]["stdout"] or "")
 
     l4t = re.search(r"R(\d+).*REVISION:\s*([\d.]+)", ds["nv_tegra_release"] or "")
     jetpack = re.search(r"nvidia-jetpack\s+(\S+)", ds["dpkg_jetpack"]["stdout"] or "")
@@ -65,19 +72,18 @@ def main() -> int:
         "power_mode": mode[0] if mode else None,
         "power_mode_id": mode[-1] if len(mode) > 1 else None,
         "power_mode_deviation": (
+            None if at_maxn else
             "PROTOCOL DEVIATION: protocol §1 requires MAXN (id 0). This run is at "
-            "MODE_30W (id 2), the board default, because switching to MAXN requires a "
-            "reboot on this board and AGENTS.md forbids confirming a reboot prompt. "
-            "In MODE_30W 4 of 8 GPU TPCs are power-gated (8 of 16 SMs) and the GPU is "
-            "capped at 612 MHz. No number from this run characterises the Orin."),
-        "jetson_clocks": ("applied after the idle power log and after the toy profiler "
-                          "runs; raw/jetson_clocks_show_locked_30W.txt is the locked "
-                          "state. power_idle.csv and both toy profiler runs were taken "
-                          "with clocks UNLOCKED (schedutil)."),
+            f"{mode[0] if mode else '?'}, because switching to MAXN requires a reboot on "
+            "this board and AGENTS.md forbids confirming a reboot prompt. GPU TPCs are "
+            "power-gated and the GPU clock is capped. No number from this run "
+            "characterises the Orin."),
+        "jetson_clocks": args.jetson_clocks_note,
         "emc_hz": int(emc_hz) if emc_hz.isdigit() else emc_hz,
         "gpu_hz": int(gpu_hz) if gpu_hz.isdigit() else gpu_hz,
-        "gpu_active_tpcs": 4, "gpu_total_tpcs": 8,
-        "sm_count_reported_by_torch": hw["multi_processor_count"],
+        "gpu_active_tpcs": active_tpcs, "gpu_total_tpcs": 8,
+        "gpu_tpc_pg_mask": pg_mask,
+        "sm_count_reported_by_torch": hw["multi_processor_count_in_this_power_mode"],
         "jetpack": jetpack.group(1) if jetpack else None,
         "l4t": f"R{l4t.group(1)}.{l4t.group(2)}" if l4t else ds["nv_tegra_release"],
         "cuda": sw.get("torch_cuda"),
@@ -105,14 +111,13 @@ def main() -> int:
         "ncu_filter": '--nvtx --nvtx-include "toy/" --profile-from-start off '
                       '(no -c/-s needed: the capture window holds one kernel)',
         "ncu_requires_root_on_this_device": True,
-        "ncu_clock_control": "base (ncu default) — SM ran at 305.70 MHz during capture, "
-                             "while the GPU runs at 612 MHz under load in this mode "
-                             "(raw/gpu_clock_under_load.txt)",
-        "ncu_run_time_s": 8.30,
-        "ncu_run_time_note": (
-            "wall clock of a timed repeat of the same filtered command "
-            "(raw/ncu_toy_walltime.txt): 8.30 s, 31 replay passes, 7 098 082 B report. "
-            "The analysed capture is the earlier identical run: 30 passes, 7 072 411 B."),
+        "ncu_clock_control": (
+            "base (ncu default). The SM frequency ncu reported during the capture is in "
+            "ncu/toy_details.csv ('SM Frequency'); the clock the workload actually sees, "
+            "measured separately, is in raw/gpu_clock_under_load.txt. Compare the two "
+            "before reading any ncu Duration."),
+        "ncu_run_time_s": args.ncu_run_time_s,
+        "ncu_run_time_note": args.ncu_run_time_note,
         "gpu_arch": hw["gpu_arch"],
         "command": [
             "bash env/setup.sh",
@@ -130,7 +135,7 @@ def main() -> int:
         ],
         "throttled": False,
         "throttled_evidence": (
-            "60 s idle tegrastats: tj stayed in the low 40s °C, GR3D_FREQ 0 %, no clock "
+            "60 s idle tegrastats: see power_idle.csv for tj, GR3D_FREQ 0 %, no clock "
             "below its configured value in jetson_clocks --show. The device was idle; "
             "no sustained load ran in this experiment."),
         "raw_files": raws,

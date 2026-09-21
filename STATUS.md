@@ -2,27 +2,32 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
-## ⚠ Needs the human before measurement can start
+## Device is at MAXN — measurement can proceed
 
-**The Jetson is in `MODE_30W`, not MAXN, and switching to MAXN requires a reboot.**
-`sudo nvpmodel -m 0` answers `NVPM WARN: Reboot required for changing to this power mode: 0`
-and prompts for confirmation; `AGENTS.md` forbids confirming it, so the prompt was declined
-and the mode is unchanged. In `MODE_30W` **4 of the 8 GPU TPCs are power-gated (8 of 16 SMs)
-and the GPU is capped at 612 MHz** — `torch.cuda.get_device_properties(0).multi_processor_count`
-reports 8, and Inductor refuses `max-autotune` GEMM templates with *"Not enough SMs"*.
-MODE_50W is not a substitute (8 TPCs but 816 MHz).
+The human rebooted into **MAXN (id 0)** on 2026-09-21 and it is persisted
+(`/var/lib/nvpmodel/status` = `pmode:0000`). `jetson_clocks` + `--fan` are applied and are
+now run **before every capture**, per protocol §1. CUDA reports **16 SMs**, `TPC_PG_MASK` 0,
+GPU locked at **1 300.5 MHz** (confirmed under load), 12 CPU cores, EMC 3 199 MHz.
 
-**Action:** `sudo nvpmodel -m 0`, confirm the reboot, then `sudo jetson_clocks`.
-Afterwards re-run (≈ 5 min, all scripts exist):
-`python bench/collect_platform.py --outdir results/<date>_E0_platform_maxn --sudo "sudo -A" --idle-seconds 60`
-and `python bench/hw_constants.py --out results/<date>_E0_platform_maxn/hw_constants.json --ncu-raw-csv ...`,
-and confirm 16 SMs. **T002 should not start before that.**
+The authoritative E0 record is **`results/20260921_E0_platform_maxn/`**.
+`results/20260921_E0_platform/` is the earlier MODE_30W run, kept only for comparison; **no
+number in it characterises the Orin.**
 
-Second prerequisite gap: **passwordless `sudo` is not configured** (`AGENTS.md` lists it).
-The user is in group `sudo` but a password is required. The human supplied the password for
-this session only, used through a `SUDO_ASKPASS` helper kept outside the repository — it is
-not persisted and a future session will need it again, or a `NOPASSWD` sudoers entry for
-`nvpmodel`, `jetson_clocks`, `tegrastats`, `ncu` and reading `/sys/kernel/debug`.
+**Three things do not survive a reboot** and must be re-applied at the start of every session:
+```bash
+sudo jetson_clocks && sudo jetson_clocks --fan
+sudo sh -c 'echo 1 > /proc/sys/kernel/perf_event_paranoid'   # ncu counters
+```
+plus the sudo password itself — **passwordless `sudo` is still not configured**
+(`AGENTS.md` lists it as a prerequisite). The user is in group `sudo` but a password is
+required; it was supplied interactively and used through a `SUDO_ASKPASS` helper kept
+outside the repository, which `/tmp` clearing at reboot removes. A `NOPASSWD` sudoers entry
+for `nvpmodel`, `jetson_clocks`, `tegrastats`, `ncu` and reading `/sys/kernel/debug` would
+remove this friction.
+
+Note for E7's power-mode sweep: **every mode change that alters TPC gating needs a reboot**,
+and declining the prompt does not stage it (`nvpmodel` reports `optMask is 1, no request for
+power mode` and leaves the persisted mode untouched). Answer `YES`, or use `--force`.
 
 ## Device
 
@@ -33,10 +38,11 @@ not persisted and a future session will need it again, or a `NOPASSWD` sudoers e
 | CUDA / cuDNN / TensorRT | 12.6.68 / 9.3.0.75 / 10.3.0.30 |
 | kernel / python | 5.15.185-tegra (`oot`) / 3.10.12 |
 | GPU | Orin, cc 8.7 → **`sm_87`** (confirmed by torch *and* `cuobjdump` on the system cuBLAS), 48 max warps/SM |
-| **SMs** | **8 of 16 — MODE_30W power-gates 4 of 8 TPCs** |
+| **SMs** | **16** at MAXN (`TPC_PG_MASK` 0, 8 of 8 TPCs); was 8 in MODE_30W |
+| GPU clock | **1 300.5 MHz** locked and confirmed under load; was 612 MHz in MODE_30W |
 | EMC | **3 199 MHz** = LPDDR5-6400, as expected |
 | memory / disk | 61 GiB RAM, 8 × 3.8 G zram (no disk swap); NVMe 1.8 T, 1.7 T free |
-| idle power (MODE_30W, `jetson_clocks` applied, 58.7 s @ 10 Hz) | **module power 8 522 mW median** (the four rails of protocol §4, from sysfs); 8 117 mW for the three tegrastats prints; tj 39.9 °C; not throttled |
+| idle power (MAXN, clocks locked, 58.6 s @ 10 Hz) | **module power 11 012 mW median** (the four rails of protocol §4, from sysfs); tj 41.9 °C; not throttled. MODE_30W gave 8 522 mW / 39.9 °C. |
 
 ## Software stack that works
 
@@ -46,7 +52,8 @@ aarch64) from `https://pypi.jetson-ai-lab.io/jp6/cu126`, in `~/venvs/jetson_base
 fp32, int8 `torch._int_mm` works.
 **`torch.compile` works in every mode**: inductor `default`, `reduce-overhead`,
 `max-autotune`, `max-autotune-no-cudagraphs`, plus `aot_eager` and `eager`
-(`results/20260921_E0_platform/stack_verification.json`).
+(`results/20260921_E0_platform_maxn/stack_verification.json`).
+**But `max-autotune` never uses Triton GEMM templates on an Orin** — see point 5 below.
 Trap to remember: `pip install torch==2.8.0` with `--extra-index-url https://pypi.org/simple`
 installs PyPI's **CPU-only** `2.8.0+cpu`, because pip prefers a manylinux wheel over the
 index's `linux_aarch64` one. Install the three CUDA wheels by full URL with `--no-deps`
@@ -58,7 +65,7 @@ all shipped with JetPack, nothing to install. `--set` values offered: `basic`, `
 
 ## Which ncu metrics this Orin exposes
 
-Full verdicts: `results/20260921_E0_platform/ncu/metric_presence.csv` — **52 present,
+Full verdicts: `results/20260921_E0_platform_maxn/ncu/metric_presence.csv` — **52 present,
 14 present-but-zero, 9 absent**; every exported column: `ncu/columns.txt` (1 117 raw
 columns). `present_zero` is the "empty" case T001 asks about, made precise: the column
 exists and every value is exactly 0.
@@ -80,25 +87,33 @@ and atomic LSU counters, shared-atom wavefronts, the `xu` pipe, `L1/TEX Hit Rate
 `sm__inst_executed_pipe_fp16...active`, `sm__inst_executed_pipe_{fma,alu}...elapsed`,
 `gpc__cycles_active.avg.per_warp`.
 
-**Four things later tasks must do differently:**
+**Five things later tasks must do differently:**
 1. **No DRAM counters — established three ways.** `ncu --query-metrics` lists **4 426
    metrics on `Orin (GA10B)` and none is `dram__*`** (`env/tool_help/ncu_query_metrics.txt`);
    an explicit `--metrics dram__bytes.sum,...` returns **`n/a`** (`raw/ncu_dram_probe.log`);
    and the `--set full` placeholder columns all read 0. ncu's `Memory Throughput` here
    equals `lts__throughput` to two decimal places — it is **L2**, not DRAM. Off-chip *read*
    bytes must come from `lts__t_sectors_*_sysmem_*_lookup_miss.sum × 32 B`; on the toy
-   kernel that gave 8.5204 MB against 8.4931 MB of analytically compulsory reads
-   (**ratio 1.0032**). The **write** path is not validated — the kernel's 0.42 MB output
-   never appears as a sysmem miss.
+   kernel at MAXN that gave **8.4931 MB against 8.4931 MB** of analytically compulsory
+   reads — **ratio 1.0000** (the MODE_30W run gave 1.0032). The **write** path is still not
+   validated: the kernel's 0.42 MB output never appears as a sysmem miss.
 2. **Stall reasons are on the `raw` page only**, as
    `smsp__average_warps_issue_stalled_<reason>_per_issue_active.ratio`. The `details` page has
    a `Warp State Statistics` section but no `Stall …` rows.
 3. **`ncu` needs root here.** `perf_event_paranoid=1` (protocol §12) is not sufficient;
    use `sudo $(which ncu) ...` (plain `sudo ncu` fails — `secure_path`), then `chown` the
    `.ncu-rep` before exporting.
-4. **`ncu` pins the SM clock to 305.70 MHz** (`--clock-control base`) while the GPU runs at
-   **612 MHz under load** in this mode (`raw/gpu_clock_under_load.txt`) — ncu `Duration` is
-   not a latency.
+4. **Check ncu's clock against the real one every time.** `--clock-control base` pins the
+   SM clock. At MAXN with `jetson_clocks` applied the two agree (ncu 1.29 GHz vs 1 300.5 MHz
+   measured, `Duration` 57.09 µs vs nsys 54.6 µs, +4.5 %). In the MODE_30W run, taken with
+   unlocked clocks, they did not (305.70 MHz vs 612 MHz). ncu `Duration` is still never a
+   latency (protocol §3.2) — but lock the clocks first and the gap is small.
+5. **`max-autotune` cannot use Triton GEMM templates on any Jetson Orin.**
+   `torch/_inductor/utils.py` hard-codes `min_sms = 68` (`# 3080`) for CUDA; Orin has 16, so
+   the check fails **in every power mode** — this was initially mis-attributed to MODE_30W
+   and is disproved by the MAXN run (`raw/verify_stack.stdout.log` line 3). `max-autotune`
+   falls back to ATen/cuBLAS; its autotune log compares only `addmm` vs `bias_addmm`.
+   **E4 must present "max-autotune" here as "default + CUDA graphs + ATen autotuning".**
 
 Also: **`tegrastats` does not print `VDDQ_VDD2_1V8AO`** on this carrier board — the memory
 rail is only in sysfs at `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon4/in2_*`.
@@ -110,9 +125,11 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Done
 
-* **T001 (E0) — bring-up and platform record.** Steps 2, 3 and 4 complete; step 1 (MAXN)
-  blocked on a human reboot, see the top of this file.
-  Result: `results/20260921_E0_platform/` · Report: `reports/E0_platform.md` ·
+* **T001 (E0) — bring-up and platform record. COMPLETE, all four steps.** Step 1 (MAXN +
+  `jetson_clocks`) was satisfied after the human authorised the reboot on 2026-09-21.
+  Result: **`results/20260921_E0_platform_maxn/`** (authoritative), with
+  `results/20260921_E0_platform/` kept as the MODE_30W comparison ·
+  Report: `reports/E0_platform.md` ·
   Environment: `env/README.md`, `env/setup.sh`, `env/requirements_base.txt`,
   `env/tool_help/` (12 files) · Harness: `bench/common.py`, `verify_stack.py`,
   `ncu_toy.py`, `ncu_columns.py`, `hw_constants.py`, `collect_platform.py`,
