@@ -58,9 +58,15 @@ def floor_rows(model_bytes: dict, tokens: dict, layers: int = 18) -> list[dict]:
         2 * P_tok * model_bytes["vlm_language_model"] // 2,
         f"VLM weights once; FLOPs = 2 x P({P_tok}) x params (bf16 -> params = bytes/2)")
     ae = model_bytes["action_expert"]
-    add("ae_step", ae + kv_bytes, 2 * S_tok * (ae // 2),
+    # FLOPs of one expert step = linear layers + attention of S queries against the
+    # P + S cached keys. Omitting the attention term understates it by ~17 %.
+    T = P_tok + S_tok
+    lin_flops = 2 * S_tok * (ae // 2)                      # bf16: params = bytes / 2
+    attn_flops = layers * 2 * (2 * 8 * S_tok * T * 256)    # QK^T and (softmax)V
+    add("ae_step", ae + kv_bytes, lin_flops + attn_flops,
         f"expert weights {ae} B + KV cache {kv_bytes} B (2x{layers}x1x256xP({P_tok})x2B); "
-        f"FLOPs = 2 x S({S_tok}) x params")
+        f"FLOPs = linear 2 x S({S_tok}) x params = {lin_flops/1e9:.2f} G, plus attention "
+        f"{layers} x 2 x (2 x 8 heads x S x T({T}) x 256) = {attn_flops/1e9:.2f} G")
     return rows
 
 
