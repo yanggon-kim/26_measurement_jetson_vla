@@ -35,3 +35,42 @@ with the toy `.nsys-rep` / `.ncu-rep` listed in `meta.json.raw_files`), reposito
 (incl. `env/tool_help/`), a line in `STATUS.md` with the versions that work and which ncu metrics this Orin exposes.
 
 status: claimed 2026-09-21
+status: done 2026-09-21 (step 1 excepted — see "deviation", below)
+
+- Result directory: `results/20260921_E0_platform/`
+- Report: `reports/E0_platform.md`
+- Environment: `env/README.md`, `env/setup.sh`, `env/requirements_base.txt`, `env/tool_help/` (12 files)
+- Harness commit: `f92a895` (the exact scripts that ran are pinned per file in
+  `results/20260921_E0_platform/meta.json.bench_files_sha256`; `bench_commit` alone does not
+  identify them, because HEAD at collection time predated the commit containing `bench/`)
+- Repository size after this task: `STATUS.md` → "Repository size (protocol §6f)"
+
+Deviations from the task:
+
+1. **Step 1 (MAXN + `jetson_clocks`) is NOT met.** `sudo nvpmodel -m 0` answers
+   `NVPM WARN: Reboot required for changing to this power mode: 0` and prompts for
+   confirmation; `AGENTS.md` forbids confirming a reboot prompt, so it was declined and the
+   device stayed in `MODE_30W` (id 2). In that mode 4 of 8 GPU TPCs are power-gated
+   (CUDA sees 8 of 16 SMs) and the GPU is capped at 612 MHz, so **nothing in this run
+   characterises the Orin**. `jetson_clocks` itself was verified to work and is applied.
+   A human must reboot into MAXN; a second, authoritative `results/<date>_E0_platform_maxn/`
+   then follows (≈ 5 min, all scripts exist). Recorded at the top of `STATUS.md`.
+2. **`ncu` requires root on this device.** Protocol §12's `perf_event_paranoid=1` is not
+   sufficient. Substitution recorded in `meta.json.notes`: every ncu run is
+   `sudo $(which ncu) ...` (plain `sudo ncu` fails on `secure_path`).
+3. **Protocol §3.3's DRAM metrics cannot be collected here at all.** `ncu --query-metrics`
+   lists 4 426 metrics on `Orin (GA10B)`, none `dram__*`; an explicit `--metrics
+   dram__bytes.sum` returns `n/a`. ncu's `Memory Throughput` on this device is the L2
+   throughput. Proposed substitute (validated to 1.0032 on the read path, write path not
+   validated): `lts__t_sectors_*_sysmem_*_lookup_miss.sum × 32 B`. Raised as question 1 for
+   the research side in `STATUS.md`.
+4. **Protocol §4's `VDDQ_VDD2_1V8AO` is not printed by `tegrastats`** on this carrier board;
+   it is read from sysfs instead, and `bench/collect_platform.py` now samples all four rails
+   there, so four-rail module power exists. That channel measures a constant 5 040 mV bus,
+   not 1.8 V — raised as question 2.
+5. **Two toy profiler captures were taken before `jetson_clocks` was applied**, so their GPU
+   clock was not fixed and was not recorded. Carried into the MAXN re-run (`STATUS.md`).
+
+Review: self-review plus an independent sub-agent pass (protocol §11). The sub-agent found
+one fabricated process claim in an earlier draft of the report and nine smaller defects; all
+are fixed and listed in `reports/E0_platform.md` §9.

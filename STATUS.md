@@ -163,20 +163,20 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 After T001 (2026-09-21):
 
 ```
-du -sh results/   1.3M
-du -sh .git       1.6M
-git count-objects -vH:  count: 136   size-pack: 62.49 KiB
+du -sh results/   1.5M
+du -sh .git       1.9M
+git count-objects -vH:  count: 176   size-pack: 62.49 KiB
 ```
 
 Five largest committed files — all far under the 50 MB limit, nothing split:
 
 | bytes | file |
 |---|---|
+| 794 544 | `env/tool_help/ncu_query_metrics.txt` (every metric ncu offers on this GPU) |
 | 536 576 | `results/20260921_E0_platform/raw/nsys_toy.sqlite` |
-| 177 285 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
+| 190 947 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
 | 108 402 | `results/20260921_E0_platform/raw/nsys_toy.nsys-rep` |
 | 92 396 | `results/20260921_E0_platform/raw/ncu_toy.ncu-rep.zst` (7.07 MB → 0.09 MB, `zstd -19`) |
-| 75 639 | `results/20260921_E0_platform/ncu/toy_raw.csv` |
 
 `find results -size +50M` is empty.
 
