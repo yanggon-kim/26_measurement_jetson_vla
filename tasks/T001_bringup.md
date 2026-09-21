@@ -28,3 +28,5 @@ Goal: a working, recorded software stack on the Jetson and the E0 platform recor
 4. Verify `tegrastats` rails listed in protocol §4 exist on this carrier board; record the exact rail names.
 Acceptance: E0 result directory (incl. the toy ncu exports, `ncu/columns.txt`, `hw_constants.json`), `env/` reproducible
 (incl. `env/tool_help/`), a line in `STATUS.md` with the versions that work and which ncu metrics this Orin exposes.
+
+status: claimed 2026-09-21
