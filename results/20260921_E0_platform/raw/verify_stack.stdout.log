@@ -1,0 +1,31 @@
+/home/yanggon/venvs/jetson_base/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+W0921 13:17:49.100000 8967 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
+  compile backend=inductor: OK (2.832s)
+  compile backend=inductor,mode=default: OK (0.092s)
+  compile backend=inductor,mode=reduce-overhead: OK (0.679s)
+AUTOTUNE addmm(51x1024, 51x4096, 4096x1024)
+strides: [0, 1], [4096, 1], [1, 4096]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  addmm 0.1936 ms 100.0% 
+  bias_addmm 0.2279 ms 84.9% 
+SingleProcess AUTOTUNE benchmarking takes 0.0886 seconds and 0.0003 seconds precompiling for 2 choices
+  compile backend=inductor,mode=max-autotune: OK (2.341s)
+  compile backend=inductor,mode=max-autotune-no-cudagraphs: OK (0.6s)
+  compile backend=aot_eager: OK (0.121s)
+  compile backend=eager: OK (0.064s)
+wrote results/20260921_E0_platform/latency_samples_compile_probe.csv
+{
+  "cuda": true,
+  "bf16_gemm_ok": true,
+  "inductor_works": true,
+  "working": [
+    "backend=inductor",
+    "backend=inductor,mode=default",
+    "backend=inductor,mode=reduce-overhead",
+    "backend=inductor,mode=max-autotune",
+    "backend=inductor,mode=max-autotune-no-cudagraphs",
+    "backend=aot_eager",
+    "backend=eager"
+  ]
+}

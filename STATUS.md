@@ -36,7 +36,7 @@ not persisted and a future session will need it again, or a `NOPASSWD` sudoers e
 | **SMs** | **8 of 16 — MODE_30W power-gates 4 of 8 TPCs** |
 | EMC | **3 199 MHz** = LPDDR5-6400, as expected |
 | memory / disk | 61 GiB RAM, 8 × 3.8 G zram (no disk swap); NVMe 1.8 T, 1.7 T free |
-| idle power (MODE_30W, 60 s, 10 Hz) | 6.92 W median over the three rails tegrastats prints; tj 46 °C; not throttled |
+| idle power (MODE_30W, `jetson_clocks` applied, 58.7 s @ 10 Hz) | **module power 8 522 mW median** (the four rails of protocol §4, from sysfs); 8 117 mW for the three tegrastats prints; tj 39.9 °C; not throttled |
 
 ## Software stack that works
 
@@ -58,38 +58,55 @@ all shipped with JetPack, nothing to install. `--set` values offered: `basic`, `
 
 ## Which ncu metrics this Orin exposes
 
-Full verdicts: `results/20260921_E0_platform/ncu/metric_presence.csv` (**66 present, 9
-absent**); every exported column: `ncu/columns.txt` (1 117 raw columns).
+Full verdicts: `results/20260921_E0_platform/ncu/metric_presence.csv` — **52 present,
+14 present-but-zero, 9 absent**; every exported column: `ncu/columns.txt` (1 117 raw
+columns). `present_zero` is the "empty" case T001 asks about, made precise: the column
+exists and every value is exactly 0.
 
-**Present and populated:** all protocol §3.3 occupancy metrics (`SM Busy`,
+**Present with non-zero values:** all protocol §3.3 occupancy metrics (`SM Busy`,
 `SM Active Cycles`, `Achieved Occupancy`, `Theoretical Occupancy`,
 `Achieved Active Warps Per SM`, `sm__warps_active.avg.pct_of_peak_sustained_active`);
 `Duration`, `Compute (SM) Throughput`, `Memory Throughput`, `Mem Busy`, `L2 Hit Rate`,
-`L1/TEX Hit Rate`, both `Executed Ipc`; all nine LSU request counters; all launch /
-occupancy-limit metrics; pipe utilisation for `lsu, fma, alu, xu, adu, cbu`;
-**all 18 warp-stall reasons**.
+both `Executed Ipc`; the LSU global/shared counters this kernel exercises; all launch /
+occupancy-limit metrics; pipe utilisation for `lsu` (21.6 %), `alu` (13.5 %), `adu`,
+`cbu`, `fma`; **15 of the 18 warp-stall reasons**.
+
+**Present but zero on the toy kernel (14):** mostly legitimate for this kernel — the local
+and atomic LSU counters, shared-atom wavefronts, the `xu` pipe, `L1/TEX Hit Rate`, and the
+`membar` / `sleeping` / `tex_throttle` stalls. **Three are not legitimate: every
+`dram__*`.** A zero on one kernel is not evidence a counter works; re-check per kernel.
 
 **Absent (9):** `DRAM Throughput`, `DRAM Utilization`, `dram__bytes{,_read,_write}.sum`,
 `sm__inst_executed_pipe_fp16...active`, `sm__inst_executed_pipe_{fma,alu}...elapsed`,
 `gpc__cycles_active.avg.per_warp`.
 
-**Three things later tasks must do differently:**
-1. **No DRAM counters.** Every exported `dram__*` reads **0**, and ncu's `Memory Throughput`
-   here is byte-identical to `lts__throughput` — it is **L2**, not DRAM. Off-chip bytes must
-   come from `lts__t_sectors_aperture_sysmem_*.sum × 32 B`; on the toy kernel that gave
-   8.52 MB against 8.49 MB of analytically compulsory reads (**ratio 1.004**).
+**Four things later tasks must do differently:**
+1. **No DRAM counters — established three ways.** `ncu --query-metrics` lists **4 426
+   metrics on `Orin (GA10B)` and none is `dram__*`** (`env/tool_help/ncu_query_metrics.txt`);
+   an explicit `--metrics dram__bytes.sum,...` returns **`n/a`** (`raw/ncu_dram_probe.log`);
+   and the `--set full` placeholder columns all read 0. ncu's `Memory Throughput` here
+   equals `lts__throughput` to two decimal places — it is **L2**, not DRAM. Off-chip *read*
+   bytes must come from `lts__t_sectors_*_sysmem_*_lookup_miss.sum × 32 B`; on the toy
+   kernel that gave 8.5204 MB against 8.4931 MB of analytically compulsory reads
+   (**ratio 1.0032**). The **write** path is not validated — the kernel's 0.42 MB output
+   never appears as a sysmem miss.
 2. **Stall reasons are on the `raw` page only**, as
    `smsp__average_warps_issue_stalled_<reason>_per_issue_active.ratio`. The `details` page has
    a `Warp State Statistics` section but no `Stall …` rows.
 3. **`ncu` needs root here.** `perf_event_paranoid=1` (protocol §12) is not sufficient;
    use `sudo $(which ncu) ...` (plain `sudo ncu` fails — `secure_path`), then `chown` the
    `.ncu-rep` before exporting.
+4. **`ncu` pins the SM clock to 305.70 MHz** (`--clock-control base`) while the GPU runs at
+   **612 MHz under load** in this mode (`raw/gpu_clock_under_load.txt`) — ncu `Duration` is
+   not a latency.
 
 Also: **`tegrastats` does not print `VDDQ_VDD2_1V8AO`** on this carrier board — the memory
-rail is only in sysfs at `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon4/in2_*`
-(`bench/common.py:ina3221_rails()` reads it). And nsys's
-`--capture-range=cudaProfilerApi` kills the target at `cudaProfilerStop` unless
-`--capture-range-end=stop` is passed.
+rail is only in sysfs at `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon4/in2_*`.
+`bench/collect_platform.py` now samples all four rails there at 10 Hz
+(`power_idle_sysfs.csv`), so protocol §4 module power is available. That channel reads a
+**constant 5 040 mV bus**, not 1.8 V — see question 2. `tegrastats` also **appends** to
+`--logfile`; delete the file first. And nsys's `--capture-range=cudaProfilerApi` kills the
+target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Done
 
@@ -97,9 +114,21 @@ rail is only in sysfs at `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon4/in2_*
   blocked on a human reboot, see the top of this file.
   Result: `results/20260921_E0_platform/` · Report: `reports/E0_platform.md` ·
   Environment: `env/README.md`, `env/setup.sh`, `env/requirements_base.txt`,
-  `env/tool_help/` (11 files) · Harness: `bench/common.py`, `verify_stack.py`,
+  `env/tool_help/` (12 files) · Harness: `bench/common.py`, `verify_stack.py`,
   `ncu_toy.py`, `ncu_columns.py`, `hw_constants.py`, `collect_platform.py`,
-  `finalize_raw.py`, `make_meta_e0.py`.
+  `gpu_clock_probe.py`, `finalize_raw.py`, `make_meta_e0.py`.
+  An independent sub-agent pass (protocol §11) reviewed the run; it found one fabricated
+  process claim in the report and nine smaller defects, all fixed and listed in
+  `reports/E0_platform.md` §9.
+
+### Carried into the MAXN re-run (accepted, not yet done)
+* Apply `sudo jetson_clocks` **before** every capture, not after, and record
+  `devfreq cur_freq` alongside each one (`bench/gpu_clock_probe.py`). In this run the two
+  toy profiler captures were taken with `schedutil` free to scale 306–612 MHz, and that
+  clock was not recorded.
+* Re-validate the L2 sysmem-miss substitute for off-chip **write** traffic, and against the
+  measured bandwidth peak from E1. Only the read path is validated so far.
+* Confirm 16 SMs and re-check `max-autotune` (it is refused at 8 SMs).
 
 ## In progress
 
@@ -131,4 +160,45 @@ rail is only in sysfs at `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon4/in2_*
 
 ## Repository size (protocol §6f)
 
-Reported after each task; see the commit for T001.
+After T001 (2026-09-21):
+
+```
+du -sh results/   1.3M
+du -sh .git       1.6M
+git count-objects -vH:  count: 136   size-pack: 62.49 KiB
+```
+
+Five largest committed files — all far under the 50 MB limit, nothing split:
+
+| bytes | file |
+|---|---|
+| 536 576 | `results/20260921_E0_platform/raw/nsys_toy.sqlite` |
+| 177 285 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
+| 108 402 | `results/20260921_E0_platform/raw/nsys_toy.nsys-rep` |
+| 92 396 | `results/20260921_E0_platform/raw/ncu_toy.ncu-rep.zst` (7.07 MB → 0.09 MB, `zstd -19`) |
+| 75 639 | `results/20260921_E0_platform/ncu/toy_raw.csv` |
+
+`find results -size +50M` is empty.
+
+### Size budget calibration from the toy captures (T001 step 3c)
+
+| file | capture | uncompressed | `zstd -19 -T0` | ratio |
+|---|---|---|---|---|
+| `nsys_toy.nsys-rep` | 3 inferences of one `F.linear`, 6 kernels | 108 402 B | 41 708 B | 2.6× |
+| `nsys_toy.sqlite` | derived from the above | 536 576 B | 53 989 B | 9.9× |
+| `ncu_toy.ncu-rep` | **1 kernel**, `--set full`, 30 replay passes | **7 072 411 B** | **92 396 B** | **76.5×** |
+
+Only the `.ncu-rep` was committed compressed (protocol §6b: > 1 MB); the other two are
+under 1 MB and are committed as-is.
+
+**What this implies for later tasks.** The ncu report is ≈ **7 MB per captured kernel**
+uncompressed at `--set full`, and compresses ~76× because it is mostly sparse. A π0
+`ae_step[0]/` capture is expected to hold several hundred kernels → **order 1–2 GB
+uncompressed, order 20–30 MB as `zstd -19`** — committable, but only just, and the
+uncompressed intermediate needs room in `scratch/`. Budget `-c` limits accordingly and
+check before committing. `bench/finalize_raw.py` compresses above 1 MB and splits above
+50 MB with a verified `REASSEMBLE.txt`.
+
+The nsys side is cheap by comparison (≈ 18 KB per kernel uncompressed here, and dominated
+by fixed overhead), so the 1–3 inference capture window of protocol §3.1 is not the
+constraint; ncu is.

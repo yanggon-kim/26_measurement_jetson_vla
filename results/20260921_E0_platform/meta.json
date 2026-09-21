@@ -1,7 +1,7 @@
 {
   "experiment": "E0",
   "task": "T001",
-  "date_utc": "2026-09-21T19:58:00Z",
+  "date_utc": "2026-09-21T20:22:07Z",
   "model": null,
   "model_repo": null,
   "model_commit": null,
@@ -24,7 +24,7 @@
   "gpu_hz": 612000000,
   "gpu_active_tpcs": 4,
   "gpu_total_tpcs": 8,
-  "sm_count_reported_by_torch": 8,
+  "sm_count_reported_by_torch": null,
   "jetpack": "6.2.3+b81",
   "l4t": "R36.5.0",
   "cuda": "12.6",
@@ -36,8 +36,20 @@
   "numpy": "1.26.4",
   "python": "3.10.12",
   "venv": "/home/yanggon/venvs/jetson_base/bin/python",
-  "bench_commit": "7ee7180d9fab385fbc59976f6c6565f5a55467da",
+  "bench_commit": "c9bed6001032ea8c93cc009a965a74eff8b732c1",
+  "bench_commit_note": "HEAD when bench/collect_platform.py ran. It may predate the commit that first contains bench/, and the tree may have been dirty, so it does not by itself identify the code that ran: bench_files_sha256 does. The committed harness for this run is the one whose hashes are listed there.",
   "bench_dirty_at_run_time": true,
+  "bench_files_sha256": {
+    "collect_platform.py": "8d0993d0142fd6190a49d838c5b33405c53835021e15364f9364228385952458",
+    "common.py": "26600ae14fbeea95dc1aa64824979005a30e92c94c7dde398aa3cb77cc5517d5",
+    "finalize_raw.py": "f59d628a1a5ea220c0879da785f08251f93e6dff4c01ea6b3d3621b74fdfda45",
+    "gpu_clock_probe.py": "3fd3cc97da9d5aa188e21ef49ce28b327a5ee6dd8215aa845b82601c01c5e1db",
+    "hw_constants.py": "90dc6cb69469496494230ac28163c6ed23ee3683efa3446e3112298deaaa6576",
+    "make_meta_e0.py": "9eaa794903442ac8a4529af0e94a1d4083e464c376a7b1ec324aa06bf8f89855",
+    "ncu_columns.py": "d09d747491e214ea940a43b819232b82358717094f02e80396a575c767625051",
+    "ncu_toy.py": "5cf3a61be8b12482ecbd4bc0816a71b4ba6bb1f5aa06156168b2753f43f1b8d4",
+    "verify_stack.py": "c6ad5d8ec9a8dc5169045579a76a1af747347f3797455e1ea5bc2bdb5426c793"
+  },
   "nsys_version": "NVIDIA Nsight Systems version 2024.5.4.34-245434855735v0",
   "ncu_version": "Version 2024.3.1.0 (build 34702747) (public-release)",
   "cuobjdump_version": "Cuda compilation tools, release 12.6, V12.6.68",
@@ -45,7 +57,9 @@
   "ncu_set": "full",
   "ncu_filter": "--nvtx --nvtx-include \"toy/\" --profile-from-start off (no -c/-s needed: the capture window holds one kernel)",
   "ncu_requires_root_on_this_device": true,
-  "ncu_clock_control": "base (ncu default) \u2014 SM ran at 305.70 MHz during capture",
+  "ncu_clock_control": "base (ncu default) \u2014 SM ran at 305.70 MHz during capture, while the GPU runs at 612 MHz under load in this mode (raw/gpu_clock_under_load.txt)",
+  "ncu_run_time_s": 8.3,
+  "ncu_run_time_note": "wall clock of a timed repeat of the same filtered command (raw/ncu_toy_walltime.txt): 8.30 s, 31 replay passes, 7 098 082 B report. The analysed capture is the earlier identical run: 30 passes, 7 072 411 B.",
   "gpu_arch": "sm_87",
   "command": [
     "bash env/setup.sh",
@@ -65,11 +79,29 @@
   "throttled_evidence": "60 s idle tegrastats: tj stayed in the low 40s \u00b0C, GR3D_FREQ 0 %, no clock below its configured value in jetson_clocks --show. The device was idle; no sustained load ran in this experiment.",
   "raw_files": [
     {
+      "path": "raw/gpu_clock_under_load.txt",
+      "sha256": "94b4e123adde6e7aae761d65ecf7f6a2d79843822ed56082c7796046f34f4012",
+      "bytes": 305,
+      "kind": "other",
+      "produced_by": "python bench/gpu_clock_probe.py \u2014 samples devfreq cur_freq at 50 Hz under a bf16 F.linear loop",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
       "path": "raw/jetson_clocks_show_locked_30W.txt",
       "sha256": "87ca1cb1eca5c3128170fcd5e5c9d9ec97e4c7da5383ae7eb70c8eac766a7a65",
       "bytes": 2074,
       "kind": "other",
-      "produced_by": "sudo jetson_clocks --show (after sudo jetson_clocks; MODE_30W)",
+      "produced_by": "sudo jetson_clocks --show, after sudo jetson_clocks, MODE_30W",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_dram_probe.log",
+      "sha256": "59ef9017965ff5d7563a457fe35e8667bac2daf9f5e13dd84d521bfd69a04308",
+      "bytes": 1378,
+      "kind": "ncu-csv",
+      "produced_by": "sudo ncu --metrics dram__bytes.sum,dram__bytes_read.sum,dram__throughput.avg.pct_of_peak_sustained_elapsed --nvtx --nvtx-include \"toy/\" --profile-from-start off --csv python bench/ncu_toy.py",
       "secrets_scan": "clean",
       "committed": true
     },
@@ -78,7 +110,7 @@
       "sha256": "6d1b8873c2e559660eac2df1c2f398aeb49f196af2e6ae77139d347858daf3ce",
       "bytes": 92396,
       "kind": "ncu-rep",
-      "produced_by": "sudo /usr/local/cuda/bin/ncu --set full --nvtx --nvtx-include \"toy/\" --profile-from-start off -o ncu_toy -f $VENV/bin/python bench/ncu_toy.py",
+      "produced_by": "sudo /usr/local/cuda/bin/ncu --set full --nvtx --nvtx-include \"toy/\" --profile-from-start off -o ncu_toy -f python bench/ncu_toy.py",
       "secrets_scan": "clean",
       "committed": true,
       "compression": {
@@ -97,7 +129,25 @@
       "sha256": "86c614b32c7b3b7f113dd743c4d3c47c9a52a19e2c2b50f911a4cdac45baf0b9",
       "bytes": 395,
       "kind": "stdout",
-      "produced_by": "stdout/stderr of the ncu command above",
+      "produced_by": "stdout/stderr of the analysed ncu command",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_toy_rerun.stdout.log",
+      "sha256": "c235b0cda3097950e1e2b6b2e42aa1cb77f28eaa825d087aca832ccb46ba8e29",
+      "bytes": 396,
+      "kind": "stdout",
+      "produced_by": "stdout/stderr of the timed repeat of the ncu command",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_toy_walltime.txt",
+      "sha256": "68bc792bfe101fb905209ec2e7550cba281808086764b01585f9cd3fd336313b",
+      "bytes": 323,
+      "kind": "other",
+      "produced_by": "wall clock of a timed repeat of the filtered ncu command",
       "secrets_scan": "clean",
       "committed": true
     },
@@ -106,7 +156,7 @@
       "sha256": "82442ade56e38472f4a73f625611da9df137c88a26e59378cb1f5158eb574836",
       "bytes": 108402,
       "kind": "nsys-rep",
-      "produced_by": "nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi -f true -o nsys_toy $VENV/bin/python bench/ncu_toy.py --iters 3",
+      "produced_by": "nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi -f true -o nsys_toy python bench/ncu_toy.py --iters 3",
       "secrets_scan": "clean",
       "committed": true
     },
@@ -115,7 +165,7 @@
       "sha256": "4e079a1f58a10061386631df98ff071bc1a6c33c41d371a20ec7bc600ca2fc00",
       "bytes": 536576,
       "kind": "nsys-sqlite",
-      "produced_by": "nsys stats -r ... -f csv -o results/20260921_E0_platform/nsys/toy <nsys_toy.nsys-rep> (sqlite generated as a side effect)",
+      "produced_by": "generated by the first nsys stats call from nsys_toy.nsys-rep",
       "secrets_scan": "clean",
       "committed": true
     },
@@ -124,16 +174,43 @@
       "sha256": "2508118e8ecd932cbf22db179cdcd699c0ee019475d99e82732f9053abd76cc1",
       "bytes": 1124,
       "kind": "stdout",
-      "produced_by": "stdout/stderr of the nsys profile command above",
+      "produced_by": "stdout/stderr of the nsys profile command",
       "secrets_scan": "clean",
       "committed": true
     },
     {
       "path": "raw/tegrastats_idle.log",
-      "sha256": "af6994924f01c8f407de7316d007e1f78e8e34d7e10e31c0b37ac39e8d66e99c",
-      "bytes": 177285,
+      "sha256": "0224d360aa8145c2c42fe263f048f68b3e346ae3ad1fc9598cb511801823ef39",
+      "bytes": 190947,
       "kind": "tegrastats",
-      "produced_by": "timeout 62 tegrastats --interval 100 --logfile results/20260921_E0_platform/raw/tegrastats_idle.log",
+      "produced_by": "timeout 62 tegrastats --interval 100 --logfile results/20260921_E0_platform/raw/tegrastats_idle.log (via bench/collect_platform.py; jetson_clocks applied)",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/verify_stack.stdout.log",
+      "sha256": "091a80853673681a517cd7731dbff62390d093e4041fff8282a7310dde8c8236",
+      "bytes": 1853,
+      "kind": "stdout",
+      "produced_by": "stdout/stderr of python bench/verify_stack.py (cold Inductor cache); carries the 'Not enough SMs to use max_autotune_gemm mode' line",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/toy_details.csv",
+      "sha256": "3d9ae2bbaa76c3cbcc6b8956b5540045ee39065b4fb56829a69c7b0a00865fc2",
+      "bytes": 26301,
+      "kind": "ncu-csv",
+      "produced_by": "ncu --import ncu_toy.ncu-rep --csv --page details > ncu/toy_details.csv",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/toy_raw.csv",
+      "sha256": "16c16f6c3f1fe4041e3c9bf0023f577a7596993dfa5d882403c1e0fd4e3108c5",
+      "bytes": 75639,
+      "kind": "ncu-csv",
+      "produced_by": "ncu --import ncu_toy.ncu-rep --csv --page raw > ncu/toy_raw.csv",
       "secrets_scan": "clean",
       "committed": true
     }
