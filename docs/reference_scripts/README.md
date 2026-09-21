@@ -15,3 +15,8 @@ adapt them (paths, the "Tensor core" opcode family, Orin column names, the §2 r
 Comments inside these files mention other documents (`references/…`) that are not in this repository;
 everything needed from them is in `docs/02_protocol.md` and `docs/03_instruction_level_analysis.md`. Hardware
 numbers in comments refer to other GPUs (protocol §8).
+
+**Exception — `check_model_inputs.py` is run in place, not copied:** it validates an E11 `model_inputs.csv`
+against `docs/02_protocol.md` §13.8 (standard library only, no GPU):
+`python docs/reference_scripts/check_model_inputs.py results/<run>/model_inputs.csv`. Exit status 0 is an acceptance
+criterion of every E11 task. A quantity it does not know is proposed in `STATUS.md`, not added locally.

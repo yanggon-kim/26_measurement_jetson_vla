@@ -248,7 +248,8 @@ device agent never thought to summarise.
 - tidy CSVs, one row per observation, long format: `latency_samples.csv (region, iter, ms)`,
   `latency_summary.csv (region, median_ms, mean_ms, p5_ms, p95_ms, min_ms, n)`, plus `nsys/*.csv`, `power.csv`,
   `kernels_per_region.csv`, `floor.csv` (§9), `ncu/*` (§3.3) and `sass/*` (E5b, `docs/03_instruction_level_analysis.md`)
-  when applicable. For profiler runs add to `meta.json`: `nsys_version`, `ncu_version`, `ncu_set`, `ncu_filter`
+  when applicable; for E11 runs `model_inputs.csv` (schema in §13.8, required in every E11 result directory) and
+  `segments.csv`, `handover.csv`, `boundary.csv` (§13.2, §13.4). For profiler runs add to `meta.json`: `nsys_version`, `ncu_version`, `ncu_set`, `ncu_filter`
   (the exact `--nvtx-include` / `-k` / `-c` / `-s` used), `gpu_arch` (e.g. `sm_87`), `cuobjdump_version`.
 - `raw/`: the raw files of §3.5 (profiler reports, dumps, logs, traces), compressed per §6, with
   `REASSEMBLE.txt` when a file was split.
@@ -398,3 +399,191 @@ kernels (E5b); (9) roofline points (E6); (10) root-cause chain (§10); (11) self
 | kernel names unreadable | `c++filt`; use NVTX ranges and `--nvtx-include` to tell phases apart |
 | matplotlib fails headless | `matplotlib.use("Agg")` |
 
+
+## 13. E11 — inputs for the hybrid GPU + PIM model: methods and the `model_inputs.csv` schema
+E11 (`01_measurement_plan.md`) measures what a system model needs when the vision encoder and the VLM prefix stay
+on the GPU and the action expert's large matrix products run in memory. Everything in §1–§6 applies (device
+state, warm-up, raw files, sizes). The rules below are specific to E11. If an API named here does not exist in
+your PyTorch build, use the equivalent it offers and record the substitution in `meta.json.notes`.
+
+### 13.1 Micro-timing of small GPU work (host segments, casts, KV materialisation)
+A host segment takes tens of microseconds to a few milliseconds, and in the target system it runs **alone**: the
+GPU is idle before it, the CPU launches it, and the CPU waits for the result before the memory side can go on.
+Therefore every small piece of work is timed in two ways, and both are reported (`timing` column, §13.8):
+- `wall_isolated` — `torch.cuda.synchronize()`; `t0 = time.perf_counter()`; run the work once;
+  `torch.cuda.synchronize()`; `t1`. This is launch + execution + completion wait from an idle GPU. It is the
+  **primary** number. Repeat it with a pause between calls, `gap_ms` ∈ {0, 2} (`time.sleep(0.002)` before the
+  first `synchronize()`), because the memory side works for about a millisecond between two segments and an
+  idle GPU may answer more slowly; label the rows `variant = gap_ms=<g>`.
+- `gpu_event` — CUDA events around the work with calls issued back to back (as in E2): pure device time.
+- additionally `wall_launch` — `perf_counter` around the call **without** the trailing synchronise: the CPU cost of
+  issuing the work.
+≥ 20 warm-up calls, then **≥ 1,000 timed calls** per (segment, style, timing); keep every sample
+(`raw/segment_samples.csv.zst`: `segment, exec_style, timing, variant, iter, ms`).
+
+Three execution styles (`exec_style`):
+- `eager` — the model's own PyTorch code, called from Python.
+- `compiled` — `torch.compile(fn, dynamic=False)` of the segment function (default mode, no CUDA graphs, so that
+  fusion and the kernel count stay visible); log the compile time; if `torch.compile` fails for a segment,
+  record the error text and mark the row `not measured`.
+- `cudagraph` — capture with `torch.cuda.CUDAGraph()` / `with torch.cuda.graph(g):` on static input tensors and
+  time `g.replay()`. Two graph granularities: **one graph per segment** (how the target system would really run
+  it, because memory-side work separates the segments), and **one graph of the whole per-layer host sequence**
+  (all segments of one layer in order, outputs of one feeding the next where the model does so; a lower bound).
+  Say in `variant` whether the captured body was the eager or the compiled function.
+
+Kernels per call: one `torch.profiler` run (CPU + CUDA activities) over 10 calls per (segment, style);
+kernels per call = CUDA kernel events ÷ 10; commit the `key_averages` table and the trace under `raw/`. Also one
+small `nsys` capture (§3.1) of ten consecutive per-layer host sequences per style.
+
+Inputs are **real**: register forward hooks (or wrap the functions) during one real denoising step of the
+fixture observation, save the input tensors of each segment at layer 0 and at a middle layer to `scratch/`
+(not committed), and replay the segment on them. Record shape, dtype, device and contiguity of every input and
+output in `segments.csv` (§13.2). Use the model's own module instances and functions; re-implement only what the
+model code does inline, line for line, and cite the file and line.
+
+### 13.2 What a host segment is, and `segments.csv`
+A **host segment** is a maximal run of consecutive operations of one action-expert layer that are **neither a
+large linear layer** (a matrix product with a weight matrix applied to the S suffix tokens: q / k / v / o, MLP
+gate / up / down, or a fused form of them) **nor an attention matrix product** (scores = q·Kᵀ, context =
+probs·V). Large linear layers and attention products are what moves into memory; every segment between two of
+them stays on the GPU. Small linears whose input is a single conditioning vector (for example the dense layer of
+an adaptive norm) count as part of the host segment they belong to. Derive the list **from the model code**, per
+model, and write it to `segments.csv`:
+`model, segment, order_in_layer, layer_kind, source_ref, ops, inputs, outputs, bytes_read, bytes_written, flops,
+flops_formula, in_model_code, notes` — `source_ref` = `file:line-line` at the model commit; `inputs` / `outputs` =
+`name:shape:dtype` lists; `layer_kind` distinguishes layer types where a model has several (self-attention /
+cross-attention, DiT block variants); `in_model_code` = `yes`, or `mapping_only` for a segment that exists only in
+the memory mapping (below). Bytes and FLOPs are analytic, from the shapes, with the formula written out.
+Per-step extras (everything in one denoising step outside the layer stack that is not a large linear layer on
+the suffix tokens: suffix / time embedding, final norm, output projection, Euler update) are listed in the same
+file with `order_in_layer = -1`.
+
+### 13.3 Transfers and synchronisation on unified memory
+The Orin's CPU and GPU share one DRAM, but software still "copies". Measure the latency of moving a buffer of
+each size in {4 KB, 16 KB, 64 KB, 256 KB, 1 MB, 2 MB, 4 MB, 16 MB} (KB = 1024 B) **plus the exact boundary sizes
+of the model** (E11 part 3), in both directions where the method has a direction, with three methods:
+- `pageable` — `gpu.copy_(cpu)` / `cpu.copy_(gpu)` with an ordinary CPU tensor;
+- `pinned` — the CPU tensor allocated with `pin_memory=True`, `copy_(…, non_blocking=True)` followed by
+  `torch.cuda.synchronize()`;
+- `zero_copy` — **one allocation that both the CPU and the GPU address, with no copy**: CUDA managed memory
+  (`cudaMallocManaged`) or mapped pinned host memory (`cudaHostAlloc` with the mapped flag +
+  `cudaHostGetDevicePointer`). PyTorch has no single documented call for this; candidate routes are a few lines
+  of C++/CUDA extension, `ctypes` calls into `libcudart`, a pluggable allocator, or CuPy managed memory shared
+  with torch through DLPack. Use whichever works on this stack and record exactly what you used. Time each
+  part: CPU writes the buffer (`numpy` copy into it), a GPU kernel reads it (the fp32→fp16 cast of §13.1 or a
+  `sum()`), synchronise, CPU reads the result — and the same GPU kernel on an ordinary device tensor, so that the
+  penalty of the shared allocation is visible. If no route works, document what failed and mark it `not measured`.
+Timing: `wall_isolated` (§13.1), ≥ 20 warm-ups, ≥ 200 timed per point (≥ 1,000 for sizes ≤ 64 KB), every sample
+kept (`raw/xfer_samples.csv.zst`). Per (method, direction) fit **t = a + b·bytes** by least squares on the
+per-size medians: report `fit_a` (ms), `fit_b` (ms per MB, MB = 10⁶ B), `fit_r2`, and 1/b as GB/s. The fixed term
+`a` is the point of this experiment; a peak GB/s alone is not enough.
+Synchronisation costs, `wall_isolated`, ≥ 1,000 samples each: `synchronize_idle` (`torch.cuda.synchronize()` with
+nothing queued), `event_synchronize_done` (`Event.synchronize()` on an event that already completed),
+`event_query` (`Event.query()`), `tiny_kernel_roundtrip` (one 1-element add + synchronise), and `stream_handoff`
+(work on stream A, `event.record()`, stream B `wait_event`, a tiny kernel on B, synchronise — minus the same
+two kernels on one stream). Record whether the CPU **spins** while it waits (process CPU time ÷ wall time during
+a long synchronise): a spinning wait shows up as 100 % CPU utilisation in §13.6 and must not be read as work.
+
+### 13.4 The hand-over object (prefix → action expert)
+After the prefix ran on the fixture observation, inspect the object the action expert receives (a KV cache for
+π0 / π0.5 / SmolVLA; whatever the model passes for GR00T — say what it is). Write `handover.csv`:
+`model, layer, tensor, shape, dtype, stride, contiguous, bytes, valid_tokens, padded_tokens, notes`, one row per
+tensor per layer, plus a `TOTAL` row. Distinguish **valid** prefix tokens from padded / masked positions that
+still occupy the cache. Time (`gpu_event` and `wall_isolated`, §13.1) the materialisation of the whole object as
+one contiguous buffer `[layers, 2, P, kv_heads, head_dim]` in the cache's dtype (`variant = layout=stacked`), and the
+same with V transposed to `[…, head_dim, P]` (`variant = layout=v_transposed`; the memory mapping stores V by
+dimension). Establish, from the code **and** at run time, how the denoising steps use the object, and write the
+answer with evidence (file:line, `data_ptr()` of the cache tensors across steps, `torch.cat` / memcpy kernels in the
+nsys trace of `ae_step`) to `kv_reuse.md`: is the prefix KV computed once per inference; does each step reference
+it or copy it (e.g. a concatenation with the suffix K/V that re-copies the prefix); is the suffix K/V appended
+and then dropped; bytes copied per step because of this. Also list the tensors that cross the prefix → expert
+boundary **per denoising step** (noisy actions, state, time, the step's output) in `boundary.csv`:
+`model, tensor, direction, shape, dtype, bytes, per, notes` with `per` ∈ {`inference`, `step`, `layer`}.
+
+### 13.5 Background memory load (a proxy — read the limits)
+`bench/bw_hog.py`, a **separate process**, two kinds of load, each with a duty cycle d ∈ {25, 50, 75, 100} %
+(period 20 ms: copy for d·20 ms, sleep for the rest):
+- `gpu_hog` — `dst.copy_(src)` between two 256 MiB device tensors;
+- `cpu_hog` — a multi-threaded CPU copy (e.g. `numpy.copyto` on 256 MiB arrays in k worker processes, or the
+  STREAM benchmark built with OpenMP — whichever you can run; record it), pinned with `taskset` to cores the
+  foreground process does not use (pin the foreground too, and record both core sets).
+Two **controls** at d = 100 %: `gpu_spin_control` (a compute-bound GPU load with a small memory footprint — small
+GEMMs — at the same duty cycle) and `cpu_spin_control` (the same worker processes on the same cores doing
+arithmetic that stays in cache). They separate "the GPU / CPU was taken" from "the memory bandwidth was taken".
+The hog prints its achieved copy rate once per second (same GB/s definition as E1's `clone()` row; say which) to
+`raw/bw_hog_<label>.log`; report the achieved rate alone and during the foreground run, and as a percentage of the
+E1-measured peak (of the 204.8 GB/s spec, marked, if E1 has not run). Log tegrastats during every run (§4); if
+this tegrastats prints a memory-controller utilisation next to `EMC_FREQ`, keep it.
+**Limits, to be repeated in the report:** this is a proxy for memory-side activity on the same DRAM. A real PIM
+occupies DRAM channels through the command bus and blocks ordinary accesses to them; a software hog instead
+competes at the memory controller and in the caches, and additionally takes GPU time slices (`gpu_hog`) or CPU
+cores (`cpu_hog`). The controls bound those side effects; the result is the sensitivity of the GPU work to
+lost memory bandwidth, not a measurement of PIM interference.
+
+### 13.6 CPU utilisation per phase
+The CPU that launches GPU kernels would also drive the memory-side command stream. In a **separate run** (not
+the latency run): (a) per region, the launching thread's CPU time (`time.thread_time()`) and the process CPU time
+(`time.process_time()`) read at the region boundaries, summed over ≥ 100 iterations, ÷ region wall time;
+(b) system-wide per-core utilisation from `/proc/stat` deltas over phase-only loops of ≥ 30 s (`vision`-only if
+separable, prefix-only, action-expert-only, full inference). Commit the raw deltas (`raw/cpu_util_samples.csv`).
+State the number of cores online and the spin-wait finding of §13.3.
+
+### 13.7 Concurrency (pipelining)
+Throughput = completed inferences ÷ wall time of a back-to-back loop ≥ 60 s. For concurrent cases say how the two
+activities share the GPU: **two processes**, or **one process with two CUDA streams** (`torch.cuda.Stream`; try a
+high-priority stream for the short work and record whether the priority argument is accepted). Report the
+latency distribution (median, p95, max) of the short activity alone and under concurrency, not only the mean.
+
+### 13.8 `model_inputs.csv` — the machine-readable hand-off (every E11 result directory has one)
+Long format, one row per (quantity, key, variant, statistic), UTF-8, comma-separated, header exactly:
+```
+model,model_commit,bench_commit,quantity,key,variant,value,unit,stat,n,exec_style,timing,power_mode,precision,P,S,N,source_file
+```
+| column | content |
+|---|---|
+| `model` | `pi0`, `pi05`, `smolvla`, `groot_n17`, or `none` for model-independent rows (transfers, synchronisation) |
+| `model_commit`, `bench_commit` | model repository commit; commit of `bench/` that produced the number |
+| `quantity` | one name from the table below — nothing else; a quantity that does not fit is proposed in `STATUS.md` and reported in `summary.md` meanwhile |
+| `key` | the sub-item (segment name, method, phase, rail, load label); empty if the quantity has none |
+| `variant` | `name=value` pairs separated by `;` for everything else that distinguishes the row (`gap_ms=2`, `layer=0`, `size_bytes=65536`, `n_images=2`, `prompt_tokens=17`, `compile_mode=max-autotune`, `graph=per_segment`, `sharing=two_processes`, `from=<run dir>`); empty if none. Same spelling everywhere |
+| `value`, `unit` | a number (no thousands separators) and its unit: `ms`, `bytes`, `flops`, `count`, `ratio`, `pct`, `W`, `GBps` (10⁹ B/s), `TFLOPps`, `inf_per_s`, `ms_per_MB`, `ms_per_token`, `ms_per_image` |
+| `stat` | `median`, `mean`, `p5`, `p95`, `min`, `max`, `value` (an exact or single number), `fit_a`, `fit_b`, `fit_r2` |
+| `n` | samples behind the statistic (points for a fit; 1 for `value`) |
+| `exec_style` | `eager`, `compiled`, `cudagraph`, or empty |
+| `timing` | `wall_isolated`, `gpu_event`, `wall_launch`, `wall_loop` (a back-to-back loop), `slope` (§2), `analytic`, or empty |
+| `power_mode` | the nvpmodel mode name and `+jetson_clocks` if set, e.g. `MAXN+jetson_clocks` |
+| `precision` | `bf16`, `fp16`, `fp32` (weights / activations of the measured work) |
+| `P`, `S`, `N` | prefix tokens, suffix tokens, denoising steps of the run; empty when not applicable |
+| `source_file` | path **relative to this result directory** of the file the value was computed from; it must exist in this directory. To restate a number from another run, copy that run's tidy CSV (never its profiler reports) to `raw/restated/<run dir>/` and point there, with `from=<run dir>` in `variant` |
+
+Report at least `median`, `p5`, `p95` for every timed quantity. Quantities (`key` values in parentheses):
+
+| quantity | unit | meaning |
+|---|---|---|
+| `t_preprocess`, `t_vision`, `t_vlm_prefix`, `t_postprocess`, `t_ae_step`, `t_ae_total`, `t_e2e` | ms | §2 regions; `t_e2e` = wall clock of one inference |
+| `t_host_segment` (segment name of `segments.csv`; also `cast_scores_fp32_fp16`) | ms | one host segment, §13.1 |
+| `n_kernels_host_segment`, `bytes_host_segment`, `flops_host_segment` (segment) | count, bytes, flops | kernels per call; analytic bytes read + written; analytic FLOPs |
+| `t_host_layer` (`sum_of_segments`, `sequence`, `whole_layer_graph`; layer kind in `variant`) | ms | all host segments of one layer: sum of the isolated segments; the sequence issued back to back with one final synchronise; one CUDA-graph replay |
+| `t_step_extra` (`suffix_embed`, `final_norm_out_proj`, `euler_update`, other names from `segments.csv`, `total`) | ms | per-step work outside the layer stack |
+| `t_launch_per_kernel` | ms | `wall_launch` of a segment ÷ its kernels per call, eager; median over segments, and per segment with the segment in `key` |
+| `t_sync` (`synchronize_idle`, `event_synchronize_done`, `event_query`, `tiny_kernel_roundtrip`, `stream_handoff`) | ms | §13.3 |
+| `xfer_latency` (`<method>:<direction>`, e.g. `pinned:h2d`, `pageable:d2h`, `zero_copy:roundtrip`; `size_bytes` in `variant`) | ms | one transfer of that size |
+| `xfer_latency_fit` (`<method>:<direction>`) | ms (`fit_a`), ms_per_MB (`fit_b`), ratio (`fit_r2`) | t = a + b·bytes |
+| `kv_bytes_per_layer`, `kv_bytes_total` (`valid` or `padded`) | bytes | the hand-over object, §13.4 |
+| `t_kv_materialise` (`stacked`, `v_transposed`) | ms | §13.4 |
+| `kv_copied_bytes_per_step` | bytes | prefix KV bytes re-copied inside one denoising step (0 if referenced) |
+| `boundary_bytes_per_step` (tensor name from `boundary.csv`, and `total`) | bytes | tensors crossing the prefix → expert boundary per denoising step |
+| `prefix_latency_fit` (`vision_vs_images`, `vlm_prefix_vs_P`, `ae_step_vs_P`) | ms (`fit_a`), ms_per_image or ms_per_token (`fit_b`), ratio (`fit_r2`) | E11 part 4 |
+| `prefix_throughput`, `e2e_throughput`, `ae_throughput` | inf_per_s | back-to-back loops: prefix only, full inference, action expert only |
+| `prefix_slowdown` (load label: `gpu_hog_25` … `gpu_hog_100`, `cpu_hog_25` … `cpu_hog_100`, `gpu_spin_control`, `cpu_spin_control`, `host_segments`) | ratio | prefix-only median latency under that load ÷ alone |
+| `host_layer_slowdown` (load label, incl. `prefix_loop`) | ratio | `t_host_layer` under that load ÷ alone |
+| `bg_bw_GBps` (load label; `alone` or `during` in `variant`) | GBps | achieved rate of the background load |
+| `cpu_util` (phase: `vision`, `vlm_prefix`, `ae_total`, `e2e`; `scope=thread`, `scope=process`, `scope=core<i>` or `scope=all_cores_mean` in `variant`) | pct | §13.6 |
+| `p_mean_W` (`<phase>/<rail>`, rail names of §4 and `module`) | W | mean power of a phase loop |
+| `gpu_idle_ae_total`, `gpu_idle_frac_ae_total` | ms, ratio | `ae_total` region time − union of kernel intervals (nsys, §3.1): GPU time free for the next frame's prefix in the ordinary run |
+| `achieved_bw_GBps`, `achieved_tflops` (segment, region, or an E1 kernel name) | GBps, TFLOPps | analytic bytes or FLOPs ÷ `gpu_event` time |
+
+Check the file with `python docs/reference_scripts/check_model_inputs.py results/<run>/model_inputs.csv` (standard
+library only, runs anywhere) before committing; it must exit 0. It verifies the header, the enumerations, that
+`value` parses, and that every `source_file` exists.
