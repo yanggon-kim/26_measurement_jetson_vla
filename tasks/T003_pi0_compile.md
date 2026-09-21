@@ -8,3 +8,5 @@ were used, steady-state latency per region, peak memory.
 Acceptance: `reports/E4_pi0_compile.md` with the speed-up per region vs T002 and the completed ladder
 (floor → eager → best compiled, ms per denoising step). If compilation fails on this stack, the report documents
 the failure precisely and the best configuration that does work.
+Raw files (protocol §3.5 / §6): per-iteration samples, run stdout, and the compile logs (`TORCH_LOGS="graph_breaks,recompiles"`
+output, Inductor's `output_code` for the action-expert graph) committed under each result directory's `raw/`.

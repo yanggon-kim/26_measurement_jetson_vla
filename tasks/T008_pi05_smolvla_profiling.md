@@ -22,4 +22,5 @@ Acceptance, per model `<m>` ∈ {`pi05`, `smolvla`}: `reports/E5_<m>_timeline.md
 `reports/E6_<m>_roofline.md`, `reports/E7_<m>_power.md` with the same content as the π0 reports, plus one
 cross-model table in `reports/E5_E5b_models.md` (`model, S, ms/step eager, ms/step compiled, floor, gap ratio,
 GPU idle % in ae_step, region-weighted SM occupancy, top stall reason and share, LSU load share, dominant kernel`).
-Self-review (§11).
+Raw files committed under each result directory's `raw/` exactly as in T004 / T007 (protocol §3.5 / §6);
+repository-size lines in `STATUS.md` after each model (§6f). Self-review (§11).

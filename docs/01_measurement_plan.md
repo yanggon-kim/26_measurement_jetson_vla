@@ -69,7 +69,8 @@ model's default N (π0, SmolVLA: 10; GR00T: 4):
    (`kernel_weighted` and `region_weighted`), **per-pipe utilisation** (`pipe_lsu`, `pipe_fma`, `pipe_alu`,
    `pipe_xu`, `pipe_adu`, `pipe_cbu`, `pipe_fp16`), **warp-stall reasons**, SM and memory throughput,
    the memory-bound / compute-bound / balanced split of kernel time. Never unfiltered; one step, not N steps.
-   Outputs: `ncu/*_details.csv`, `ncu/*_raw.csv`, `ncu/columns.txt`, `ncu/kernels.csv`, `ncu/region_utilisation.csv`.
+   Outputs: `ncu/*_details.csv`, `ncu/*_raw.csv` (full exports), `ncu/columns.txt`, `ncu/kernels.csv`,
+   `ncu/region_utilisation.csv`, and the raw `.nsys-rep` / `.ncu-rep` under `raw/` (protocol §3.5, §6).
 Questions to answer: **of the time one denoising step takes, how much is kernels executing and how much is the
 GPU waiting for the CPU? While kernels execute, how occupied are the SMs, which pipes are busy, and what do the
 warps stall on?** The region-weighted SM occupancy of the action-expert phase is the number to set against the

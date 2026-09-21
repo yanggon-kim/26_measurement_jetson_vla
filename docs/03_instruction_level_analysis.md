@@ -9,7 +9,7 @@ If the evidence says the kernels are compute-bound, launch-bound or something el
 
 This document is self-contained: you need no other guide. It applies to **every model in the plan** (π0, π0.5,
 SmolVLA, GR00T N1.7); tasks say which model and when. `docs/02_protocol.md` stays binding (timing, result schema,
-raw-file policy, "never run `ncu --set full` unfiltered").
+raw files committed under `results/<run>/raw/` with the size rules of §6, "never run `ncu --set full` unfiltered").
 
 Vocabulary: *SM* streaming multiprocessor; *warp* the group of threads an SM schedules together; *SASS* the
 GPU's machine instructions; *PTX* the virtual ISA above it; *pipe* an execution pipe inside the SM — LSU
@@ -29,15 +29,21 @@ Output directory: `results/<date>_E5b_<model>_<mode>_<short>/` with
 | `sass/<kernel>_<arch>_total_inventory.csv` and `.md` | whole-kernel instruction inventory (§4) |
 | `sass/<kernel>_<arch>_inner_inventory.csv` and `.md` | inner-loop inventory (§4), with the PC range in the file header |
 | `sass/<kernel>_<arch>_backward_bra.csv` | `source_pc, target_pc, span_bytes, role` (§3) |
-| `sass/<kernel>_<arch>_hotloop.sass.md` | the **annotated hot-loop excerpt** (§5) — an excerpt, not the full dump |
+| `sass/<kernel>_<arch>_hotloop.sass.md` | the **annotated hot-loop excerpt** (§5) — an excerpt; the full dump is in `raw/` |
 | `sass/<kernel>_<arch>_pseudocode.md` | decompiled C-like pseudocode with phases and PC ranges (§5) |
 | `ncu/parsed.json` | per-kernel pipes, LSU split, stalls (§6; produced by `bench/parse_ncu.py`) |
 | `sass/<kernel>_<arch>_crosscheck.md` | static-vs-dynamic cross-check (§8) |
 | `sass/<kernel>_<arch>_latency_budget.csv` | inner-loop latency budget (§9) |
+| `raw/<kernel>_<arch>.sass.zst`, `raw/<kernel>_<arch>.ptx.zst`, `raw/<kernel>_<arch>.res-usage.txt` | the **full** SASS and PTX dumps and resource usage of every target kernel (compressed per protocol §6) |
+| `raw/cubin/*.cubin` | the extracted / JIT-compiled kernel binaries that were dumped (not the vendor `.so`: record its path, version and sha256) |
+| `raw/*.ncu-rep.zst`, `ncu/*_details.csv`, `ncu/*_raw.csv` | every ncu report of the run and both full page exports |
+| `raw/*.stdout.log` | stdout / stderr of the cuobjdump and ncu commands |
 | `summary.md` | 5–15 lines |
 
-Raw, **not committed** (`raw/<run>/`, hashes in `meta.json`): full SASS / PTX dumps, extracted `.cubin`,
-`.ncu-rep`. Prose goes to `reports/E5b_<model>.md` (§10).
+Raw files are **committed** (protocol §3.5): the excerpts and inventories are in addition to the full dumps,
+never instead of them. Every raw file is in `meta.json.raw_files` with sha256 and bytes; the size rules of
+protocol §6 apply (a full SASS dump of one kernel is text and compresses well; never dump a whole library —
+dump the target functions). Prose goes to `reports/E5b_<model>.md` (§10).
 
 ## 1. Choose the target kernels
 From E5 (nsys `cuda_gpu_kern_sum` restricted to `ae_step`, and `ncu/kernels.csv`), take for each model and mode:
@@ -66,8 +72,9 @@ data are the evidence. Say so in the report.
    `ldd`/`find` for `libcublas*.so*`, `libcublasLt*.so*`; the JetPack wheel may use the system copies under
    `/usr/local/cuda/lib64` or `/usr/lib/aarch64-linux-gnu`). Attention kernels may live in `libtorch_cuda.so` or
    in the `flash_attn` extension. **Compiled-mode (Inductor / Triton) kernels are generated at run time**: set
-   `TORCHINDUCTOR_CACHE_DIR` and `TRITON_CACHE_DIR` to a directory under `raw/<run>/` before the run and look
-   there for the compiled kernel binaries (`.cubin`); `max-autotune` may still pick cuBLAS for GEMM — the ncu
+   `TORCHINDUCTOR_CACHE_DIR` and `TRITON_CACHE_DIR` to a directory under `scratch/<run>/` (ignored by git)
+   before the run, look there for the compiled kernel binaries (`.cubin`), and copy the ones you analyse —
+   with the Triton / Inductor source of the same kernel if present — to `results/<run>/raw/cubin/`; `max-autotune` may still pick cuBLAS for GEMM — the ncu
    kernel name tells you which.
 4. **List and dump.** `cuobjdump` ships with the CUDA toolkit; use the one from the toolkit that built the
    library. Two option spellings are documented for different cuobjdump versions; run `cuobjdump --help`, save
@@ -75,10 +82,10 @@ data are the evidence. Say so in the report.
    ```
    # spelling 1 (newer)
    cuobjdump --list-text <library.so>                       # one line per (kernel, sm_arch) pair
-   cuobjdump --dump-sass -arch=sm_<XX> --function <MANGLED_SYMBOL> <library.so> > raw/<run>/<kernel>_sm<XX>.sass
+   cuobjdump --dump-sass -arch=sm_<XX> --function <MANGLED_SYMBOL> <library.so> > results/<run>/raw/<kernel>_sm<XX>.sass
    # spelling 2 (older)
    cuobjdump -symbols <library.so> | c++filt | grep -i "gemm\|gemv"
-   cuobjdump -sass -fun "<kernel_name>" <library.so>        > raw/<run>/<kernel>_sm<XX>.sass
+   cuobjdump -sass -fun "<kernel_name>" <library.so>        > results/<run>/raw/<kernel>_sm<XX>.sass
    ```
    Notes: `-arch=sm_87` takes `=` (a space is an error); `--list-text` prints lines such as
    `SASS text section <N> : x-<mangled>...sm_<XX>.elf.bin` — pick the entry for this GPU's architecture (vendor

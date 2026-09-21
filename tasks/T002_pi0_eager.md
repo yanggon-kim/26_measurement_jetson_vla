@@ -13,6 +13,7 @@ Goal: measured π0 latency per region and **per denoising step** on this device.
 2. Save one real LIBERO observation per protocol §2 to `bench/fixtures/` (PNG + JSON) and drive `sample_actions` with it.
 3. Instrument the regions of protocol §2 with CUDA events + NVTX (wrap, do not rewrite the model). Print P and S.
 4. Run the sweep N ∈ {1, 2, 4, 6, 8, 10} per protocol §2.
-Acceptance: one result directory per N; `reports/E3_pi0_eager.md` with the region table, ms per step vs N, the
+Acceptance: one result directory per N, each with the full per-iteration `latency_samples.csv` and the run's
+stdout under `raw/` (protocol §3.5); `reports/E3_pi0_eager.md` with the region table, ms per step vs N, the
 comparison with 920 ms / 110-258-543 ms, and the first two rows of the ladder (floor 3.15 ms vs measured eager).
 If π0 does not fit or run, fall back in this order: lerobot's π0 implementation, then SmolVLA, and say so.

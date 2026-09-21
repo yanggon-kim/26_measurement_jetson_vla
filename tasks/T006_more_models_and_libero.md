@@ -8,3 +8,5 @@
    policy vs simulator time, achieved control Hz, for eager vs compiled and N ∈ {10, 4, 2}.
 Acceptance: `reports/E3_E4_models.md` (one table across models: per region ms, ms per denoising step eager and
 compiled, floor and gap ratio per protocol §9) and `reports/E8_libero.md`. Self-review (§11).
+Raw files (protocol §3.5 / §6): as T002 / T003 per model; for E8 the per-episode, per-step log (success, steps, policy ms,
+simulator ms per control step) as CSV. Rollout videos are not committed unless a task asks for them.

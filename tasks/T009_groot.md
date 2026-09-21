@@ -13,4 +13,5 @@ the task blocked — do not substitute another model.
 3. E5b as T008 step 6 with S sweep S ∈ {1, 16, 41, 256}.
 Acceptance: `reports/E3_E4_groot.md`, `reports/E5_groot_timeline.md`, `reports/E5b_groot.md`,
 `reports/E6_groot_roofline.md`, `reports/E7_groot_power.md`; a GR00T row added to `reports/E5_E5b_models.md`.
-Self-review (§11).
+Raw files committed under each result directory's `raw/` as in T004 / T007 (protocol §3.5 / §6); repository-size
+lines in `STATUS.md` (§6f). Self-review (§11).

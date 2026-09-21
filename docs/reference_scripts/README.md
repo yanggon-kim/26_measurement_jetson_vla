@@ -8,7 +8,7 @@ adapt them (paths, the "Tensor core" opcode family, Orin column names, the §2 r
 
 | file | becomes | note |
 |---|---|---|
-| `ncu_profile_workload.py` | `bench/ncu_target.py` | template: placeholder model, 2 warm-ups — replace with the real model and ≥ 20 warm-ups; the ncu commands in its docstring write to `profiles/`, here use `raw/<run>/` |
+| `ncu_profile_workload.py` | `bench/ncu_target.py` | template: placeholder model, 2 warm-ups — replace with the real model and ≥ 20 warm-ups; the ncu commands in its docstring write to `profiles/`, here use `results/<run>/raw/` (committed, protocol §3.5) |
 | `build_inst_inventory.py` | `bench/build_inst_inventory.py` | SASS → per-opcode / per-category / LSU-split inventory; `--inner-loop-range 0xLO-0xHI` |
 | `crosscheck_sass.py` | `bench/crosscheck_sass.py` | expects the `parsed.json` schema of `docs/03` §11 item 2 (`pipe_utilization`, `pipe_lsu_split`) |
 

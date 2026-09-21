@@ -17,4 +17,6 @@ Result directories: `results/<date>_E5b_pi0_<mode>_S51/` and `results/<date>_E5b
 Acceptance: `reports/E5b_pi0.md` with the structure of §10, answering *what do the dominant π0 action-expert
 kernels wait for — memory loads, compute, or launch — and how does it change with S and under `torch.compile`?*;
 every stall reason > 5 % traced to instructions; items that the device's tools could not provide are listed as
-"not available" with the exact failing command. Full SASS dumps and `.ncu-rep` stay in `raw/`. Self-review (§11).
+"not available" with the exact failing command. The **full** SASS / PTX dumps, the analysed `.cubin` files and
+every `.ncu-rep` are committed under `results/<run>/raw/` (compressed, protocol §3.5 / §6) and listed in
+`meta.json.raw_files`; repository-size lines in `STATUS.md` (§6f). Self-review (§11).

@@ -14,6 +14,11 @@ Two agents work in this repository and nobody else:
 
 Data moves only through this git remote. Both sides `git pull --rebase` before every push.
 
+**Raw data policy.** We want as much raw data as possible: profiler reports (`.nsys-rep`, `.ncu-rep`), full SASS
+dumps, tegrastats logs, traces and per-iteration samples are committed under `results/<run>/raw/`, compressed,
+every file under 50 MB (`docs/02_protocol.md` §3.5 and §6). Never committed: model weights, datasets, caches,
+environments, secrets.
+
 **If you are the on-device agent, read [`AGENTS.md`](AGENTS.md) now.**
 
 | path | content |
@@ -27,7 +32,8 @@ Data moves only through this git remote. Both sides `git pull --rebase` before e
 | `tasks/` | one file per task, in priority order; claim, do, report |
 | `env/` | how the device was set up: scripts, exact versions, pins |
 | `bench/` | the measurement harness you write |
-| `results/` | one directory per run: `meta.json`, tidy CSVs, `summary.md` |
+| `results/` | one directory per run: `meta.json`, tidy CSVs, `summary.md`, and `raw/` — the run's raw profiler output (compressed `.zst`; split files carry a `REASSEMBLE.txt`) |
+| `scratch/` | ignored by git: caches and uncompressed originals on the device |
 | `reports/` | your analysis per experiment |
 | `STATUS.md` | your running state: what is done, what is blocked, what you need |
 | `analysis/` | research-side post-processing of your results |
