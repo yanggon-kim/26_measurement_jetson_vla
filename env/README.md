@@ -111,25 +111,28 @@ the `../../+f/...` hrefs on the index pages do **not** resolve.
 ## 4. `torch.compile` — works, every mode
 
 `bench/verify_stack.py` → `results/20260921_E0_platform/stack_verification.json`.
-bf16 MLP (1024 → 4096 → 1024, GeLU), input `[51, 1024]`, 20 steady-state calls after the
-first, compared against eager:
+bf16 MLP (1024 → 4096 → 1024, GeLU), input `[51, 1024]`: 20 warm-up calls, then 100 timed
+CUDA-event calls per mode (700 samples in all, kept in
+`results/20260921_E0_platform/latency_samples_compile_probe.csv`), compared against eager:
 
 | backend / mode | compiles | first call incl. compile | max rel. err vs eager |
 |---|---|---|---|
-| `inductor` (no mode) | yes | 3.05 s | 4.7e-3 |
-| `inductor` `default` | yes | 0.10 s | 4.7e-3 |
-| `inductor` `reduce-overhead` | yes | 0.70 s | 4.7e-3 |
-| `inductor` `max-autotune` | yes | 1.97 s | 4.7e-3 |
-| `inductor` `max-autotune-no-cudagraphs` | yes | 0.65 s | 4.7e-3 |
+| `inductor` (no mode) | yes | 2.83 s | 4.7e-3 |
+| `inductor` `default` | yes | 0.09 s | 4.7e-3 |
+| `inductor` `reduce-overhead` | yes | 0.68 s | 4.7e-3 |
+| `inductor` `max-autotune` | yes | 2.34 s | 4.7e-3 |
+| `inductor` `max-autotune-no-cudagraphs` | yes | 0.60 s | 4.7e-3 |
 | `aot_eager` | yes | 0.12 s | 0 |
-| `eager` | yes | 0.07 s | 0 |
+| `eager` | yes | 0.06 s | 0 |
 
 The 4.7e-3 relative difference is Inductor's bf16 GeLU/`addmm` fusion, not a failure
 (bf16 has ~3 decimal digits). A plain bf16 2048³ GEMM differs from an fp32 reference by
 4.2e-3, the same order.
 
-`max-autotune` emits **`Not enough SMs to use max_autotune_gemm mode`** — a consequence of
-the 8-SM `MODE_30W` state, not of the stack. Re-verify at MAXN.
+With a cold Inductor cache the run logs **`torch/_inductor/utils.py:1446] [0/0] Not enough
+SMs to use max_autotune_gemm mode`** (captured in
+`results/20260921_E0_platform/raw/verify_stack.stdout.log`, line 3) — a consequence of the
+8-SM `MODE_30W` state, not of the stack. Re-verify at MAXN.
 
 Also verified to run: bf16, fp16, fp32 matmul and int8 via `torch._int_mm`
 (Orin has INT8 tensor cores and no FP8).
@@ -147,9 +150,11 @@ Also verified to run: bf16, fp16, fp32 matmul and int8 via `torch._int_mm`
 | `c++filt` | `/usr/bin/c++filt` | binutils 2.38 |
 
 Both shipped with JetPack; nothing had to be installed.
-Full help output: `env/tool_help/` (`ncu_help.txt`, `nsys_help.txt`,
+Full help output: `env/tool_help/` — 12 files (`ncu_help.txt`, `nsys_help.txt`,
 `nsys_profile_help.txt`, `nsys_stats_help.txt`, `nsys_stats_help_reports.txt`,
-`ncu_list_sets.txt`, `ncu_list_sections.txt`, `cuobjdump_help.txt`, `nvdisasm_help.txt`).
+`ncu_list_sets.txt`, `ncu_list_sections.txt`, **`ncu_query_metrics.txt`**,
+`cuobjdump_help.txt`, `nvdisasm_help.txt`, `ncu_version.txt`, `nsys_version.txt`,
+`cxxfilt_help.txt`).
 
 ### Nsight Compute needs **root** on this device
 `perf_event_paranoid = 1` (protocol §12) is **not sufficient** here. With it applied, an
@@ -220,14 +225,21 @@ script's own output after the window is lost (the process exits 143). Add
 
 From the toy `--set full` run (`results/20260921_E0_platform/ncu/`,
 inventory in `ncu/columns.txt`, verdicts in `ncu/metric_presence.csv`).
-One kernel, `--set full` → **9 s, 30 replay passes, 7.07 MB report, 1 117 raw columns**.
+One kernel, `--set full` → **8.30 s wall clock, 30–31 replay passes, 7.07 MB report
+(92 KB as `zstd -19`), 1 117 raw columns**.
 
-**Present and populated** — all of protocol §3.3's occupancy metrics (`SM Busy`,
+**Verdicts: 52 present, 14 present-but-zero, 9 absent.** The `present_zero` verdict is the
+"empty" case T001 asks about, made precise: the column exists and every value is exactly 0.
+Most of the 14 are legitimately zero *for this kernel* (no local-memory traffic, no atomics,
+no shared-memory atomics, no `tex_throttle` / `membar` / `sleeping` stalls, an unused `xu`
+pipe, a 0 % L1/TEX hit rate on a streaming weight read). **Three are not: every `dram__*`.**
+
+**Present with non-zero values** — all of protocol §3.3's occupancy metrics (`SM Busy`,
 `SM Active Cycles`, `Achieved Occupancy`, `Theoretical Occupancy`,
 `Achieved Active Warps Per SM`, `sm__warps_active.avg.pct_of_peak_sustained_active`),
 throughput (`Duration`, `Compute (SM) Throughput`, `Memory Throughput`, `Mem Busy`,
-`L2 Hit Rate`, `L1/TEX Hit Rate`, both `Executed Ipc`), the LSU request counters, the
-launch/occupancy-limit metrics, and **all 18 warp-stall reasons**.
+`L2 Hit Rate`, both `Executed Ipc`), the LSU counters this kernel exercises, the
+launch/occupancy-limit metrics, and **15 of the 18 warp-stall reasons**.
 
 **Names that differ from the protocol's:** the stall reasons are **not** exported as
 `Stall Long Scoreboard` etc. on the `details` page — that page has a `Warp State Statistics`
@@ -241,40 +253,54 @@ short_scoreboard, sleeping, tex_throttle, wait`. **E5/E5b must read the raw page
 
 | metric | note |
 |---|---|
-| `DRAM Throughput`, `DRAM Utilization` | see below — this is the important one |
+| `DRAM Throughput`, `DRAM Utilization`, `dram__bytes{,_read,_write}.sum` | see below |
 | `sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active` | no fp16 pipe counter; bf16/fp16 MMA shows in `sm__pipe_tensor_op_hmma_cycles_active.*` |
-| `sm__inst_executed_pipe_{fma,alu}.avg.pct_of_peak_sustained_elapsed` | the `..._active` variants exist and are populated |
+| `sm__inst_executed_pipe_{fma,alu}.avg.pct_of_peak_sustained_elapsed` | the `..._active` variants exist and are non-zero |
 | `gpc__cycles_active.avg.per_warp` | derive if needed |
-| `dram__bytes{,_read,_write}.sum` | not exported at all |
 
-### ⚠ ncu cannot see DRAM traffic on this Tegra
-Every `dram__*` counter that *is* exported reads **exactly 0**:
-`dram__cycles_active.sum = 0`, `dram__cycles_elapsed.sum = 0`,
-`dram__bytes_read.sum.pct_of_peak_sustained_elapsed = 0`. On Orin the LPDDR5 is behind the
-GPU L2 as *sysmem*, and the DRAM performance monitors are not exposed to ncu.
-**ncu's `Memory Throughput` on this device is the L2 throughput** — for the toy kernel it is
-76.55 %, byte-identical to `lts__throughput.avg.pct_of_peak_sustained_elapsed` — **not DRAM
-utilisation.** Reading it as DRAM utilisation in E5/E6 would be wrong.
+### ⚠ This Tegra exposes no DRAM counters at all
+Three independent checks:
 
-**Substitute, and it checks out.** Off-chip traffic is measurable from the L2 sysmem-miss
-sectors (32 B per sector):
+1. **`ncu --query-metrics` on `Device Orin (GA10B)` lists 4 426 metrics and not one is
+   `dram__*`** (`env/tool_help/ncu_query_metrics.txt`). It lists 1 859 `lts__*` metrics.
+2. **An explicit `--metrics dram__bytes.sum,dram__bytes_read.sum,dram__throughput...`**
+   profiles the kernel fine and returns all three as **`n/a`** with an empty unit
+   (`results/20260921_E0_platform/raw/ncu_dram_probe.log`).
+3. In the `--set full` export the six `dram__*` placeholder columns all read **0**, and
+   `DRAM Throughput` / `DRAM Utilization` are absent from the `details` page.
+
+On Orin the LPDDR5 sits behind the GPU L2 as *sysmem* and its monitors are not exposed to ncu.
+**ncu's `Memory Throughput` on this device is the L2 throughput** — 76.55 % for the toy
+kernel, equal to two decimal places to `L2 Cache Throughput` and to the raw-page
+`lts__throughput.avg.pct_of_peak_sustained_elapsed` (76.553465) — **not DRAM utilisation.**
+
+**Substitute.** Off-chip *read* traffic is recoverable from the L2 sysmem-miss sectors
+(32 B per sector):
 
 | quantity | value |
 |---|---|
-| `lts__t_sectors_aperture_sysmem_lookup_miss.sum` | 266 491 sectors → **8.53 MB** |
-| of which reads (`..._srcunit_tex_aperture_sysmem_op_read_lookup_miss.sum`) | 266 264 → **8.52 MB** |
-| analytic bytes that *must* be read: W (4096×1024×2 B) + x (51×1024×2 B) | **8.49 MB** |
-| measured ÷ analytic (reads) | **1.004** |
+| `lts__t_sectors_srcunit_tex_aperture_sysmem_op_read_lookup_miss.sum` | 266 264 → **8.5204 MB** |
+| analytic compulsory reads: W (4096×1024×2 B) + x (51×1024×2 B) | **8.4931 MB** |
+| **reads measured ÷ reads analytic** | **1.0032** |
+| all sysmem misses, `lts__t_sectors_aperture_sysmem_lookup_miss.sum` | 266 491 → 8.5277 MB |
 
-So `lts__t_sectors_aperture_sysmem_*.sum × 32 B` is a sound measured proxy for off-chip
-bytes on this device, to 0.4 % on a kernel whose traffic is known. Use it for E6 and record
-it as *measured (L2 sysmem-miss sectors)*, never as `dram__*`.
+Validated on **one** cold, read-dominated kernel whose 8.5 MB working set is about twice the
+L2. The **write path is not validated**: the kernel's 0.42 MB output never appears as a
+sysmem miss (consistent with a write-back L2 that has not evicted it).
 
-### ⚠ ncu locks the clocks, so its durations are not latencies
-`--clock-control` defaults to `base`: in the toy run ncu reported `SM Frequency 305.70 MHz`
-and `Duration 195.74 µs`, while the same kernel under nsys at the (30 W-capped) 612 MHz ran
-in **186 µs** — and both are far from what MAXN will give. Protocol §3.2 already says
-latency comes from CUDA events only; this is the mechanism.
+**Rule for E5/E6:** off-chip read bytes = `lts__t_sectors_*_sysmem_*_lookup_miss.sum × 32 B`,
+labelled *measured (L2 sysmem-miss sectors)*, never as `dram__*`.
+
+### ⚠ ncu pins the clocks, so its durations are not latencies
+`--clock-control` defaults to `base`: in the toy run ncu reported **`SM Frequency
+305.70 MHz`** and `Duration 195.74 µs`. A separate probe (`bench/gpu_clock_probe.py` →
+`results/20260921_E0_platform/raw/gpu_clock_under_load.txt`) shows the GPU runs at
+**612 MHz under load** in this mode, so ncu profiles at about half the clock the workload
+sees. Protocol §3.2 already says latency comes from CUDA events only; this is the mechanism.
+(nsys measured the same kernel at a 185.4 µs median, but that capture predates
+`jetson_clocks` and its clock was not recorded, so the pair is not a measurement of the
+size of the effect — and this kernel is dominated by LPDDR5 traffic at an EMC clock that
+did not change.)
 
 ---
 
@@ -291,16 +317,25 @@ latency comes from CUDA events only; this is the mechanism.
 
 `tegrastats` on this carrier board prints only the three rails of the first INA3221
 (`1-0040`). The memory rail lives on the second INA3221 (`1-0041`) and **must be read from
-sysfs**; `bench/common.py:ina3221_rails()` does that. E7's "module power" therefore needs
-both sources. `curr<i>_input` (mA) × `in<i>_input` (mV) gives mW; for `VDD_GPU_SOC` this
-agreed with the `tegrastats` figure at idle (3.19 W vs 2.79 W, sensor-averaged differently).
-The `in2_input` voltage reported for `VDDQ_VDD2_1V8AO` is a bus voltage, not 1.8 V —
-**E7 must confirm the scaling of this rail before quoting memory power.**
+sysfs**. `bench/common.py:ina3221_rails()` reads all four
+(`mW = in<i>_input[mV] × curr<i>_input[mA] / 1000`), and `bench/collect_platform.py`
+samples them at 10 Hz alongside tegrastats into `power_idle_sysfs.csv` — so protocol §4's
+**four-rail module power is available**: **8 522 mW** at idle (MODE_30W, clocks locked),
+against 8 117 mW for the three rails tegrastats prints.
 
-`tegrastats` needs **no** sudo on this board. `GR3D_FREQ` is logged alongside as the coarse
-cross-check protocol §4 allows.
+Two things worth knowing before E7:
 
----
+* **sysfs and tegrastats agree** once the clocks are locked: `VDD_GPU_SOC` reads
+  **3 587 mW from both**, flat across 587 samples (min 3 585, max 3 588).
+* **`VDDQ_VDD2_1V8AO` is measured on a ~5 V bus.** Its `in2_input` is constant at
+  **5 040 mV** over all 563 samples while `curr2_input` varies 80–140 mA → 403–706 mW. The
+  channel therefore monitors the input to the memory regulator, not the 1.8 V rail its name
+  suggests. The product is a real power, but **whether it is the memory power the research
+  side wants is not established** — settle this before E7 quotes memory energy.
+
+`tegrastats` needs **no** sudo on this board, and it **appends** to `--logfile`: delete the
+file first or a re-run silently concatenates two sessions. `GR3D_FREQ` is logged alongside
+as the coarse cross-check protocol §4 allows.
 
 ## 8. Session-level settings that do not survive a reboot
 

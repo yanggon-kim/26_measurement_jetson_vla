@@ -110,7 +110,8 @@ def try_compile(torch, backend: str, mode: str | None) -> dict:
         samples = [s.elapsed_time(e) for s, e in ev]
         r.update({"ok": True, "max_rel_err_vs_eager": err,
                   "finite": bool(torch.isfinite(y).all().item()),
-                  "steady_state_ms": summarize(samples)})
+                  "steady_state_ms": summarize(samples),
+                  "samples_ms": samples})
     except Exception as e:
         r.update({"ok": False, "error": repr(e),
                   "traceback": traceback.format_exc()[-4000:]})
@@ -120,6 +121,9 @@ def try_compile(torch, backend: str, mode: str | None) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
+    ap.add_argument("--samples-csv", default=None,
+                    help="write every per-iteration CUDA-event sample here "
+                         "(protocol §3.5: keep every sample, never only the summary)")
     args = ap.parse_args()
 
     rep = {"date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -168,6 +172,21 @@ def main() -> int:
               f"{'OK' if res.get('ok') else 'FAILED'}"
               + (f" ({res['compile_and_first_call_s']}s)" if res.get("ok") else ""),
               flush=True)
+
+    if args.samples_csv:
+        import csv as _csv
+        p_csv = Path(args.samples_csv)
+        p_csv.parent.mkdir(parents=True, exist_ok=True)
+        with p_csv.open("w", newline="") as f:
+            w = _csv.writer(f)
+            w.writerow(["region", "iter", "ms"])
+            for c in rep["compile"]:
+                for i, ms in enumerate(c.get("samples_ms", [])):
+                    w.writerow([f"compile_probe_mlp:{c['label']}", i, ms])
+        print(f"wrote {p_csv}")
+    # keep the JSON readable: the samples live in the CSV
+    for c in rep["compile"]:
+        c.pop("samples_ms", None)
 
     working = [c["label"] for c in rep["compile"] if c.get("ok")]
     rep["compile_working"] = working

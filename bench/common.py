@@ -203,6 +203,12 @@ def software_versions() -> dict:
     sw["nvdisasm_version"] = sh_out("nvdisasm --version | tail -2 | head -1")
     sw["bench_commit"] = sh_out(f"git -C {REPO} rev-parse HEAD")
     sw["bench_dirty"] = bool(sh_out(f"git -C {REPO} status --porcelain bench/"))
+    # bench_commit alone does not identify the code that ran: HEAD can predate the
+    # commit that first contains bench/, and the tree can be dirty. Hash every script
+    # as it was executed, so a run is reproducible from meta.json even then.
+    sw["bench_files_sha256"] = {
+        f.name: sha256(f) for f in sorted((REPO / "bench").glob("*.py"))
+    }
     return sw
 
 

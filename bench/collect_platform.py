@@ -12,7 +12,9 @@ from __future__ import annotations
 import argparse
 import csv
 import re
+import statistics
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -84,12 +86,46 @@ def tegrastats_rail_table(sample_lines: list[str]) -> list[dict]:
 
 def tegrastats_idle_log(out_log: Path, seconds: int, interval_ms: int) -> dict:
     out_log.parent.mkdir(parents=True, exist_ok=True)
+    # tegrastats APPENDS to --logfile; without this a re-run silently concatenates
+    # two sessions into one file and doubles the sample count.
+    if out_log.exists():
+        out_log.unlink()
     cmd = (f"timeout {seconds + 2} tegrastats --interval {interval_ms} "
            f"--logfile {out_log}")
     r = sh(cmd, timeout=seconds + 20)
     r["note"] = ("idle baseline in the power mode recorded in platform.json; "
                  "tegrastats needs no sudo on this board")
     return r
+
+
+def sample_sysfs_rails(out_csv: Path, seconds: int, interval_ms: int) -> dict:
+    """Sample every INA3221 rail from sysfs, including the one tegrastats omits.
+
+    protocol §4 defines module power as the sum of FOUR rails
+    (VDD_GPU_SOC + VDD_CPU_CV + VIN_SYS_5V0 + VDDQ_VDD2_1V8AO), but tegrastats on this
+    carrier board prints only the first three. This closes the gap, and repeated samples
+    let a single instantaneous read be told apart from real variation.
+    """
+    rows, t0 = [], time.time()
+    while time.time() - t0 < seconds:
+        t = round(time.time() - t0, 3)
+        for rail, d in ina3221_rails().items():
+            if "mW" in d:
+                rows.append({"t_s": t, "rail": rail, "mW": d["mW"],
+                             "mV": d["mV"], "mA": d["mA"]})
+        time.sleep(interval_ms / 1000.0)
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    with out_csv.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["t_s", "rail", "mW", "mV", "mA"])
+        w.writeheader()
+        w.writerows(rows)
+    by = {}
+    for r in rows:
+        by.setdefault(r["rail"], []).append(r["mW"])
+    return {rail: {"n": len(v), "median_mW": statistics.median(v),
+                   "mean_mW": round(statistics.fmean(v), 1),
+                   "min_mW": min(v), "max_mW": max(v)}
+            for rail, v in sorted(by.items())}
 
 
 def tidy_power(log: Path, out_csv: Path, interval_ms: int) -> int:
@@ -137,12 +173,28 @@ def main() -> int:
         w.writerows(modes)
     plat["nvpmodel_modes"] = modes
 
-    print(f"logging {args.idle_seconds} s of idle tegrastats ...", flush=True)
+    print(f"logging {args.idle_seconds} s of idle tegrastats + sysfs rails ...",
+          flush=True)
     log = out / "raw" / "tegrastats_idle.log"
+    sysfs_stats = {}
+
+    def _sysfs():
+        sysfs_stats.update(sample_sysfs_rails(
+            out / "power_idle_sysfs.csv", args.idle_seconds, args.idle_interval_ms))
+
+    th = threading.Thread(target=_sysfs)
+    th.start()
     plat["tegrastats_idle_run"] = tegrastats_idle_log(
         log, args.idle_seconds, args.idle_interval_ms)
+    th.join()
     n = tidy_power(log, out / "power_idle.csv", args.idle_interval_ms)
     plat["power_idle_rows"] = n
+    plat["power_idle_sysfs_summary"] = sysfs_stats
+    plat["module_power_note"] = (
+        "protocol §4 module power = VDD_GPU_SOC + VDD_CPU_CV + VIN_SYS_5V0 + "
+        "VDDQ_VDD2_1V8AO. tegrastats prints only the first three on this carrier board, "
+        "so power_idle.csv (tegrastats) has three rails and power_idle_sysfs.csv has all "
+        "four. Use the sysfs file for the four-rail sum.")
 
     rails = tegrastats_rail_table(log.read_text().splitlines()[:5])
     with (out / "tegrastats_rails.csv").open("w", newline="") as f:
@@ -157,6 +209,9 @@ def main() -> int:
     for r in rails:
         print(f"  rail {r['rail']:18s} protocol={r['wanted_by_protocol_s4']!s:5s} "
               f"tegrastats={r['in_tegrastats']!s:5s} sysfs={r['in_sysfs_ina3221']}")
+    for rail, st in sysfs_stats.items():
+        print(f"  sysfs {rail:18s} n={st['n']:4d} median={st['median_mW']:8.1f} mW "
+              f"min={st['min_mW']} max={st['max_mW']}")
     return 0
 
 

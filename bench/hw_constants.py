@@ -67,16 +67,29 @@ def ncu_per_sm_limits(ncu_raw_csv: Path | None) -> dict:
 
     return {
         "source": str(ncu_raw_csv),
-        "note": "from the T001 toy kernel; device limits, not kernel-specific ones, "
-                "are the *_peak_sustained / max_warps entries",
-        "sm__maximum_warps_per_active_cycle_pct": get("sm__maximum_warps_per_active_cycle_pct"),
-        "sm__maximum_warps_avg_per_active_cycle": get("sm__maximum_warps_avg_per_active_cycle"),
-        "launch__occupancy_limit_warps": get("launch__occupancy_limit_warps"),
-        "launch__occupancy_limit_blocks": get("launch__occupancy_limit_blocks"),
-        "launch__occupancy_limit_registers": get("launch__occupancy_limit_registers"),
-        "launch__occupancy_limit_shared_mem": get("launch__occupancy_limit_shared_mem"),
-        "sm__warps_active.avg.peak_sustained": get("sm__warps_active.avg.peak_sustained"),
+        "_warning": "Everything under per_kernel_NOT_a_device_limit describes the ONE "
+                    "kernel this export holds (the T001 toy GEMM: 158 registers/thread, "
+                    "49 KB static + 24.6 KB dynamic shared memory). Those numbers are "
+                    "properties of that launch, not of the GPU. Do not read them as "
+                    "hardware constants.",
+        "device_limits": {
+            "sm__warps_active.avg.peak_sustained": get(
+                "sm__warps_active.avg.peak_sustained"),
+            "sm__maximum_warps_per_active_cycle_pct": get(
+                "sm__maximum_warps_per_active_cycle_pct"),
+        },
+        "per_kernel_NOT_a_device_limit": {
+            "sm__maximum_warps_avg_per_active_cycle": get(
+                "sm__maximum_warps_avg_per_active_cycle"),
+            "launch__occupancy_limit_warps": get("launch__occupancy_limit_warps"),
+            "launch__occupancy_limit_blocks": get("launch__occupancy_limit_blocks"),
+            "launch__occupancy_limit_registers": get("launch__occupancy_limit_registers"),
+            "launch__occupancy_limit_shared_mem": get("launch__occupancy_limit_shared_mem"),
+        },
         "dram__cycles_elapsed.sum": get("dram__cycles_elapsed.sum"),
+        "dram_note": "0. ncu --query-metrics offers 4426 metrics on this device and none "
+                     "is dram__*; an explicit --metrics dram__bytes.sum returns 'n/a'. "
+                     "See results/<run>/raw/ncu_dram_probe.log.",
     }
 
 
@@ -96,7 +109,23 @@ def main() -> int:
         "gpu_name": p.name,
         "compute_capability": f"{p.major}.{p.minor}",
         "gpu_arch": f"sm_{p.major}{p.minor}",
-        "multi_processor_count": p.multi_processor_count,
+        "multi_processor_count": None,
+        "multi_processor_count_READ_THIS_FIRST":
+            "null on purpose. On Orin the SM count depends on the power mode: TPC power "
+            "gating removes SMs, and CUDA reports only the ungated ones. Use "
+            "multi_processor_count_by_power_mode[<mode recorded for your run>]. The Orin "
+            "AGX 64GB has 8 TPCs x 2 SMs = 16 SMs when no TPC is gated (MAXN / MODE_50W).",
+        "multi_processor_count_in_this_power_mode": p.multi_processor_count,
+        "multi_processor_count_by_power_mode": {
+            "_source": "TPC_PG_MASK per mode from /etc/nvpmodel.conf (see "
+                       "nvpmodel_modes.csv); 2 SMs per TPC. Only the mode this run was "
+                       "taken in is OBSERVED; the others are derived from the mask and "
+                       "must be confirmed by running in them.",
+            "MAXN(0)": {"sms": 16, "status": "derived from TPC_PG_MASK=0, NOT observed"},
+            "MODE_15W(1)": {"sms": 2, "status": "derived from TPC_PG_MASK=248"},
+            "MODE_30W(2)": {"sms": p.multi_processor_count, "status": "OBSERVED"},
+            "MODE_50W(3)": {"sms": 16, "status": "derived from TPC_PG_MASK=0"},
+        },
         "total_memory_bytes": p.total_memory,
         "warp_size": getattr(p, "warp_size", 32),
         "max_threads_per_multi_processor": getattr(
@@ -118,6 +147,8 @@ def main() -> int:
                        "TPC power gating removes SMs. Record the mode with every use.",
         },
         "max_warps_per_sm": (getattr(p, "max_threads_per_multi_processor", 0) or 0) // 32,
+        "max_warps_per_sm_source": "torch max_threads_per_multi_processor / 32 "
+                                   "(1536/32 = 48); not taken from ncu",
         "measured_peaks": {
             "_status": "not measured yet — T005 / E1 fills these",
             "peak_memory_bandwidth_GBps": None,

@@ -25,6 +25,20 @@ def main() -> int:
     plat = json.loads((run / "platform.json").read_text())
     hw = json.loads((run / "hw_constants.json").read_text())
     raws = json.loads((run / "raw_files.json").read_text())
+    # Protocol §3.5 counts the full ncu CSV exports as raw data ("these may live in
+    # ncu/ as before"), with kind "ncu-csv". They are committed uncompressed because
+    # both are well under the 1 MB compression threshold of §6b.
+    from common import sha256 as _sha
+    for name, produced in [
+        ("ncu/toy_details.csv",
+         "ncu --import ncu_toy.ncu-rep --csv --page details > ncu/toy_details.csv"),
+        ("ncu/toy_raw.csv",
+         "ncu --import ncu_toy.ncu-rep --csv --page raw > ncu/toy_raw.csv"),
+    ]:
+        f = run / name
+        raws.append({"path": name, "sha256": _sha(f), "bytes": f.stat().st_size,
+                     "kind": "ncu-csv", "produced_by": produced,
+                     "secrets_scan": "clean", "committed": True})
     ds, sw = plat["device_state"], plat["software"]
 
     l4t = re.search(r"R(\d+).*REVISION:\s*([\d.]+)", ds["nv_tegra_release"] or "")
@@ -76,7 +90,13 @@ def main() -> int:
         "python": sw.get("python"),
         "venv": sw.get("executable"),
         "bench_commit": sw.get("bench_commit"),
+        "bench_commit_note": (
+            "HEAD when bench/collect_platform.py ran. It may predate the commit that "
+            "first contains bench/, and the tree may have been dirty, so it does not by "
+            "itself identify the code that ran: bench_files_sha256 does. The committed "
+            "harness for this run is the one whose hashes are listed there."),
         "bench_dirty_at_run_time": sw.get("bench_dirty"),
+        "bench_files_sha256": sw.get("bench_files_sha256"),
         "nsys_version": sw.get("nsys_version"),
         "ncu_version": sw.get("ncu_version"),
         "cuobjdump_version": sw.get("cuobjdump_version"),
@@ -85,7 +105,14 @@ def main() -> int:
         "ncu_filter": '--nvtx --nvtx-include "toy/" --profile-from-start off '
                       '(no -c/-s needed: the capture window holds one kernel)',
         "ncu_requires_root_on_this_device": True,
-        "ncu_clock_control": "base (ncu default) — SM ran at 305.70 MHz during capture",
+        "ncu_clock_control": "base (ncu default) — SM ran at 305.70 MHz during capture, "
+                             "while the GPU runs at 612 MHz under load in this mode "
+                             "(raw/gpu_clock_under_load.txt)",
+        "ncu_run_time_s": 8.30,
+        "ncu_run_time_note": (
+            "wall clock of a timed repeat of the same filtered command "
+            "(raw/ncu_toy_walltime.txt): 8.30 s, 31 replay passes, 7 098 082 B report. "
+            "The analysed capture is the earlier identical run: 30 passes, 7 072 411 B."),
         "gpu_arch": hw["gpu_arch"],
         "command": [
             "bash env/setup.sh",

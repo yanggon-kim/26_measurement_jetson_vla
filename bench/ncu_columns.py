@@ -104,10 +104,27 @@ def base_name(col: str) -> str:
 
 
 def classify(values: list[str]) -> str:
+    """The three verdicts T001 step 3c asks for, plus the one the data forced.
+
+    absent       the metric is not a column / Metric Name of the export at all
+    empty        the column exists but every value is blank or 'n/a'
+    present_zero the column exists and every value is exactly 0 — the counter may be
+                 genuinely idle for this kernel (no local memory, no atomics) or may be
+                 dead on this device (every dram__* is in this class). A zero on one
+                 kernel is NOT evidence that a counter works; check per group.
+    present      the column exists and carries a non-zero value
+    """
     if not values:
         return "absent"
     non_empty = [v for v in values if v.strip() not in ("", "n/a", "N/A")]
-    return "present" if non_empty else "empty"
+    if not non_empty:
+        return "empty"
+    def is_zero(v: str) -> bool:
+        try:
+            return float(v.replace(",", "")) == 0.0
+        except ValueError:
+            return False
+    return "present_zero" if all(is_zero(v) for v in non_empty) else "present"
 
 
 def main() -> int:
