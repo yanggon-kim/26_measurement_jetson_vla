@@ -1,12 +1,27 @@
 # 02 — Measurement protocol (binding)
 
 ## 1. Device state — record for every run, fix before every run
-- Power mode: `sudo nvpmodel -q --verbose` lists the modes and their ids on this board (on AGX Orin typically
-  0 = MAXN, 1 = 15 W, 2 = 30 W, 3 = 50 W — **confirm, do not assume**). Default for all experiments: **MAXN**
-  followed by `sudo jetson_clocks`. E7 repeats selected points at the other modes. Switching between MAXN and a
-  capped mode can require a reboot: do all MAXN work first, run the mode sweep as the **last** item of a session,
-  write "next: resume E7 at mode <id>" in `STATUS.md` before switching, and if a reboot is demanded stop and leave
-  it to the human (never confirm the prompt yourself).
+- Power mode: `sudo nvpmodel -q --verbose` lists the modes and their ids. **Confirmed on this board by T001**
+  (`results/20260921_E0_platform/nvpmodel_modes.csv`): 0 = `MAXN` (12 CPU cores, no TPC power-gated, GPU and EMC
+  uncapped), 1 = `MODE_15W` (4 cores, 5 of 8 TPCs gated, GPU ≤ 408 MHz, EMC ≤ 2,133 MHz), 2 = `MODE_30W` (8 cores,
+  4 of 8 TPCs gated, GPU ≤ 612 MHz), 3 = `MODE_50W` (12 cores, no TPC gated, GPU ≤ 816 MHz). The board booted in
+  `MODE_30W`, and `nvpmodel -m 0` from there demands a reboot. Default for all experiments: **MAXN** followed by
+  `sudo jetson_clocks`. **The human sets MAXN once (it persists across reboots); you never confirm a reboot prompt
+  and never use `nvpmodel --force`.**
+- **Gate at the start of every session and before every measured or profiled run:** `nvpmodel -q` reports `MAXN`,
+  `torch.cuda.get_device_properties(0).multi_processor_count` equals the MAXN value recorded by T013 (16 is derived
+  from `TPC_PG_MASK = 0`, not yet observed), `sudo jetson_clocks` has been applied **before** the run (it does not
+  persist across reboots), and the GPU `devfreq` `cur_freq` is recorded next to the run (`bench/gpu_clock_probe.py`).
+  If the mode is not MAXN, no latency, occupancy, bandwidth, FLOP/s or power task starts: write it at the top of
+  `STATUS.md` and do only work that does not depend on the GPU configuration (environment set-up, checkpoint
+  download and conversion, fixtures, harness code, analytic `floor.csv`, `segments.csv` derived from model code).
+- **Power-mode sweep (E7).** A mode change that alters the set of power-gated TPCs needs a reboot, so the sweep
+  cannot run inside one session. Rule: all MAXN work first. `MODE_50W` has the same TPC mask as MAXN: as the
+  **last** item of the last MAXN session try `sudo nvpmodel -m 3`; if it asks for a reboot, decline and record
+  that; if it switches, re-apply `jetson_clocks`, measure, then return with `sudo nvpmodel -m 0` (if *that* asks
+  for a reboot, decline, write it at the top of `STATUS.md` and stop — the human restores MAXN). `MODE_30W` and
+  `MODE_15W` are measured only in a session the human has started in that mode after a reboot, announced by a
+  task; never request them yourself. Write "next: resume E7 at mode <id>" in `STATUS.md` before any switch.
 - Save `sudo jetson_clocks --show`, `cat /etc/nv_tegra_release`, `dpkg -l | grep -E 'nvidia-jetpack|cuda-toolkit|tensorrt|cudnn'`,
   `nvcc --version`, `python -c "import torch;print(torch.__version__, torch.version.cuda)"`, kernel version, and the EMC
   (memory) clock: `sudo cat /sys/kernel/debug/bpmp/debug/clk/emc/rate` (expect 3,199 MHz = LPDDR5-6400).
@@ -52,7 +67,10 @@ nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi -f t
 ```
 with `torch.cuda.profiler.start()/stop()` around **1–3 steady-state inferences** (after the §2 warm-up, which
 stays outside the window) — never a whole benchmark loop: the `.nsys-rep` is committed (§3.5) and must stay
-small (§6). Known flag problems: overwrite is
+small (§6). With nsys 2024.5.4 on this device (T001) `--capture-range=cudaProfilerApi` defaults to
+`--capture-range-end=stop-shutdown`: the target is killed (exit 143) at `cudaProfilerStop` and everything the script
+would print or write afterwards is lost — add **`--capture-range-end=stop`** whenever the script must run to
+completion. Known flag problems: overwrite is
 `-f true` (`--force-overwrite` fails to parse on some versions); `--cuda-memory-usage=true` is useful but some
 versions reject it as ambiguous — drop it if so. Then export and commit the CSVs:
 ```
@@ -106,7 +124,9 @@ an ncu export page; the `raw/` directory of §3.5 is a different thing.)
   (`ae_step_0`, `ae_layer_0`) in `bench/` — record what you used. One range per ncu run.
 - **Metric sets.** `--set basic` (fast: duration, throughput), `--set roofline` (medium: SM and memory
   throughput), `--set full` (slow: adds occupancy, stalls, IPC, pipes). Occupancy reads 0 % under
-  `roofline`, so the utilisation work uses `full`. T001 lists the sets this Orin actually offers.
+  `roofline`, so the utilisation work uses `full`. This Orin offers `basic`, `detailed`, `full`, `nvlink`,
+  `pmsampling`, `roofline` (`env/tool_help/ncu_list_sets.txt`); `full` is the only set with Occupancy,
+  WarpStateStats and SchedulerStats together.
 - **Restricting the capture with the cudaProfiler API.** The target script (`bench/ncu_target.py`, written by
   you) loads the model, runs the §2 warm-up **outside** the capture window, then runs exactly **one** inference
   (or one AE step) between
@@ -121,9 +141,23 @@ an ncu export page; the `raw/` directory of §3.5 is a different thing.)
 - **Compiled runs.** Whether ncu can see kernels replayed from CUDA graphs is not documented: try the best
   compiled mode; if the captured kernel list is empty or incomplete, capture under
   `max-autotune-no-cudagraphs` instead and say so.
-- **Permissions.** `ERR_NVGPUCTRPERM` means the counters are locked:
-  `sudo sh -c 'echo 1 > /proc/sys/kernel/perf_event_paranoid'` (a runtime setting, not a boot change; record it
-  in `env/`). On Tegra some counters may still be missing: record exactly which metrics come back empty.
+- **Permissions — on this device `ncu` needs root (T001).** `perf_event_paranoid = 1` is not sufficient: every
+  collecting run is `sudo $(which ncu) …` (plain `sudo ncu` fails, sudo's `secure_path` lacks the CUDA `bin`), and
+  the root-owned `.ncu-rep` is `chown`ed back before the unprivileged `--import`. Consequences to handle and
+  record: the profiled Python then runs **as root** — give it the venv interpreter by absolute path and pass the
+  environment it needs explicitly (one workable pattern: `sudo env HOME=$HOME HF_HOME=… HF_HUB_OFFLINE=1
+  TORCHINDUCTOR_CACHE_DIR=$PWD/scratch/<run>/inductor_root TRITON_CACHE_DIR=$PWD/scratch/<run>/triton_root $(which ncu) …`;
+  never `sudo -E`, which would carry token variables, §3.5); keep root's compile caches in their own `scratch/`
+  directories so that no root-owned file lands in your user caches or in the repository; `chown -R` what the run
+  wrote before committing. Record the exact command in `meta.json`.
+- **Clock control.** ncu's `--clock-control` defaults to `base`, which pins the SM clock (305.70 MHz in T001) below
+  what the workload sees; the other value this version offers is `none` (`env/tool_help/ncu_help.txt`). ncu
+  `Duration` is never a latency (§2 gives latency), but clock also changes the *ratios* we care about: at a lower
+  SM clock a fixed memory latency costs fewer cycles, so memory stalls are under-stated. T013 runs the toy kernel
+  with both values at MAXN + `jetson_clocks`. From then on use **`--clock-control none` with `jetson_clocks`
+  applied** if T013 shows that ncu's `SM Frequency` then equals the locked GPU frequency and the metrics are
+  populated; otherwise stay with `base` and state in every report which clock the ncu metrics were taken at. Always
+  record ncu's `SM Frequency` and the `devfreq` `cur_freq` per run.
 - **Parse with `csv.DictReader`**, never by splitting on commas: kernel names contain commas.
 - If, and only if, ncu exposes no usable counters on this device after the steps above, document the failure
   and fall back to **analytic FLOPs and bytes per kernel (from tensor shapes) ÷ measured kernel time**.
@@ -137,25 +171,49 @@ The `details` page is long-format, one row per (kernel launch, metric), with col
 keyed by `ID`, one column per raw counter. Column and metric names below are the ones documented for desktop
 GPUs; **on the Orin, save the exported header and the distinct `Metric Name` list to
 `results/<run>/ncu/columns.txt`** and, where a name differs or is absent, use what the device exports and say so.
+T001 checked every name below on this Orin (`results/20260921_E0_platform/ncu/metric_presence.csv`: 52 present, 14
+present but zero on the toy kernel, 9 absent); the differences are marked **[Orin]** and are binding. A column that
+is zero for one kernel is not evidence that the counter works: re-check `present_zero` metrics per kernel.
 
 Keep, per kernel launch (`results/<run>/ncu/kernels.csv`, one row per launch, plus the kernel's NVTX region,
 grid and block size):
 - occupancy / activity: `SM Busy`, `SM Active Cycles`, `Achieved Occupancy`, `Theoretical Occupancy`,
   `Achieved Active Warps Per SM`, and from the raw page `sm__warps_active.avg.pct_of_peak_sustained_active`;
-- throughput: `Duration`, `Compute (SM) Throughput`, `Memory Throughput`, `DRAM Throughput`, `DRAM Utilization`,
-  `Mem Busy`, `L2 Hit Rate`, `L1/TEX Hit Rate`, `Executed Ipc Active`, `Executed Ipc Elapsed`;
+- throughput: `Duration`, `Compute (SM) Throughput`, `Memory Throughput`, `Mem Busy`, `L2 Hit Rate`,
+  `L1/TEX Hit Rate`, `Executed Ipc Active`, `Executed Ipc Elapsed`.
+  **[Orin] There are no DRAM counters**: `DRAM Throughput`, `DRAM Utilization` and every `dram__*` metric are absent
+  (`--query-metrics` lists none; an explicit `--metrics dram__…` returns `n/a`; placeholder columns read 0). Never
+  quote them. **[Orin] `Memory Throughput` is the L2 throughput** (it equals `lts__throughput…` on the raw page), not
+  DRAM utilisation: write it as "Memory (L2) Throughput" in every table and never read it as off-chip bandwidth use;
+- **[Orin] off-chip bytes (substitute for the DRAM counters; answer to question 1 of 2026-09-21).** Keep, per
+  kernel, the L2 sysmem-miss sector counters of the raw page — `lts__t_sectors_*_sysmem_*_lookup_miss.sum`, read and
+  write operations separately, and the all-operations total — and report `offchip_read_bytes = read-miss sectors ×
+  32 B`, labelled ***measured (L2 sysmem-miss sectors)***. It is accepted for E5 / E5b / E6 under these conditions:
+  (1) the **analytic** bytes (from tensor shapes) are always reported next to it and stay the primary x-axis input of
+  the roofline; (2) it is a **read-traffic** estimator until E1 validates the write path (T005 step "substitute
+  validation"); (3) achieved GB/s = these bytes ÷ the kernel's **nsys** duration of the same configuration, never
+  ÷ ncu `Duration`; (4) the 32 B sector size and the validation ratio are cited from the run that established them;
 - **per-pipe utilisation** (raw page): `sm__inst_executed_pipe_<p>.avg.pct_of_peak_sustained_active` for
   `<p>` ∈ {`lsu`, `fma`, `alu`, `xu`, `adu`, `cbu`, `fp16`} and `...pct_of_peak_sustained_elapsed` for
-  {`lsu`, `fma`, `alu`, `xu`}. Pipes have different peak issue rates: the percentages do not sum to 100 and
+  {`lsu`, `fma`, `alu`, `xu`}. **[Orin]** the `fp16` pipe column does not exist — half-precision tensor work appears
+  in the `sm__pipe_tensor_op_hmma_cycles_active.*` columns: keep those instead and name them as exported; the
+  `_elapsed` variants exist only for `lsu` and `xu` (use `_active` for `fma`, `alu`). Pipes have different peak issue rates: the percentages do not sum to 100 and
   are not comparable across pipes as if they were instruction counts;
-- **warp-stall reasons**: every `Stall …` metric exported — `Stall Long Scoreboard`, `Stall Short Scoreboard`,
+- **warp-stall reasons**. **[Orin] they are on the `raw` page only**, as
+  `smsp__average_warps_issue_stalled_<reason>_per_issue_active.ratio` with `<reason>` ∈ {`barrier`,
+  `branch_resolving`, `dispatch_stall`, `drain`, `imc_miss`, `lg_throttle`, `long_scoreboard`, `math_pipe_throttle`,
+  `membar`, `mio_throttle`, `misc`, `no_instruction`, `not_selected`, `selected`, `short_scoreboard`, `sleeping`,
+  `tex_throttle`, `wait`} — keep all 18 and check in the first model run whether they sum to ≈ 1 per kernel (say
+  what they sum to; do not renormalise silently). The `details` page has no `Stall …` rows here. For reference, the
+  desktop names are: every `Stall …` metric exported — `Stall Long Scoreboard`, `Stall Short Scoreboard`,
   `Stall Wait`, `Stall Barrier`, `Stall Not Selected`, `Stall Memory Dependency`, `Stall Memory Throttle`,
   `Stall Math Pipe Throttle`, `Stall Misc`, and any others present (some versions name them
   `long_scoreboard`, `short_scoreboard`, `mio_throttle`, `lg_throttle`, `barrier`, `not_selected`, `wait`,
   `dispatch_stall`, `drain`, `selected`, `tex_throttle`, `sleeping`);
 - LSU request counters for the load/store split (raw page): `l1tex__t_requests_pipe_lsu_mem_global_op_{ld,st,red,atom}.sum`,
   `l1tex__t_requests_pipe_lsu_mem_local_op_{ld,st}.sum`, `l1tex__data_pipe_lsu_wavefronts_mem_shared_op_{ld,st,atom}.sum`;
-- for E5b: `gpc__cycles_active.avg.per_warp`, and the launch metrics `launch__grid_size`, `launch__block_size`,
+- for E5b: `gpc__cycles_active.avg.per_warp` (**[Orin]** absent: derive it as `gpc__cycles_active.avg` ÷
+  `sm__warps_launched.sum` if both are exported, label it *derived*, else *not measurable*), and the launch metrics `launch__grid_size`, `launch__block_size`,
   `launch__registers_per_thread`, `launch__occupancy_limit_{blocks,registers,shared_mem,warps}` if exported.
 
 Aggregate per region (`results/<run>/ncu/region_utilisation.csv`, columns
@@ -167,7 +225,10 @@ Aggregate per region (`results/<run>/ncu/region_utilisation.csv`, columns
   number to compare with the characterization paper's "SM utilisation 22 %". Label it *derived* and give
   `kernel_time_coverage` (captured kernel time ÷ all kernel time in the region).
 Classify each kernel: memory-bound if `Memory Throughput` > 1.5 × `Compute (SM) Throughput`, compute-bound if
-the reverse, else balanced; report the share of region kernel time in each class.
+the reverse, else balanced; report the share of region kernel time in each class. **[Orin]** because `Memory
+Throughput` is L2 throughput here, call the classes "L2-throughput-dominated / SM-throughput-dominated / balanced"
+and give, next to them, the classification that does not depend on that counter: analytic intensity (FLOPs ÷
+analytic bytes) against the Orin ridge point (§8). Where the two disagree, say so; neither is tuned to agree.
 
 ### 3.4 Other tools
 - `torch.profiler` with `record_shapes=True, with_flops=True` is a welcome cross-check and the fastest way to
@@ -218,14 +279,34 @@ device agent never thought to summarise.
   in `scratch/<run>/` until the research side says the result is accepted.
 
 ## 4. Power and energy
-- `sudo tegrastats --interval 100 --logfile results/<run>/raw/tegrastats.log` (10 Hz) or read the INA3221 rails directly
-  from sysfs at ≥ 10 Hz if finer. Rails to keep: `VDD_GPU_SOC`, `VDD_CPU_CV`, `VIN_SYS_5V0`, `VDDQ_VDD2_1V8AO`
+- **On this carrier board `tegrastats` prints only three of the four rails (T001): `VDDQ_VDD2_1V8AO`, the memory
+  rail, exists only in sysfs** (second INA3221, `/sys/bus/i2c/drivers/ina3221/1-0041/hwmon/hwmon*/in2_*`; find the
+  channel by its `in<i>_label`, the `hwmon` index can change across boots). Every power run therefore samples **all
+  four rails from sysfs at ≥ 10 Hz** (`bench/common.py: ina3221_rails()`, tidy CSV `t_s, rail, mW, mV, mA`) and runs
+  tegrastats alongside for temperatures, `GR3D_FREQ`, `EMC_FREQ` and as a cross-check of the three shared rails.
+  `tegrastats --logfile` **appends**: delete the log before each run.
+- `sudo tegrastats --interval 100 --logfile results/<run>/raw/tegrastats.log` (10 Hz). Rails to keep: `VDD_GPU_SOC`, `VDD_CPU_CV`, `VIN_SYS_5V0`, `VDDQ_VDD2_1V8AO`
   (the memory rail — we care about it specifically). Convert to a tidy CSV (`t_s, rail, mW`). Always report each
   rail separately **and** their sum as "module power" (`VDD_GPU_SOC + VDD_CPU_CV + VIN_SYS_5V0 + VDDQ_VDD2_1V8AO`;
   check the rail list of this carrier board and say if it differs). tegrastats `GR3D_FREQ` % is logged in the
   same file as a **coarse cross-check only**: it says whether the GPU had work queued, not how much of the GPU
   the work used. The utilisation metric of this project is ncu's SM occupancy (§3.3). Both the raw
   tegrastats log (`raw/tegrastats.log`, compressed per §6 if large) and the tidy CSV are committed.
+- **What the memory-rail reading is (answer to question 2 of 2026-09-21; no calibration step is needed).** Each
+  INA3221 channel reports the bus voltage *at its shunt*, which sits at the **input** of the regulator(s) of that
+  rail group, not at the load: `VDD_GPU_SOC` reads ≈ 19.9 V and `VDDQ_VDD2_1V8AO` ≈ 5.04 V in T001 for that reason.
+  `mW = mV × mA` is therefore a real power: the input power of the regulators that make LPDDR5 VDDQ and VDD2 **and**
+  the 1.8 V always-on rail `[ASSUMPTION: read from the rail's name and the bus voltage, not from the carrier
+  schematic]`. Do not rescale it to 1.8 V. Report it under the name `VDDQ_VDD2_1V8AO (regulator input)`. It is an
+  **upper bound** on DRAM power (it includes regulator loss and non-memory 1.8 V loads), so the quantity to quote
+  for memory activity is the **above-idle delta** of this rail per phase, next to its absolute value; never call
+  it "DRAM power" without those words.
+- **Is the module sum double-counting? Check once, in E1 (T005).** The memory regulators' 5 V input may or may not
+  be downstream of the `VIN_SYS_5V0` shunt. Log the four rails at idle, during the E1 memory-copy loop and during
+  the E1 large-GEMM loop, and report ΔVIN_SYS_5V0 and ΔVDDQ_VDD2_1V8AO (above idle) for each: if `VIN_SYS_5V0` rises
+  by about the memory-rail delta or more whenever the memory rail rises, say that nesting is likely. Until then
+  "module power" stays the four-rail sum (NVIDIA's convention for this module, `[ASSUMPTION]`), and every table
+  also gives the three-rail sum without the memory rail, so either reading can be recomputed.
 - Measure 60 s of idle baseline in the same power mode before each power run.
 - Because one inference is shorter than the sampling period, measure power on a **loop of back-to-back
   inferences ≥ 60 s**, and separately on loops that run only the prefix and only the action expert, so the
@@ -314,7 +395,9 @@ Every hardware constant printed in a published profiling guide belongs to anothe
 RTX 4070 Ti SUPER: 44.1 TFLOP/s bf16, 672 GB/s, 66 SMs, ridge ≈ 66 FLOP/B, 48 warps per SM, DRAM latency
 ≈ 400 ns. **None of these applies to the Orin.** Derive the Orin's own values and record them in
 `results/<date>_E0_platform/hw_constants.json` (E0/E1, tasks T001/T005):
-- SM count: `torch.cuda.get_device_properties(0).multi_processor_count`; compute capability and the
+- SM count: `torch.cuda.get_device_properties(0).multi_processor_count` — **it depends on the power mode** (8 in
+  `MODE_30W`, where 4 of 8 TPCs are power-gated; T001): record it per mode, as T001's `hw_constants.json` does, and
+  take the MAXN value from an observation at MAXN (T013), not from the mask; compute capability and the
   architecture string used by `cuobjdump` (we expect 8.7 → `sm_87`; confirm from the device, do not assume);
 - peak memory bandwidth and peak bf16 / fp16 / fp32 / int8 throughput: measured in E1;
 - ridge point = measured peak FLOP/s ÷ measured peak bytes/s;
@@ -388,7 +471,14 @@ kernels (E5b); (9) roofline points (E6); (10) root-cause chain (§10); (11) self
 | `ncu` runs "forever", report is 1 GB+ | unfiltered `--set full`; always filter (§3.2), reduce `-c`, narrow the NVTX range |
 | `git push` rejected: "exceeds GitHub's file size limit of 100.00 MB" | a raw file was committed unsplit. The commit is local, so undo it (`git reset --soft HEAD~1` — allowed because it was never pushed), then shorten / compress / split per §6 and commit again |
 | ncu occupancy shows 0 % | collected with `--set roofline`; use `--set full` |
-| `ERR_NVGPUCTRPERM` | `sudo sh -c 'echo 1 > /proc/sys/kernel/perf_event_paranoid'` |
+| `ERR_NVGPUCTRPERM`, or ncu: "Insufficient privileges to launch app for profiling" | on this device ncu needs root: `sudo $(which ncu) …`, then `chown` the report (§3.2); `perf_event_paranoid=1` alone is not enough |
+| `sudo ncu`: command not found | sudo's `secure_path`; use `sudo $(which ncu)` |
+| script output missing after an nsys run, exit code 143 | nsys killed the target at `cudaProfilerStop`; add `--capture-range-end=stop` (§3.1) |
+| tegrastats log has two sessions in it | `--logfile` appends; delete the file first (§4) |
+| memory rail missing from tegrastats | expected on this board; sample the four rails from sysfs (§4) |
+| `torch.cuda.is_available()` false after a `pip install` in a model environment | pip replaced the Jetson CUDA wheel with PyPI's CPU-only `torch…+cpu` (it prefers a manylinux wheel over the index's `linux_aarch64` one). Install the three CUDA wheels by full URL with `--no-deps` (`env/setup.sh`), install model repositories with `--no-deps`, and **re-check `torch.__version__`, `torch.version.cuda` and `is_available()` after every install step** |
+| Inductor logs "Not enough SMs to use max_autotune_gemm mode" | Inductor's `is_big_gpu` check (`torch/_inductor/utils.py`) compares `multi_processor_count` with a fixed minimum (68 for CUDA devices in the PyTorch sources the research side can read; read the value in the installed file and record it). The Orin has at most 16, so **expect this at MAXN too**: `max-autotune` then runs without Triton GEMM templates (ATen / cuBLAS GEMM, other autotuning and CUDA graphs still apply). It is a property of the stack: report it; see T003 for the labelled override variant |
+| SM count is 8, GPU stops at 612 MHz | the board is in `MODE_30W`; §1 gate — no measurement until the human has set MAXN |
 | nsys "option parsing failure" | use `-f true`, not `--force-overwrite`; drop `--cuda-memory-usage` if it is reported ambiguous |
 | ncu CSV columns misaligned | kernel names contain commas: parse with `csv.DictReader` |
 | `flash-attn` will not build | `pip install wheel` first, then `pip install flash-attn --no-build-isolation`; needs ~5 GB of temporary space and a torch whose CUDA version matches `nvcc`; on aarch64 expect a long source build — if it fails, run with PyTorch SDPA and record that |
