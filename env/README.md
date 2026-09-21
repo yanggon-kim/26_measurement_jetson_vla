@@ -371,3 +371,85 @@ Caches are kept out of the repository:
 `jax`, `flash-attn` (wheels 2.8.2/2.8.3 exist on the Jetson index for cp310),
 `torchao` (0.13.0 exists), `openpi`, `lerobot`, `Isaac-GR00T`, LIBERO. These belong to
 T002 and later and go into their own environments.
+
+---
+
+## 10. π0 environment — LeRobot, not openpi (T002 / E3 onwards)
+
+| | |
+|---|---|
+| path | `~/venvs/pi0` (outside the repository, untracked) |
+| rebuild | `bash env/setup_pi0.sh` |
+| exact pins | `env/requirements_pi0.txt` |
+| model | `lerobot @ f0d2b37bebddf7e8852cb624712da0ad564601b6` (version string 0.4.5) |
+| checkpoint | `lerobot/pi0_libero_finetuned_v044` rev `45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f`, 7,011,548,640 B, bf16, not gated |
+| transformers | **5.3.0 exactly** |
+
+### Why not openpi
+`tasks/T002_pi0_eager.md` originally prescribed openpi's PyTorch port. Researched in full and
+rejected on setup cost, none of which measures anything:
+a 12 GB orbax/OCDBT checkpoint to convert on-device, a mandatory JAX install (JAX is imported
+unconditionally by `openpi.models.gemma` even on the PyTorch path), a
+`transformers.__version__ == "4.53.2"` string-equality check with five files copied over
+site-packages, and a `requires-python >=3.11` gate to override. LeRobot ships the same
+architecture — the model prints *"a direct port of the OpenPI implementation … follows the
+original OpenPI structure for compatibility"* on load — with a ready-made PyTorch checkpoint.
+The openpi route remains available for a later cross-implementation comparison.
+
+### ⚠ Why this exact commit, and why **not** lerobot 0.4.4
+The checkpoint is named `…_v044`, so PyPI `lerobot==0.4.4` looks like the obvious match.
+**It is a trap.** Verified in the installed source before discarding it:
+
+1. it requires a **patched transformers fork** — `from transformers.models.siglip import check`
+   at `modeling_pi0.py:582`, which stock transformers does not satisfy;
+2. it **lacks the `lm_head -> embed_tokens` fix**. This checkpoint stores
+   `…language_model.embed_tokens.weight` only as a safetensors *metadata alias* of
+   `paligemma.lm_head.weight`, and `safetensors.torch.load_file` does not reconstruct
+   aliases, so the key is absent and `load_state_dict` fails;
+3. `from_pretrained` **catches load failures, prints a warning and returns a model with
+   randomly initialised weights** (`modeling_pi0.py:1024-1025, 1073`).
+
+Together those three produce a silently random model that still runs and still yields
+plausible-looking latencies. Any measurement taken that way would be worthless.
+
+`f0d2b37beb` is the one window that is both Python-3.10-clean and correct: `requires-python
+>=3.10`, `typing_extensions.Unpack` (not `typing.Unpack`, which is 3.11+ and is what the
+later refs use), **stock** transformers, and it **has** the alias fix. `env/setup_pi0.sh`
+asserts all of this at the end of every rebuild.
+
+Version constraints, for the record: only cp310 torch wheels exist for JetPack 6 / CUDA 12.6,
+so Python 3.10 is forced; lerobot ≥ 0.5.0 requires Python ≥ 3.12. lerobot does not pin torch
+(`>=2.2.1,<2.11.0`), so our 2.8.0 CUDA wheel survives the install, and `torchcodec` carries an
+environment marker that excludes aarch64 so it is never pulled in.
+
+### ⚠ transformers must be 5.3.0 exactly
+The `[pi]` extra allows `>=5.3.0,<6.0.0`. Do not take the upper end: transformers **5.4.0**
+moved a `* sqrt(hidden_size)` rescale inside `PaliGemmaModel.get_image_features`, and lerobot
+removed its own copy of that rescale in the same change. Running this ref against 5.4+ scales
+every prefix embedding by √2048 ≈ 45 and produces garbage actions **with no error**.
+
+### ⚠ Two checkpoint config fields must be overridden before construction
+`config.json` ships `compile_model: true` with `compile_mode: "max-autotune"`, and
+`gradient_checkpointing: true`. `PI0Pytorch.__init__` reads `compile_model` and wraps
+`sample_actions` in `torch.compile` immediately, so overriding *after* `from_pretrained` is too
+late. Set `compile_model=False` and `gradient_checkpointing=False` on the config object
+first — otherwise T002 would silently measure a compiled model and the NVTX ranges would be
+swallowed.
+
+### numpy
+lerobot pulls numpy 2.x via `accelerate`; the JetPack torch 2.8.0 wheel is built against the
+numpy **1.x** C ABI, and on numpy 2 every torch↔numpy conversion fails
+("Failed to initialize NumPy", `tensor_numpy.cpp:82`), which breaks the policy's
+preprocessing. Pin `numpy<2` after installing lerobot. pip then warns that
+`opencv-python-headless` and `rerun-sdk` "require numpy>=2" — a conservative declaration, not
+a real ABI requirement: both import and work on 1.26.4 (verified).
+
+### Hugging Face gating
+`google/paligemma-3b-pt-224` (the tokenizer the preprocessor loads) is **gated**: accept the
+Gemma license once and `hf auth login`. Everything else T002–T009 needs is open — the π0/π0.5
+LIBERO checkpoints, `lerobot/smolvla_base`, `HuggingFaceTB/SmolVLM2-500M-Video-Instruct`,
+`nvidia/GR00T-N1.5-3B`, and the LIBERO datasets. `google/gemma-2b` is gated but not needed:
+the Gemma weights ship inside the π0 checkpoint.
+If the gate is ever a problem, Google publishes the identical file ungated at
+`https://storage.googleapis.com/big_vision/paligemma_tokenizer.model` — verified
+byte-identical, sha256 `8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6`.
