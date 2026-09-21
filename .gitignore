@@ -1,29 +1,55 @@
-# never commit raw traces, weights, datasets, caches or secrets
-raw/
-*.nsys-rep
-*.qdrep
-*.qdstrm
-*.sqlite
-*.ncu-rep
-*.nvvp
+# Raw profiler output IS committed, under results/<run>/raw/ (docs/02_protocol.md §3.5, §6):
+# .nsys-rep, .ncu-rep, .sqlite, SASS/PTX dumps, .cubin, tegrastats logs, torch.profiler traces, full CSV exports.
+# Nothing below may match them. Never committed: model weights, datasets, caches, environments, secrets.
+
+# model weights and checkpoints
 checkpoints/
+weights/
+models/
 *.safetensors
 *.ckpt
 *.pt
 *.pth
 *.npz
-!bench/fixtures/**
-*.hdf5
+*.onnx
+*.engine
+*.gguf
+
+# datasets
 datasets/
+*.hdf5
+*.parquet
+
+# caches and scratch space (Inductor / Triton caches, temporary profiler output before compression)
+scratch/
 .cache/
+hf_cache/
 __pycache__/
 *.pyc
+
+# virtual environments
 .venv/
 venv/
-*.log
+
+# credentials and tokens
 .env
+.netrc
+.git-credentials
 hf_token*
 *.token
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# logs are ignored everywhere except inside a result directory
+*.log
+!results/**/*.log
+
+# the fixture observation (PNG + JSON, possibly a small .npz) is allowed
+!bench/fixtures/**
+
+# research-side agent files, local to the server
 ONBOARDING.md
 HANDOFF.md
 HANDOFF.history.md

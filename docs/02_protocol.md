@@ -48,14 +48,16 @@ record the substitution in `meta.json.notes`.
 ### 3.1 Nsight Systems (`nsys`) — timeline
 ```
 nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi -f true \
-     -o raw/<run>/<name> python bench/<script>.py ...
+     -o results/<run>/raw/<name> python bench/<script>.py ...
 ```
-with `torch.cuda.profiler.start()/stop()` around ~10 steady-state inferences. Known flag problems: overwrite is
+with `torch.cuda.profiler.start()/stop()` around **1–3 steady-state inferences** (after the §2 warm-up, which
+stays outside the window) — never a whole benchmark loop: the `.nsys-rep` is committed (§3.5) and must stay
+small (§6). Known flag problems: overwrite is
 `-f true` (`--force-overwrite` fails to parse on some versions); `--cuda-memory-usage=true` is useful but some
 versions reject it as ambiguous — drop it if so. Then export and commit the CSVs:
 ```
 nsys stats -r cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_api_sum,nvtx_sum,nvtx_kern_sum,nvtx_gpu_proj_trace,cuda_kern_exec_sum \
-     -f csv -o results/<run>/nsys raw/<run>/<name>.nsys-rep
+     -f csv -o results/<run>/nsys results/<run>/raw/<name>.nsys-rep
 ```
 and the full kernel trace for one inference (`-r cuda_gpu_trace`). `nvtx_sum` covers CPU ranges only; the
 kernels-per-region attribution comes from `nvtx_kern_sum` / `nvtx_gpu_proj_trace`. Report names differ between
@@ -73,26 +75,29 @@ inference can take 5–30 minutes. Latency always comes from §2, never from an 
 **Hard rule: never run `ncu --set full` unfiltered.** Every ncu command carries (a) one NVTX range
 (`--nvtx --nvtx-include "<range>/"`) or one kernel-name regex (`-k "regex:..."`), and (b) where the filter can
 still match many launches, the limits `-c <count>` (capture at most this many kernels) and/or `-s <skip>` (skip
-the first N). An unfiltered `--set full` run takes hours and writes a report of 1 GB or more.
+the first N). An unfiltered `--set full` run takes hours and writes a report of 1 GB or more — which also could not be
+committed (§6).
 
 Command forms (the only ones we rely on):
 ```
 # (A) one NVTX range, capture window controlled by the script (RECOMMENDED)
 ncu --set full --nvtx --nvtx-include "ae_step[0]/" --profile-from-start off \
-    -o raw/<run>/ncu_ae_step0 -f  python bench/ncu_target.py --model <model> --num-steps <N> ...
+    -o results/<run>/raw/ncu_ae_step0 -f  python bench/ncu_target.py --model <model> --num-steps <N> ...
 
 # (B) kernels by name, at most 5 launches
-ncu --set full -k "regex:gemm|gemv|cutlass" -c 5 -o raw/<run>/ncu_gemm -f  python bench/ncu_target.py ...
+ncu --set full -k "regex:gemm|gemv|cutlass" -c 5 -o results/<run>/raw/ncu_gemm -f  python bench/ncu_target.py ...
 
 # (C) skip the first N kernels, capture M (use with the kernel order taken from the nsys cuda_gpu_trace)
-ncu --set full -s 700 -c 10 -o raw/<run>/ncu_s700_c10 -f  python bench/ncu_target.py ...
+ncu --set full -s 700 -c 10 -o results/<run>/raw/ncu_s700_c10 -f  python bench/ncu_target.py ...
 
 # export for scripted analysis — two pages
-ncu --import raw/<run>/ncu_ae_step0.ncu-rep --csv --page details > results/<run>/ncu/ae_step0_details.csv
-ncu --import raw/<run>/ncu_ae_step0.ncu-rep --csv --page raw     > results/<run>/ncu/ae_step0_raw.csv
+ncu --import results/<run>/raw/ncu_ae_step0.ncu-rep --csv --page details > results/<run>/ncu/ae_step0_details.csv
+ncu --import results/<run>/raw/ncu_ae_step0.ncu-rep --csv --page raw     > results/<run>/ncu/ae_step0_raw.csv
 ```
 `-o` is the output path without extension (ncu writes `<path>.ncu-rep`); `-f` overwrites. The long form of `-k`
-appears as `--kernel-name` in some versions; check `ncu --help`.
+appears as `--kernel-name` in some versions; check `ncu --help`. Both exported pages are committed **in full**
+(every row and column; compressed per §6 when large) next to the `.ncu-rep` itself. (`--page raw` is the name of
+an ncu export page; the `raw/` directory of §3.5 is a different thing.)
 
 - **Region names.** The NVTX range passed to `--nvtx-include` is the §2 region name followed by `/`:
   `"vision/"`, `"vlm_prefix/"`, `"ae_step[0]/"`, `"ae_layer[0]/"`. Ranges are nested
@@ -170,25 +175,57 @@ the reverse, else balanced; report the share of region kernel time in each class
 - `cuobjdump`, `nvdisasm`, `c++filt` for the instruction-level analysis (E5b): see
   `docs/03_instruction_level_analysis.md`.
 
-### 3.5 Raw and derived files
-- **Raw, never committed** (kept under `raw/<run>/` on the device; `meta.json.raw_files` records path, sha256,
-  bytes): `.nsys-rep` and the `.sqlite` nsys derives from it, `.ncu-rep`, full SASS / PTX dumps and extracted
-  `.cubin` files, Chrome-trace JSON from `torch.profiler`, tegrastats logs.
-- **Derived, committed** under `results/<run>/`: `nsys/*.csv`; `ncu/*_details.csv`, `ncu/*_raw.csv`,
-  `ncu/columns.txt`, `ncu/kernels.csv`, `ncu/region_utilisation.csv` (if an exported CSV exceeds 5 MB, commit it
-  filtered to the columns of §3.3 and keep the full export under `raw/`); for E5b the instruction-inventory
-  CSVs, annotated hot-loop excerpts and cross-check tables; `power.csv`.
-- Keep `raw/` until the research side says a result is accepted: a re-export may be requested.
+### 3.5 Raw and derived files — both are committed
+**We want as much raw data as possible.** Prefer committing a raw file over summarising it; a summary is
+written *in addition to* the raw file, never instead of it. The research side re-analyses raw files that the
+device agent never thought to summarise.
+
+- **Raw, committed under `results/<run>/raw/`** (tracked; raw and derived stay in the same result directory):
+  - `.nsys-rep`, and the `.sqlite` that nsys derives from it (rule in §6e);
+  - `.ncu-rep` of every ncu run, including failed or partial ones that still carry information;
+  - the **full** SASS and PTX dumps from `cuobjdump`, `-res-usage` output, and the extracted / JIT-compiled
+    `.cubin` files of the kernels analysed (copy them from the Inductor / Triton cache into `raw/cubin/`; the
+    cache directory itself is scratch and is not committed);
+  - the raw tegrastats log (and raw INA3221 samples if you read sysfs);
+  - `torch.profiler` Chrome-trace JSON and its `key_averages` table;
+  - stdout / stderr of every profiler and benchmark command (`raw/<name>.stdout.log`);
+  - the **full** ncu CSV exports (both pages, all rows and columns) — these may live in `ncu/` as before; there
+    is no longer a "filter to the kept columns above 5 MB" rule: keep the full export, compressed;
+  - per-iteration latency samples (`latency_samples.csv`, §5) — every sample, never only the summary.
+- **Derived, committed** under `results/<run>/`: `nsys/*.csv`; `ncu/columns.txt`, `ncu/kernels.csv`,
+  `ncu/region_utilisation.csv`; for E5b the instruction-inventory CSVs, annotated hot-loop excerpts and
+  cross-check tables; `power.csv`; `latency_summary.csv`; `summary.md`.
+- **Every raw file is listed in `meta.json.raw_files`** with path (relative to the result directory), sha256
+  and bytes; for a compressed or split file also the compression command and the sha256 + bytes of the
+  uncompressed original (schema in §5). Compute the hash of the original **before** compressing.
+- **Size rules are in §6** (design captures small, compress, split above 50 MB). They are binding: GitHub
+  rejects a push that contains any file over 100 MB, and the whole push fails, not just that file.
+- **Never committed, whatever a task seems to imply:** model weights and checkpoints (`*.safetensors`, `*.ckpt`,
+  `*.pt`, `*.pth`, `checkpoints/`), datasets, caches (Hugging Face, Inductor, Triton, pip), virtual environments,
+  vendor libraries (`libcublas*.so` etc. — record path, version and sha256 instead), and credentials or tokens.
+  `bench/fixtures/` (one PNG + JSON LIBERO observation) is the only model-input data in git.
+- **Secrets check before committing raw files.** Profiler reports and logs can record the environment and the
+  command line of the profiled process. (1) Never pass a token on a command line. (2) Download models in a
+  separate step; run every profiled or logged command with the token variables removed and the hub offline:
+  `env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN -u GITHUB_TOKEN -u GH_TOKEN HF_HUB_OFFLINE=1 nsys profile ...`.
+  (3) Before compressing, scan each raw file:
+  `strings -n 8 <file> | grep -nE 'hf_[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY'`
+  and also grep for the literal content of any token file you use (e.g. `~/.cache/huggingface/token`). A hit
+  means the file is **not committed**: delete it, fix the environment, capture again, and note it in
+  `STATUS.md`. Record `secrets_scan: "clean"` per file in `meta.json.raw_files`.
+- A temporary, untracked `scratch/` directory (ignored) is where uncompressed profiler output, caches and
+  over-size captures live before they are compressed into `results/<run>/raw/`. Keep the uncompressed originals
+  in `scratch/<run>/` until the research side says the result is accepted.
 
 ## 4. Power and energy
-- `sudo tegrastats --interval 100 --logfile raw/<run>/tegrastats.log` (10 Hz) or read the INA3221 rails directly
+- `sudo tegrastats --interval 100 --logfile results/<run>/raw/tegrastats.log` (10 Hz) or read the INA3221 rails directly
   from sysfs at ≥ 10 Hz if finer. Rails to keep: `VDD_GPU_SOC`, `VDD_CPU_CV`, `VIN_SYS_5V0`, `VDDQ_VDD2_1V8AO`
   (the memory rail — we care about it specifically). Convert to a tidy CSV (`t_s, rail, mW`). Always report each
   rail separately **and** their sum as "module power" (`VDD_GPU_SOC + VDD_CPU_CV + VIN_SYS_5V0 + VDDQ_VDD2_1V8AO`;
   check the rail list of this carrier board and say if it differs). tegrastats `GR3D_FREQ` % is logged in the
   same file as a **coarse cross-check only**: it says whether the GPU had work queued, not how much of the GPU
-  the work used. The utilisation metric of this project is ncu's SM occupancy (§3.3). Raw tegrastats logs stay
-  under `raw/`; the tidy CSV is committed.
+  the work used. The utilisation metric of this project is ncu's SM occupancy (§3.3). Both the raw
+  tegrastats log (`raw/tegrastats.log`, compressed per §6 if large) and the tidy CSV are committed.
 - Measure 60 s of idle baseline in the same power mode before each power run.
 - Because one inference is shorter than the sampling period, measure power on a **loop of back-to-back
   inferences ≥ 60 s**, and separately on loops that run only the prefix and only the action expert, so the
@@ -200,18 +237,60 @@ the reverse, else balanced; report the share of region kernel time in each class
 - `meta.json`: `experiment, task, date_utc, model, model_repo, model_commit, checkpoint, precision, compile_mode,
   num_denoise_steps, action_horizon, prefix_tokens, suffix_tokens, batch, n_warmup, n_timed, power_mode,
   jetson_clocks, emc_hz, gpu_hz, jetpack, l4t, cuda, torch, torchvision, triton, bench_commit, command,
-  throttled, raw_files:[{path, sha256, bytes}], notes`.
+  throttled, raw_files:[…], notes`. Each `raw_files` entry:
+  `{path, sha256, bytes, kind, produced_by, secrets_scan}` for a file committed as-is, plus, for a compressed
+  file, `compression: {tool, level, command}, original: {name, sha256, bytes}`, plus, for a split file,
+  `parts: [{path, sha256, bytes}], reassembled: {sha256, bytes}` (§6). `path` is relative to the result
+  directory; `kind` ∈ `nsys-rep, nsys-sqlite, ncu-rep, ncu-csv, sass, ptx, cubin, res-usage, tegrastats,
+  torch-trace, stdout, other`; `produced_by` is the exact command. A raw file that was produced but could not
+  be committed (over the limits of §6 after shortening, or failed the secrets scan) is still listed, with
+  `committed: false`, the reason, and the command that regenerates it.
 - tidy CSVs, one row per observation, long format: `latency_samples.csv (region, iter, ms)`,
   `latency_summary.csv (region, median_ms, mean_ms, p5_ms, p95_ms, min_ms, n)`, plus `nsys/*.csv`, `power.csv`,
   `kernels_per_region.csv`, `floor.csv` (§9), `ncu/*` (§3.3) and `sass/*` (E5b, `docs/03_instruction_level_analysis.md`)
   when applicable. For profiler runs add to `meta.json`: `nsys_version`, `ncu_version`, `ncu_set`, `ncu_filter`
   (the exact `--nvtx-include` / `-k` / `-c` / `-s` used), `gpu_arch` (e.g. `sm_87`), `cuobjdump_version`.
+- `raw/`: the raw files of §3.5 (profiler reports, dumps, logs, traces), compressed per §6, with
+  `REASSEMBLE.txt` when a file was split.
 - `summary.md`: five to fifteen lines — what was run, the headline table, anything odd.
 Never overwrite a result directory; a re-run is a new directory and the old one is referenced.
 
-## 6. Git hygiene
+## 6. Git hygiene and raw-file size rules (binding)
 `git pull --rebase` before every push; small commits with a message that names the experiment and task; never
-force-push; never rewrite pushed history. Files over 5 MB do not belong in git — summarise them.
+force-push; never rewrite pushed history. Commit a result directory in its own commit (raw files included), so
+that a push that fails on size can be fixed without touching other work.
+
+Raw files are committed (§3.5), so size is managed, not forbidden. **GitHub rejects any file over 100 MB (the
+whole push fails) and warns above 50 MB.** The working limit here is **50 MB per committed file**.
+
+a. **Design captures to be small.** nsys: a bounded window with the cudaProfiler API around 1–3 steady-state
+   inferences (§3.1). ncu: one NVTX range or one kernel filter, with `-c` / `-s` limits (§3.2). tegrastats and
+   `torch.profiler`: the measured window only. Never profile a whole benchmark loop, a warm-up or a compile.
+b. **Compress before committing.** Any raw file over 1 MB is committed compressed: `zstd -19 -T0 <file>`
+   (preferred; add `--long=27` for files over 100 MB and then record that `zstd -d --long=27` is needed) or
+   `xz -9 <file>` if zstd cannot be installed (`sudo apt install zstd`; record it in `env/`). Hash the original
+   first (§3.5). Commit `<name>.zst`, not the original (move the uncompressed original to `scratch/<run>/` so it
+   cannot be staged by accident; this also applies to a full ncu CSV export in `ncu/`); files under 1 MB and text the research side will read
+   directly (`summary.md`, tidy CSVs, annotated excerpts) stay uncompressed.
+c. **If a compressed file is still over 50 MB:** first shorten the capture (fewer inferences, a narrower NVTX
+   range, smaller `-c`) and capture again. Only if it cannot be made smaller, split it:
+   `split -b 45M -d -a 3 <name>.zst <name>.zst.part` → `<name>.zst.part000`, `…part001`, …, and write
+   `results/<run>/raw/REASSEMBLE.txt` with, per split file, the exact commands
+   `cat <name>.zst.part* > <name>.zst && zstd -d <name>.zst` and the sha256 + bytes of the reassembled `.zst`
+   and of the decompressed original. Verify the round trip yourself before committing. Commit the parts, not
+   the unsplit file. More than 8 parts (≈ 360 MB) for one capture means the capture is badly designed: go back
+   to (a) and, if it is truly irreducible, ask under "Questions for the research side" before committing it.
+d. **No Git LFS** unless a task says so.
+e. **The nsys `.sqlite`** is derivable from the `.nsys-rep` (`nsys export --type sqlite` / first `nsys stats`
+   call): commit it only if it is under 50 MB compressed; otherwise record the regenerating command in
+   `meta.json.raw_files` (`committed: false`) and keep it in `scratch/`.
+f. **Report sizes after every task** in `STATUS.md` under "Repository size": the output of `du -sh results/`,
+   `du -sh .git`, `git count-objects -vH`, and the five largest committed files
+   (`git ls-files -z | xargs -0 du -b | sort -nr | head -5`). **If the repository (`size-pack`) approaches
+   ~2 GB, stop adding raw files**: keep them in `scratch/`, list them with `committed: false`, and ask under
+   "Questions for the research side" how to proceed.
+g. Before every commit that contains raw files: `git status` shows nothing under `scratch/`, no weights,
+   datasets or environments; `find results -size +50M` is empty; the secrets scan of §3.5 was run.
 
 ## 7. Where things go (mapping from common profiling-project layouts to this repository)
 Profiling guides usually assume one project directory with `venv/ models/ scripts/ profiles/ traces/ analysis/`.
@@ -222,7 +301,8 @@ Here the write partition of `README.md` decides instead:
 | `venv/` | an untracked virtual environment (one per model) outside git or under the ignored `.venv/`; how to rebuild it, with exact versions, goes in `env/` |
 | `models/` (source checkouts, weights) | untracked checkout paths outside the repository; repo URL, commit, checkpoint name and sha256 go in `meta.json` |
 | `scripts/` | `bench/` |
-| `profiles/` (`.nsys-rep`, `.ncu-rep`) and `traces/` (Chrome JSON) | `raw/<run>/` — never committed; path + sha256 + bytes in `meta.json.raw_files` |
+| `profiles/` (`.nsys-rep`, `.ncu-rep`) and `traces/` (Chrome JSON) | `results/<run>/raw/` — **committed**, compressed per §6; path + sha256 + bytes in `meta.json.raw_files` |
+| temporary files, caches (Inductor, Triton), uncompressed originals | `scratch/<run>/` — ignored, never committed |
 | `analysis/` data (CSV, JSON, inventories) | `results/<run>/` |
 | `analysis/` prose (reports, root-cause write-ups) | `reports/` |
 
@@ -286,8 +366,10 @@ launch-bound, CPU-bound), follow it. Do not write "memory-bound" or "launch-boun
 - **Every task — self-review.** Re-read the task's acceptance criteria and check, item by item: every
   requested file exists under the requested name; every number in the report traces to a file in `results/`;
   `meta.json` is complete (§5) and `raw_files` hashes are filled; n, power mode and `throttled` are stated;
-  measured / derived / not-measured are separated; deviations are listed; no raw file is staged
-  (`git status`); nothing on the research side was edited. Append the filled checklist to the report under
+  measured / derived / not-measured are separated; deviations are listed; **every raw file the run produced
+  is committed under `results/<run>/raw/` and listed in `raw_files`** (or listed with `committed: false` and a
+  reason); the §6g checks pass (no file over 50 MB, no weights / datasets / environments / secrets staged,
+  secrets scan clean); sizes reported in `STATUS.md` (§6f); nothing on the research side was edited. Append the filled checklist to the report under
   "Self-review".
 - **P0 tasks (T001–T003) — independent pass, if your framework supports sub-agents.** Give a fresh sub-agent
   only the task file, this protocol and the produced files; ask it to list unmet acceptance criteria and numbers
@@ -303,6 +385,7 @@ kernels (E5b); (9) roofline points (E6); (10) root-cause chain (§10); (11) self
 | symptom | cause / fix |
 |---|---|
 | `ncu` runs "forever", report is 1 GB+ | unfiltered `--set full`; always filter (§3.2), reduce `-c`, narrow the NVTX range |
+| `git push` rejected: "exceeds GitHub's file size limit of 100.00 MB" | a raw file was committed unsplit. The commit is local, so undo it (`git reset --soft HEAD~1` — allowed because it was never pushed), then shorten / compress / split per §6 and commit again |
 | ncu occupancy shows 0 % | collected with `--set roofline`; use `--set full` |
 | `ERR_NVGPUCTRPERM` | `sudo sh -c 'echo 1 > /proc/sys/kernel/perf_event_paranoid'` |
 | nsys "option parsing failure" | use `-f true`, not `--force-overwrite`; drop `--cuda-memory-usage` if it is reported ambiguous |

@@ -21,7 +21,7 @@ everything the other side needs must be in a committed file.
 - Passwordless `sudo` for `nvpmodel`, `jetson_clocks`, `tegrastats` and reading `/sys/kernel/debug`.
 - A git identity and push access to this repository (deploy key or token), and network access to GitHub,
   PyPI / the Jetson wheel index, Hugging Face and the openpi checkpoint bucket.
-- ≥ 150 GB free on NVMe for environments, checkpoints and raw traces.
+- ≥ 150 GB free on NVMe for environments, checkpoints and scratch space for uncompressed traces.
 - **`ncu`** (the Nsight Compute command-line profiler) is already installed; `nsys` normally ships with JetPack.
   Both are required tools (protocol §3). T001 verifies them.
 - **You may install whatever tools you need** — `apt` packages and user-space software (Python environments,
@@ -42,12 +42,14 @@ If a push fails, keep working: commit locally, note it at the top of `STATUS.md`
 1. `git pull --rebase`. Pick the open task with the lowest number whose dependencies are done. Append
    `status: claimed <UTC date>` to it, commit, push.
 2. Do the work following `docs/02_protocol.md`. Put code in `bench/`, environment changes in `env/`.
-3. Write one result directory per run under `results/` and one analysis file under `reports/`.
+3. Write one result directory per run under `results/` — derived files **and** the raw files of the run under
+   `results/<run>/raw/` (protocol §3.5, §6) — and one analysis file under `reports/`.
 4. Self-review against the task's acceptance criteria (protocol §11; for P0 tasks add the independent pass
    if your framework has sub-agents). Then append to the task file: `status: done <UTC date>`, the result directories, the report file, the
    commit hash of `bench/` used, and any deviation from the task. If you could not finish:
    `status: blocked` plus what you tried and what you need.
-5. Update `STATUS.md`. `git pull --rebase`, commit in small pieces, push.
+5. Update `STATUS.md`, including the repository-size lines of protocol §6f. `git pull --rebase`, commit in
+   small pieces (one result directory per commit), push.
 
 ## Rules that are not negotiable
 - **Never fabricate, interpolate or "estimate" a measurement.** A number in `results/` was measured by
@@ -60,12 +62,26 @@ If a push fails, keep working: commit locally, note it at the top of `STATUS.md`
   show the evidence; do not tune the setup until the expected answer appears.
 - **Record the device state** for every run: power mode, clocks, temperature, throttling. A latency
   without its power mode is not a result.
-- **Do not commit large or sensitive files**: no model weights, no datasets, no raw `.nsys-rep` / `.sqlite` /
-  `.ncu-rep` reports, no full SASS dumps (keep them under `raw/` on the device, record path + sha256 + size
-  in `meta.json`), no tokens or credentials. Commit the exported CSV summaries, instruction-inventory tables,
-  annotated hot-loop excerpts and the analysis prose (protocol §3.5).
+- **Commit the raw data. We want as much raw data as possible.** Prefer committing a raw file over summarising
+  it; summaries are *in addition to* raw data, never instead of it. Every run's raw output goes into
+  `results/<run>/raw/` and is committed: `.nsys-rep` (and its `.sqlite` when small enough), `.ncu-rep`, full
+  SASS / PTX dumps and the analysed `.cubin` files, raw tegrastats logs, `torch.profiler` traces, command
+  stdout / stderr, per-iteration latency samples, and the full ncu CSV exports. Each is listed in `meta.json`
+  with path, sha256 and bytes (and, if compressed, the tool, level and the hash + size of the original).
+  Protocol §3.5 has the list, §5 the schema.
+- **Size is managed, not forbidden** (protocol §6, binding): GitHub rejects any file over 100 MB and the whole
+  push with it. Design captures small (1–3 inferences for nsys, one filtered range for ncu), compress with
+  `zstd -19`, keep every committed file under 50 MB (shorten the capture first; split with `split -b 45M` +
+  `REASSEMBLE.txt` only as a last resort), no Git LFS, report `du -sh results/` and `git count-objects -vH` in
+  `STATUS.md` after every task, and stop adding raw files and ask if the repository approaches ~2 GB.
+- **The only things never committed** are model weights and checkpoints (`*.safetensors`, `*.ckpt`, `*.pt`,
+  `*.pth`, `checkpoints/`), datasets, caches, virtual environments, vendor libraries, and credentials or tokens.
+  `.gitignore` covers the usual names; it is a safety net, not the rule — check `git status` before every
+  commit and never use `git add -f` on such a file. `bench/fixtures/` (one PNG + JSON observation) is allowed.
+  Profiler reports and logs can capture the process environment: run profiled commands without token variables
+  and scan every raw file for secrets before committing it (protocol §3.5).
 - **Never run `ncu --set full` unfiltered**: always one NVTX range or one kernel regex, with `-c` / `-s`
-  limits (protocol §3.2). An unfiltered run takes hours and fills the disk.
+  limits (protocol §3.2). An unfiltered run takes hours, fills the disk and produces a report too large to commit.
 - **Stay within the device**: do not flash a different JetPack, change boot configuration or overclock
   without a task that says so. **Never answer "yes" to a reboot prompt** (some `nvpmodel` mode changes ask for
   one): a reboot ends your session. Power-mode sweeps are scheduled last and described in the protocol. Installing `apt` packages, user-space packages, Python environments and
