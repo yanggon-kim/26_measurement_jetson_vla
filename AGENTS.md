@@ -9,8 +9,9 @@ everything the other side needs must be in a committed file.
 
 ## Read first, in this order
 1. `docs/00_context.md` — why these measurements matter and exactly which numbers they replace.
-2. `docs/01_measurement_plan.md` — the experiments (E0–E10 and E5b), sweeps and priorities.
-3. `docs/02_protocol.md` — the measurement rules, tool commands (`nsys`, `ncu`) and the result schema. It is
+2. `docs/01_measurement_plan.md` — the experiments (E0–E11 and E5b), sweeps, priorities and the **task order**.
+3. `docs/02_protocol.md` — the measurement rules, tool commands (`nsys`, `ncu`), the result schema, and §13: the
+   methods of E11 and the `model_inputs.csv` hand-off format. It is
    binding; where any other guide or habit differs, the protocol wins.
 4. `docs/03_instruction_level_analysis.md` — the procedure for E5b (read it when you reach an E5b task).
 5. `tasks/` — the work queue. Then `STATUS.md` — your own notes from earlier sessions.
@@ -39,7 +40,9 @@ If a push fails, keep working: commit locally, note it at the top of `STATUS.md`
   whatever does not depend on the answer.
 
 ## Workflow for every task
-1. `git pull --rebase`. Pick the open task with the lowest number whose dependencies are done. Append
+1. `git pull --rebase`. Pick the first open task **in the task-order table at the top of
+   `docs/01_measurement_plan.md`** (priority order, not task number: T010 comes right after T003) whose
+   dependencies are done. Append
    `status: claimed <UTC date>` to it, commit, push.
 2. Do the work following `docs/02_protocol.md`. Put code in `bench/`, environment changes in `env/`.
 3. Write one result directory per run under `results/` — derived files **and** the raw files of the run under

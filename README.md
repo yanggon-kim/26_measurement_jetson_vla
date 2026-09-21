@@ -25,10 +25,10 @@ environments, secrets.
 |---|---|
 | `AGENTS.md` | your instructions: role, rules, workflow, reporting |
 | `docs/00_context.md` | what the research claims and which of its numbers you are replacing |
-| `docs/01_measurement_plan.md` | experiments E0–E10 and E5b: definition, sweeps, priority, outputs |
-| `docs/02_protocol.md` | how to measure, tool commands (`nsys`, `ncu`, tegrastats), SM-occupancy utilisation metric, result schema, file mapping, physical floor, review |
+| `docs/01_measurement_plan.md` | experiments E0–E11 and E5b: definition, sweeps, priority, task order, outputs. E11 = inputs for a hybrid GPU + PIM system model (host segments, transfer / synchronisation latency, KV hand-over, prefix vs input, memory pressure, pipelining) |
+| `docs/02_protocol.md` | how to measure, tool commands (`nsys`, `ncu`, tegrastats), SM-occupancy utilisation metric, result schema, file mapping, physical floor, review; §13 = E11 methods and the `model_inputs.csv` schema |
 | `docs/03_instruction_level_analysis.md` | E5b: SASS-level analysis of the dominant action-expert kernels, and the scripts to write for it |
-| `docs/reference_scripts/` | read-only reference implementations for E5b; the on-device agent copies and adapts them into `bench/` |
+| `docs/reference_scripts/` | read-only reference implementations for E5b; the on-device agent copies and adapts them into `bench/`. Also `check_model_inputs.py`, the validator of E11's `model_inputs.csv`, which is run in place |
 | `tasks/` | one file per task, in priority order; claim, do, report |
 | `env/` | how the device was set up: scripts, exact versions, pins |
 | `bench/` | the measurement harness you write |
