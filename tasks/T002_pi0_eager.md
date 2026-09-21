@@ -24,3 +24,5 @@ Acceptance: one result directory per N, each with the full per-iteration `latenc
 stdout under `raw/` (protocol §3.5); `reports/E3_pi0_eager.md` with the region table, ms per step vs N, the
 comparison with 920 ms / 110-258-543 ms, and the first two rows of the ladder (floor 3.15 ms vs measured eager).
 If π0 does not fit or run, fall back in this order: lerobot's π0 implementation, then SmolVLA, and say so.
+
+status: claimed 2026-09-21
