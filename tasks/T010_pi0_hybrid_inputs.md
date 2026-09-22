@@ -77,3 +77,54 @@ If a part cannot be done (for example no working `zero_copy` route, or `torch.co
 the others, mark that part "not measured" with the exact error, and do not block the task on it.
 
 status: claimed 2026-09-22
+
+---
+
+status: done 2026-09-22
+
+**Result directories** (nine; all pass `docs/reference_scripts/check_model_inputs.py` run in place):
+`results/20260922b_E11a_pi0_hostseg`, `…b_E11b_xfer`, `…b_E11c_pi0_handover`,
+`…b_E11d_pi0_{eager,reduce-overhead}_prefixsweep`, `…d_E11e_pi0_{eager,reduce-overhead}_mempressure`,
+`…b_E11f_pi0_pipelining`, `…b_E11_pi0_inputs` (consolidated: 1,564 rows, 33 of 35 quantities).
+
+**Report**: `reports/E11_pi0_hybrid_inputs.md`. **`bench/` commit used**: `a8ae8b8` for E11a–E11d and
+E11f, `eb43ed4` for E11e (the E11e re-run needed two further hog fixes). Every `model_inputs.csv`
+carries the commit its own run used, and `bench/` was committed before each run so the column names
+code that actually ran.
+
+**The four quantities the hybrid model assumes and the measurement contradicts**
+
+| assumption | measured |
+|---|---|
+| one kernel per host segment, 20 µs | 1–10.1 kernels; ~35 launches per layer for the six mapping segments |
+| `T_host_layer` ≈ 0.16 ms | 0.1827 ms as one CUDA graph per layer; 0.4455 ms compiled sequence; 1.5290 ms eager |
+| transfers free of fixed cost, 143 GB/s | `a` = 38–40 µs pinned; slope = 36 GB/s; synchronisation 0.8–68.7 µs |
+| `kv_copied_bytes_per_step` = 0, `t_kv_materialise` = 0 | 15,040,512 B copied **every step** by `copy.deepcopy` at `modeling_pi0.py:918`, 5.5824 ms |
+
+**Not measured**, each with its exact error in `meta.json.not_measured` and the report:
+`t_preprocess`, `t_postprocess` (no region instrumented); `suffix_embed` under `cudagraph`
+(`cudaErrorStreamCaptureInvalidated`); `final_norm_out_proj` under `compile` (inductor: "Offset
+increment outside graph capture encountered unexpectedly"); GPU-idle fraction under
+`reduce-overhead` (region context managers graph-break the model, so the compiled captures run
+`--no-regions` and have no `ae_step` ranges to project onto — the wrinkle `tasks/T004` anticipates).
+
+**Deviations from the task text.** None in scope or method. Three of the seven parts were measured
+more than once; every superseded directory is kept with a `SUPERSEDED.md` naming its defect, per §5.
+
+**What the three re-measurements cost, and why they are recorded rather than quietly fixed.**
+An independent adversarial review of the first pass raised 40 findings. Two invalidated published
+numbers, and both were invisible in the output — no error, no warning, a plausible figure:
+
+1. The timed sequence returned `None`, so `torch.compile` deleted its body. Sized deliberately on
+   this device: a compiled 2048³ bf16 matmul costs 0.0662 ms discarded and 0.6605 ms returned. The
+   published "0.085 ms", the "18× win" and the "0.53× of the assumption" measured nothing. Correct
+   value 0.4455 ms, i.e. **2.78× the assumption, not 0.53×** — the conclusion reverses.
+2. The background hog's duty cycle never applied, so half the E11e table was one condition repeated
+   four times. Fixing it exposed two further defects of my own: a closure rebinding that killed every
+   `cpu_spin_control` worker, and `start_hog` discarding the hog's stderr so six tracebacks went
+   nowhere and the run finished apparently fine 47 minutes later.
+
+Three defects in a row were visible only in the output. `bench/bw_hog.py --self-test` now runs every
+hog kind for two seconds and fails unless each emits samples carrying an achieved duty;
+`bench/mempressure.py` calls it before loading the model. `bench/check_report_numbers.py --task=T010`
+re-derives 96 figures from the CSVs and fails if any is absent from the report.

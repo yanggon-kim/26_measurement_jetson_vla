@@ -19,6 +19,55 @@ The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGE
 After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
 power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
 
+## Headline after T010 (E11): the hybrid model's six [ASSUMPTION] terms, measured
+
+`reports/E11_pi0_hybrid_inputs.md` · nine result directories · 1,564 rows in
+`results/20260922b_E11_pi0_inputs/model_inputs.csv`, 33 of the 35 quantities §13.8 names.
+
+| term | assumed | measured | |
+|---|---|---|---|
+| kernels per host segment | 1 (2 for attention) | **1–10.1**; ~35 launches per layer | 10× too few |
+| `T_host_layer` | 0.16 ms | **0.1827 ms** as one CUDA graph per layer | 1.14× — reachable |
+| | | 0.4455 ms compiled sequence | 2.78× |
+| | | 1.5290 ms eager sequence | 9.56× |
+| transfer fixed cost | **0** | **38–40 µs** pinned, either direction | not zero |
+| transfer bandwidth | 143 GB/s | **36 GB/s** pinned | 4× optimistic |
+| synchronisation | **free** | 0.8 µs query … **68.7 µs** stream hand-off | not free |
+| `kv_copied_bytes_per_step` | **0** | **15,040,512 B every step**, 5.5824 ms | not zero |
+
+**Only one implementation reaches the mapping's 0.16 ms: a single CUDA graph over the whole
+layer.** Six separate graphs cost 1.6×, a compiled sequence 2.8×, eager 9.6×. Fusion across
+segment boundaries is real and worth 2.5×, but it is a graph that closes the gap, not a compiler.
+
+**The GPU is idle 75.6 % of the action-expert region** at both N = 4 and N = 10 — corrected for
+nsys inflating the region's wall time ×1.53 while leaving kernel durations alone. The uncorrected
+figure is 84 % and charges the profiler's overhead to the model. In CPU terms: the expert loop
+pins **one core at 100 %** while eleven of twelve do nothing.
+
+**Overlap belongs in a separate process.** A prefix loop beside the host-segment sequence costs
+1.2 % as two processes and **10.4 ×** on the executing part as two CUDA streams in one process.
+The contention is for the GIL, not the GPU.
+
+**The prefix is a constant for this checkpoint.** `P_processed = 816` at every point of the sweep
+while `P_valid` moves 262 → 807; every region is flat to within 0.7 %. This is a property of the
+input format — three always-encoded image slots and a prompt padded to 48 — not of the hardware,
+and **it is not expected to transfer to π0.5**, whose `tokenizer_max_length` is 200 and
+`empty_cameras` 0.
+
+### ⚠ Three defects in T010 were visible only in the output, never as an error
+
+Recorded because the pattern matters more than the individual bugs. A compiled callable whose
+results are discarded is dead-code-eliminated — measured here at 0.0662 ms vs 0.6605 ms for the
+same matmul — and the published "compiled sequence = 0.085 ms" measured nothing. The background
+hog's duty cycle never applied, so half a table was one condition four times. Fixing that
+introduced a closure rebinding that killed every `cpu_spin_control` worker, whose six tracebacks
+went to `DEVNULL` with the hog's stdout. Each produced a plausible number and no warning.
+
+Countermeasures now in place: `bench/bw_hog.py --self-test` (every hog kind for 2 s, fails unless
+each emits samples with an achieved duty; `mempressure.py` calls it before loading the model), and
+`bench/check_report_numbers.py --task=T010`, which re-derives 96 figures from the CSVs and fails if
+any is absent from the report.
+
 ## Headline after T005 (E1/E2): the expert's GEMMs are already at the speed of memory
 
 **The gap is not weight streaming.** E2 put the action expert's 126 projection GEMMs — 622.85 MB,
@@ -412,6 +461,27 @@ Historical, for the record: T002 was blocked until the reboot, because it would 
    be limited to MAXN plus whichever capped modes can be entered without a reboot?
 
 ## Repository size (protocol §6f)
+
+After T010 (2026-09-22):
+
+```
+du -sh results/   106M
+du -sh .git        25M
+git count-objects -vH:  count: 1821   size-pack: 62.49 KiB
+
+five largest committed files (protocol §6f):
+   6,584,184  results/20260922b_E11f_pi0_pipelining/nsys/eager_N10_cuda_gpu_trace.csv
+   6,584,072  results/20260922_E5_pi0_eager_N10/nsys/eager_N10_cuda_gpu_trace.csv
+   3,301,941  results/20260922b_E11f_pi0_pipelining/nsys/eager_N4_cuda_gpu_trace.csv
+   3,301,929  results/20260922_E5_pi0_eager_N4/nsys/eager_N4_cuda_gpu_trace.csv
+   2,466,365  results/20260922_E4_pi0_max-autotune+forced_N4/raw/compile_and_stdout.log
+```
+
+`find results -size +50M` is empty; the largest committed file is 6.6 MB, well inside §6's limit.
+T010 added ~84 MB: nine result directories plus the superseded passes §5 requires be kept, 216,000
+per-iteration segment samples, 61 `torch.profiler` traces (~23× under zstd -19), per-core
+`/proc/stat` samples and the nsys CSV exports. 453 raw-file entries were secrets-scanned before
+commit with zero matches. At 106 MB of results the ~2 GB ceiling is not close.
 
 After T005 (2026-09-22):
 
