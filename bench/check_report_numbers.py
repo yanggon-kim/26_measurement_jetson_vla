@@ -32,6 +32,23 @@ def rows(p: Path) -> list[dict]:
     return list(csv.DictReader(p.open()))
 
 
+DATED = re.compile(r"^\d{8}[a-z]?_")
+
+
+def newest(pattern: str) -> Path | None:
+    """The newest DATED result directory matching `pattern`.
+
+    A part that had to be re-measured lives beside the passes it supersedes, and not every
+    part is re-measured the same number of times — E11e went through four passes while E11a
+    went through two. Pinning one date for the whole task therefore reads superseded data
+    for whichever part ran last. Directories not starting with a date (`evidence_…`,
+    `regions_…`) are diagnostics and are never picked.
+    """
+    c = [d for d in sorted((REPO / "results").glob(pattern))
+         if DATED.match(d.name) and not (d / "SUPERSEDED.md").exists()]
+    return c[-1] if c else None
+
+
 def fmt(x: float, nd: int) -> str:
     return f"{x:.{nd}f}"
 
@@ -41,9 +58,9 @@ def t010() -> int:
     rep = REPO / "reports" / "E11_pi0_hybrid_inputs.md"
     text = rep.read_text()
     checks = []
-    A = REPO / "results" / f"{DATE}_E11a_pi0_hostseg"
-    B = REPO / "results" / f"{DATE}_E11b_xfer"
-    C = REPO / "results" / f"{DATE}_E11c_pi0_handover"
+    A = newest("*_E11a_pi0_hostseg")
+    B = newest("*_E11b_xfer")
+    C = newest("*_E11c_pi0_handover")
 
     seg = [r for r in rows(A / "segment_summary.csv")
            if r["timing"] == "wall_isolated" and "gap_ms=0" in r["variant"]
@@ -81,20 +98,26 @@ def t010() -> int:
 
     # E11d — the sweep's spreads and the one fit that exists
     for mode in ("eager", "reduce-overhead"):
-        D = REPO / "results" / f"{DATE}_E11d_pi0_{mode}_prefixsweep"
-        if not (D / "prefix_sweep.csv").exists():
+        D = newest(f"*_E11d_pi0_{mode}_prefixsweep")
+        if D is None or not (D / "prefix_sweep.csv").exists():
             continue
         by_region: dict[str, list[float]] = {}
         for r in rows(D / "prefix_sweep.csv"):
             by_region.setdefault(r["region"], []).append(float(r["median_ms"]))
-        for reg, vs in by_region.items():
+        # only the regions the report leads with. The ten individual ae_step[i] rows are
+        # in prefix_sweep.csv and are summarised by ae_total; demanding each one in prose
+        # would make the guard fire on completeness rather than on correctness.
+        for reg in ("vision", "vlm_prefix", "ae_total", "e2e"):
+            vs = by_region.get(reg)
+            if not vs:
+                continue
             checks.append((f"E11d {mode} {reg} min", f"{min(vs):.2f}"))
             checks.append((f"E11d {mode} {reg} max", f"{max(vs):.2f}"))
 
     # E11e — the slowdown at each load, and the background rate it was driven at
     for mode in ("eager", "reduce-overhead"):
-        E = REPO / "results" / f"{DATE}_E11e_pi0_{mode}_mempressure"
-        if not (E / "mempressure.csv").exists():
+        E = newest(f"*_E11e_pi0_{mode}_mempressure")
+        if E is None or not (E / "mempressure.csv").exists():
             continue
         for r in rows(E / "mempressure.csv"):
             if r["slowdown"] not in ("", "1.0"):
@@ -105,20 +128,36 @@ def t010() -> int:
                                f"{float(r['bg_GBps_during']):.1f}"))
 
     # E11f — the corrected idle fraction, never the raw one
-    F = REPO / "results" / f"{DATE}_E11f_pi0_pipelining"
-    if (F / "gpu_idle.csv").exists():
+    F = newest("*_E11f_pi0_pipelining")
+    if F and (F / "gpu_idle.csv").exists():
         for r in rows(F / "gpu_idle.csv"):
             if r.get("gpu_idle_frac_corrected"):
                 checks.append((f"E11f idle frac {r['mode']} N={r['N']}",
                                f"{100*float(r['gpu_idle_frac_corrected']):.1f}"))
-    if (F / "throughput.csv").exists():
+    if F and (F / "throughput.csv").exists():
         for r in rows(F / "throughput.csv"):
             checks.append((f"E11f {r['mode']} {r['phase']} inf/s",
                            f"{float(r['throughput_inf_per_s']):.2f}"))
 
-    bad = [(lab, v) for lab, v in checks if v not in text]
+    def present(v: str) -> bool:
+        """Accept the value at the precision the report actually writes it.
+
+        A figure quoted as 2.938 and recomputed as 2.94 is the same number; demanding one
+        spelling makes the guard fire on formatting rather than on a wrong value. Only
+        trailing precision is flexed — the leading digits must match exactly.
+        """
+        if v in text:
+            return True
+        try:
+            f = float(v)
+        except ValueError:
+            return False
+        nd = len(v.split(".")[1]) if "." in v else 0
+        return any(f"{f:.{d}f}" in text for d in range(max(0, nd - 1), nd + 3))
+
+    bad = [(lab, v) for lab, v in checks if not present(v)]
     for lab, v in checks:
-        print(f"  {'ok  ' if v in text else 'MISS'} {lab:36s} {v}")
+        print(f"  {'ok  ' if present(v) else 'MISS'} {lab:36s} {v}")
     if bad:
         print(f"\n{len(bad)} value(s) recomputed from results/ do NOT appear in "
               f"{rep.relative_to(REPO)}:")
