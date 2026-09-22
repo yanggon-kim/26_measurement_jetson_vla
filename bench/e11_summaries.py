@@ -52,6 +52,113 @@ def _absent(out: Path) -> list[str]:
     return [x if isinstance(x, str) else json.dumps(x) for x in n]
 
 
+# ---------------------------------------------------------------------------- E11a
+
+
+def e11a(out: Path) -> Path:
+    seg, hl, defs = (rd(out / "segment_summary.csv"), rd(out / "host_layer_summary.csv"),
+                     rd(out / "segments.csv"))
+    # §13.1's PRIMARY timing is wall_isolated with no pause between calls.
+    prim = [r for r in seg if r["timing"] == "wall_isolated"
+            and r["variant"].endswith("gap_ms=0")]
+
+    def layer_of(r):
+        return r["layer"]
+
+    styles = ["eager", "compiled", "cudagraph"]
+    by = {(r["segment"], r["layer"], r["exec_style"]): r for r in prim}
+    bytes_of = {d["segment"]: d for d in defs}
+
+    def build(layers: list[str]) -> list[str]:
+        """One table. `layer = -1` holds the per-step extras, which are not per-layer
+        segments and must not be listed under a layer they never ran in."""
+        names, seen = [], set()
+        for r in prim:
+            if r["layer"] in layers and r["segment"] not in seen:
+                seen.add(r["segment"])
+                names.append(r["segment"])
+        if not names:
+            return []
+        t = ["| segment | layer | " + " | ".join(f"{st} ms" for st in styles)
+             + " | kernels, eager | bytes read + written | FLOPs |",
+             "|---|---:|" + "---:|" * (len(styles) + 3)]
+        for lay in layers:
+            for n in names:
+                if (n, lay, "eager") not in by:
+                    continue
+                cells = [f(by[(n, lay, st)]["median_ms"], 4) if (n, lay, st) in by
+                         else "not measured" for st in styles]
+                e = by[(n, lay, "eager")]
+                d = bytes_of.get(n, {})
+                br, bw = d.get("bytes_read", ""), d.get("bytes_written", "")
+                t.append(f"| `{n}` | {lay} | " + " | ".join(cells)
+                         + f" | {f(e['n_kernels'], 1) if e['n_kernels'] else ''}"
+                         + f" | {(br + ' + ' + bw) if br else ''}"
+                         + f" | {d.get('flops', '')} |")
+        return t
+
+    layers = sorted({r["layer"] for r in prim if r["layer"] != "-1"},
+                    key=lambda x: int(x))
+    tbl = build(layers)
+    extras_tbl = build(["-1"])
+
+    lay_tbl = ["| key | exec_style | layer | median ms | p5 | p95 | n | vs the analytic "
+               "0.16 ms |", "|---|---|---:|---:|---:|---:|---:|---:|"]
+    for r in sorted(hl, key=lambda r: (r["variant"], float(r["median_ms"]))):
+        v = float(r["median_ms"])
+        lay_tbl.append(f"| `{r['key']}` | {r['exec_style']} | {r['variant']} | "
+                       f"**{v:.4f}** | {f(r['p5_ms'], 4)} | {f(r['p95_ms'], 4)} | {r['n']} | "
+                       f"{v/0.16:.2f}x |")
+
+    nm = _absent(out)
+    sections = [
+        ("Answer — per-segment latency, `wall_isolated`, `gap_ms = 0` (the §13.1 primary)",
+         "\n".join(tbl) + "\n\n**Per-step extras** (`order_in_layer = -1`: once per "
+         "denoising step, not once per layer)\n\n" + "\n".join(extras_tbl)
+         + "\n\n`gap_ms = 2`, `gpu_event` and `wall_launch` for every row, "
+         "with achieved GB/s and TFLOP/s where the segment has bytes and FLOPs, are in "
+         "`segment_summary.csv`; the byte and FLOP formulas and every input's shape, dtype "
+         "and contiguity in `segments.csv`; the 216,000 per-iteration samples in "
+         "`raw/segment_samples.csv.zst`; kernel counts, their `key_averages` table and one "
+         "Chrome trace per (segment, layer, style) in `raw/profiler/`."),
+        ("A whole layer, six ways", "\n".join(lay_tbl) + "\n\n`sum_of_segments` is derived "
+         "(the six mapping segments added up); `sequence` and `whole_layer_graph` are "
+         "measured directly. The ordering is the finding: **one CUDA graph over the whole "
+         "layer is the only implementation that comes near the mapping's 0.16 ms**, and it "
+         "beats a compiled sequence by about 2.4x. Compiling the sequence is worth ~2.5x "
+         "over compiling the six segments separately — fusion does cross the segment "
+         "boundaries the mapping treats as separable — but it lands ~2.8x above 0.16 ms, "
+         "not below it."),
+        ("Conditions",
+         "pi0 @ `45dcc8fc`, bf16, MAXN + jetson_clocks, P = 816 processed (533 valid), "
+         "S = 51, N = 4. Layers 0 and 9 of the action expert. >= 20 warm-ups and 1,000 timed "
+         "calls per (segment, style, timing) — §13.1 asks for >= 20 and >= 1,000. Inputs are "
+         "the model's own tensors, captured with hooks from one real denoising step of the "
+         "fixture and replayed through the model's own callables; the prefix K/V are read "
+         "from the cache **before** the layer updates it, so the replayed attention runs "
+         "over the real T = P + S = 867 keys rather than S = 51."),
+        ("The caveat that governs every compiled number",
+         "A compiled callable whose outputs are discarded is dead-code-eliminated. Measured "
+         "on this device to size the error: a compiled 2048^3 bf16 matmul costs **0.0662 ms** "
+         "when its result is discarded and **0.6605 ms** when it is returned. An earlier "
+         "version of this experiment returned `None` from the timed sequence and reported it "
+         "at 0.085 ms, which measured nothing. Every timed callable here returns its "
+         "results."),
+        ("Reproduce",
+         "```\n# kernel counts and profiler traces need root: CUPTI does, on this device.\n"
+         "# They run as a SEPARATE pass because attaching a profiler inflates every\n"
+         "# subsequent call by ~30 %.\n"
+         f"sudo -n /bin/sh -c 'cd $PWD && HOME=$HOME HF_HUB_OFFLINE=1 \\\n"
+         f"    exec python bench/host_segments.py --outdir {out} --mode count'\n"
+         f"python bench/host_segments.py --outdir {out} --warmup 20 --timed 1000 \\\n"
+         f"    --kernels-csv {out}/kernels_per_call.csv\n"
+         f"bash bench/run_nsys.sh {out} host_sequences -- \\\n"
+         f"    python bench/host_segments.py --outdir {out} --mode nsys\n```"),
+    ]
+    return write_summary(out, "E11a - pi0 host segments (protocol §13.1, §13.2)",
+                         sections, nm)
+
+
 # ---------------------------------------------------------------------------- E11b
 
 
@@ -263,7 +370,7 @@ def e11d(out: Path) -> Path:
     return write_summary(out, "E11d — prefix latency vs its input (measurement plan, part 4)", sections, _absent(out))
 
 
-DISPATCH = {"E11b": e11b, "E11c": e11c, "E11d": e11d, "E11e": e11e, "E11f": e11f}
+DISPATCH = {"E11a": e11a, "E11b": e11b, "E11c": e11c, "E11d": e11d, "E11e": e11e, "E11f": e11f}
 
 
 def main() -> int:
@@ -275,8 +382,7 @@ def main() -> int:
         out = Path(d)
         part = next((k for k in DISPATCH if f"_{k}_" in out.name or out.name.endswith(k)), None)
         if part is None:
-            print(f"{out}: no summary writer (E11a and the consolidated directory write "
-                  f"their own)")
+            print(f"{out}: no summary writer (the consolidated directory writes its own)")
             rc = 1
             continue
         print("wrote", DISPATCH[part](out))

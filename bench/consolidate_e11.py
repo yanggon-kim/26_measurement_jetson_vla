@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -31,6 +32,23 @@ PARTS = ["E11a_pi0_hostseg", "E11b_xfer", "E11c_pi0_handover",
 REGION_Q = {"preprocess": "t_preprocess", "vision": "t_vision", "vlm_prefix": "t_vlm_prefix",
             "postprocess": "t_postprocess", "ae_step": "t_ae_step", "ae_total": "t_ae_total",
             "e2e_wall": "t_e2e", "e2e": "t_e2e"}
+
+
+DATED = re.compile(r"^\d{8}[a-z]?_")
+
+
+def pick_run(pattern: str) -> Path | None:
+    """The newest **dated** result directory matching `pattern`.
+
+    Two rules, both learned the hard way. Take the *newest* match, because a re-measured
+    part lives beside the superseded one (§5 forbids overwriting a result directory) and
+    the date prefix sorts. But take only directories whose name starts with a date:
+    `results/` also holds diagnostic directories named `evidence_…` and `regions_…`, and
+    plain lexical order puts those after every date, so `[-1]` silently preferred
+    `evidence_E4_pi0_reduce-overhead_N4` over `20260921_E4_pi0_reduce-overhead_N4`.
+    """
+    cands = [p for p in sorted((REPO / "results").glob(pattern)) if DATED.match(p.name)]
+    return cands[-1] if cands else None
 
 
 def restate(out: Path, src_dir: Path, filename: str) -> str | None:
@@ -55,9 +73,7 @@ def main() -> int:
 
     # --- 1. every part's own rows, with source_file repointed at a restated copy
     for part in PARTS:
-        # the NEWEST matching directory: a re-measured part lives beside the superseded
-        # one (§5 forbids overwriting a result directory), and the date prefix sorts.
-        d = (sorted((REPO / "results").glob(f"*_{part}")) or [None])[-1]
+        d = pick_run(f"*_{part}")
         if d is None or not (d / "model_inputs.csv").exists():
             missing.append(part)
             print(f"  MISSING {part}")
@@ -83,7 +99,7 @@ def main() -> int:
                                  "*_E4_pi0_reduce-overhead_N{n}", "compiled",
                                  "reduce-overhead")):
         for n_steps in (4, 10):
-            d = (sorted((REPO / "results").glob(pat.format(n=n_steps))) or [None])[-1]
+            d = pick_run(pat.format(n=n_steps))
             if d is None:
                 missing.append(f"{tag} N={n_steps}")
                 continue

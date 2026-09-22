@@ -160,6 +160,88 @@ def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float):
     return run, len(segs)
 
 
+
+def emit_model_inputs(out: Path, trows, crows, irows, steps: int,
+                      bench_commit: str) -> int:
+    """Every model_inputs.csv row E11f is responsible for, from the three CSVs.
+
+    Shared by the measuring path and by --from-csv, so a re-emission cannot drift
+    from what a fresh run would write.
+    """
+    mi = ModelInputs("pi0", P.REVISION, bench_commit,
+                     "MAXN+jetson_clocks", 816, 51, steps)
+    qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
+    for r in trows:
+        st = "eager" if r["mode"] == "eager" else "compiled"
+        mi.add(qmap[r["phase"]], r["throughput_inf_per_s"], "inf_per_s", "value", r["n"],
+               "throughput.csv", variant=f"mode={r['mode']}", exec_style=st,
+               timing="wall_loop")
+    for r in crows:
+        if r["slowdown"] != "":
+            st = "eager" if r["mode"] == "eager" else "compiled"
+            mi.add("host_layer_slowdown", r["slowdown"], "ratio", "value", r["n"],
+                   "concurrency.csv", key="prefix_loop",
+                   variant=f"sharing={r['sharing']};mode={r['mode']}", exec_style=st,
+                   timing="wall_isolated")
+    # §13.8's `timing` is a closed enum and does not contain "nsys". Both idle figures rest
+    # on a wall-clock loop measurement — the corrected one on the UNPROFILED loop, the raw
+    # one on the profiled wall — so both are `wall_loop`, and `basis=` in `variant` says
+    # which. (An earlier version wrote timing="nsys" and check_model_inputs.py rejected it,
+    # and timing="analytic" for the raw figure, which was worse: nothing about it is analytic.)
+    for r in irows:
+        st = "eager" if r["mode"] == "eager" else "compiled"
+        if r.get("gpu_idle_frac_corrected") not in ("", None):
+            base = (f"mode={r['mode']};N={r['N']};"
+                    f"basis=unprofiled_wall_minus_profiled_kernel_busy")
+            mi.add("gpu_idle_ae_total", r["gpu_idle_ms_corrected"], "ms", "value", 1,
+                   "gpu_idle.csv", variant=base, exec_style=st, timing="wall_loop")
+            mi.add("gpu_idle_frac_ae_total", r["gpu_idle_frac_corrected"], "ratio", "value",
+                   1, "gpu_idle.csv", variant=base, exec_style=st, timing="wall_loop")
+        if r.get("gpu_idle_ms") not in ("", None):
+            base = f"mode={r['mode']};N={r['N']};basis=profiled_wall"
+            mi.add("gpu_idle_ae_total", r["gpu_idle_ms"], "ms", "value", 1, "gpu_idle.csv",
+                   variant=base, exec_style=st, timing="wall_loop")
+            mi.add("gpu_idle_frac_ae_total", r["gpu_idle_frac"], "ratio", "value", 1,
+                   "gpu_idle.csv", variant=base, exec_style=st, timing="wall_loop")
+    return mi.write(out / "model_inputs.csv")
+
+
+def rebuild_from_csv(out: Path, args) -> int:
+    """Re-emit model_inputs.csv and summary.md from this run's committed CSVs.
+
+    Nothing is measured. The CSVs are the record of the run; this only rebuilds the
+    derived hand-off file when the way a row is *labelled* turns out to be wrong.
+    """
+    def rd(name):
+        p_ = out / name
+        return list(csv.DictReader(p_.open())) if p_.exists() else []
+
+    trows, crows, irows = rd("throughput.csv"), rd("concurrency.csv"), rd("gpu_idle.csv")
+    if not (trows or crows or irows):
+        print(f"{out}: no CSVs to rebuild from")
+        return 1
+    meta_p = out / "meta.json"
+    if not meta_p.exists():
+        print(f"{out}: meta.json is missing; refusing to invent one")
+        return 1
+    meta = json.loads(meta_p.read_text())
+    n_mi = emit_model_inputs(out, trows, crows, irows, int(meta.get("num_denoise_steps", 4)),
+                             meta.get("bench_commit") or sh_out(f"git -C {REPO} rev-parse HEAD"))
+    e11f(out)
+    meta["model_inputs_rows"] = n_mi
+    meta.setdefault("notes", []).append(
+        f"model_inputs.csv and summary.md were rebuilt from this run's own CSVs on "
+        f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} with "
+        f"`python bench/pipelining.py --outdir {out} --from-csv` at bench commit "
+        f"{sh_out(f'git -C {REPO} rev-parse HEAD')}. No measurement was repeated: the fix "
+        f"was to the `timing` label of the gpu_idle rows, which §13.8's closed enum does "
+        f"not allow to be 'nsys'. The measured values are unchanged.")
+    meta["raw_files"] = collect_raw(out, meta.get("command", ""))
+    write_json(meta_p, meta)
+    print(f"rebuilt {out}: {n_mi} model_inputs rows (nothing measured)")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
@@ -168,10 +250,21 @@ def main() -> int:
     ap.add_argument("--modes", default="eager,reduce-overhead")
     ap.add_argument("--conc-reps", type=int, default=30)
     ap.add_argument("--pause-ms", type=float, default=2.0)
+    ap.add_argument("--from-csv", action="store_true",
+                    help="measure nothing: re-read this run's own throughput.csv, "
+                         "concurrency.csv and gpu_idle.csv and rebuild model_inputs.csv and "
+                         "summary.md from them. For correcting how a measurement is "
+                         "*described* (a wrong `timing` label, a missing row) without "
+                         "pretending to have measured it again. meta.json keeps the original "
+                         "run's device state and gains a note saying this happened.")
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
     (out / "nsys").mkdir(parents=True, exist_ok=True)
+
+    if args.from_csv:
+        return rebuild_from_csv(out, args)
+
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
 
@@ -346,41 +439,8 @@ def main() -> int:
                 w.writeheader()
                 w.writerows([{k: r.get(k, "") for k in keys} for r in rows_])
 
-    mi = ModelInputs("pi0", P.REVISION, sh_out(f"git -C {REPO} rev-parse HEAD"),
-                     "MAXN+jetson_clocks", 816, 51, args.steps)
-    qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
-    for r in trows:
-        st = "eager" if r["mode"] == "eager" else "compiled"
-        mi.add(qmap[r["phase"]], r["throughput_inf_per_s"], "inf_per_s", "value", r["n"],
-               "throughput.csv", variant=f"mode={r['mode']}", exec_style=st,
-               timing="wall_loop")
-    for r in crows:
-        if r["slowdown"] != "":
-            st = "eager" if r["mode"] == "eager" else "compiled"
-            mi.add("host_layer_slowdown", r["slowdown"], "ratio", "value", r["n"],
-                   "concurrency.csv", key="prefix_loop",
-                   variant=f"sharing={r['sharing']};mode={r['mode']}", exec_style=st,
-                   timing="wall_isolated")
-    for r in irows:
-        if r.get("gpu_idle_frac_corrected") not in ("", None):
-            mi.add("gpu_idle_ae_total", r["gpu_idle_ms_corrected"], "ms", "value", 1,
-                   "gpu_idle.csv", variant=f"mode={r['mode']};N={r['N']};"
-                   f"basis=unprofiled_wall_minus_profiled_kernel_busy",
-                   exec_style="eager" if r["mode"] == "eager" else "compiled",
-                   timing="nsys")
-            mi.add("gpu_idle_frac_ae_total", r["gpu_idle_frac_corrected"], "ratio", "value", 1,
-                   "gpu_idle.csv", variant=f"mode={r['mode']};N={r['N']};"
-                   f"basis=unprofiled_wall_minus_profiled_kernel_busy",
-                   exec_style="eager" if r["mode"] == "eager" else "compiled",
-                   timing="nsys")
-        if r.get("gpu_idle_ms") not in ("", None):
-            st = "eager" if r["mode"] == "eager" else "compiled"
-            mi.add("gpu_idle_ae_total", r["gpu_idle_ms"], "ms", "value", 1, "gpu_idle.csv",
-                   variant=f"mode={r['mode']};N={r['N']}", exec_style=st, timing="analytic")
-            mi.add("gpu_idle_frac_ae_total", r["gpu_idle_frac"], "ratio", "value", 1,
-                   "gpu_idle.csv", variant=f"mode={r['mode']};N={r['N']}", exec_style=st,
-                   timing="analytic")
-    n_mi = mi.write(out / "model_inputs.csv")
+    n_mi = emit_model_inputs(out, trows, crows, irows, args.steps,
+                             sh_out(f"git -C {REPO} rev-parse HEAD"))
 
     sw = software_versions()
     write_json(out / "meta.json", {

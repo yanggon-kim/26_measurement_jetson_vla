@@ -48,8 +48,9 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
+from e11_summaries import e11a  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, nvtx, sh_out,  # noqa: E402
-                    software_versions, summarize, write_json, write_summary)
+                    software_versions, summarize, write_json)
 
 LAYERS = (0, 9)
 
@@ -522,57 +523,6 @@ class ModelInputs:
         return len(self.rows)
 
 
-
-def _write_summary(out, all_rows, layer_rows, seg_rows, notes, args, n_mi) -> None:
-    """The §5 summary.md: the answer first, then how it was produced."""
-    def pick(**kw):
-        for r in all_rows:
-            if all(str(r.get(k)) == str(v) for k, v in kw.items()):
-                return r
-        return None
-
-    tbl = ["| segment | layer | style | timing | median ms | p5 | p95 | n |",
-           "|---|---|---|---|---:|---:|---:|---:|"]
-    for r in all_rows:
-        if r["timing"] != "cuda_event" or r["variant"] not in ("", "gap_ms=0"):
-            continue
-        tbl.append(f"| {r['segment']} | {r['layer']} | {r['exec_style']} | {r['timing']} | "
-                   f"{r['median_ms']:.4f} | {r['p5_ms']:.4f} | {r['p95_ms']:.4f} | {r['n']} |")
-
-    seq = [r for r in all_rows if r["segment"].startswith("six_segment_sequence")]
-    seq_lines = [f"- `{r['segment']}` {r['exec_style']}: **{r['median_ms']:.4f} ms** "
-                 f"(p5 {r['p5_ms']:.4f}, p95 {r['p95_ms']:.4f}, n={r['n']})" for r in seq]
-    whole = [r for r in all_rows if r["segment"] == "whole_layer_graph"]
-    seq_lines += [f"- `whole_layer_graph` {r['exec_style']}: **{r['median_ms']:.4f} ms** "
-                  f"(n={r['n']})" for r in whole]
-
-    sections = [
-        ("Answer — per-segment host-replay latency (cuda_event, gap_ms=0)",
-         "\n".join(tbl) + "\n\nFull distributions, every style, timing and variant, and "
-         "the per-segment byte and FLOP formulas are in `segment_summary.csv` and "
-         "`segments.csv`; per-iteration samples in `raw/segment_samples.csv.zst`."),
-        ("Sequence vs whole layer",
-         "\n".join(seq_lines) or "not measured"),
-        ("Conditions",
-         f"pi0 @ `{P.REVISION}`, bf16, MAXN + jetson_clocks, P=816 (533 valid), S=51, "
-         f"N={args.steps}. Layers 0 and 9 of the action expert. "
-         f"{args.warmup} warm-ups and {args.timed} timed calls per point (protocol §2 "
-         f"asks for >=20 and >=100). Inputs are the model's own tensors captured from one "
-         f"real denoising step and replayed; prefix K/V are read from the cache *before* "
-         f"the layer updates it, so the replayed attention runs over the real T=P+S=867 "
-         f"keys."),
-        ("Caveat that governs every compiled number",
-         "A compiled callable whose outputs are discarded is dead-code-eliminated. Measured "
-         "on this device: a compiled 2048^3 bf16 matmul costs 0.066 ms when its result is "
-         "discarded and 0.661 ms when it is returned. Every timed callable here therefore "
-         "returns its results."),
-        ("Reproduce",
-         f"```\npython bench/host_segments.py --outdir {args.outdir} "
-         f"--warmup {args.warmup} --timed {args.timed} --mode count   # kernel counts, needs root\n"
-         f"python bench/host_segments.py --outdir {args.outdir} "
-         f"--warmup {args.warmup} --timed {args.timed} --kernels-csv <that>/kernels_per_call.csv\n```"),
-    ]
-    write_summary(out, "E11a - pi0 host segments (protocol §13.1)", sections, notes)
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -1091,7 +1041,7 @@ def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
             "exists. `partials_residual` and `cast_scores_fp32_fp16` are mapping_only.",
         ],
     })
-    _write_summary(out, all_rows, layer_rows, seg_rows, notes, args, n_mi)
+    e11a(out)          # summary.md, from the CSVs just written (bench/e11_summaries.py)
     meta = json.loads((out / "meta.json").read_text())
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)
