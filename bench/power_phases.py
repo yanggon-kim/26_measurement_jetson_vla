@@ -57,7 +57,29 @@ class Rails(threading.Thread):
             time.sleep(max(0.0, self.period - (time.time() - t)))
 
 
+def stop_tegrastats(proc=None):
+    """Stop tegrastats for real.
+
+    `subprocess.Popen(["sudo", "tegrastats", ...]).terminate()` signals the *sudo* wrapper; the
+    root tegrastats survives it and keeps appending to its log. E11e's first run left 22 of
+    them alive, which both corrupted the logs (39,845 lines for a 60 s capture) and added
+    growing background load to every later condition. `tegrastats --stop` is the documented
+    way; the pkill is a belt-and-braces for instances it does not own.
+    """
+    subprocess.run(["sudo", "-n", "tegrastats", "--stop"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+    subprocess.run(["sudo", "-n", "pkill", "-9", "-x", "tegrastats"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+    if proc is not None:
+        try:
+            proc.terminate()
+            proc.wait(timeout=10)
+        except Exception:                                          # noqa: BLE001
+            pass
+
+
 def measure(fn, seconds, tag, teg_log: Path):
+    stop_tegrastats()
     if teg_log.exists():
         teg_log.unlink()
     teg = subprocess.Popen(["sudo", "-n", "tegrastats", "--interval", "100",
@@ -73,7 +95,7 @@ def measure(fn, seconds, tag, teg_log: Path):
         time.sleep(seconds)
     s.stop.set()
     s.join(timeout=2)
-    teg.terminate()
+    stop_tegrastats(teg)
     rails = [k for k in s.samples[0] if k != "t"]
     means = {k: statistics.fmean([x[k] for x in s.samples if x.get(k) is not None])
              for k in rails}

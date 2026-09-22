@@ -45,8 +45,9 @@ def load(nsys_dir: Path, tag: str, kind: str):
 
 
 def span(r):
-    st = num(r.get("Start (ns)") or r.get("Start"))
-    du = num(r.get("Duration (ns)") or r.get("Duration"))
+    """nsys names these columns differently in cuda_gpu_trace and nvtx_gpu_proj_trace."""
+    st = num(r.get("Start (ns)") or r.get("Projected Start (ns)") or r.get("Start"))
+    du = num(r.get("Duration (ns)") or r.get("Projected Duration (ns)") or r.get("Duration"))
     return (st, st + du) if st is not None and du is not None else (None, None)
 
 
@@ -93,10 +94,13 @@ def main() -> int:
     regions = collections.defaultdict(list)
     if proj:
         for r in proj:
-            nm = (r.get("Name") or r.get("Range") or "").strip()
+            # projected ranges carry their NVTX domain as a ":" prefix
+            nm = (r.get("Name") or r.get("Range") or "").lstrip(":").strip()
             a, b = span(r)
             if a is None or not nm:
                 continue
+            if nm.startswith(("ae_step_", "ae_layer_")):
+                continue                   # bracket-free alias: same span, counted once
             base = nm.split("[")[0] if "[" in nm else nm
             regions[base].append((a, b))
         print(f"  NVTX ranges from {pname}: "

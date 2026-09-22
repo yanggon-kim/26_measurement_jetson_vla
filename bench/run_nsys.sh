@@ -17,7 +17,15 @@ TAG="${1:?missing tag}"; shift
 mkdir -p "$OUT/raw" "$OUT/nsys"
 REP="$OUT/raw/${TAG}"
 
-nsys profile \
+# Protocol §3.5: "run profiled commands without token variables". nsys snapshots the process
+# environment into the report, and the first E11f capture embedded this session's
+# CLAUDE_CODE_MESSAGING_TOKEN. Strip every token-like variable before profiling.
+UNSET=""
+for V in $(env | grep -oE "^[A-Za-z_]*(TOKEN|SECRET|PASSWORD|APIKEY|API_KEY)[A-Za-z_]*=" \
+           | tr -d "=" ); do UNSET="$UNSET -u $V"; done
+[ -n "$UNSET" ] && echo "  scrubbing from the profiled environment:$UNSET"
+
+env $UNSET nsys profile \
     -t cuda,nvtx,osrt,cublas \
     --capture-range=cudaProfilerApi --capture-range-end=stop \
     --cuda-memory-usage=true \

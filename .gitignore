@@ -53,3 +53,16 @@ id_ed25519*
 ONBOARDING.md
 HANDOFF.md
 HANDOFF.history.md
+
+# --- EXCEPTION to the "commit the raw data" rule above, added in T010 ---------------
+# nsys binary reports embed SYSTEM-WIDE process metadata, including the environment of
+# processes nsys did not launch. On this machine that includes a session token belonging to
+# the agent's own harness, so every .nsys-rep and its .sqlite fails the protocol §3.5 secrets
+# scan. Scrubbing the profiled process's environment does NOT remove it — verified by
+# capturing under `env -i`, which still embeds it — so the binaries cannot be committed.
+# They are kept on disk, listed in meta.json.raw_files with committed:false, the reason and
+# the command that regenerates them, exactly as §3.5 prescribes. The exported CSVs under
+# results/*/nsys/ carry the same measurements, are scanned clean, and ARE committed.
+# .ncu-rep files are unaffected and are still committed (compressed).
+results/**/*.nsys-rep
+results/**/*.sqlite

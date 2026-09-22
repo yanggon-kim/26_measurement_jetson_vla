@@ -64,11 +64,14 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str) -> dict | None:
         kern.append((st, st + du))
     spans = []
     for r in csv.DictReader(open(proj)):
-        nm = (r.get("Name") or r.get("Range") or "")
-        if not nm.startswith("ae_step"):
-            continue
-        st = num(r.get("Start (ns)") or r.get("Start"))
-        du = num(r.get("Duration (ns)") or r.get("Duration"))
+        # nsys prefixes projected NVTX ranges with their domain, e.g. ":ae_step[0]"
+        nm = (r.get("Name") or r.get("Range") or "").lstrip(":").strip()
+        if not nm.startswith("ae_step") or nm.startswith("ae_step_"):
+            continue                       # the bracket-free alias duplicates the same span
+        # ...and the projected trace names its columns differently from cuda_gpu_trace
+        st = num(r.get("Projected Start (ns)") or r.get("Start (ns)") or r.get("Start"))
+        du = num(r.get("Projected Duration (ns)") or r.get("Duration (ns)")
+                 or r.get("Duration"))
         if st is None or du is None:
             continue
         spans.append((st, st + du))

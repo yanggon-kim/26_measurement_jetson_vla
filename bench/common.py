@@ -96,7 +96,11 @@ def scan_for_secrets(path: Path, limit: int = 64 << 20) -> str:
         return f"unreadable: {e}"
     m = _SECRET_RE.search(blob)
     if m:
-        return f"MATCH: {m.group(0)[:24]!r}... REVIEW BEFORE COMMITTING"
+        # NEVER echo the match: this string is written into meta.json, which IS committed.
+        # Report the pattern class and the offset only.
+        head = m.group(0).split(b"=")[0][:40].decode("ascii", "replace")
+        return (f"MATCH at byte {m.start()}: a value assigned to {head!r} matches the "
+                f"secret pattern. NOT COMMITTED.")
     return "clean"
 
 
@@ -174,7 +178,21 @@ def collect_raw(outdir: Path, produced_by: str, kind_of=None,
             kind = kind_of(f) if kind_of else classify_kind(f)
             rel = str(f.relative_to(base))
             by = (produced_by_map or {}).get(rel, produced_by)
-            e = raw_file_entry(f, base, kind, by, secrets_scan=scan_for_secrets(f))
+            scan = scan_for_secrets(f)
+            e = raw_file_entry(f, base, kind, by, secrets_scan=scan)
+            if scan.startswith("MATCH"):
+                # §3.5: "A raw file that was produced but could not be committed (... or
+                # failed the secrets scan) is still listed, with committed: false, the
+                # reason, and the command that regenerates it."
+                e["committed"] = False
+                e["not_committed_reason"] = (
+                    "failed the secrets scan. nsys snapshots system-wide process metadata "
+                    "into its report, which on this machine includes a session token from "
+                    "the agent's own environment. Scrubbing the profiled process's "
+                    "environment does not remove it (verified with `env -i`), so the binary "
+                    "report cannot be committed. The exported CSVs under nsys/ carry the "
+                    "same measurements and are clean.")
+                e["regenerate_with"] = by
             # protocol §5: a compressed file carries its compression command and the
             # sha256 + bytes of the uncompressed original IN THE ENTRY, not only in a
             # sidecar file.

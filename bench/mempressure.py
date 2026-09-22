@@ -67,7 +67,29 @@ def hog_rate(log: Path) -> float | None:
     return vals[len(vals) // 2]
 
 
+def stop_tegrastats(proc=None):
+    """Stop tegrastats for real.
+
+    `subprocess.Popen(["sudo", "tegrastats", ...]).terminate()` signals the *sudo* wrapper; the
+    root tegrastats survives it and keeps appending to its log. E11e's first run left 22 of
+    them alive, which both corrupted the logs (39,845 lines for a 60 s capture) and added
+    growing background load to every later condition. `tegrastats --stop` is the documented
+    way; the pkill is a belt-and-braces for instances it does not own.
+    """
+    subprocess.run(["sudo", "-n", "tegrastats", "--stop"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+    subprocess.run(["sudo", "-n", "pkill", "-9", "-x", "tegrastats"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+    if proc is not None:
+        try:
+            proc.terminate()
+            proc.wait(timeout=10)
+        except Exception:                                          # noqa: BLE001
+            pass
+
+
 def start_tegrastats(log: Path):
+    stop_tegrastats()                      # never leave one running from a previous condition
     if log.exists():
         log.unlink()                       # tegrastats --logfile APPENDS (T001 finding)
     return subprocess.Popen(["sudo", "-n", "tegrastats", "--interval", "100",
@@ -123,7 +145,7 @@ def main() -> int:
                     time.sleep(3)
                 teg = start_tegrastats(teg_log)
                 r = PL.run_loop(fn, args.seconds, f"{phase}/{tag}")
-                teg.terminate()
+                stop_tegrastats(teg)
                 during = hog_rate(hog_log)
                 if proc:
                     proc.terminate()
