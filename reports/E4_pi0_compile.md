@@ -256,6 +256,35 @@ the hybrid model: the part being moved into memory is exactly the part compilati
 
 ---
 
+## 4.1 Per-region speed-up under compilation (the acceptance line's "speed-up per region")
+
+§5.2 explains why the *whole*-model compiled runs cannot be instrumented. `step_only` can:
+it compiles `denoise_step` only, and `bench/regions.py` wraps that callable from **outside**,
+so no region boundary falls inside a compiled graph. Confirmed — this run logs **1** graph
+break (the `deepcopy`), not the 5+ that instrumenting a whole-model compile produces.
+
+Median ms, n = 100, `results/regions_E4_pi0_reduce-overhead+step_only_N{4,10}/`:
+
+| region | eager N=4 | compiled N=4 | speed-up | eager N=10 | compiled N=10 | speed-up |
+|---|---|---|---|---|---|---|
+| `vision` | 239.35 | 241.58 | **1.00×** | 239.60 | 240.42 | **1.00×** |
+| `vlm_prefix` | 233.08 | 234.64 | **1.00×** | 232.93 | 234.59 | **0.99×** |
+| **`ae_total`** | 215.53 | **68.88** | **3.13×** | 533.03 | **170.31** | **3.13×** |
+| end-to-end | 694.05 | 551.17 | 1.26× | 1011.57 | 651.71 | 1.55× |
+
+`vision` and `vlm_prefix` are unchanged to within 1 %, which is the correct control: under
+`step_only` they are not compiled at all. The entire gain is in `ae_total`, **3.13× at both N**.
+
+**Share of the frame, compiled.** The action expert falls from 31.1 % to **12.5 %** at N = 4,
+and from 52.7 % to **26.1 %** at N = 10. Compilation makes the phase this study wants to move
+into memory an even smaller fraction of the control cycle.
+
+*Caveat:* these regions carry their own CUDA-event cost — the instrumented per-step figure is
+17.0–17.2 ms against 16.34 ms uninstrumented, about **4 %**. Use §1.2's uninstrumented slopes
+for the ladder and this table for the split.
+
+---
+
 ## 5. Two measurement errors I made and caught
 
 Recorded because both would have produced plausible, wrong numbers.
