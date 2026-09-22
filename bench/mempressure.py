@@ -77,6 +77,20 @@ def hog_rate(log: Path, unit: str = "GBps") -> float | None:
     return vals[len(vals) // 2]
 
 
+def hog_duty(log: Path) -> float | None:
+    """Median ACHIEVED duty cycle, which is a measurement; the requested duty is an input.
+
+    The unit of work cannot be made arbitrarily small, so a hog asked for 25 % overshoots.
+    Every analysis of these rows has to use this column, not `duty_pct`.
+    """
+    if not log.exists():
+        return None
+    vals = [json.loads(ln).get("achieved_duty_pct")
+            for ln in log.read_text().splitlines() if ln.strip().startswith("{")]
+    vals = sorted(v for v in vals if v is not None)
+    return vals[len(vals) // 2] if vals else None
+
+
 def stop_tegrastats(proc=None):
     """Stop tegrastats for real.
 
@@ -164,7 +178,10 @@ def main() -> int:
                 if label == "none":
                     base[phase] = r["median_ms"]
                 slow = r["median_ms"] / base[phase] if base.get(phase) else ""
-                rows.append({"load_label": tag, "duty_pct": duty, "phase": phase,
+                rows.append({"load_label": tag, "duty_pct": duty,
+                             "duty_pct_achieved_alone": hog_duty(
+                                 out / "raw" / f"bw_hog_{tag}_alone.log"),
+                             "duty_pct_achieved_during": hog_duty(hog_log), "phase": phase,
                              "bg_GBps_alone": round(alone, 3) if alone else "",
                              "bg_GBps_during": round(during, 3) if during else "",
                              "pct_of_measured_peak": round(100 * during / PEAK_GBPS, 1)

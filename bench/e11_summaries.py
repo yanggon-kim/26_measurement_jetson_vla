@@ -247,12 +247,18 @@ def e11e(out: Path) -> Path:
     mp, cu, pw = rd(out / "mempressure.csv"), rd(out / "cpu_util.csv"), rd(out / "power.csv")
     sections = [
         ("Answer — what a memory-bandwidth competitor does to the prefix",
-         table(mp, ["load_label", "duty_pct", "bg_GBps_alone", "bg_GBps_during",
+         table(mp, ["load_label", "duty_pct", "duty_pct_achieved_alone",
+                    "duty_pct_achieved_during", "bg_GBps_alone", "bg_GBps_during",
                     "pct_of_measured_peak", "median_ms", "p5_ms", "p95_ms", "n",
                     "throughput_inf_per_s", "slowdown"],
-               ["load", "duty %", "bg GB/s alone", "bg GB/s during", "% of 187.47",
+               ["load", "duty % asked", "duty % got, alone", "duty % got, during",
+                "bg GB/s alone", "bg GB/s during", "% of 187.47",
                 "median ms", "p5", "p95", "n", "inf/s", "slowdown"],
-               {"median_ms": 3, "p5_ms": 3, "p95_ms": 3, "throughput_inf_per_s": 3})),
+               {"median_ms": 3, "p5_ms": 3, "p95_ms": 3, "throughput_inf_per_s": 3})
+         + "\n\n**Read the achieved duty, not the requested one.** The unit of work cannot "
+           "be made arbitrarily small — a 32 MiB GPU chunk is ~0.4 ms against a 5 ms window "
+           "at duty 25 — so a hog asked for 25 % delivers more. The achieved figure is "
+           "measured from the time the hog actually spent working in each 20 ms period."),
         ("CPU utilisation per phase",
          table([r for r in cu if not (r["scope"].startswith("cpu") and r["scope"] != "cpu")],
                ["phase", "scope", "pct", "median_pct", "p5_pct", "p95_pct", "n", "cores_busy"],

@@ -29,33 +29,59 @@ PERIOD_S = 0.020
 BUF_MIB = 256
 
 
+def duty_loop(do_chunk, bytes_per_chunk, duty, seconds, log, label, unit="GBps",
+              extra_emit=None):
+    """Run `do_chunk` for `duty` % of each 20 ms period and report the rate achieved.
+
+    **The unit of work has to be much smaller than the window.** A whole 256 MiB copy is
+    ~3.4 ms on the GPU and ~10 ms on the CPU, so at duty 25 (a 5 ms window) the inner loop
+    checks its condition, does one indivisible copy, and overshoots by 2x; at duty 75 it
+    overshoots past the end of the period and the sleep never runs. The first version of
+    this file had that bug on top of a worse one (synchronising outside the window), and
+    every duty cycle collapsed to 100 %. `do_chunk` therefore moves a slice, not the buffer.
+
+    The requested duty is an input; the **achieved** duty is a measurement, and it is what
+    the analysis must use. It is emitted with every rate sample.
+    """
+    on = PERIOD_S * duty / 100.0
+    t_end = time.perf_counter() + seconds
+    win_b, win_busy, win_t0 = 0, 0.0, time.perf_counter()
+    while time.perf_counter() < t_end:
+        t0 = time.perf_counter()
+        while time.perf_counter() - t0 < on:
+            do_chunk()
+            win_b += bytes_per_chunk
+        busy = time.perf_counter() - t0
+        win_busy += busy
+        rest = PERIOD_S - busy
+        if rest > 0:
+            time.sleep(rest)
+        if time.perf_counter() - win_t0 >= 1.0:
+            dt = time.perf_counter() - win_t0
+            emit(log, label, win_b / dt / 1e9, unit=unit,
+                 achieved_duty_pct=round(100 * win_busy / dt, 2))
+            if extra_emit:
+                extra_emit(log, label, dt, win_b, win_busy)
+            win_b, win_busy, win_t0 = 0, 0.0, time.perf_counter()
+
+
 def gpu_hog(duty: float, seconds: float, log, label: str):
     import torch
     n = BUF_MIB * 1024 * 1024 // 2
     src = torch.empty(n, device="cuda", dtype=torch.bfloat16).normal_()
     dst = torch.empty(n, device="cuda", dtype=torch.bfloat16)
-    moved = 2 * n * 2                                   # read + write, as E1's clone() row
-    on = PERIOD_S * duty / 100.0
-    t_end = time.perf_counter() + seconds
-    win_b, win_t0 = 0, time.perf_counter()
-    # One copy takes ~3.4 ms of GPU time. Queuing copies for `on` seconds and only THEN
-    # synchronising drains a queue far longer than the 20 ms period, so `rest` was always
-    # negative, the sleep never ran, and every duty cycle collapsed to 100 % -- which is why
-    # the first run showed "duty cycle barely matters". Synchronise inside the window so the
-    # GPU is actually idle for the rest of the period.
-    while time.perf_counter() < t_end:
-        t0 = time.perf_counter()
-        while time.perf_counter() - t0 < on:
-            dst.copy_(src)
-            torch.cuda.synchronize()          # bound the in-flight queue to one copy
-            win_b += moved
-        rest = PERIOD_S - (time.perf_counter() - t0)
-        if rest > 0:
-            time.sleep(rest)
-        if time.perf_counter() - win_t0 >= 1.0:
-            dt = time.perf_counter() - win_t0
-            emit(log, label, win_b / dt / 1e9)
-            win_b, win_t0 = 0, time.perf_counter()
+    # ~32 MiB per chunk: about 0.4 ms of GPU time, 1/12 of the shortest duty window.
+    chunk = n // 8
+    moved = 2 * chunk * 2                               # read + write, as E1's clone() row
+    pos = [0]
+
+    def do_chunk():
+        i = pos[0]
+        dst[i:i + chunk].copy_(src[i:i + chunk])
+        torch.cuda.synchronize()        # bound the in-flight queue to one chunk
+        pos[0] = 0 if i + chunk >= n else i + chunk
+
+    duty_loop(do_chunk, moved, duty, seconds, log, label)
 
 
 def gpu_spin_control(duty: float, seconds: float, log, label: str):
@@ -64,27 +90,25 @@ def gpu_spin_control(duty: float, seconds: float, log, label: str):
     import torch
     a = torch.empty(512, 512, device="cuda", dtype=torch.bfloat16).normal_()
     b = torch.empty(512, 512, device="cuda", dtype=torch.bfloat16).normal_()
-    on = PERIOD_S * duty / 100.0
-    t_end = time.perf_counter() + seconds
-    win_t0, win_n = time.perf_counter(), 0
-    while time.perf_counter() < t_end:
-        t0 = time.perf_counter()
-        while time.perf_counter() - t0 < on:
-            a @ b
-            torch.cuda.synchronize()          # same queue bound as gpu_hog
-            win_n += 1
-        rest = PERIOD_S - (time.perf_counter() - t0)
-        if rest > 0:
-            time.sleep(rest)
-        if time.perf_counter() - win_t0 >= 1.0:
-            dt = time.perf_counter() - win_t0
-            # Report BOTH: the compute rate, and the DRAM traffic this control actually
-            # moves. The second is the number the E11e analysis divides by; publishing only
-            # TFLOP/s (and having the caller store it in a GB/s column) is how "5.5 GB/s"
-            # got into the report when the value was 5.5 TFLOP/s.
-            emit(log, label, 2 * 512 ** 3 * win_n / dt / 1e12, unit="TFLOPps")
-            emit(log, label, 3 * 512 * 512 * 2 * win_n / dt / 1e9, unit="GBps")
-            win_t0, win_n = time.perf_counter(), 0
+    n = [0]
+
+    def do_chunk():
+        a @ b
+        torch.cuda.synchronize()        # same queue bound as gpu_hog
+        n[0] += 1
+
+    def also_flops(log_, label_, dt, win_b, win_busy):
+        # Report BOTH: the compute rate, and the DRAM traffic this control actually moves.
+        # The second is the number the E11e analysis divides by; publishing only TFLOP/s
+        # (and having the caller store it in a GB/s column) is how "5.5 GB/s" got into the
+        # report when the value was 5.5 TFLOP/s.
+        emit(log_, label_, 2 * 512 ** 3 * n[0] / dt / 1e12, unit="TFLOPps",
+             achieved_duty_pct=round(100 * win_busy / dt, 2))
+        n[0] = 0
+
+    # three matrices touched per GEMM, bf16
+    duty_loop(do_chunk, 3 * 512 * 512 * 2, duty, seconds, log, label,
+              extra_emit=also_flops)
 
 
 def _cpu_worker(duty, seconds, cores, q, arithmetic_only):
@@ -94,32 +118,52 @@ def _cpu_worker(duty, seconds, cores, q, arithmetic_only):
     n = BUF_MIB * 1024 * 1024 // 8
     if arithmetic_only:
         a = np.ones(1 << 16, dtype=np.float64)          # fits in cache
+        chunk = a.size
+        moved = a.nbytes * 2
     else:
         src = np.ones(n, dtype=np.float64)
         dst = np.empty(n, dtype=np.float64)
-    moved = 2 * n * 8
+        # ~16 MiB per chunk: about 0.6 ms, well inside the shortest duty window. A whole
+        # 256 MiB np.copyto is ~10 ms, half the period, and cannot be interrupted.
+        chunk = n // 16
+        moved = 2 * chunk * 8
+    pos = [0]
+
+    def do_chunk():
+        if arithmetic_only:
+            a *= 1.0000001
+        else:
+            i = pos[0]
+            np.copyto(dst[i:i + chunk], src[i:i + chunk])
+            pos[0] = 0 if i + chunk >= n else i + chunk
+
     on = PERIOD_S * duty / 100.0
     t_end = time.perf_counter() + seconds
-    win_b, win_t0 = 0, time.perf_counter()
+    win_b, win_busy, win_t0 = 0, 0.0, time.perf_counter()
     while time.perf_counter() < t_end:
         t0 = time.perf_counter()
         while time.perf_counter() - t0 < on:
-            if arithmetic_only:
-                a *= 1.0000001
-                win_b += a.nbytes * 2
-            else:
-                np.copyto(dst, src)
-                win_b += moved
-        rest = PERIOD_S - (time.perf_counter() - t0)
+            do_chunk()
+            win_b += moved
+        busy = time.perf_counter() - t0
+        win_busy += busy
+        rest = PERIOD_S - busy
         if rest > 0:
             time.sleep(rest)
         if time.perf_counter() - win_t0 >= 1.0:
             dt = time.perf_counter() - win_t0
-            q.put(win_b / dt / 1e9)
-            win_b, win_t0 = 0, time.perf_counter()
+            q.put((win_b / dt / 1e9, 100 * win_busy / dt))
+            win_b, win_busy, win_t0 = 0, 0.0, time.perf_counter()
 
 
 def cpu_hog(duty, seconds, log, label, workers, cores, arithmetic_only=False):
+    """Sum the workers' rates on a fixed 1 s cadence.
+
+    The queue is drained completely each pass and the latest report from each worker is
+    kept. Summing whatever happened to arrive inside a 1 s window instead — the first
+    version — counted a variable number of workers per sample, which is why the rate a
+    cpu_hog reported "alone" fell as its duty cycle rose.
+    """
     q = mp.Queue()
     ps = [mp.Process(target=_cpu_worker,
                      args=(duty, seconds, cores, q, arithmetic_only))
@@ -127,24 +171,28 @@ def cpu_hog(duty, seconds, log, label, workers, cores, arithmetic_only=False):
     for p in ps:
         p.start()
     t_end = time.perf_counter() + seconds
-    acc, last = 0.0, time.perf_counter()
+    latest: dict[int, tuple[float, float]] = {}
+    seq, last = 0, time.perf_counter()
     while time.perf_counter() < t_end:
         try:
-            acc += q.get(timeout=0.5)
+            latest[seq % workers] = q.get(timeout=0.2)
+            seq += 1
         except Exception:                                          # noqa: BLE001
             pass
-        if time.perf_counter() - last >= 1.0:
-            emit(log, label, acc)
-            acc, last = 0.0, time.perf_counter()
+        if time.perf_counter() - last >= 1.0 and latest:
+            emit(log, label, sum(v[0] for v in latest.values()),
+                 achieved_duty_pct=round(
+                     sum(v[1] for v in latest.values()) / len(latest), 2))
+            last = time.perf_counter()
     for p in ps:
         p.join(timeout=5)
         if p.is_alive():
             p.terminate()
 
 
-def emit(log, label, rate, unit="GBps"):
+def emit(log, label, rate, unit="GBps", **extra):
     line = json.dumps({"t": round(time.time(), 3), "label": label,
-                       "rate": round(rate, 3), "unit": unit})
+                       "rate": round(rate, 3), "unit": unit, **extra})
     print(line, flush=True)
     if log:
         with open(log, "a") as f:
