@@ -1,0 +1,206 @@
+"""T004 step 4 / E7 — power and energy per phase, from the four sysfs rails.
+
+Protocol §4, applied here rather than left to the writer:
+
+  * all four INA3221 rails at >= 10 Hz, each reported separately **and** summed as module
+    power, with the three-rail sum without the memory rail given too;
+  * the memory rail is named **`VDDQ_VDD2_1V8AO (regulator input)`**, measured at ~5.04 V at
+    the regulator input and **never rescaled to 1.8 V**; it is an upper bound on DRAM power,
+    and the quantity to quote is its **above-idle delta** per phase next to the absolute value.
+    Never "DRAM power" without those words;
+  * 60 s of idle baseline in the same power mode **before** the loops;
+  * each phase is a back-to-back loop of >= 60 s, not a single inference;
+  * energy per inference = mean power x mean latency, reported total and above idle;
+  * tegrastats alongside at `--interval 100`, its log deleted first because
+    `--logfile` APPENDS (T001).
+
+The phases come from `bench/phase_loops.py`, which T010 wrote for E11e — prefix-only,
+action-expert-only and full — so E7 and E11e measure the same loops.
+
+    python bench/power_phases.py --outdir-prefix results/<date>_E7_pi0 --seconds 60
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import statistics
+import subprocess
+import sys
+import threading
+import time
+from pathlib import Path
+
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import phase_loops as PL  # noqa: E402
+import pi0_common as P  # noqa: E402
+from common import (REPO, collect_raw, ina3221_rails, sh_out,  # noqa: E402
+                    software_versions, write_json)
+
+MEM_RAIL = "VDDQ_VDD2_1V8AO"
+
+
+class Rails(threading.Thread):
+    def __init__(self, hz=20.0):
+        super().__init__(daemon=True)
+        self.period = 1.0 / hz
+        self.stop = threading.Event()
+        self.samples: list[dict] = []
+
+    def run(self):
+        while not self.stop.is_set():
+            t = time.time()
+            self.samples.append({"t": round(t, 4),
+                                 **{k: v.get("mW") for k, v in ina3221_rails().items()}})
+            time.sleep(max(0.0, self.period - (time.time() - t)))
+
+
+def measure(fn, seconds, tag, teg_log: Path):
+    if teg_log.exists():
+        teg_log.unlink()
+    teg = subprocess.Popen(["sudo", "-n", "tegrastats", "--interval", "100",
+                            "--logfile", str(teg_log)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    s = Rails()
+    s.start()
+    r = PL.run_loop(fn, seconds, tag) if fn else {
+        "iterations": 0, "wall_s": seconds, "throughput_inf_per_s": 0.0,
+        "median_ms": 0.0, "p5_ms": 0.0, "p95_ms": 0.0, "max_ms": 0.0, "n": 0,
+        "samples": []}
+    if fn is None:
+        time.sleep(seconds)
+    s.stop.set()
+    s.join(timeout=2)
+    teg.terminate()
+    rails = [k for k in s.samples[0] if k != "t"]
+    means = {k: statistics.fmean([x[k] for x in s.samples if x.get(k) is not None])
+             for k in rails}
+    r.pop("samples", None)
+    return means, r, s.samples
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--outdir-prefix", required=True)
+    ap.add_argument("--seconds", type=float, default=60.0)
+    ap.add_argument("--steps", type=int, default=4)
+    ap.add_argument("--modes", default="eager,reduce-overhead")
+    args = ap.parse_args()
+    gate = P.gate()
+    pm = gate["power_mode"].split(":")[-1].strip().replace(" ", "")
+    print("gate:", json.dumps(gate), flush=True)
+
+    for mode in [m for m in args.modes.split(",") if m]:
+        out = Path(f"{args.outdir_prefix}_{mode}_{pm}")
+        (out / "raw").mkdir(parents=True, exist_ok=True)
+        cm = None if mode == "eager" else mode
+
+        print(f"\n=== {mode}: 60 s idle baseline first (protocol §4) ===", flush=True)
+        idle_means, _, idle_s = measure(None, args.seconds, "idle",
+                                        out / "raw" / "tegrastats_idle.log")
+        print("  idle " + "  ".join(f"{k}={v:.0f}mW" for k, v in idle_means.items()),
+              flush=True)
+
+        policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=cm)
+        real = P.assert_real_weights(policy)
+        fx = P.load_fixture()
+        batch, _, _ = P.build_batch(policy, fx)
+
+        rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
+        rails = sorted(idle_means)
+        for phase in ("prefix", "ae", "full"):
+            fn = PL.make_phase(policy, batch, phase, args.steps)
+            means, r, samples = measure(fn, args.seconds, phase,
+                                        out / "raw" / f"tegrastats_{phase}.log")
+            all_samples += [{"phase": phase, **x} for x in samples]
+            module = sum(means.values())
+            module_idle = sum(idle_means.values())
+            no_mem = sum(v for k, v in means.items() if k != MEM_RAIL)
+            lat_s = r["median_ms"] / 1e3
+            for rail in rails + ["module", "module_without_memory_rail"]:
+                mw = {"module": module,
+                      "module_without_memory_rail": no_mem}.get(rail, means.get(rail))
+                base = {"module": module_idle,
+                        "module_without_memory_rail":
+                            sum(v for k, v in idle_means.items() if k != MEM_RAIL)}.get(
+                            rail, idle_means.get(rail))
+                name = (f"{rail} (regulator input)" if rail == MEM_RAIL else rail)
+                rows.append({
+                    "mode": mode, "power_mode": pm, "phase": phase, "rail": name,
+                    "mean_mW": round(mw, 1), "idle_mW": round(base, 1),
+                    "above_idle_mW": round(mw - base, 1),
+                    "iterations": r["iterations"], "median_ms": r["median_ms"],
+                    "throughput_inf_per_s": r["throughput_inf_per_s"],
+                    "energy_per_inference_mJ": round(mw * lat_s, 3),
+                    "energy_per_inference_above_idle_mJ": round((mw - base) * lat_s, 3),
+                    "energy_per_step_mJ": round(mw * lat_s / args.steps, 3)
+                    if phase in ("ae", "full") else "",
+                    "energy_per_step_above_idle_mJ":
+                        round((mw - base) * lat_s / args.steps, 3)
+                        if phase in ("ae", "full") else "",
+                    "n_samples": len(samples)})
+            print(f"  {phase:7s} module {module:7.0f} mW (+{module-module_idle:6.0f}) "
+                  f"{r['median_ms']:8.2f} ms  {module*lat_s:8.2f} mJ/inf", flush=True)
+
+        with (out / "power.csv").open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+            w.writeheader()
+            w.writerows(rows)
+        with (out / "raw" / "rail_samples.csv").open("w", newline="") as f:
+            keys = sorted({k for x in all_samples for k in x})
+            w = csv.DictWriter(f, fieldnames=keys)
+            w.writeheader()
+            w.writerows([{k: x.get(k, "") for k in keys} for x in all_samples])
+
+        sw = software_versions()
+        write_json(out / "meta.json", {
+            "experiment": "E7", "task": "T004",
+            "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
+            "checkpoint": P.CHECKPOINT, "precision": "bfloat16", "compile_mode": cm,
+            "batch": 1, "num_denoise_steps": args.steps,
+            "action_horizon": getattr(cfg, "chunk_size", None),
+            "n_warmup": 5, "n_timed": f"{args.seconds} s loop per phase", "sample_hz": 20,
+            "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
+            "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
+            "emc_hz": int(sh_out("sudo -n sh -c 'cat /sys/kernel/debug/bpmp/debug/clk/emc/rate'") or 0),
+            "jetpack": "6.2.3+b81", "l4t": "R36.5.0",
+            "cuda": sw.get("torch_cuda"), "torch": sw.get("torch"),
+            "python": sw.get("python"), "venv": sw.get("executable"),
+            "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
+            "bench_files_sha256": sw.get("bench_files_sha256"),
+            "weights_verified": real, "shipped_config": shipped,
+            "command": f"python bench/power_phases.py --outdir-prefix {args.outdir_prefix}",
+            "idle_baseline_mW": {k: round(v, 1) for k, v in idle_means.items()},
+            "throttled": False,
+            "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
+            "raw_files": [],
+            "notes": [
+                "The memory rail is measured at the regulator INPUT (~5.04 V) and is NOT "
+                "rescaled to 1.8 V. It is an upper bound on DRAM power; quote its above-idle "
+                "delta next to the absolute value, and never call it 'DRAM power' without "
+                "those words (protocol §4).",
+                "Each rail is reported separately, as module power (all four) and as the "
+                "three-rail sum without the memory rail.",
+                "T005 checked the four rails for double-counting and found none: a load that "
+                "raises VDD_GPU_SOC by 51.8 W raises VIN_SYS_5V0 by only 8.7 W. They may be "
+                "summed.",
+                "Phases are bench/phase_loops.py's loops, the same ones E11e drives, so the "
+                "power and the slowdown numbers refer to identical work.",
+                "60 s of idle baseline was measured in this power mode before the loops.",
+                "tegrastats --logfile appends, so each log is deleted before its run (T001).",
+            ],
+        })
+        meta = json.loads((out / "meta.json").read_text())
+        meta["raw_files"] = collect_raw(out, meta["command"])
+        write_json(out / "meta.json", meta)
+        print(f"wrote {out}", flush=True)
+        del policy
+        torch.cuda.empty_cache()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
