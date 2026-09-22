@@ -23,7 +23,9 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 |---|---|---|---|
 | bandwidth floor | 3.15 ms | 629 MB of weights (+KV) ÷ 204.8 GB/s | analytic |
 | "optimistic bound" | 6.30 ms | 2 × floor, a stand-in for a perfect software stack | **assumed** |
-| compiled stack | ≈ 90 ms | 136 ms ÷ 1.51, the paper's `torch.compile` gain on *Jetson Thor* | **estimate, never measured on Orin** — E4 / T003 replaces it |
+| ~~compiled stack~~ | ~~≈ 90 ms~~ | 136 ms ÷ 1.51, the paper's `torch.compile` gain on *Jetson Thor* | **superseded**: 5.5× too pessimistic |
+| **compiled stack (best stock mode)** | **16.30 ms** | **T003 / E4, `reports/E4_pi0_compile.md`** — `reduce-overhead`, slope over N ∈ {1,2,4,6,8,10} | **measured**, 5.2× the floor |
+| *(one-line fix: crop instead of cloning the KV cache)* | *10.37 ms* | *T003 / E4 §3.3, byte-identical actions* | *measured, 3.3× the floor — **1.67× the "optimistic bound" that was assumed unreachable*** |
 | ~~measured stack~~ | ~~136 ms~~ | the paper's 543 ms action-expert phase ÷ N = 4 | **superseded**: derived, and 2.6× too slow |
 | **measured stack (eager)** | **52.94 ms** | **T002 / E3, `reports/E3_pi0_eager.md`** — slope fit over N ∈ {1,2,4,6,8,10}, r² = 0.99999, MAXN, LeRobot π0 | **measured on this Orin**, 17.0× the floor |
 
@@ -34,7 +36,7 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | phase split vision / VLM / action expert | ~~110 / 258 / 543 ms = 12 / 28 / 59 %~~ → **measured 239.4 / 233.1 / 215.5 ms = 34.5 / 33.6 / 31.1 % at N = 4** | paper Fig. 5 | **E3 done — the split is the big disagreement, see below** |
 | action-expert time **per denoising step** | ~~136 ms~~ → **measured 52.94 ms** | derived | **E3 done** (the most important single number) |
 | action-expert share of latency vs N | ~~59.1 % (N = 4), 78.3 % (N = 10)~~ → **measured 31.1 % (N = 4), 52.7 % (N = 10)** | derived | **E3 done** |
-| `torch.compile` gain on Orin | 1.51× (Thor's) → ≈ 90 ms/step | transplanted | **E4** (biggest gap in our evidence) |
+| `torch.compile` gain on Orin | ~~1.51× (Thor's) → ≈ 90 ms/step~~ → **measured 3.22× per step** (1.39× e2e at N = 4, 1.69× at N = 10) | transplanted | **E4 done** — a single e2e factor is not transferable across N; the slope is |
 | GPU utilisation in the AE phase — the paper's "SM utilisation": streaming-multiprocessor (SM) occupancy as Nsight Compute (`ncu`) reports it; you report ncu SM occupancy / activity per region, with tegrastats `GR3D_FREQ` only as a coarse cross-check | 22 % | paper Fig. 5 | E5 |
 | per-pipe utilisation (LSU / FMA / ALU / …) and warp-stall reasons in `vision`, `vlm_prefix`, `ae_step` | unknown | — | E5 |
 | what the dominant action-expert kernels stall on, at instruction level (memory loads vs compute vs launch), vs S and under `torch.compile` | asserted "memory-bound", never shown | — | **E5b** |
@@ -113,6 +115,16 @@ cloned **every** step, measured at **5.68 ms/step** — 10.4 % of a step, and 1.
 whole 3.115 ms memory floor. It is Python/allocator cost (2.65 GB/s effective), not
 bandwidth. The hybrid model's `t_kv_materialise` / `kv_copied_bytes_per_step` assumptions of
 zero should be revised. (LeRobot-specific; openpi's loop does not do this.)
+
+*Corrected by T003/E4.* An earlier version of this paragraph suggested the copy might be
+unnecessary because the expert passes `use_cache=False`. **That was wrong, and the experiment
+was run:** deleting it makes the cache grow to P + 2S = 918 against an 867 mask and the model
+fails on step 2 — the expert appends its suffix K/V regardless. The copy is *load-bearing*.
+What is **not** needed is the 15 MB **clone**: `DynamicCache.crop(P)` after the forward gives
+byte-identical actions (verified bitwise, max abs diff 0.000e+00) and takes the compiled step
+from 16.30 to **10.37 ms** while removing **all four** of the model's graph breaks — every one
+of which is this line, since dynamo cannot trace `copy.deepcopy`. See
+`reports/E4_pi0_compile.md` §3.
 
 **Denoising step 0 costs +0.83 ms** over the rest. An earlier version of this section said
 +3.13 ms; that figure was ~74 % measurement artefact and is withdrawn.
