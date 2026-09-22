@@ -18,7 +18,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import REPO  # noqa: E402
 
-DATE = sys.argv[1] if len(sys.argv) > 1 else "20260922"
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+TASK = next((a.split("=")[1] for a in sys.argv[1:] if a.startswith("--task=")), "T005")
+DATE = ARGS[0] if ARGS else "20260922"
 E1 = REPO / "results" / f"{DATE}_E1_peak"
 E2 = REPO / "results" / f"{DATE}_E2_ae_kernels"
 KC = REPO / "results" / f"{DATE}_E2_kernel_counts"
@@ -34,7 +36,65 @@ def fmt(x: float, nd: int) -> str:
     return f"{x:.{nd}f}"
 
 
+def t010() -> int:
+    """T010's report, re-derived from the E11 CSVs."""
+    rep = REPO / "reports" / "E11_pi0_hybrid_inputs.md"
+    text = rep.read_text()
+    checks = []
+    A = REPO / "results" / f"{DATE}_E11a_pi0_hostseg"
+    B = REPO / "results" / f"{DATE}_E11b_xfer"
+    C = REPO / "results" / f"{DATE}_E11c_pi0_handover"
+
+    seg = [r for r in rows(A / "segment_summary.csv")
+           if r["timing"] == "wall_isolated" and "gap_ms=0" in r["variant"]
+           and r["layer"] == "0"]
+    for name in ("rmsnorm1", "rope", "attention_gpu", "residual_rmsnorm2"):
+        for style in ("eager", "compiled", "cudagraph"):
+            m = [r for r in seg if r["segment"] == name and r["exec_style"] == style]
+            if m:
+                checks.append((f"{name}/{style}", f"{float(m[0]['median_ms']):.4f}"))
+        m = [r for r in seg if r["segment"] == name and r["exec_style"] == "eager"]
+        if m:
+            checks.append((f"{name} kernels", str(float(m[0]["n_kernels"]))))
+
+    hl = {(r["key"], r["exec_style"]): float(r["median_ms"])
+          for r in rows(A / "host_layer_summary.csv") if r["variant"] == "layer=0"}
+    for (k, st), v in hl.items():
+        checks.append((f"t_host_layer {k}/{st}", f"{v:.3f}"))
+
+    for r in rows(B / "xfer_fit.csv"):
+        if r["method"] in ("pinned", "pageable"):
+            checks.append((f"fit_a {r['method']}:{r['direction']}",
+                           f"{float(r['fit_a_ms'])*1e3:.1f}"))
+            checks.append((f"GBps {r['method']}:{r['direction']}",
+                           f"{float(r['GBps_from_b']):.2f}"))
+    for r in rows(B / "sync_summary.csv"):
+        if r["sync"].startswith("_"):
+            continue
+        v = float(r["net_of_control_ms"] or r["median_ms"]) * 1e3
+        checks.append((f"t_sync {r['sync']}", f"{v:.1f}"))
+
+    meta = json.loads((C / "meta.json").read_text())
+    checks += [("kv_bytes_total", f"{meta['kv_bytes_total']:,}"),
+               ("kv_bytes_per_layer", f"{meta['kv_bytes_per_layer']:,}"),
+               ("deepcopy ms", f"{meta['deepcopy_ms_per_step']:.2f}")]
+
+    bad = [(lab, v) for lab, v in checks if v not in text]
+    for lab, v in checks:
+        print(f"  {'ok  ' if v in text else 'MISS'} {lab:36s} {v}")
+    if bad:
+        print(f"\n{len(bad)} value(s) recomputed from results/ do NOT appear in "
+              f"{rep.relative_to(REPO)}:")
+        for lab, v in bad:
+            print(f"    {lab}: expected {v!r}")
+        return 1
+    print(f"\nall {len(checks)} recomputed values appear in {rep.relative_to(REPO)}")
+    return 0
+
+
 def main() -> int:
+    if TASK == "T010":
+        return t010()
     text = REPORT.read_text()
     checks: list[tuple[str, str]] = []          # (label, string that must appear)
 

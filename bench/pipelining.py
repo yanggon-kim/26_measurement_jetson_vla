@@ -1,0 +1,325 @@
+"""T010 / E11f — throughput, GPU idle inside the expert, and what happens when two things share
+the GPU (protocol §13.7, plan part 6).
+
+The hybrid design overlaps the next frame's GPU prefix with the current frame's memory-side
+denoising, and assumes the two do not delay each other (`host_layer_slowdown = 1.0`,
+**[ASSUMPTION]**). Three things are measured here:
+
+  (a) the three throughputs — prefix-only, action-expert-only, full inference;
+  (b) `gpu_idle_ae_total` — the action-expert region time minus the union of the kernel
+      intervals inside it, from an nsys capture. This is the GPU time already free for the next
+      frame's prefix even in the ordinary all-GPU run. T004's E5 may reuse these captures;
+  (c) the prefix loop running concurrently with the per-layer host-segment sequence, **as two
+      processes and as two CUDA streams**, reporting median, p95 and max of the short activity
+      alone and under concurrency.
+
+    python bench/pipelining.py --outdir results/<date>_E11f_pi0_pipelining
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pi0_common as P  # noqa: E402
+import phase_loops as PL  # noqa: E402
+from common import REPO, collect_raw, sh_out, software_versions, summarize, write_json  # noqa: E402
+from host_segments import LayerCapture, ModelInputs, build_segments, intermediates  # noqa: E402
+
+
+def gpu_idle_from_nsys(nsys_dir: Path, tag: str) -> dict | None:
+    """region time - union of kernel intervals, from the nsys exports.
+
+    `cuda_gpu_trace` gives every kernel's start and duration; `nvtx_gpu_proj_trace` gives the
+    NVTX ranges projected onto the GPU timeline. The union is taken so overlapping kernels are
+    not double-counted.
+    """
+    import glob
+    trace = next(iter(glob.glob(str(nsys_dir / f"{tag}*cuda_gpu_trace.csv"))), None)
+    proj = next(iter(glob.glob(str(nsys_dir / f"{tag}*nvtx_gpu_proj_trace.csv"))), None)
+    if not trace or not proj:
+        return None
+
+    def num(x):
+        try:
+            return float(str(x).replace(",", ""))
+        except (TypeError, ValueError):
+            return None
+
+    kern = []
+    for r in csv.DictReader(open(trace)):
+        st = num(r.get("Start (ns)") or r.get("Start"))
+        du = num(r.get("Duration (ns)") or r.get("Duration"))
+        name = r.get("Name") or ""
+        if st is None or du is None or not name:
+            continue
+        kern.append((st, st + du))
+    spans = []
+    for r in csv.DictReader(open(proj)):
+        nm = (r.get("Name") or r.get("Range") or "")
+        if not nm.startswith("ae_step"):
+            continue
+        st = num(r.get("Start (ns)") or r.get("Start"))
+        du = num(r.get("Duration (ns)") or r.get("Duration"))
+        if st is None or du is None:
+            continue
+        spans.append((st, st + du))
+    if not kern or not spans:
+        return None
+    lo, hi = min(s for s, _ in spans), max(e for _, e in spans)
+    region_ns = hi - lo
+    inside = sorted((max(a, lo), min(b, hi)) for a, b in kern if b > lo and a < hi)
+    busy, cur_s, cur_e = 0.0, None, None
+    for a, b in inside:
+        if cur_s is None:
+            cur_s, cur_e = a, b
+        elif a <= cur_e:
+            cur_e = max(cur_e, b)
+        else:
+            busy += cur_e - cur_s
+            cur_s, cur_e = a, b
+    if cur_s is not None:
+        busy += cur_e - cur_s
+    idle = region_ns - busy
+    return {"ae_total_ms": region_ns / 1e6, "kernel_busy_ms": busy / 1e6,
+            "gpu_idle_ms": idle / 1e6,
+            "gpu_idle_frac": idle / region_ns if region_ns else 0.0,
+            "n_kernels_in_region": len(inside), "n_ae_step_spans": len(spans)}
+
+
+def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float):
+    """The per-layer host-segment sequence, `layers_per_inf` times with a pause between
+    segments — the plan's 18 x N layers per inference."""
+    cap = LayerCapture(policy, 0)
+    with cap, torch.no_grad():
+        policy.predict_action_chunk(batch)
+    t = intermediates(policy, cap)
+    ex = policy.model.paligemma_with_expert.gemma_expert
+    S = t["x"].shape[1]
+    t["_partials"] = torch.randn(4, S, ex.config.hidden_size, device="cuda", dtype=t["x"].dtype)
+    segs = [s for s in build_segments(t, S, ex.config.hidden_size, ex.config.intermediate_size,
+                                      ex.config.num_attention_heads, ex.config.head_dim,
+                                      t["scores"].shape[-1])
+            if s["segment"] in ("rmsnorm1", "rope", "softmax", "residual_rmsnorm2",
+                                "gelu_gate_mul_up", "partials_residual")]
+
+    def run():
+        for _ in range(layers_per_inf):
+            for sd in segs:
+                sd["fn"]()
+                if pause_ms:
+                    time.sleep(pause_ms / 1e3)
+        torch.cuda.synchronize()
+
+    return run, len(segs)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--outdir", required=True)
+    ap.add_argument("--seconds", type=float, default=60.0)
+    ap.add_argument("--steps", type=int, default=4)
+    ap.add_argument("--modes", default="eager,reduce-overhead")
+    ap.add_argument("--conc-reps", type=int, default=30)
+    ap.add_argument("--pause-ms", type=float, default=2.0)
+    args = ap.parse_args()
+    out = Path(args.outdir)
+    (out / "raw").mkdir(parents=True, exist_ok=True)
+    (out / "nsys").mkdir(parents=True, exist_ok=True)
+    gate = P.gate()
+    print("gate:", json.dumps(gate), flush=True)
+
+    trows, crows, irows = [], [], []
+    for mode in [m for m in args.modes.split(",") if m]:
+        cm = None if mode == "eager" else mode
+        policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=cm)
+        real = P.assert_real_weights(policy)
+        fx = P.load_fixture()
+        batch, _, _ = P.build_batch(policy, fx)
+        print(f"\n=== {mode}: throughput ===", flush=True)
+        for phase in ("prefix", "ae", "full"):
+            fn = PL.make_phase(policy, batch, phase, args.steps)
+            r = PL.run_loop(fn, args.seconds, phase)
+            r.pop("samples")
+            trows.append({"mode": mode, "phase": phase, **r})
+            print(f"  {phase:8s} {r['throughput_inf_per_s']:7.3f} inf/s  "
+                  f"median {r['median_ms']:8.2f} ms", flush=True)
+
+        # --- (c) concurrency
+        print(f"=== {mode}: concurrency ===", flush=True)
+        seq_fn, n_segs = host_sequence_fn(policy, batch, 18, args.pause_ms)
+        prefix_fn = PL.make_phase(policy, batch, "prefix", args.steps)
+
+        def bench_seq(label, sharing):
+            for _ in range(3):
+                seq_fn()
+            torch.cuda.synchronize()
+            ms = []
+            for _ in range(args.conc_reps):
+                torch.cuda.synchronize()
+                t0 = time.perf_counter()
+                seq_fn()
+                ms.append((time.perf_counter() - t0) * 1e3)
+            s = summarize(ms)
+            crows.append({"mode": mode, "sharing": sharing, "activity": "host_sequence",
+                          "condition": label, "median_ms": round(s["median_ms"], 4),
+                          "p95_ms": round(s["p95_ms"], 4), "max_ms": round(s["max_ms"], 4),
+                          "n": s["n"], "slowdown": ""})
+            return s["median_ms"]
+
+        alone = bench_seq("alone", "none")
+        # two streams in one process
+        s_hi = torch.cuda.Stream(priority=-1)
+        prio_ok = True
+        try:
+            _ = s_hi.priority
+        except Exception:                                          # noqa: BLE001
+            prio_ok = False
+        stop = {"v": False}
+
+        def prefix_spam():
+            while not stop["v"]:
+                prefix_fn()
+
+        import threading
+        th = threading.Thread(target=prefix_spam, daemon=True)
+        th.start()
+        time.sleep(2)
+        med = bench_seq("with_prefix_loop", "two_streams")
+        stop["v"] = True
+        th.join(timeout=30)
+        crows[-1]["slowdown"] = round(med / alone, 4)
+        print(f"  two_streams   host_sequence {med:8.2f} ms  slowdown {med/alone:.3f}",
+              flush=True)
+
+        # two processes
+        proc = subprocess.Popen(
+            [sys.executable, str(REPO / "bench" / "phase_loops.py"), "--phase", "prefix",
+             "--seconds", str(args.conc_reps * 2 + 30), "--steps", str(args.steps)]
+            + ([] if cm is None else ["--compile-mode", cm]),
+            stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        time.sleep(45 if cm else 25)               # let it load (and compile) before timing
+        med2 = bench_seq("with_prefix_loop", "two_processes")
+        proc.terminate()
+        proc.wait(timeout=30)
+        crows[-1]["slowdown"] = round(med2 / alone, 4)
+        print(f"  two_processes host_sequence {med2:8.2f} ms  slowdown {med2/alone:.3f}",
+              flush=True)
+        del policy
+        torch.cuda.empty_cache()
+
+        # --- (b) nsys, N = 4 and N = 10
+        for n in (4, 10):
+            tag = f"{mode}_N{n}"
+            cmd = ["bash", str(REPO / "bench" / "run_nsys.sh"), str(out), tag, "--",
+                   sys.executable, str(REPO / "bench" / "nsys_target.py"),
+                   "--steps", str(n), "--inferences", "2"]
+            if cm:
+                cmd += ["--compile-mode", cm, "--no-regions"]
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+            (out / "raw" / f"nsys_{tag}_driver.log").write_text(r.stdout + r.stderr)
+            g = gpu_idle_from_nsys(out / "nsys", tag)
+            if g:
+                irows.append({"mode": mode, "N": n, **g})
+                print(f"  nsys {tag}: ae_total {g['ae_total_ms']:.2f} ms  busy "
+                      f"{g['kernel_busy_ms']:.2f}  idle {g['gpu_idle_ms']:.2f} "
+                      f"({100*g['gpu_idle_frac']:.1f} %)", flush=True)
+            else:
+                irows.append({"mode": mode, "N": n, "ae_total_ms": "", "kernel_busy_ms": "",
+                              "gpu_idle_ms": "", "gpu_idle_frac": "",
+                              "n_kernels_in_region": "", "n_ae_step_spans": "",
+                              "note": "nsys exports missing or no ae_step NVTX ranges "
+                                      "(compiled captures run with --no-regions because the "
+                                      "context managers graph-break the model)"})
+                print(f"  nsys {tag}: no usable exports", flush=True)
+
+    for name, rows_ in (("throughput.csv", trows), ("concurrency.csv", crows),
+                        ("gpu_idle.csv", irows)):
+        if rows_:
+            keys = sorted({k for r in rows_ for k in r})
+            with (out / name).open("w", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=keys)
+                w.writeheader()
+                w.writerows([{k: r.get(k, "") for k in keys} for r in rows_])
+
+    mi = ModelInputs("pi0", P.REVISION, sh_out(f"git -C {REPO} rev-parse HEAD"),
+                     "MAXN+jetson_clocks", 816, 51, args.steps)
+    qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
+    for r in trows:
+        st = "eager" if r["mode"] == "eager" else "compiled"
+        mi.add(qmap[r["phase"]], r["throughput_inf_per_s"], "inf_per_s", "value", r["n"],
+               "throughput.csv", variant=f"mode={r['mode']}", exec_style=st,
+               timing="wall_loop")
+    for r in crows:
+        if r["slowdown"] != "":
+            st = "eager" if r["mode"] == "eager" else "compiled"
+            mi.add("host_layer_slowdown", r["slowdown"], "ratio", "value", r["n"],
+                   "concurrency.csv", key="prefix_loop",
+                   variant=f"sharing={r['sharing']};mode={r['mode']}", exec_style=st,
+                   timing="wall_isolated")
+    for r in irows:
+        if r.get("gpu_idle_ms") not in ("", None):
+            st = "eager" if r["mode"] == "eager" else "compiled"
+            mi.add("gpu_idle_ae_total", r["gpu_idle_ms"], "ms", "value", 1, "gpu_idle.csv",
+                   variant=f"mode={r['mode']};N={r['N']}", exec_style=st, timing="analytic")
+            mi.add("gpu_idle_frac_ae_total", r["gpu_idle_frac"], "ratio", "value", 1,
+                   "gpu_idle.csv", variant=f"mode={r['mode']};N={r['N']}", exec_style=st,
+                   timing="analytic")
+    n_mi = mi.write(out / "model_inputs.csv")
+
+    sw = software_versions()
+    write_json(out / "meta.json", {
+        "experiment": "E11f", "task": "T010",
+        "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
+        "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+        "compile_mode": args.modes, "batch": 1, "num_denoise_steps": args.steps,
+        "prefix_tokens": 816, "suffix_tokens": 51,
+        "n_warmup": 5, "n_timed": f"{args.seconds} s loops; {args.conc_reps} concurrency reps",
+        "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
+        "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
+        "emc_hz": int(sh_out("sudo -n sh -c 'cat /sys/kernel/debug/bpmp/debug/clk/emc/rate'") or 0),
+        "jetpack": "6.2.3+b81", "l4t": "R36.5.0",
+        "nsys_version": sh_out("nsys --version"),
+        "cuda": sw.get("torch_cuda"), "torch": sw.get("torch"),
+        "torchvision": sw.get("torchvision"), "triton": sw.get("triton"),
+        "python": sw.get("python"), "venv": sw.get("executable"),
+        "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
+        "bench_files_sha256": sw.get("bench_files_sha256"),
+        "command": f"python bench/pipelining.py --outdir {args.outdir}",
+        "high_priority_stream_accepted": prio_ok,
+        "throttled": False,
+        "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
+        "model_inputs_rows": n_mi, "raw_files": [],
+        "notes": [
+            "gpu_idle_ae_total is region time minus the UNION of kernel intervals inside the "
+            "ae_step NVTX spans, so overlapping kernels are not double-counted. It is the GPU "
+            "time already free for the next frame's prefix in the ordinary all-GPU run.",
+            "T004's E5 may reuse these captures rather than taking new ones; the .nsys-rep "
+            "files are under raw/ and the exports under nsys/.",
+            "Compiled captures run with --no-regions: bench/regions.py's context managers "
+            "force a graph break under torch.compile (bench/run_e4.py), so a compiled run "
+            "with regions on would not be the graph the model actually executes. That means "
+            "no ae_step NVTX spans exist for compiled, and gpu_idle is reported for eager.",
+            "Concurrency is measured both ways §13.7 asks for: two CUDA streams in one "
+            "process and two processes. Whether the high-priority stream argument was "
+            "accepted is recorded.",
+        ],
+    })
+    meta = json.loads((out / "meta.json").read_text())
+    meta["raw_files"] = collect_raw(out, meta["command"])
+    write_json(out / "meta.json", meta)
+    print(f"\nwrote {out} ({n_mi} rows)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

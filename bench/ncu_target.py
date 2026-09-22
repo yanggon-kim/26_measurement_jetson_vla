@@ -1,0 +1,97 @@
+"""T004 / T007 — the workload Nsight Compute profiles, one region at a time.
+
+Spec: `docs/03_instruction_level_analysis.md` §11 item 1 — args `--model --mode --num-steps
+--warmup --region`, and it must run standalone.
+
+Protocol §3.2 forbids an unfiltered `--set full`: every ncu command carries one NVTX range or
+one kernel regex plus `-c`/`-s` limits. This target warms up, then wraps exactly ONE inference
+in `cudaProfilerStart/Stop` with `bench/regions.py`'s NVTX ranges on it, so ncu sees one
+instance of the requested region.
+
+The region names available are the ones `bench/regions.py` emits (each also pushed without
+brackets, because §3.2 warns `--nvtx-include` may not parse them):
+
+    vision            vlm_prefix            ae_step[i] / ae_step_i     ae_layer[j] / ae_layer_j
+
+`ae_total` is NOT an NVTX range — it is derived from the first and last `ae_step` events — so
+`--nvtx-include "ae_total/"` would match nothing.
+
+Typical use, smallest region first (protocol §3.2's escalation order):
+
+    sudo $(which ncu) --profile-from-start off --nvtx --nvtx-include "ae_layer[0]/" \\
+        -c 1 --set full --csv --page details --log-file <out>/ncu/ae_layer0_details.csv \\
+        --export <out>/ncu/ae_layer0 --force-overwrite \\
+        python bench/ncu_target.py --region "ae_layer[0]" --mode eager --num-steps 4
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pi0_common as P  # noqa: E402
+import regions as R  # noqa: E402
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0", choices=("pi0",))
+    ap.add_argument("--mode", default="eager",
+                    help="eager, or a torch.compile mode such as reduce-overhead")
+    ap.add_argument("--num-steps", type=int, default=4)
+    ap.add_argument("--warmup", type=int, default=20)
+    ap.add_argument("--region", default="ae_layer[0]",
+                    help="informational: the NVTX range ncu is filtering on. The target emits "
+                         "all of them; ncu selects.")
+    ap.add_argument("--no-regions", action="store_true",
+                    help="do not instrument. Required for compiled captures: the context "
+                         "managers graph-break the model (bench/run_e4.py).")
+    args = ap.parse_args()
+
+    gate = P.gate()
+    cm = None if args.mode == "eager" else args.mode
+    policy, _, _ = P.load_policy(num_inference_steps=args.num_steps, compile_mode=cm)
+    P.assert_real_weights(policy)
+    fx = P.load_fixture()
+    batch, _, _ = P.build_batch(policy, fx)
+
+    rec = undo = None
+    if not args.no_regions:
+        need_layers = args.region.startswith("ae_layer")
+        rec = R.Recorder(enable_layers=need_layers,
+                         layers_in_step=18 if need_layers else 0)
+        undo = R.instrument(policy, rec)
+
+    for _ in range(args.warmup):
+        policy.predict_action_chunk(batch)
+    torch.cuda.synchronize()
+
+    cudart = torch.cuda.cudart()
+    cudart.cudaProfilerStart()
+    if rec is not None:
+        rec.reset()
+        rec.start()
+    policy.predict_action_chunk(batch)
+    torch.cuda.synchronize()
+    if rec is not None:
+        rec.stop()
+    cudart.cudaProfilerStop()
+    if undo:
+        undo()
+
+    print(json.dumps({
+        "region_requested": args.region, "mode": args.mode, "num_steps": args.num_steps,
+        "warmup": args.warmup, "instrumented": rec is not None,
+        "gpu_cur_freq_hz": gate["gpu_cur_freq_hz"], "power_mode": gate["power_mode"],
+        "sm_count": gate["sm_count"],
+        "regions_ms": None if rec is None else rec.results_ms(),
+    }))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
