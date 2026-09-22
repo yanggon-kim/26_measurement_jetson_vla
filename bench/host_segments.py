@@ -339,20 +339,32 @@ def time_segment(fn, timing: str, warmup: int, n: int, gap_ms: float = 0.0) -> l
     return out
 
 
-def make_style(fn, style: str):
+# §13.1: "log the compile time" for every compiled callable. One entry per successful
+# torch.compile, in seconds, covering the compile plus the three warm-up calls that force it.
+COMPILE_S: list[float] = []
+
+
+def make_style(fn, style: str, label: str = ""):
     """Return (callable, note) for an exec_style, or (None, error) if it cannot be built."""
     if style == "eager":
         return fn, ""
     if style == "compiled":
         try:
+            t0 = time.perf_counter()
             c = torch.compile(fn, dynamic=False)
             for _ in range(3):
                 c()
             torch.cuda.synchronize()
+            COMPILE_S.append(round(time.perf_counter() - t0, 3))
+            if label:
+                print(f"    compiled {label} in {COMPILE_S[-1]:.1f} s", flush=True)
             return c, ""
         except Exception as e:                                    # noqa: BLE001
             return None, f"{type(e).__name__}: {str(e)[:160]}"
     if style == "cudagraph":
+        if not _graph_capture_healthy():
+            return None, ("skipped: an earlier CUDA-graph capture left the context in an "
+                          "error state and the health probe did not recover it")
         try:
             s = torch.cuda.Stream()
             s.wait_stream(torch.cuda.current_stream())
@@ -365,8 +377,44 @@ def make_style(fn, style: str):
                 fn()
             return (lambda g=g: g.replay()), ""
         except Exception as e:                                    # noqa: BLE001
+            # A failed capture can leave the context unable to capture again. The next
+            # caller's health probe decides whether anything after this is trustworthy;
+            # without it, a later segment would silently report a number measured in a
+            # broken context. (Observed: suffix_embed's capture failed with
+            # cudaErrorStreamCaptureInvalidated, and the next attempt reported the generic
+            # "operation failed due to a previous error".)
+            _GRAPH_STATE["failed_after"] = True
             return None, f"{type(e).__name__}: {str(e)[:160]}"
     raise ValueError(style)
+
+
+_GRAPH_STATE = {"failed_after": False}
+
+
+def _graph_capture_healthy() -> bool:
+    """After a failed capture, prove the context can still capture and replay.
+
+    Only runs when a previous capture failed, and costs one tiny graph.
+    """
+    if not _GRAPH_STATE["failed_after"]:
+        return True
+    try:
+        torch.cuda.synchronize()
+        a = torch.zeros(8, device="cuda")
+        st = torch.cuda.Stream()
+        st.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(st):
+            a.add_(1.0)
+        torch.cuda.current_stream().wait_stream(st)
+        g = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(g):
+            a.add_(1.0)
+        g.replay()
+        torch.cuda.synchronize()
+    except Exception:                                             # noqa: BLE001
+        return False
+    _GRAPH_STATE["failed_after"] = False        # recovered
+    return True
 
 
 KA_ROWS: list[dict] = []
@@ -603,7 +651,7 @@ def main() -> int:
                     "bytes_formula": sd.get("bytes_formula", ""),
                     "in_model_code": sd["in_model"], "notes": sd["notes"]})
             for style in styles:
-                fn, err = make_style(sd["fn"], style)
+                fn, err = make_style(sd["fn"], style, f"{sd['segment']}@L{li}")
                 if fn is None:
                     notes_not_measured.append(
                         f"{sd['segment']} layer={li} exec_style={style}: {err}")
@@ -700,7 +748,7 @@ def main() -> int:
                 # lands in the report.
                 built = []
                 for style in ("eager", "compiled", "cudagraph"):
-                    fn, err = make_style(seq, style)
+                    fn, err = make_style(seq, style, f"sequence@L{li}")
                     if fn is None:
                         print(f"  nsys: {style} unavailable: {err[:80]}", flush=True)
                         continue
@@ -725,7 +773,7 @@ def main() -> int:
                 return 0
 
             for style in ("eager", "compiled"):
-                fn, err = make_style(seq, style)
+                fn, err = make_style(seq, style, f"sequence@L{li}")
                 if fn is None:
                     notes_not_measured.append(f"sequence layer={li} {style}: {err}")
                     continue
@@ -739,7 +787,7 @@ def main() -> int:
                              key="sequence", variant=f"layer={li}", exec_style=style,
                              timing="wall_isolated")
                 print(f"  sequence {style:9s} {s['median_ms']:.4f} ms", flush=True)
-            gfn, err = make_style(seq, "cudagraph")
+            gfn, err = make_style(seq, "cudagraph", f"whole_layer_graph@L{li}")
             if gfn is None:
                 notes_not_measured.append(f"whole_layer_graph layer={li}: {err}")
             else:
@@ -784,7 +832,7 @@ def main() -> int:
         defs, err = build_extras(policy, batch, args, holder["h"].detach().clone())
         for name, fn, _ref, _ops in defs:
             for style in styles:
-                f_, e = make_style(fn, style)
+                f_, e = make_style(fn, style, name)
                 if f_ is None:
                     continue
                 nk = count_kernels(f_, trace_path=out / "raw" / "profiler" /
@@ -883,7 +931,7 @@ def measure_extras(policy, batch, args, mi, all_rows, notes, styles, last_hidden
     rows = []
     for name, fn, ref, ops in defs:
         for style in styles:
-            f, e = make_style(fn, style)
+            f, e = make_style(fn, style, name)
             if f is None:
                 notes.append(f"{name} exec_style={style}: {e}")
                 print(f"  {name:22s} {style:9s} NOT MEASURED: {e[:70]}")
