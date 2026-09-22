@@ -275,6 +275,24 @@ Median ms, n = 100, `results/regions_E4_pi0_reduce-overhead+step_only_N{4,10}/`:
 `vision` and `vlm_prefix` are unchanged to within 1 %, which is the correct control: under
 `step_only` they are not compiled at all. The entire gain is in `ae_total`, **3.13× at both N**.
 
+**Why this control is valid, added 2026-09-22 after T004/E4b.** `modeling_pi0.py:591-595`
+enables TF32 for every fp32 matmul in the process — `torch.set_float32_matmul_precision("high")`
+— inside the same `if config.compile_model:` branch that compiles `sample_actions`. Every run in
+this report compiles by calling `torch.compile` **directly** (`bench/run_e4.py:169-181`) on a
+policy loaded with `compile_mode=None` (`:210`), so that flag is never set and TF32 is **off
+throughout E4**. That is why `vision` and `vlm_prefix` can be flat here: nothing in these runs
+changes their numerics.
+
+It also explains an apparent contradiction with T010. E11d/E11e/E11f load through
+`load_policy(compile_mode=…)`, which *does* set the flag, so their `reduce-overhead` rows carry
+TF32 as well as compilation and their prefix looks 1.41× faster. Measured with only the
+precision toggled and no compilation anywhere
+(`results/20260922_E4b_pi0_tf32_confound/`): prefix **1.400×**, action expert **1.012×**,
+end-to-end **1.244×**. The prefix's gain there is entirely the precision change; the action
+expert's 3.13× in the table above is entirely compilation. The two reports do not disagree —
+they ran with the flag in different states, and only this one is a clean compilation control.
+`results/20260922_E4c_pi0_opt_ladder/` separates all four factors in a single ladder.
+
 **Share of the frame, compiled.** The action expert falls from 31.1 % to **12.5 %** at N = 4,
 and from 52.7 % to **26.1 %** at N = 10. Compilation makes the phase this study wants to move
 into memory an even smaller fraction of the control cycle.
