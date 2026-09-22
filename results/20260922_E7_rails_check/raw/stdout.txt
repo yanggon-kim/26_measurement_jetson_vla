@@ -1,0 +1,16 @@
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+
+sampling four rails at 10 Hz, 60 s per load
+
+  idle                   VDD_GPU_SOC=  4783mW  VDD_CPU_CV=  1195mW  VIN_SYS_5V0=  4115mW  VDDQ_VDD2_1V8AO=   384mW
+  clone_256mib           VDD_GPU_SOC= 23487mW  VDD_CPU_CV=  2698mW  VIN_SYS_5V0= 11476mW  VDDQ_VDD2_1V8AO=  5338mW
+  copy_kernel_256mib     VDD_GPU_SOC= 26974mW  VDD_CPU_CV=  2707mW  VIN_SYS_5V0= 11970mW  VDDQ_VDD2_1V8AO=  5613mW
+  gemm_8192_bf16         VDD_GPU_SOC= 56567mW  VDD_CPU_CV=  2355mW  VIN_SYS_5V0= 12789mW  VDDQ_VDD2_1V8AO=  5806mW
+
+=== above idle, mW ===
+load                      VDDQ_VDD2_1V8AO         VDD_CPU_CV        VDD_GPU_SOC        VIN_SYS_5V0        SUM
+clone_256mib                         4953               1503              18704               7361      32522
+copy_kernel_256mib                   5228               1512              22191               7855      36786
+gemm_8192_bf16                       5422               1160              51784               8674      67040
+
+wrote results/20260922_E7_rails_check

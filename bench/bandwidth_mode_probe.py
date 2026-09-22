@@ -1,9 +1,9 @@
 """T005 — record which memory-performance mode this device is currently in.
 
-E1 found that bandwidth on this board is bimodal: a slow mode around 150-165 GB/s and a fast
-mode around 180-190 GB/s, a uniform ~1.21x that moves every memory-bound kernel together and
-persists across many consecutive process launches. Neither the cause nor a way to force a mode
-is known.
+E1 found that memory bandwidth on this board varies from run to run by up to ~1.14x with the
+GPU clock, the EMC clock and the die temperature all constant. Twenty-two samples span
+165.1-188.6 GB/s and the distribution is CONTINUOUS -- it is not two clean modes, and an
+earlier draft that called it bimodal was over-reading three points. The cause is not known.
 
 This probe exists so the claim is backed by a committed, re-runnable measurement rather than
 by an interactive session. Each invocation is a fresh process and reports one sample of the
@@ -79,7 +79,6 @@ def main() -> int:
     T = temps()
     print(json.dumps({
         "GBps": round(bw, 1),
-        "mode": "fast" if bw > 175 else ("slow" if bw < 170 else "between"),
         "median_ms": round(med, 4),
         "p5_ms": round(sorted(ms)[len(ms) // 20], 4),
         "p95_ms": round(sorted(ms)[-max(1, len(ms) // 20)], 4),

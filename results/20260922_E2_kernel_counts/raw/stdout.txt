@@ -1,0 +1,28 @@
+  slope over N=2 -> N=10: **969 kernel launches per denoising step**
+  fixed per inference (vision + VLM prefix + post): 2629
+
+  category                          per step   share
+  elementwise                          466.1   48.1 %
+  GEMM (tensor/CUDA core)              168.0   17.3 %
+  copy                                 157.0   16.2 %
+  concatenate (KV cache)                78.0    8.0 %
+  reduction / normalisation             75.0    7.7 %
+  softmax                               18.0    1.9 %
+  other                                  4.0    0.4 %
+  memset                                 3.0    0.3 %
+
+  top 12 individual kernels per step:
+       74.0  elementwise                  void at::native::vectorized_elementwise_kernel<4, at::nati
+       58.0  copy                         void at::native::vectorized_elementwise_kernel<4, at::nati
+       54.1  elementwise                  void at::native::vectorized_elementwise_kernel<4, at::nati
+       54.0  elementwise                  void at::native::vectorized_elementwise_kernel<4, at::nati
+       41.0  copy                         void at::native::unrolled_elementwise_kernel<at::native::d
+       37.0  elementwise                  void at::native::elementwise_kernel<128, 2, at::native::gp
+       37.0  elementwise                  void at::native::elementwise_kernel<128, 4, at::native::gp
+       37.0  reduction / normalisation    void at::native::reduce_kernel<512, 1, at::native::ReduceO
+       37.0  elementwise                  void at::native::vectorized_elementwise_kernel<4, at::nati
+       37.0  reduction / normalisation    void at::native::vectorized_elementwise_kernel<4, at::nati
+       36.0  copy                         Memcpy DtoD (Device -> Device)
+       36.0  GEMM (tensor/CUDA core)      ampere_bf16_s16816gemm_bf16_128x64_ldg8_f2f_stages_64x3_tn
+
+wrote results/20260922_E2_kernel_counts/kernels_per_step_by_name.csv, _by_category.csv and meta.json

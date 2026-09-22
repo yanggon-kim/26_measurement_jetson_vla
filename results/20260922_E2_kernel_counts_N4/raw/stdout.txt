@@ -1,0 +1,31 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+  distinct kernel names : 82
+  total kernel launches : 6505 for one inference with N=4 steps
+  total/N               : 1626  (NOT the per-step count -- vision and the prefix run once per inference; use the slope)
+  total GPU kernel time : 527.80 ms
+
+  top 15 by launch count:
+      555  Memset (Device)
+      416  ampere_sgemm_128x64_tn
+      372  void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctorOnSelf_
+      290  void at::native::vectorized_elementwise_kernel<4, at::native::bfloat16_copy_kern
+      270  void at::native::vectorized_elementwise_kernel<4, at::native::BinaryFunctor<c10:
+      270  void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<c1
+      216  void at::native::(anonymous namespace)::CatArrayBatchedCopy<at::native::(anonymo
+      204  void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda
+      198  ampere_bf16_s16816gemm_bf16_128x64_ldg8_f2f_stages_64x3_tn
+      185  void at::native::vectorized_elementwise_kernel<4, at::native::(anonymous namespa
+      185  void at::native::reduce_kernel<512, 1, at::native::ReduceOp<float, at::native::M
+      185  void at::native::vectorized_elementwise_kernel<4, at::native::rsqrt_kernel_cuda(
+      185  void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl<at::nati
+      185  void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<a
+      180  void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<a
+
+wrote results/20260922_E2_kernel_counts_N4

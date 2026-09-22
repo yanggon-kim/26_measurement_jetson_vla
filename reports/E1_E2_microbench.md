@@ -3,40 +3,42 @@
 **Task T005** · π0 (`lerobot/pi0_libero_finetuned_v044` @ `45dcc8f`) · MAXN, 16 SMs, GPU pinned
 1300.5 MHz, EMC 3199 MHz · bf16 · `bench/` commit recorded in each `meta.json`
 
-Results: `results/20260921_E1_peak/`, `results/20260921_E2_ae_kernels/`,
-`results/20260921_E2_kernel_counts{,_N2,_N10}/`, `results/20260921_E7_rails_check/`
+Results: `results/20260922_E1_peak/`, `results/20260922_E2_ae_kernels/`,
+`results/20260922_E2_kernel_counts_N{2,4,10}/`, `results/20260922_E7_rails_check/`
+
+The `20260921_*` copies of these runs are kept, each with a `SUPERSEDED.md` saying why.
 
 ---
 
 ## The answer first
 
-**1. This device reaches 91 % of its spec bandwidth and 80 % of its spec bf16 throughput.**
+**1. This device reaches 92 % of its spec bandwidth and 81 % of its spec bf16 throughput.**
 
 | quantity | spec | measured | ratio |
 |---|---|---|---|
-| memory bandwidth | 204.8 GB/s | **185.59 GB/s** | 0.906 |
-| bf16 dense GEMM | 42 TFLOP/s | **33.55 TFLOP/s** | 0.799 |
-| ridge point | task's ≈ 208 FLOP/B (spec-derived 205.1) | **180.8 FLOP/B** | 0.87 |
+| memory bandwidth | 204.8 GB/s | **187.47 GB/s** | 0.915 |
+| bf16 dense GEMM | 42 TFLOP/s | **33.85 TFLOP/s** | 0.806 |
+| ridge point | task's ≈ 208 FLOP/B (spec-derived 205.1) | **180.6 FLOP/B** | 0.87 |
 
 **2. E11's analytic host model is pessimistic by 2× on compute.** `docs/00_context.md` carries
 two fractions marked **[ASSUMPTION]**; both are now measured:
 
 | fraction | assumed | measured | assumption is |
 |---|---|---|---|
-| `eff_flops_frac` | 0.40 | **0.799** | 2.00× too pessimistic |
-| `eff_bw_frac` | 0.70 | **0.906** | 1.29× too pessimistic |
+| `eff_flops_frac` | 0.40 | **0.806** | 2.01× too pessimistic |
+| `eff_bw_frac` | 0.70 | **0.915** | 1.31× too pessimistic |
 
 **3. The action expert's GEMMs are not the problem.** With the Python interpreter out of the
 timed region, the expert's 126 projection GEMMs — 622.85 MB, i.e. 97.6 % of the 638 MB that
-T002's `ae_step` floor was built on — run at **1.31× their memory floor**. There is very little
+T002's `ae_step` floor was built on — run at **1.33× their memory floor**. There is very little
 left there for a faster memory system to win.
 
 **4. A denoising step launches 969 GPU kernels, and only 17 % of them are GEMMs.** Measured by
 slope over N ∈ {2, 10}, not assumed: 48 % of the launches are elementwise kernels, 12 % copies,
 8 % KV-cache concatenation, 8 % normalisation.
 
-**5. The step is CPU-dispatch-bound.** The same 126 projections take **8.82 ms** issued from
-Python and **4.42 ms** replayed as one CUDA graph — a 2.0× gap with identical GPU work.
+**5. The step is CPU-dispatch-bound.** The same 126 projections take **8.66 ms** issued from
+Python and **4.41 ms** replayed as one CUDA graph — a 2.0× gap with identical GPU work.
 
 **6. The L2 sysmem-miss substitute for DRAM traffic works — for reads only, and the protocol's
 definition of the write half is wrong.** Reads validate to within 0.9 % on four kernels with
@@ -63,15 +65,15 @@ a peak.
 
 | kernel | bytes counted | GB/s | % of 204.8 spec |
 |---|---|---|---|
-| `mul_scalar_fp32` (`z = 2·x`, fp32) | r+w | **185.59** | **90.6 %** |
-| `add_out_of_place` (`z = x+y`) | r+r+w | 170.32 | 83.2 % |
-| `mul_scalar_out_of_place` | r+w | 168.24 | 82.1 % |
-| `copy_fp32` | r+w | 166.90 | 81.5 % |
-| `axpy_inplace` (`y += a·x`) | r+r+w | 165.11 | 80.6 % |
-| `fill_` (pure write) | w | 163.43 | 79.8 % |
-| `clone_allocating`, 256 MiB / 1 / 2 GiB | r+w | 163.25 / 159.94 / 155.81 | 76.1–79.7 % |
-| `copy_out_of_place` | r+w | 155.65 | 76.0 % |
-| `sum_reduction` (pure read) | r | 103.43 | 50.5 % |
+| `axpy_inplace` | r+r+w | **187.47** | **91.5 %** |
+| `add_out_of_place` | r+r+w | 182.72 | 89.2 % |
+| `mul_scalar_out_of_place` | r+w | 182.62 | 89.2 % |
+| `clone_allocating`, 256 MiB / 1 GiB / 2 GiB | r+w | 154.68 / 167.50 / 155.04 | 75.5–81.8 % |
+| `fill_` | w | 166.22 | 81.2 % |
+| `copy_out_of_place` | r+w | 164.47 | 80.3 % |
+| `mul_scalar_fp32` | r+w | 164.42 | 80.3 % |
+| `copy_fp32` | r+w | 147.88 | 72.2 % |
+| `sum_reduction` | r | 103.14 | 50.4 % |
 
 Eight patterns rather than one, because a read-modify-write, a pure write and a copy that
 allocates its own output are not the same kernel. The `clone_allocating` rows show what the
@@ -82,16 +84,16 @@ Which pattern comes top varies between runs — see the variability section belo
 
 | dtype | best shape | TFLOP/s | note |
 |---|---|---|---|
-| **bf16** | 2048³ | **33.55** | 79.9 % of the 42 spec |
-| fp16 | 2048³ | 27.25 | |
-| tf32 | 4096³ | 15.66 | fp32 tensors, `allow_tf32=True` |
+| **bf16** | 2048³ | **33.85** | 80.6 % of the 42 spec |
+| fp16 | 2048³ | 32.15 | |
+| tf32 | 4096³ | 15.96 | fp32 tensors, `allow_tf32=True` |
 | fp32 | 8192³ | 3.48 | true IEEE fp32 (CUDA cores) |
-| int8 | 8192³ | 10.49 | **not a hardware peak — see below** |
+| int8 | 8192³ | 10.50 | **not a hardware peak — see below** |
 
-bf16 peaks at n = 2048 and falls to 21.7 TFLOP/s at n = 8192. That is **not** throttling:
+bf16 peaks at n = 2048 and falls to 24.9 TFLOP/s at n = 8192. That is **not** throttling:
 `raw/sustained_load.csv` holds 12 consecutive repeats of an 8192² bf16 GEMM, during which the
-GPU clock stayed at 1300.5 MHz while the die went 51 → 56 °C and throughput showed no downward
-trend (19.3 → 23.3 TFLOP/s, the first repeat being the slowest). The fall-off is cuBLAS kernel
+GPU clock stayed at 1300.5 MHz while the die rose to 58.4 °C and throughput showed no downward
+trend (21.0 → 23.1 TFLOP/s, the first repeat being the slowest). The fall-off is cuBLAS kernel
 selection at large n.
 
 **int8 is a software-path number.** `torch._int_mm` reaches 10.5 TOP/s, roughly an eighth of
@@ -101,10 +103,10 @@ offered as a hardware constant.
 
 ### The ridge point
 
-Measured **180.8 FLOP/B** (33.55 TFLOP/s ÷ 185.59 GB/s), against the ≈ 208 FLOP/B the task
+Measured **180.6 FLOP/B** (33.85 TFLOP/s ÷ 187.47 GB/s), against the ≈ 208 FLOP/B the task
 expected and the 205.1 that `docs/00_context.md` derives from the spec sheet. It comes out
 **13 % below** both, because the bandwidth peak is reached more nearly than the compute peak
-(0.906 vs 0.799 of spec). A kernel needs ~181 FLOP per byte here to be compute-bound.
+(0.915 vs 0.806 of spec). A kernel needs ~181 FLOP per byte here to be compute-bound.
 
 ### ⚠ Bandwidth varies run to run, and I cannot explain it
 
@@ -113,12 +115,12 @@ enough to matter for every floor in this campaign.
 
 | evidence, all committed | spread |
 |---|---|
-| `raw/bandwidth_modes.jsonl` — 22 fresh processes, same kernel | 165.1 → 188.6 GB/s (**1.14×**) |
-| `raw/earlier_passes/` — three earlier whole-E1 passes | 161.8, 183.4, 189.1 GB/s (**1.17×**) |
+| `raw/bandwidth_modes.jsonl` — 22 fresh processes, same kernel | 159.9 → 189.7 GB/s (**1.19×**) |
+| whole-E1 passes across the session (this run, `20260921_E1_peak/` and its `raw/earlier_passes/`) | 161.8, 183.4, 185.6, 187.5, 189.1 GB/s (**1.17×**) |
 
 Across all 22 probe samples the GPU clock was 1300.5 MHz, the EMC clock 3199 MHz (sampled
-*during* the timed loop, not just around it) and the die 45–47 °C — every one of them constant
-while bandwidth moved by 14 %. The shift applies uniformly to every memory-bound kernel in a
+*during* the timed loop, not just around it) and the die 47.2–50.5 °C — every one of them
+effectively constant while bandwidth moved by 19 %. The shift applies uniformly to every memory-bound kernel in a
 given run, so a run is "fast" or "slow" as a whole rather than one pattern being erratic.
 
 What was checked, and what that check rests on:
@@ -127,7 +129,7 @@ What was checked, and what that check rests on:
 |---|---|---|---|
 | GPU clock | sampled either side of every timed row, and per probe sample | pinned 1300.5 MHz throughout | **yes** (`latency_summary.csv`, `bandwidth_modes.jsonl`) |
 | EMC clock | sampled before, **during** and after the timed loop | pinned 3199 MHz throughout | **yes** (`bandwidth_modes.jsonl`) |
-| die temperature | recorded with every sample | 45–47 °C across the whole range | **yes** (`bandwidth_modes.jsonl`) |
+| die temperature | recorded with every sample | 47.2–50.5 °C across the whole range | **yes** (`bandwidth_modes.jsonl`) |
 | thermal throttling | 12 sustained 8192² GEMM repeats | clock stable, no decay | **yes** (`sustained_load.csv`) |
 | buffer placement | `data_ptr()` recorded per sample | identical pointers in fast and slow samples | **yes** (`bandwidth_modes.jsonl`) |
 | competing processes | `ps` during runs | none | no — checked interactively |
@@ -142,16 +144,23 @@ and their output was not retained**; they are reported as reasoning, not as evid
 be treated as weaker.
 
 **How it is handled.** `peak_memory_bandwidth_GBps` is this run's best observed value, which is
-what "peak" should mean for a roofline. **Consequence for the campaign: any bandwidth-derived
-floor carries roughly ±7 %, and a measured-vs-floor ratio should use a peak measured in the same
-session.** E2 below was run immediately after this E1 and normalised against its peak. Worth
-re-checking after the power-mode reboots, which clear whatever this is.
+what "peak" should mean for a roofline. **Consequence for the campaign: a bandwidth-derived floor
+carries roughly ±8 %, and a measured-vs-floor ratio should use a peak measured in the same
+session.** E2 below was run immediately after this E1 and normalised against its peak.
+
+**Which way the sensitivity runs matters, so here it is explicitly.** E2's central number — the
+projection stack at 1.33× its floor — uses the *highest* peak measured, which is the
+*conservative* choice for that claim: a lower peak raises the floor and lowers the multiple. At
+the bottom of the observed range (159.9 GB/s) the stack floor becomes 3.894 ms and the multiple
+falls to **1.13×**. The conclusion that the expert's weight streaming is near-optimal therefore
+gets stronger, not weaker, anywhere else in the range. Worth re-checking after the power-mode
+reboots, which clear whatever this is.
 
 ---
 
 ## How many kernels a denoising step launches — measured, not assumed
 
-`results/20260921_E2_kernel_counts{,_N2,_N10}/` · `bench/count_step_kernels.py`,
+`results/20260922_E2_kernel_counts_N{2,4,10}/` · `bench/count_step_kernels.py`,
 `bench/analyze_step_kernels.py`
 
 An earlier draft of this report asserted that "a denoising step issues on the order of 400
@@ -174,11 +183,11 @@ split is real.
 |---|---|---|
 | elementwise | 466.1 | **48.1 %** |
 | GEMM (tensor / CUDA core) | 168.0 | **17.3 %** |
-| copy | 119.0 | 12.3 % |
+| copy | 157.0 | 16.2 % |
 | concatenate (KV cache) | 78.0 | 8.0 % |
 | reduction / normalisation | 75.0 | 7.7 % |
-| other | 42.0 | 4.3 % |
 | softmax | 18.0 | 1.9 % |
+| other | 4.0 | 0.4 % |
 | memset | 3.0 | 0.3 % |
 
 **The expert's GEMMs are 17 % of the launches in a step.** The other 83 % is elementwise work,
@@ -187,10 +196,11 @@ paying full dispatch cost.
 
 Two counts worth singling out, because they turn assumptions into measurements:
 
-* **37 `reduce_kernel` + 37 `rsqrt` per step.** RMSNorm is applied twice per layer
-  (`input_layernorm` and `post_attention_layernorm` in `lerobot/policies/pi_gemma.py`), so 18
-  layers × 2 = 36 invocations per step is what those counts say, within rounding. The earlier
-  draft assumed that multiplier; it is now confirmed from the profiler.
+* **37.0 `reduce_kernel` + 37.0 `rsqrt` per step** — exactly 37, not 36. RMSNorm is applied
+  twice per layer (`input_layernorm` and `post_attention_layernorm` in
+  `lerobot/policies/pi_gemma.py`), giving 18 × 2 = 36; the 37th is one further normalisation in
+  the step. An earlier draft *assumed* 36 and then claimed these counts confirmed it "within
+  rounding" — they do not, the slope is exactly 37.0, and the extra one is real.
 * **168 GEMMs per step** against the 126 projections the expert contains — the extra ~42 are
   the attention products (QK<sup>T</sup> and PV, 18 layers × 2) plus a few more.
 
@@ -202,7 +212,7 @@ sha256 and size in `raw/ORIGINALS.json`.
 
 ## E2 — the action expert, one kernel at a time
 
-`results/20260921_E2_ae_kernels/` · `bench/micro_ae_kernels.py`
+`results/20260922_E2_ae_kernels/` · `bench/micro_ae_kernels.py`
 
 The shapes are read from the loaded checkpoint, never from a table:
 
@@ -224,41 +234,51 @@ between one CUDA-event pair — gave **0.10 ms for every projection regardless o
 68 µs for an empty kernel. At these sizes the Python interpreter cannot feed the GPU. The CPU
 was not at fault: all 12 cores were pinned at 2.2 GHz.
 
-**(b) A single timed call carries a fixed ~45 µs that is not the call.** Fitting the project's
-own chain measurements, `t(k) = fixed + k·marginal` gives marginal = **60.5 µs** and fixed =
-**44.9 µs** (the fit predicts the 8-call chain to 0.3 %). An earlier version of this report
-multiplied that 45 µs constant by 18 and 36 to build a per-step budget — the same class of
-error as T002's "+3.13 ms finding that was 74 % instrumentation". Every operator is therefore
-now measured three ways, and the budget built from microbenchmarks has been **replaced** by the
-measured kernel counts above.
+**(b) A single timed call carries a fixed cost that is not the call.** Least squares over
+chains of k ∈ {1, 8, 64} calls in one timed region (`launch_cost.csv`) fits
+`t(k) = fixed + k·marginal` with marginal = **59.44 µs**, fixed = **44.35 µs** and a maximum
+residual of **0.22 µs**. An earlier version of this report multiplied that fixed constant by 18
+and 36 to build a per-step budget — the same class of error as T002's "+3.13 ms finding that
+was 74 % instrumentation". Every operator is therefore now measured three ways, and the budget
+built from microbenchmarks has been **replaced** by the measured kernel counts above.
+
+The fixed term is **not** a universal constant: across the 130 rows it ranges 8.4–53.3 µs
+(median 41.6), collapsing towards zero once a call is GPU-bound, because the chain is then
+limited by the GPU rather than by the launch path. That is why each row carries its own fit and
+its own `chain_fit_max_resid_ms` (median 0.63 µs, worst 15.1 µs) rather than a shared constant.
 
 * **`eager_single_ms`** — one Python call between one event pair. Reported, never multiplied.
-* **`eager_chain_ms`** — the marginal cost of one call inside a 64-call chain. *This* is what an
-  operation costs when the model issues it back to back.
+* **`eager_chain_ms` / `marginal_us`** — the marginal cost of one call, from the 3-point fit.
+  *This* is what an operation costs when the model issues it back to back. Because CUDA launches
+  are asynchronous it is `max(CPU dispatch, GPU time)`, **not** CPU time alone — it equals the
+  dispatch cost only while the call is CPU-bound, and above that it tracks the GPU.
 * **`graph_cold_ms`** — the projection across all 18 layers inside one CUDA graph, so the weights
   stream from DRAM as they do in the real model. The honest kernel time; floors use it.
 * **`graph_hot_ms`** — layer 0's weights replayed 18 times, so they sit in L2.
 
 ### Every projection is CPU-bound, and the big ones are at the speed of memory
 
-At S = 51, against the **measured** 185.59 GB/s peak:
+At S = 51, against the **measured** 187.47 GB/s peak:
 
-| projection | weight | CPU/call | GPU/call | CPU-bound? | × floor | % of peak BW |
+| projection | weight | marginal/call | GPU/call | marginal ÷ GPU | × floor | % of peak BW |
 |---|---|---|---|---|---|---|
-| `gate_proj` | 8.39 MB | 63.7 µs | 53.4 µs | yes | **1.11×** | 89.9 % |
-| `up_proj` | 8.39 MB | 64.1 µs | 53.4 µs | yes | 1.11× | 90.0 % |
-| `down_proj` | 8.39 MB | 62.5 µs | 55.1 µs | yes | 1.15× | 87.1 % |
-| `o_proj` | 4.19 MB | 62.0 µs | 28.8 µs | yes | 1.18× | 84.5 % |
-| `q_proj` | 4.19 MB | 62.1 µs | 30.8 µs | yes | 1.27× | 78.8 % |
-| `k_proj` | 0.52 MB | 62.0 µs | 8.0 µs | yes | 2.28× | 43.8 % |
-| `v_proj` | 0.52 MB | 62.1 µs | 8.1 µs | yes | 2.28× | 43.8 % |
+| `gate_proj` | 8.39 MB | 64.2 µs | 53.5 µs | 1.20× | **1.11×** | 89.7 % |
+| `up_proj` | 8.39 MB | 63.7 µs | 53.4 µs | 1.19× | 1.11× | 89.9 % |
+| `down_proj` | 8.39 MB | 62.1 µs | 55.0 µs | 1.13× | 1.15× | 87.3 % |
+| `o_proj` | 4.19 MB | 62.2 µs | 28.6 µs | 2.17× | 1.18× | 84.9 % |
+| `q_proj` | 4.19 MB | 62.0 µs | 30.5 µs | 2.03× | 1.26× | 79.7 % |
+| `k_proj` | 0.52 MB | 61.9 µs | 8.0 µs | 7.76× | 2.26× | 44.3 % |
+| `v_proj` | 0.52 MB | 61.8 µs | 8.1 µs | 7.68× | 2.28× | 43.9 % |
 
-Two things stand out. **CPU dispatch is ~62 µs per projection whatever the shape** — a 0.52 MB
-k_proj and an 8.39 MB gate_proj cost the CPU the same — while GPU time varies 7× with the
-weight size. Every projection is therefore CPU-bound at S = 51. And the three MLP projections,
-which carry 73 % of the expert's weight bytes, run at **87–90 % of measured peak bandwidth**;
-only the two tiny multi-query projections do badly (44 %), and they are 3 % of the bytes, where
-a 0.52 MB weight at S = 51 is latency-bound rather than bandwidth-bound.
+Two things stand out. **At S = 51 the marginal cost sits at ~62 µs for every projection
+whatever its shape** — a 0.52 MB `k_proj` and an 8.39 MB `gate_proj` cost the same — while GPU
+time varies 7× with the weight size. Since every one of them is above its GPU time, that 62 µs
+*is* the CPU dispatch cost here, and every projection is launch-bound at S = 51. (The claim is
+specific to this regime: at S = 256 `gate_proj`'s marginal rises to 209 µs because the call has
+become GPU-bound, and there the column is no longer a dispatch cost.) And the three MLP
+projections, which carry 73 % of the expert's weight bytes, run at **87–90 % of measured peak
+bandwidth**; only the two tiny multi-query projections do badly (44 %), and they are 3 % of the
+bytes, where a 0.52 MB weight at S = 51 is latency-bound rather than bandwidth-bound.
 
 Note the floor definitions differ between the two tables that follow, and are stated in the CSVs:
 `kernels.csv` floors count **weights + input and output activations** (`total_bytes`), while the
@@ -270,16 +290,16 @@ The multiple of the memory floor each projection achieves, S = 1 … 256 (`kerne
 
 | S | q_proj | k_proj | o_proj | gate_proj | down_proj |
 |---|---|---|---|---|---|
-| 1 | 1.20× | 2.14× | 1.23× | 1.17× | 1.17× |
-| 2 | 1.22× | 2.77× | 1.43× | 1.18× | 1.27× |
-| 4 | 1.22× | 2.75× | 1.43× | 1.18× | 1.27× |
-| 8 | 1.22× | 2.71× | 1.42× | 1.18× | 1.27× |
-| 16 | 1.20× | 2.66× | 1.43× | 1.17× | 1.27× |
-| 32 | 1.19× | 2.44× | 1.20× | 1.12× | 1.15× |
-| **51** (the model) | **1.27×** | **2.28×** | **1.18×** | **1.11×** | **1.15×** |
-| 64 | 1.26× | 2.17× | 1.18× | 1.11× | 1.14× |
-| 128 | 1.19× | 1.77× | 1.28× | 1.99× | 1.29× |
-| 256 | 1.92× | 1.71× | 1.56× | 3.17× | 1.53× |
+| 1 | 1.20× | 2.11× | 1.22× | 1.17× | 1.17× |
+| 2 | 1.22× | 2.77× | 1.43× | 1.18× | 1.26× |
+| 4 | 1.22× | 2.74× | 1.43× | 1.18× | 1.26× |
+| 8 | 1.21× | 2.70× | 1.43× | 1.18× | 1.26× |
+| 16 | 1.20× | 2.65× | 1.43× | 1.17× | 1.27× |
+| 32 | 1.18× | 2.44× | 1.19× | 1.12× | 1.15× |
+| **51** (the model) | **1.26×** | **2.26×** | **1.18×** | **1.11×** | **1.15×** |
+| 64 | 1.25× | 2.16× | 1.17× | 1.11× | 1.14× |
+| 128 | 1.18× | 1.75× | 1.25× | 1.99× | 1.29× |
+| 256 | 1.90× | 1.70× | 1.57× | 3.17× | 1.53× |
 
 The multiple is almost flat from S = 1 to S = 64: these kernels stream a fixed weight matrix and
 the activations are negligible beside it, so lengthening the sequence costs nothing until the
@@ -294,16 +314,16 @@ which side dominates (`cpu_dispatch_us ÷ gpu_time_us`, both committed in `kerne
 
 | S | 1 | 16 | 51 | 64 | 128 | 256 |
 |---|---|---|---|---|---|---|
-| `k_proj` | 10.2× | 8.9× | **7.7×** | 7.7× | 7.8× | 5.7× |
+| `k_proj` | 10.2× | 8.9× | **7.8×** | 7.7× | 7.8× | 5.7× |
 | `q_proj` | 2.3× | 2.3× | **2.0×** | 2.0× | 2.0× | 1.0× |
 | `o_proj` | 2.2× | 2.1× | **2.2×** | 2.1× | 1.9× | 1.3× |
 | `gate_proj` | 1.2× | 1.2× | **1.2×** | 1.2× | 1.0× | 1.0× |
 | `down_proj` | 1.2× | 1.2× | **1.1×** | 1.1× | 1.0× | 1.0× |
 
-**At S = 16 nothing has crossed over.** The MLP projections become GPU-bound at S ≈ 128, `q_proj`
-and `o_proj` at S ≈ 256, and `k_proj`/`v_proj` never do within S ≤ 256 — they spend 6–10× longer
-being launched than being executed. At the model's own S = 51 every projection is still
-launch-bound, though the MLP ones only mildly (1.1–1.2×).
+**At S = 16 nothing has crossed over.** The MLP projections become GPU-bound at S ≈ 128 and
+`q_proj` at S ≈ 256; `o_proj` is still 1.3× at S = 256 and `k_proj`/`v_proj` never cross within
+S ≤ 256 — they spend 6–10× longer being launched than being executed. At the model's own S = 51
+every projection is still launch-bound, though the MLP ones only mildly (1.1–1.2×).
 
 ### The whole projection stack
 
@@ -311,33 +331,41 @@ All 126 projections of a denoising step, floor counting **weights only** (622.85
 
 | | ms | µs per launch | × floor |
 |---|---|---|---|
-| analytic floor (622.85 MB ÷ 185.59 GB/s) | 3.356 | — | 1.00× |
-| **replayed as one CUDA graph (GPU time)** | **4.411** | 35.0 | **1.31×** |
-| issued back to back from Python (eager) | 8.674 | 68.8 | 2.58× |
+| analytic floor (622.85 MB ÷ 187.47 GB/s) | 3.322 | — | 1.00× |
+| **replayed as one CUDA graph (GPU time)** | **4.411** | 35.0 | **1.33×** |
+| issued back to back from Python (eager) | 8.656 | 68.7 | 2.61× |
 
 **This is the central result of T005.** Those 622.85 MB are 97.6 % of the 638 MB that T002's
-`ae_step` floor was built on. With the interpreter removed they stream at **1.31× the floor**.
-Meanwhile a whole eager denoising step is 52.56 ms against a 3.438 ms floor at the measured
-peak — **15.3×**. The factor of 15 is not weight streaming.
+`ae_step` floor was built on. With the interpreter removed they stream at **1.33× the floor**.
+Meanwhile a whole eager denoising step is 52.56 ms against a 3.403 ms floor at the measured
+peak — **15.4×**. The factor of 15 is not weight streaming.
+
+Three caveats on that comparison, none of which reverses it. (i) 126 GEMMs issued back to back
+with nothing between them is a best case for DRAM locality; in the real step ~800 other kernels
+interleave with them. (ii) `timed()` replays the graph 100 times without flushing caches, so a
+little of the 622 MB can survive between replays — the same caveat raised below for
+`graph_hot`, and it would make the true cold number slightly *worse* than 1.33×. (iii) The
+eager row is a single timed region, so it still contains the ~44 µs fixed cost — 0.5 % of
+8.656 ms, which is why 2.61× and 68.7 µs/launch are marginally high.
 
 ### The non-GEMM operators
 
 At S = 51, T = P + S = 867 keys (`ops.csv`):
 
-| op | CPU/call | GPU/call | CPU ÷ GPU | what it is |
+| op | marginal/call | GPU/call | marginal ÷ GPU | what it is |
 |---|---|---|---|---|
-| `rmsnorm` | **282.0 µs** | 17.6 µs | **16.0×** | Python composite: mean, rsqrt, casts, weighted multiply |
-| `rope` | **198.6 µs** | 21.2 µs | **9.4×** | Python composite: slice, negate, concat, two multiplies, add |
-| `sdpa_attention` | 78.5 µs | 41.0 µs | 1.9× | one fused SDPA call |
-| `softmax` | 67.8 µs | 22.0 µs | 3.1× | |
-| `gelu` | 30.5 µs | 4.8 µs | 6.4× | single kernel |
-| `elementwise_add` | 29.2 µs | 2.1 µs | 13.9× | single kernel |
+| `rmsnorm` | **275.2 µs** | 17.7 µs | **15.6×** | Python composite: mean, rsqrt, casts, weighted multiply |
+| `rope` | **194.7 µs** | 21.2 µs | **9.2×** | Python composite: slice, negate, concat, two multiplies, add |
+| `sdpa_attention` | 77.9 µs | 41.0 µs | 1.9× | one fused SDPA call |
+| `softmax` | 65.8 µs | 22.1 µs | 3.0× | |
+| `gelu` | 30.6 µs | 4.8 µs | 6.4× | single kernel |
+| `elementwise_add` | 28.6 µs | 2.1 µs | 13.6× | single kernel |
 
-Per-kernel dispatch is ~30 µs for a single-kernel operator and ~62 µs for an `F.linear`; the
-282 µs of `rmsnorm` and 199 µs of `rope` are those costs multiplied by the number of kernels
+Per-kernel dispatch is ~29 µs for a single-kernel operator and ~62 µs for an `F.linear`; the
+275 µs of `rmsnorm` and 195 µs of `rope` are those costs multiplied by the number of kernels
 each Python composite expands into. `PiGemmaRMSNorm` is not a fused kernel, and in the real
 model it does *more* than the version benchmarked here — it also has a conditioning path
-(`dense(cond)`, `chunk`, two further elementwise ops) that this benchmark omits, so 282 µs is a
+(`dense(cond)`, `chunk`, two further elementwise ops) that this benchmark omits, so 275 µs is a
 **lower bound** on what the model pays.
 
 > **These operators run on activations, so `bytes` in `ops.csv` is L2 traffic, not off-chip
@@ -353,23 +381,23 @@ model it does *more* than the version benchmarked here — it also has a conditi
 
 | method | µs per operation |
 |---|---|
-| empty kernel (`add_` on one element), Python | 69.0 |
-| smallest real GEMM (`q_proj` at S = 1), Python, single timed call | 106.5 |
-| `q_proj` at S = 51, single timed call | 105.5 |
-| 8 back to back | 65.9 |
-| **64 back to back (the marginal cost)** | **60.7** |
-| the same 64 replayed as one CUDA graph (GPU time only) | 21.5 |
-| the 126-projection stack, Python | 68.8 |
+| empty kernel (`add_` on one element), Python | 68.5 |
+| smallest real GEMM (`q_proj` at S = 1), Python, single timed call | 104.7 |
+| `q_proj` at S = 51, single timed call | 103.6 |
+| 8 back to back | 65.0 |
+| **64 back to back (the marginal cost)** | **60.1** |
+| the same 64 replayed as one CUDA graph (GPU time only) | 28.15 |
+| the 126-projection stack, Python | 68.7 |
 | the 126-projection stack, CUDA graph | 35.0 |
 
-The gap between a single timed call (105.5 µs) and the marginal cost in a chain (60.7 µs) is the
-fixed ~45 µs of the timed region itself, not a property of the call.
+The gap between a single timed call (103.6 µs) and the marginal cost in a chain (60.1 µs) is the
+fixed ~44 µs of the timed region itself, not a property of the call.
 
-**CPU dispatch for one `F.linear` is ~61 µs**, and it is shape-independent: a 0.52 MB `k_proj`
-and an 8.39 MB `gate_proj` both cost the CPU ~62 µs. It is *not* 61 − 21 = 40 µs: CUDA launches
-are asynchronous, so a chain runs at `max(CPU, GPU)` per call, and subtracting the GPU time
-would assume the two serialise — which is exactly the opposite of what the measurement shows.
-The GPU work hides underneath the dispatch.
+**CPU dispatch for one `F.linear` is ~60 µs**, and in the launch-bound regime it is
+shape-independent: a 0.52 MB `k_proj` and an 8.39 MB `gate_proj` both cost ~62 µs. It is *not*
+60 − 28 = 32 µs: CUDA launches are asynchronous, so a chain runs at `max(CPU, GPU)` per call,
+and subtracting the GPU time would assume the two serialise — the opposite of what the
+measurement shows. The GPU work hides underneath the dispatch.
 
 ### What the L2 is worth
 
@@ -377,14 +405,19 @@ The GPU work hides underneath the dispatch.
 
 | projection | weight | 18× working set | hot speed-up at S = 1 | at S = 51 |
 |---|---|---|---|---|
-| `q_proj` | 4.19 MB | 75 MB | **1.51×** | 1.33× |
-| `k_proj` | 0.52 MB | 9.4 MB | 1.44× | 1.02× |
-| `gate_proj` | 8.39 MB | 151 MB | 1.00× | 1.01× |
+| `q_proj` | 4.19 MB | 75 MB | **2.26×** | 1.22× |
+| `k_proj` | 0.52 MB | 9.4 MB | 1.42× | 1.01× |
+| `gate_proj` | 8.39 MB | 151 MB | 1.01× | 1.01× |
 
-Weights around the size of the 4 MB L2 gain up to 1.5× from being resident; the 8.39 MB MLP
+**These are the least reproducible numbers in E2.** Two independent runs of the whole sweep
+agree to 0.30 % (median) on GPU kernel time but differ by up to 29 % on `hot_speedup` — `q_proj`
+at S = 1 came out 1.51×, 1.65× and 2.26× on three runs. Read them as "roughly 1.5–2× for
+weights near the L2 size, and nothing for the 8.39 MB ones", not as precise figures.
+
+Weights around the size of the 4 MB L2 gain up to 2.2× from being resident; the 8.39 MB MLP
 weights gain nothing, because they cannot fit however they are scheduled. This is the closest
 thing in T005 to a direct measurement of what keeping expert weights near the compute units
-would buy — and it caps out at ~1.5× for the projections near the L2 size and 1× for the large ones, *given
+would buy — and it caps out at ~2× for the small projections and 1× for the large ones, *given
 that those already run at 87–90 % of peak bandwidth*.
 
 Two caveats on the "cold" side of that comparison. For `k_proj`/`v_proj` the 18-layer working
@@ -401,13 +434,13 @@ This Tegra exposes **no `dram__*` counters at all** — T001 found 0 of 4426 met
 explicit request returns `n/a`. Every off-chip byte this campaign reports must therefore come
 from the L2's sysmem counters. The question was whether that substitute is trustworthy.
 
-Four kernels whose traffic is known by construction, one profiled launch each
-(`bench/ncu_validation.py`, driven by `bench/run_ncu_validation.sh`):
+Four kernel configurations, five profiled runs — `gemm_l2_twice` runs the same kernel twice in
+one window with `-c 2` (`bench/ncu_validation.py`, driven by `bench/run_ncu_validation.sh`):
 
 | case | analytic read | read from misses | **ratio** | analytic write | write from `op_write` | **ratio** |
 |---|---|---|---|---|---|---|
 | `copy_256mib` | 268.44 MB | 268.44 MB | **1.0000** | 268.44 MB | 268.44 MB | **1.0000** |
-| `gemm_cold` | 33.97 MB | 34.28 MB | **1.0089** | 0.42 MB | 0.42 MB | **1.0010** |
+| `gemm_cold` | 33.97 MB | 34.28 MB | **1.0091** | 0.42 MB | 0.42 MB | **1.0010** |
 | `gemm_warm` | 33.97 MB | 34.26 MB | **1.0085** | 0.42 MB | 0.42 MB | **1.0010** |
 | `gemm_l2` | 1.15 MB | 1.15 MB | **1.0002** | 0.05 MB | 0.05 MB | **1.0080** |
 | `gemm_l2_twice` | 1.15 MB | 1.15 MB | **1.0002** | 0.05 MB | 0.05 MB | **1.0080** |
@@ -439,12 +472,25 @@ Two deviations recorded rather than hidden:
   (`gemm_l2_twice`, `-c 2`) gave **byte-identical counters for both launches** (36,039 miss /
   25,190 hit each). That is ncu's kernel replay restoring device state between passes, not a
   statement about the L2. The independent answer comes from E2 with no profiler attached:
-  replaying a 0.52 MB-weight projection from L2 is **1.44×** faster than streaming 18 distinct
-  ones, and 4.19 MB weights give **1.51×** at S = 1. The L2 does retain; ncu cannot show it
+  replaying a 0.52 MB-weight projection from L2 is **1.45×** faster than streaming 18 distinct
+  ones, and 4.19 MB weights give **2.17×** at S = 1. The L2 does retain; ncu cannot show it
   this way.
 
-The per-run SM-clock check of protocol §3.2 is committed for each of the five profiled runs in
-`raw/ncu_clock_check.csv` (GPU 1300.5 MHz and EMC 3199 MHz, pinned, for all five).
+**Protocol §3.2's per-run clock check** is committed for all five runs, two ways. The devfreq
+clock and EMC rate are in `raw/ncu_clock_check.csv` (1300.5 MHz and 3199 MHz, pinned, for all
+five), and ncu's **own** SM clock — which is what §3.2's 2 % rule is about — is now derived from
+`gpc__cycles_elapsed.avg.per_second` and carried in `sysmem_miss_validation.csv` as
+`sm_clock_hz_from_ncu`, `sm_clock_pct_diff_vs_pinned` and `sm_clock_within_2pct`. It reads
+1275.8–1288.3 MHz, i.e. **−0.93 % to −1.90 %** against the pinned 1300.5 MHz: within the 2 %
+limit for every run, but not identical to it, which is worth knowing before T004 profiles
+anything larger.
+
+One column deliberately left blank: protocol §3.3(3) forbids deriving achieved GB/s from ncu's
+`Duration` (ncu serialises and flushes caches), and there is no nsys run in this directory to
+supply a real duration. `GBps_from_misses`, `GBps_analytic` and `pct_of_measured_peak` are
+therefore empty, with the reason recorded in the row; the duration itself is kept under its
+honest name `ncu_duration_ms`. An earlier version of this CSV called it `nsys_kernel_ms` and
+filled those columns from it.
 
 ---
 
@@ -455,18 +501,24 @@ Four INA3221 rails sampled at 10 Hz for 60 s per load, after a 3 s settle
 
 | load | VDD_GPU_SOC | VDD_CPU_CV | VIN_SYS_5V0 | VDDQ_VDD2_1V8AO | sum |
 |---|---|---|---|---|---|
-| idle (absolute) | 4783 mW | 1210 mW | 4156 mW | 405 mW | 10555 mW |
-| `clone_256mib` | +18681 | +1522 | +7265 | +4929 | +32396 mW |
-| `copy_kernel_256mib` | +22174 | +1522 | +7849 | +5231 | +36776 mW |
-| `gemm_8192_bf16` | +50720 | +1132 | +8802 | +5531 | +66186 mW |
+| idle (absolute) | 4783 mW | 1195 mW | 4115 mW | 385 mW | 10478 mW |
+| `clone_256mib` | +18704 | +1503 | +7361 | +4953 | +32522 mW |
+| `copy_kernel_256mib` | +22191 | +1512 | +7855 | +5228 | +36786 mW |
+| `gemm_8192_bf16` | +51784 | +1160 | +8674 | +5422 | +67040 mW |
 
-**No double counting; the four may be summed.** The argument is behavioural: the bf16 GEMM
-raises `VDD_GPU_SOC` by 50.7 W while raising `VIN_SYS_5V0` by only 8.8 W. If `VIN_SYS_5V0`
-contained the GPU rail it would have to rise by at least as much as the rail it contains. The
-same load separates the other pairs: `VDD_CPU_CV` *falls* going from the copy loop (+1.52 W) to
-the GEMM loop (+1.13 W) even as GPU power more than doubles, so it is not a superset of the GPU
-either, and `VDDQ_VDD2_1V8AO` responds to DRAM traffic (+4.93 W on the pure-copy load, which
-does almost no arithmetic) rather than to compute.
+**No double counting; the four may be summed.** The argument is behavioural and rests on one
+comparison: the bf16 GEMM raises `VDD_GPU_SOC` by **51.8 W** while raising `VIN_SYS_5V0` by only
+**8.7 W**. If `VIN_SYS_5V0` contained the GPU rail it would have to rise by at least as much as
+the rail it contains, so it does not. `VDDQ_VDD2_1V8AO` responds to DRAM traffic (+4.95 W on the
+pure-copy load, which does almost no arithmetic) rather than to compute, which is what its name
+implies.
+
+An earlier version of this report added a second argument — that `VDD_CPU_CV` *falls* from the
+copy loop (+1.50 W) to the GEMM loop (+1.16 W) while GPU power doubles. That does not survive
+scrutiny: those are means, and the **medians** above idle are 1593 / 1593 / 1589 mW, i.e.
+indistinguishable. The CPU rail simply does not move with GPU load, which is consistent with
+independence but is not evidence of it. The `VIN_SYS_5V0` comparison is the one that carries
+the conclusion.
 
 Two things worth carrying into E7. The memory rail is **not** where memory traffic shows up
 most: the copy loop costs +4.9 W on `VDDQ_VDD2_1V8AO` but +18.7 W on `VDD_GPU_SOC`, because the
@@ -484,13 +536,13 @@ in `STATUS.md`.
 
 1. **The action expert's weight streaming is already near-optimal.** The projections hold
    622.85 MB — 97.6 % of the 638 MB that T002's `ae_step` floor is built on — and with dispatch
-   removed they run at 1.31× that floor. A memory system that removed *all* off-chip weight
+   removed they run at 1.30× that floor. A memory system that removed *all* off-chip weight
    traffic for them would save at most the ~4.4 ms those GEMMs take, out of a 52.56 ms step.
 2. **The gap is dispatch and pointwise work.** 969 kernels per step, 83 % of them not GEMMs,
    each paying a CPU dispatch cost comparable to or larger than its GPU time. This is a
    software-stack cost, and T003 already showed `torch.compile` + CUDA graphs recovers most of
    it (52.56 → 16.30 ms/step).
-3. **E11's analytic host model should use 0.799 and 0.906**, not 0.40 and 0.70. The compute
+3. **E11's analytic host model should use 0.80 and 0.91**, not 0.40 and 0.70. The compute
    fraction is wrong by 2×, and it propagates into every segment estimate.
 4. **Off-chip traffic must be counted with two *different* counters.** Reads from
    `op_read_lookup_miss.sum`, writes from `op_write.sum`. Using `*_lookup_miss` for both, as
@@ -499,10 +551,11 @@ in `STATUS.md`.
    tensor-core load costs above idle.
 6. **Every floor in this campaign now has a measured row.** `bench/fill_measured_floors.py`
    filled the 90 `peak_source = measured` rows that T002 and T003 left blank across every
-   `floor.csv`. Two of them change the story: with measured peaks `ae_step`'s floor is
-   **3.438 ms** (not 3.115 at spec), so the eager step is **15.3× floor** rather than 16.9×;
-   and `vlm_prefix` is **compute**-bound, not memory-bound (122.0 ms compute floor against a
-   27.0 ms memory floor).
+   `floor.csv`. The one that changes a number: with measured peaks `ae_step`'s floor is
+   **3.403 ms** (not 3.115 at spec), so the eager step is **15.4× floor** rather than 16.9×.
+   `vlm_prefix` remains compute-bound — it already was at the spec peaks (97.5 ms compute
+   against a 24.5 ms memory floor); the measured peaks only widen that margin from 4.0× to
+   4.5×. An earlier version of this report called that a change of story. It is not.
 
 ## Measured, derived, not measured
 
@@ -545,9 +598,10 @@ sudo ncu --profile-from-start off --nvtx --nvtx-include "micro/" -c 1 --set full
      python bench/micro_ae_kernels.py --outdir /tmp/x --ncu-window q_proj@51
 ```
 
-Verified end to end: it profiles exactly one kernel,
+Verified end to end, and the evidence is committed as
+`raw/t007_ncu_window_verification.csv`: it profiles exactly one kernel,
 `ampere_bf16_s16816gemm_bf16_64x128_sliced1x2_ldg8_` (a tensor-core bf16 GEMM), 37.3 µs, whose
-134,919 read-miss sectors × 32 B = 4.32 MB matches q_proj's 4.19 MB of weights plus 0.10 MB of
+134,919 read-miss sectors × 32 B = 4.32 MB matches `q_proj`'s 4.19 MB of weights plus 0.10 MB of
 activations to within 0.4 %. `--layer <proj>` and `--S <list>` restrict the sweep.
 
 The ncu reports are committed compressed (`zstd -19`, 32–114×) and the chrome traces likewise

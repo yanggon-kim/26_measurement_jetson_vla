@@ -21,6 +21,7 @@ M_RD_ALL = "lts__t_sectors_aperture_sysmem_op_read.sum"
 M_WR_ALL = "lts__t_sectors_aperture_sysmem_op_write.sum"
 M_HIT = "lts__t_sectors_aperture_sysmem_lookup_hit.sum"
 M_DUR = "gpu__time_duration.sum"
+M_SM = "gpc__cycles_elapsed.avg.per_second"
 
 
 def read_case(d: Path, case: str) -> dict | None:
@@ -48,7 +49,7 @@ def read_case(d: Path, case: str) -> dict | None:
     return {"kernel_name": r.get("Kernel Name", ""), "raw": r,
             "rd": num(M_RD), "wr": num(M_WR), "all": num(M_ALL),
             "rd_all": num(M_RD_ALL), "wr_all": num(M_WR_ALL), "hit": num(M_HIT),
-            "dur": num(M_DUR)}
+            "dur": num(M_DUR), "sm_hz": num(M_SM)}
 
 
 def main() -> int:
@@ -92,11 +93,22 @@ def main() -> int:
             "measured_write_bytes_from_op_write": int((c["wr_all"] or 0) * SECTOR),
             "ratio_write_from_op_write": round((c["wr_all"] or 0) * SECTOR / awr, 4)
                                           if awr else "",
-            "nsys_kernel_ms": round(ms, 6),
-            "GBps_from_misses": round(mall / sec / 1e9, 2) if sec else "",
-            "GBps_analytic": round((ard + awr) / sec / 1e9, 2) if sec else "",
-            "pct_of_measured_peak": round(100 * (mall / sec / 1e9) / peak_bw, 1)
-                                    if sec else "",
+            # protocol §3.3(3) and §2: ncu's Duration is NOT a latency -- ncu serialises and
+            # flushes caches. It is recorded for reference under its real name, and the
+            # bandwidth columns it would produce are deliberately left blank: they would need
+            # an nsys duration of the same kernel, and no nsys run exists in this directory.
+            "ncu_duration_ms": round(ms, 6),
+            "GBps_from_misses": "",
+            "GBps_analytic": "",
+            "pct_of_measured_peak": "",
+            "GBps_columns_blank_because": "protocol §3.3(3): achieved GB/s must use an nsys "
+                                          "duration, never ncu Duration; no nsys run here",
+            # protocol §3.2: ncu's own SM clock, and how far it is from the pinned value
+            "sm_clock_hz_from_ncu": int(c["sm_hz"]) if c["sm_hz"] else "",
+            "sm_clock_pct_diff_vs_pinned": round(
+                100 * (c["sm_hz"] - 1300500000) / 1300500000, 2) if c["sm_hz"] else "",
+            "sm_clock_within_2pct": (abs(c["sm_hz"] - 1300500000) / 1300500000 < 0.02)
+                                     if c["sm_hz"] else "",
             "description": an["description"],
         })
 
@@ -107,15 +119,19 @@ def main() -> int:
         w.writerows(out)
 
     print(f"{'case':14s} {'a_read_MB':>10s} {'m_read_MB':>10s} {'r_read':>7s} "
-          f"{'a_wr_MB':>8s} {'m_wr_MB':>8s} {'r_wr':>7s} {'ms':>8s} {'GB/s':>7s}")
+          f"{'a_wr_MB':>8s} {'wr_op_MB':>9s} {'r_wr_op':>8s} {'ncu_ms':>8s} "
+          f"{'SM_MHz':>8s} {'d%':>6s}")
     for r in out:
         if "analytic_read_bytes" not in r:
             print(f"{r['kernel']:14s} {r.get('note')}")
             continue
         print(f"{r['kernel']:14s} {r['analytic_read_bytes']/1e6:10.2f} "
               f"{r['measured_read_bytes']/1e6:10.2f} {r['ratio_read']:7} "
-              f"{r['analytic_write_bytes']/1e6:8.2f} {r['measured_write_bytes']/1e6:8.2f} "
-              f"{r['ratio_write']:7} {r['nsys_kernel_ms']:8.4f} {r['GBps_from_misses']:7}")
+              f"{r['analytic_write_bytes']/1e6:8.2f} "
+              f"{r['measured_write_bytes_from_op_write']/1e6:9.2f} "
+              f"{r['ratio_write_from_op_write']:8} {r['ncu_duration_ms']:8.4f} "
+              f"{(r['sm_clock_hz_from_ncu'] or 0)/1e6:8.1f} "
+              f"{r['sm_clock_pct_diff_vs_pinned']:6}")
     print(f"\nwrote {f}")
     return 0
 

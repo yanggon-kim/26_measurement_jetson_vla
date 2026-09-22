@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import REPO  # noqa: E402
 
-E1 = REPO / "results" / "20260921_E1_peak" / "hw_constants.json"
+E1 = REPO / "results" / "20260922_E1_peak" / "hw_constants.json"
 
 
 def main() -> int:
@@ -33,7 +33,7 @@ def main() -> int:
     fl = mp["peak_bf16_TFLOPps"]
     src = Path(args.e1).relative_to(REPO)
     note = (f"measured peaks from {src} (T005/E1): {bw} GB/s, {fl} TFLOP/s. "
-            f"Bandwidth on this device varies run to run by up to 1.14x with clocks and "
+            f"Bandwidth on this device varies run to run by up to 1.19x with clocks and "
             f"temperature constant, so this floor carries that spread — see "
             f"reports/E1_E2_microbench.md.")
 
@@ -44,7 +44,7 @@ def main() -> int:
             continue
         hit = False
         for r in rows:
-            if r.get("peak_source") != "measured" or r.get("floor_mem_ms"):
+            if r.get("peak_source") != "measured":
                 continue
             b = float(r["bytes_read"] or 0)
             fp = float(r["flops"] or 0)

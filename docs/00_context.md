@@ -22,7 +22,7 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | rung | value | where it comes from | status |
 |---|---|---|---|
 | bandwidth floor | 3.15 ms | 629 MB of weights (+KV) ÷ 204.8 GB/s | analytic, **spec-based** |
-| **bandwidth floor, measured peak** | **3.44 ms** | 638 MB (T002 `floor.csv`) ÷ **185.59 GB/s** measured in T005/E1 | **measured** — every `floor.csv`'s `peak_source = measured` row is now filled |
+| **bandwidth floor, measured peak** | **3.40 ms** | 638 MB (T002 `floor.csv`) ÷ **187.47 GB/s** measured in T005/E1 | **measured** — every `floor.csv`'s `peak_source = measured` row is now filled |
 | "optimistic bound" | 6.30 ms | 2 × floor, a stand-in for a perfect software stack | **assumed** |
 | ~~compiled stack~~ | ~~≈ 90 ms~~ | 136 ms ÷ 1.51, the paper's `torch.compile` gain on *Jetson Thor* | **superseded**: 5.5× too pessimistic |
 | **compiled stack (best stock mode)** | **16.30 ms** | **T003 / E4, `reports/E4_pi0_compile.md`** — `reduce-overhead`, slope over N ∈ {1,2,4,6,8,10} | **measured**, 5.2× the floor |
@@ -42,11 +42,11 @@ analytic model. You are here to put measured numbers on that ladder, and to tell
 | per-pipe utilisation (LSU / FMA / ALU / …) and warp-stall reasons in `vision`, `vlm_prefix`, `ae_step` | unknown | — | E5 |
 | what the dominant action-expert kernels stall on, at instruction level (memory loads vs compute vs launch), vs S and under `torch.compile` | asserted "memory-bound", never shown | — | **E5b** |
 | where the ≈ 43× over the floor goes: kernel time vs launch gaps vs idle | unknown | — | E5 |
-| per-kernel launch overhead | **~30 µs** for a single-kernel op, **~62 µs** for an `F.linear`; shape-independent | **measured** (T005/E2, marginal cost in a 64-call chain) | ~~E2~~ done |
-| achieved fraction of peak bandwidth / FLOPs on small kernels | **0.906 / 0.799** | **measured** (T005/E1) — the 0.7 / 0.4 assumption was 1.29× and 2.00× too pessimistic | ~~E1, E2~~ done |
-| peak memory bandwidth and bf16 throughput | **185.59 GB/s, 33.55 TFLOP/s** (90.6 % and 79.9 % of spec) | **measured** (T005/E1). Bandwidth varies run to run by up to 1.14× with clocks and temperature constant — unexplained; see `reports/E1_E2_microbench.md` | ~~E1~~ done |
+| per-kernel launch overhead | **~29 µs** for a single-kernel op, **~62 µs** for an `F.linear`; shape-independent *while the call is launch-bound* | **measured** (T005/E2, 3-point fit of `t(k) = fixed + k·marginal`) | ~~E2~~ done |
+| achieved fraction of peak bandwidth / FLOPs on small kernels | **0.915 / 0.806** | **measured** (T005/E1) — the 0.7 / 0.4 assumption was 1.31× and 2.01× too pessimistic | ~~E1, E2~~ done |
+| peak memory bandwidth and bf16 throughput | **187.47 GB/s, 33.85 TFLOP/s** (91.5 % and 80.6 % of spec) | **measured** (T005/E1). Bandwidth varies run to run by up to 1.19× with clocks and temperature constant — unexplained; see `reports/E1_E2_microbench.md` | ~~E1~~ done |
 | arithmetic intensity of an AE layer | 60 (ours) vs 64.5 (paper) FLOPs/B | analytic | E6 |
-| token count where the GPU stops being launch-bound (~~our "S ≈ 16 crossover"~~) | **S ≈ 128** for the MLP projections, **S ≈ 256** for q/o, **never within S ≤ 256** for the multi-query k/v | **measured** (T005/E2). At S = 16 nothing has crossed over; at the model's S = 51 every projection is still launch-bound | ~~E2 sweep over S~~ done |
+| token count where the GPU stops being launch-bound (~~our "S ≈ 16 crossover"~~) | **S ≈ 128** for the MLP projections, **S ≈ 256** for q_proj, **never within S ≤ 256** for o_proj or the multi-query k/v | **measured** (T005/E2). At S = 16 nothing has crossed over; at the model's S = 51 every projection is still launch-bound | ~~E2 sweep over S~~ done |
 | real prefix length P | 816 | ~~assumed~~ → **measured 816** = 3 images × 256 + 48 language tokens (only 533 valid) | **E3 done — the assumption was right** |
 | module power during the AE phase (sum of the rails in protocol §4) | 20 W (we sweep 15–30) | **assumed** | E7 |
 | energy per denoising step, measured stack | 3,335 mJ | 136 ms × 20 W + DRAM model | E7 |

@@ -39,7 +39,7 @@ def main() -> int:
     fx = P.load_fixture()
     batch, preprocess, _ = P.build_batch(policy, fx)
 
-    for _ in range(3):
+    for _ in range(20):                       # protocol §2: >= 20 warm-ups before a capture
         policy.predict_action_chunk(batch)
     torch.cuda.synchronize()
 
@@ -55,18 +55,23 @@ def main() -> int:
             names[k.name] += 1
             total_us += k.duration
 
-    rows = [{"kernel": n, "launches": c, "launches_per_step": round(c / args.steps, 2)}
+    # NOT a per-step figure: vision and the VLM prefix run once per inference, so total/N
+    # mixes them in. The real per-step number is the SLOPE between two values of N, computed
+    # by bench/analyze_step_kernels.py. This column is kept only as a sanity check.
+    rows = [{"kernel": n, "launches": c,
+             "launches_over_N_not_per_step": round(c / args.steps, 2)}
             for n, c in names.most_common()]
     with (out / "kernels_per_step.csv").open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["kernel", "launches", "launches_per_step"])
+        w = csv.DictWriter(f, fieldnames=["kernel", "launches",
+                                          "launches_over_N_not_per_step"])
         w.writeheader()
         w.writerows(rows)
 
     total = sum(names.values())
     print(f"  distinct kernel names : {len(names)}")
     print(f"  total kernel launches : {total} for one inference with N={args.steps} steps")
-    print(f"  per denoising step    : {total/args.steps:.0f} (upper bound: the prefix and "
-          f"vision run once per inference, not per step)")
+    print(f"  total/N               : {total/args.steps:.0f}  (NOT the per-step count -- "
+          f"vision and the prefix run once per inference; use the slope)")
     print(f"  total GPU kernel time : {total_us/1e3:.2f} ms")
     print("\n  top 15 by launch count:")
     for r in rows[:15]:
@@ -78,8 +83,11 @@ def main() -> int:
         "experiment": "E2-aux (kernel count per step)", "task": "T005",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": P.CHECKPOINT, "model_revision": P.REVISION, "precision": "bfloat16",
+        "model_repo": P.CHECKPOINT, "model_commit": P.REVISION, "checkpoint": P.CHECKPOINT,
+        "num_denoise_steps": args.steps, "action_horizon": getattr(cfg, "chunk_size", None),
+        "torchvision": None, "triton": None,          # filled below from software_versions()
         "compile_mode": None, "batch": 1, "num_inference_steps": args.steps,
-        "n_warmup": 3, "n_timed": 1,
+        "n_warmup": 20, "n_timed": 1,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
         "cuda": sw.get("torch_cuda"), "torch": sw.get("torch"),
@@ -90,7 +98,9 @@ def main() -> int:
         "command": f"python bench/count_step_kernels.py --outdir {args.outdir} "
                    f"--steps {args.steps}",
         "total_kernel_launches": total, "distinct_kernel_names": len(names),
-        "launches_per_step_upper_bound": round(total / args.steps, 1),
+        "launches_over_N_not_per_step": round(total / args.steps, 1),
+        "_per_step_note": "total/N is NOT the per-step count; use the slope between two N "
+                          "values (bench/analyze_step_kernels.py).",
         "total_gpu_kernel_ms": round(total_us / 1e3, 3),
         "throttled": False,
         "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
@@ -104,6 +114,13 @@ def main() -> int:
         ],
     })
     meta = json.loads((out / "meta.json").read_text())
+    meta["torchvision"] = sw.get("torchvision")
+    meta["triton"] = sw.get("triton")
+    meta["jetson_clocks"] = "applied before the run; GPU locked min==max"
+    meta["emc_hz"] = int(sh_out(
+        "sudo -n sh -c 'cat /sys/kernel/debug/bpmp/debug/clk/emc/rate'") or 0)
+    meta["jetpack"] = "6.2.3+b81"
+    meta["l4t"] = "R36.5.0"
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)
     print(f"\nwrote {out}")

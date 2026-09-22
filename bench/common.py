@@ -128,6 +128,31 @@ def classify_kind(f: Path) -> str:
     return "other"
 
 
+def compress_and_record(path: Path, level: int = 19) -> dict:
+    """zstd a raw file and return its ORIGINALS.json entry.
+
+    Protocol §3.5 says to scan for secrets and hash *before* compressing: a scan of the
+    compressed bytes finds nothing by construction and is worthless. Both happen here, on the
+    original, and the scan result travels with the entry.
+    """
+    import subprocess
+
+    scan = scan_for_secrets(path)
+    if scan.startswith("MATCH"):
+        raise SystemExit(f"{path}: {scan} — not compressing or committing it")
+    entry = {"original_name": path.name, "original_sha256": sha256(path),
+             "original_bytes": path.stat().st_size,
+             "original_secrets_scan": scan,
+             "compressed_name": path.name + ".zst", "tool": "zstd", "level": level,
+             "command": f"zstd -{level} --rm {path.name}"}
+    subprocess.run(["zstd", f"-{level}", "-q", "-f", "--rm", str(path)], check=True)
+    z = path.with_name(path.name + ".zst")
+    entry["compressed_bytes"] = z.stat().st_size
+    entry["compressed_sha256"] = sha256(z)
+    entry["ratio"] = round(entry["original_bytes"] / entry["compressed_bytes"], 1)
+    return entry
+
+
 def collect_raw(outdir: Path, produced_by: str, kind_of=None,
                 dirs=("raw", "ncu", "nsys"), produced_by_map=None,
                 originals: dict | None = None) -> list[dict]:
@@ -155,6 +180,9 @@ def collect_raw(outdir: Path, produced_by: str, kind_of=None,
             # sidecar file.
             o = (originals or {}).get(f.name)
             if o:
+                # scanning compressed bytes proves nothing; report the original's scan
+                e["secrets_scan"] = o.get("original_secrets_scan",
+                                          "not scanned before compression")
                 e["compression"] = {"tool": o["tool"], "level": o["level"],
                                     "command": o.get("command",
                                                      f"zstd -{o['level']} --rm "

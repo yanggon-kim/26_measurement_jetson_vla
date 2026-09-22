@@ -48,6 +48,14 @@ def gate(require_maxn: bool = True) -> dict:
         "gpu_max_freq_hz": mx,
         "jetson_clocks_locked": mn == mx,
         "tpc_pg_mask": sh_out("cat /sys/devices/platform/gpu.0/tpc_pg_mask"),
+        # the dispatch-bound conclusions depend on the CPU not being the limiter, so record it
+        "cpu_online": sh_out("cat /sys/devices/system/cpu/online"),
+        "cpu_governor": sh_out(
+            "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"),
+        "cpu_cur_freq_khz": sh_out(
+            "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | sort -u | tr '\n' ' '"),
+        "cpu_max_freq_khz": sh_out(
+            "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq | sort -u | tr '\n' ' '"),
     }
     if require_maxn:
         if "MAXN" not in mode:

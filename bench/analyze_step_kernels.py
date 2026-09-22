@@ -20,14 +20,22 @@ import collections
 import csv
 import json
 import re
+import sys
+import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import REPO, collect_raw, sh_out, software_versions, write_json  # noqa: E402
 
 CATEGORY = [
     (re.compile(r"gemm|gemv|s16816|sgemm|cutlass", re.I), "GEMM (tensor/CUDA core)"),
-    (re.compile(r"reduce_kernel|rsqrt|norm", re.I), "reduction / normalisation"),
+    (re.compile(r"reduce_kernel|rsqrt|rms_norm|layer_norm|_norm_", re.I),
+     "reduction / normalisation"),
     (re.compile(r"CatArrayBatchedCopy|cat_", re.I), "concatenate (KV cache)"),
     (re.compile(r"Memset", re.I), "memset"),
-    (re.compile(r"copy_kern|direct_copy|_copy_", re.I), "copy"),
+    # `Memcpy DtoD` and `Memcpy HtoD` are copies; without this they fell through to "other",
+    # which under-counted copies by 38 launches per step.
+    (re.compile(r"copy_kern|direct_copy|_copy_|Memcpy", re.I), "copy"),
     (re.compile(r"softmax", re.I), "softmax"),
     (re.compile(r"elementwise|BinaryFunctor|CUDAFunctor|gpu_kernel", re.I), "elementwise"),
 ]
@@ -94,7 +102,42 @@ def main() -> int:
     print(f"\n  top 12 individual kernels per step:")
     for r in rows[:12]:
         print(f"    {r['per_denoising_step']:7.1f}  {r['category']:28s} {r['kernel'][:58]}")
-    print(f"\nwrote {out}/kernels_per_step_by_name.csv and _by_category.csv")
+    lo_meta = json.loads((lo_d / "meta.json").read_text())
+    sw = software_versions()
+    write_json(out / "meta.json", {
+        "experiment": "E2-aux (kernels per denoising step, by slope)", "task": "T005",
+        "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "derived_from": [str(lo_d), str(hi_d)],
+        "method": f"slope over N={n_lo} -> N={n_hi} of per-kernel-name launch counts from "
+                  f"torch.profiler; separates the expert (once per denoising step) from vision "
+                  f"and the VLM prefix (once per inference).",
+        "kernels_per_denoising_step": round(total, 1),
+        "fixed_launches_per_inference": round(
+            sum(r["fixed_per_inference"] for r in rows), 1),
+        "categories": {c: round(v, 2) for c, v in cat.most_common()},
+        "model": lo_meta.get("model"), "model_revision": lo_meta.get("model_revision"),
+        "model_repo": lo_meta.get("model_repo"), "model_commit": lo_meta.get("model_commit"),
+        "checkpoint": lo_meta.get("checkpoint"),
+        "power_mode": lo_meta.get("power_mode"), "sm_count": lo_meta.get("sm_count"),
+        "gpu_hz": lo_meta.get("gpu_hz"), "gate": lo_meta.get("gate"),
+        "precision": "bfloat16", "compile_mode": None, "batch": 1,
+        "torch": sw.get("torch"), "torchvision": sw.get("torchvision"),
+        "triton": sw.get("triton"), "python": sw.get("python"),
+        "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
+        "bench_files_sha256": sw.get("bench_files_sha256"),
+        "command": f"python bench/analyze_step_kernels.py --lo {lo_d} --hi {hi_d} --out {out}",
+        "throttled": False,
+        "throttled_evidence": "counts only; no timing is taken from these runs",
+        "raw_files": collect_raw(out, "derived from the two runs in `derived_from`"),
+        "notes": [
+            "COUNTS ONLY. torch.profiler perturbs times, so nothing here is a latency.",
+            "`kernels_per_step.csv` in the source directories carries a "
+            "`launches_over_N_not_per_step` column that is total/N — NOT a per-step figure, "
+            "because vision and the prefix run once per inference. This directory's slope is "
+            "the per-step number.",
+        ],
+    })
+    print(f"\nwrote {out}/kernels_per_step_by_name.csv, _by_category.csv and meta.json")
     return 0
 
 

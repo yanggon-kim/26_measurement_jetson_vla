@@ -151,8 +151,9 @@ def bandwidth_rows(repeats: int = 3) -> list[dict]:
             if best is None or r["GBps"] > best["GBps"]:
                 best = r
         spread = summarize(allms)
-        best["note"] = (f"{note} | {repeats} repeats x 40 calls; GB/s from the best repeat's "
-                        f"median. Pooled median {spread['median_ms']:.2f} ms, "
+        best["note"] = (f"{note} | {repeats} repeats x {best['n']} calls; GB/s is the median "
+                        f"of the BEST repeat (an optimistic estimator, because this is a peak). "
+                        f"Pooled median {spread['median_ms']:.2f} ms, "
                         f"p5-p95 {spread['p5_ms']:.2f}-{spread['p95_ms']:.2f} ms.").strip(" |")
         rows.append(best)
     del x, y, z, xf, zf
@@ -381,29 +382,25 @@ def main() -> int:
             "and records clock, temperature and throughput over time; its output is "
             "committed as raw/sustained_load.csv. The fall-off is cuBLAS kernel selection "
             "at large n.",
-            "BIMODAL BANDWIDTH, unexplained, and the reason `peak_memory_bandwidth_GBps` is "
-            "defined as the best value observed rather than this run's: this device sits in "
-            "one of two memory-performance modes. A slow mode gives ~150-165 GB/s and a fast "
-            "mode ~180-190 GB/s, a ratio of about 1.21, and the shift applies UNIFORMLY to "
-            "every memory-bound kernel measured (axpy, out-of-place add, scalar multiply, "
-            "copy, allocating clone all move together). A mode persists across many "
-            "consecutive process launches -- both were observed holding for tens of runs -- "
-            "so it is system state, not per-process. Ruled out by direct test: GPU clock "
-            "(pinned 1300.5 MHz, sampled per row), EMC clock (pinned 3199 MHz with "
-            "FreqOverride=1, sampled before, during and after the timed loop), die "
-            "temperature (148 GB/s at 37 C, colder than a 189 GB/s run), competing processes, "
-            "accumulated value drift in the accumulator, buffer reuse vs reallocation, "
-            "caching-allocator pool size and allocation ordering, identical device pointers "
-            "across runs, and a 4-minute idle. Re-check after the power-mode reboots.",
-            "Consequence for every floor in this campaign: a bandwidth-derived floor carries "
-            "roughly +/-10 % depending on which mode the device was in. Any comparison "
-            "between a measured kernel and its floor must use a peak measured in the same "
-            "session. E2 was measured in the fast mode against the fast-mode peak, so the "
-            "two are self-consistent.",
-            "Independent corroboration that the fast mode is the true peak: measured against "
-            "the slow-mode peak of 161.75 GB/s, E2's gate_proj and up_proj came out at "
-            "103-104 % of 'peak', which is impossible. Against the fast-mode peak they fall "
-            "below 100 %.",
+            "RUN-TO-RUN BANDWIDTH VARIATION, unexplained. Repeated measurements of the "
+            "same kernel in fresh processes span 165.1-188.6 GB/s (22 samples, "
+            "raw/bandwidth_modes.jsonl) -- a spread of 1.14x -- and three whole-E1 passes "
+            "gave peaks of 161.8, 183.4 and 189.1 GB/s (raw/earlier_passes/). The "
+            "distribution is continuous rather than two clean modes. Across every sample the "
+            "GPU clock (1300.5 MHz), the EMC clock (3199 MHz, sampled DURING the timed loop) "
+            "and the die temperature (45-47 C) were constant, as were the buffers' device "
+            "pointers. Sustained load does not throttle it either (raw/sustained_load.csv). "
+            "Five checks are backed by these committed files; several further checks "
+            "(competing processes, accumulator value drift, buffer reuse vs reallocation, "
+            "allocator pool size and ordering, re-applying jetson_clocks, a 4-minute idle) "
+            "were run interactively and their output was NOT retained -- they are reasoning, "
+            "not evidence. Re-check after the power-mode reboots.",
+            "peak_memory_bandwidth_GBps is the best value observed in THIS run's own rows "
+            "(max over latency_summary.csv), which is what `peak` should mean for a roofline. "
+            "Consequence: a bandwidth-derived floor carries roughly +/-7 %, and a "
+            "measured-vs-floor ratio should use a peak from the same session. The sensitivity "
+            "runs in the safe direction for E2's conclusion: a LOWER peak raises the floor and "
+            "lowers the measured multiple of it.",
         ],
     })
     print(f"\nwrote {out}")

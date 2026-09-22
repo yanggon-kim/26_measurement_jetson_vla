@@ -103,26 +103,39 @@ def timed(fn, warmup: int = 20, n: int = 100) -> list[float]:
     return [a.elapsed_time(b) for a, b in ev]
 
 
-def chain_marginal(fn, k_lo: int = 8, k_hi: int = 64) -> tuple[float, float]:
-    """Marginal CPU cost of ONE call, and the fixed cost of a timed region.
+def chain_marginal(fn, ks=(1, 8, 64)) -> tuple[float, float, float]:
+    """Marginal cost of ONE call, the fixed cost of a timed region, and the fit residual.
 
-    A single call measured between one CUDA-event pair is not the cost of that call. On this
-    device the event pair plus loop costs a fixed ~45 us, which is comparable to the call
-    itself -- an earlier version of this experiment multiplied that constant by 18 or 36 and
-    reported it as model time. Timing a chain of k calls between ONE event pair and fitting
-    t(k) = fixed + k * marginal separates the two. `marginal` is what an operation costs when
-    the model issues it back to back, which is what a model does.
+    A single call measured between one CUDA-event pair is not the cost of that call: on this
+    device the event pair plus loop costs a few tens of microseconds, comparable to the call
+    itself. An earlier version of this experiment multiplied that constant by 18 and 36 and
+    reported it as model time. Timing chains of k calls between ONE event pair and fitting
+    t(k) = fixed + k * marginal separates the two.
 
-    Returns (marginal_ms, fixed_ms).
+    Three points, least squares, and the residual is reported per row -- a two-point fit gives
+    no error bar, and the fixed term turns out to be regime-dependent rather than constant
+    (it collapses towards zero once the call is GPU-bound, because then the chain is limited by
+    the GPU and not by the launch path).
+
+    `marginal` is the cost of one call issued back to back, which is what a model does. Because
+    CUDA launches are asynchronous it is max(CPU dispatch, GPU time), NOT CPU time alone.
+
+    Returns (marginal_ms, fixed_ms, max_abs_residual_ms).
     """
-    def chain(k):
-        for _ in range(k):
-            fn()
-
-    lo = summarize(timed(lambda: chain(k_lo), 10, 30))["median_ms"]
-    hi = summarize(timed(lambda: chain(k_hi), 10, 30))["median_ms"]
-    marginal = (hi - lo) / (k_hi - k_lo)
-    return marginal, lo - k_lo * marginal
+    ys = []
+    for k in ks:
+        def chain(k=k):
+            for _ in range(k):
+                fn()
+        ys.append(summarize(timed(chain, 20, 100))["median_ms"])
+    n = len(ks)
+    mx = sum(ks) / n
+    my = sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in ks)
+    marginal = sum((x - mx) * (y - my) for x, y in zip(ks, ys)) / sxx
+    fixed = my - marginal * mx
+    resid = max(abs(y - (fixed + marginal * x)) for x, y in zip(ks, ys))
+    return marginal, fixed, resid
 
 
 def capture(run):
@@ -193,7 +206,7 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
                         return one()
 
             eager = summarize(stash(p["name"], S, "eager_single", timed(fn, 20, 100)))
-            marg, fixed = chain_marginal(fn)
+            marg, fixed, resid = chain_marginal(fn)
 
             def cold(x=x, ws=ws, F=F):
                 for w in ws:
@@ -238,6 +251,7 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
                 "eager_single_min_ms": round(eager["min_ms"], 6),
                 "eager_chain_ms": round(marg, 6),
                 "timed_region_fixed_ms": round(fixed, 6),
+                "chain_fit_max_resid_ms": round(resid, 6),
                 "graph_cold_ms": round(cold_ms, 6) if cold_ms else "",
                 "graph_cold_mean_ms": round(gc_["mean_ms"] / nl, 6) if gc_ else "",
                 "graph_cold_p5_ms": round(gc_["p5_ms"] / nl, 6) if gc_ else "",
@@ -253,7 +267,6 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
                 # is well below that, the call is CPU-bound and 62 us IS the dispatch cost;
                 # where it tracks gpu_time_us the call has become GPU-bound.
                 "marginal_us": round(marg * 1e3, 2),
-                "cpu_dispatch_us": round(marg * 1e3, 2),   # kept: same value, older name
                 "gpu_time_us": round(cold_ms * 1e3, 2) if cold_ms else "",
                 "marginal_over_gpu": round(marg / cold_ms, 2) if cold_ms else "",
                 "regime": ("cpu_bound (dispatch)" if cold_ms and marg > 1.15 * cold_ms
@@ -327,7 +340,9 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
         ops = [
             ("sdpa_attention", lambda q=q, ke=ke, ve=ve:
                 torch.nn.functional.scaled_dot_product_attention(q, ke, ve),
-             # q read + K,V read (one KV head, but read H times through the expand) + out
+             # q read + K,V read + out. K and V are counted ONCE each: there is one KV head
+             # and `expand` is a view, so the unique bytes touched are T*D per tensor however
+             # many query heads read them. Unique bytes is the right quantity for a floor.
              S * H * D * 2 + 2 * T * D * 2 + S * H * D * 2,
              2 * 2 * H * S * T * D,
              f"S={S} queries (8 heads x 256) against T={T} keys, 1 KV head"),
@@ -341,7 +356,7 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
         ]
         for name, fn, nb, flops, note in ops:
             eager = summarize(stash(name, S, "eager_single", timed(fn, 20, 100)))
-            marg, fixed = chain_marginal(fn)
+            marg, fixed, resid = chain_marginal(fn)
             gms = None
             try:
                 def rep(fn=fn):
@@ -363,7 +378,9 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
             # which is the proof rather than an anomaly. The columns are named accordingly
             # and a DRAM-roofline column is deliberately NOT provided.
             ws = nb
-            l2 = ws <= 4 * 1024 * 1024
+            L2 = 4 * 1024 * 1024
+            l2 = ws < L2            # strict: a working set of exactly the L2 size is not
+                                    # safely resident, and `gelu` at S=256 hits it exactly
             rows.append({
                 "op": name, "S": S, "T": T,
                 "eager_single_ms": round(eager["median_ms"], 6),
@@ -372,8 +389,9 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
                 "eager_single_p95_ms": round(eager["p95_ms"], 6),
                 "eager_chain_ms": round(marg, 6),
                 "timed_region_fixed_ms": round(fixed, 6),
+                "chain_fit_max_resid_ms": round(resid, 6),
                 "marginal_us": round(marg * 1e3, 2),
-                "cpu_dispatch_us": round(marg * 1e3, 2),   # kept: same value, older name
+                "chain_fit_max_resid_ms": round(resid, 6),
                 "graph_ms": round(gms, 6) if gms else "",
                 "graph_p5_ms": round(gr["p5_ms"] / 18, 6) if gms else "",
                 "graph_p95_ms": round(gr["p95_ms"] / 18, 6) if gms else "",
@@ -384,6 +402,7 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
                 "n": eager["n"],
                 "bytes_touched": nb, "flops": flops,
                 "working_set_bytes": ws, "l2_resident": l2,
+                "working_set_over_l2": round(ws / L2, 3),
                 "l2_GBps": round(nb / sec / 1e9, 2) if sec else "",
                 "dram_floor_ms_NOT_APPLICABLE_IF_L2_RESIDENT": round(nb / bw * 1e3, 6),
                 "note": note + ("; working set fits the 4 MB L2, so l2_GBps is CACHE "
@@ -603,7 +622,7 @@ def main() -> int:
     for r in krows:
         print(f"{r['proj']:10s} {r['S']:4d} {r['eager_single_ms']:9.4f} "
               f"{r['eager_chain_ms']:9.4f} {r['graph_cold_ms']:8.4f} "
-              f"{r['cpu_dispatch_us']:7.1f} {r['hot_speedup']:6.2f} "
+              f"{r['marginal_us']:7.1f} {r['hot_speedup']:6.2f} "
               f"{r['arith_intensity_FLOP_per_B']:7.1f} "
               f"{r['floor_ms']:9.4f} {r['x_floor']:7.2f} {r['pct_of_peak_bw']:8.1f}")
     with (out / "kernels.csv").open("w", newline="") as f:
@@ -618,7 +637,7 @@ def main() -> int:
     for r in orows:
         print(f"{r['op']:18s} {r['S']:4d} {r['T']:5d} {r['eager_single_ms']:9.4f} "
               f"{r['eager_chain_ms']:9.4f} {r['graph_ms']:8.4f} "
-              f"{r['cpu_dispatch_us']:7.1f} {str(r['l2_resident']):>4s} "
+              f"{r['marginal_us']:7.1f} {str(r['l2_resident']):>4s} "
               f"{r['l2_GBps']:>8}")
     with (out / "ops.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(orows[0].keys()))
@@ -660,10 +679,19 @@ def main() -> int:
         "experiment": "E2", "task": "T005",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": P.CHECKPOINT, "model_revision": P.REVISION,
+        "model_repo": P.CHECKPOINT, "model_commit": P.REVISION, "checkpoint": P.CHECKPOINT,
+        "num_denoise_steps": "not applicable — E2 measures single kernels, not a sample loop; "
+                             "the policy is loaded with num_inference_steps=4 only so the "
+                             "weights load identically to T002/T003",
+        "action_horizon": getattr(cfg_obj, "chunk_size", None),
+        "prefix_tokens": "not applicable — E2 sweeps S itself; the model's real P=816 / S=51 "
+                         "are recorded in T002 (results/20260921_E3_pi0_eager_N*/meta.json)",
+        "suffix_tokens": "swept: see S_swept",
+        "torchvision": sw.get("torchvision"), "triton": sw.get("triton"),
         "precision": "bfloat16", "compile_mode": None,
         "batch": 1, "n_warmup": 20, "n_timed": 100,
-        "n_warmup_chain": 10, "n_timed_chain": 30, "chain_k": [8, 64],
-        "estimator": "median; chained rows are a 2-point fit of t(k) = fixed + k*marginal",
+        "n_warmup_chain": 20, "n_timed_chain": 100, "chain_k": [1, 8, 64],
+        "estimator": "median; chained rows are a 3-point least-squares fit of t(k) = fixed + k*marginal over k in {1,8,64}, with the max residual per row",
         "S_swept": S_list, "expert_geometry": cfg,
         "projections": [{"name": p["name"], "in": p["in"], "out": p["out"]} for p in projs],
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
