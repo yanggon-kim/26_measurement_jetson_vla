@@ -75,3 +75,5 @@ way it falls, (3) the limits of the memory-pressure proxy (protocol §13.5), (4)
 over 50 MB; repository-size lines in `STATUS.md` (protocol §6f). Self-review (protocol §11).
 If a part cannot be done (for example no working `zero_copy` route, or `torch.compile` fails on a segment), finish
 the others, mark that part "not measured" with the exact error, and do not block the task on it.
+
+status: claimed 2026-09-22
