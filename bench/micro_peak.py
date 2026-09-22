@@ -45,7 +45,8 @@ ASSUMED_EFF_BW_FRAC = 0.7
 GPU_FREQ = "/sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq"
 THERMAL = Path("/sys/class/thermal")
 
-FIELDS = ["kernel", "dtype", "shape", "bytes", "flops", "ms", "p5_ms", "p95_ms",
+FIELDS = ["kernel", "dtype", "shape", "bytes", "flops",
+          "ms", "median_ms", "mean_ms", "p5_ms", "p95_ms", "min_ms", "max_ms",
           "GBps", "TFLOPps", "n", "correct", "rel_err",
           "gpu_hz_before", "gpu_hz_after", "gpu_C_before", "gpu_C_after", "tj_C_after",
           "note"]
@@ -93,7 +94,9 @@ def row(kernel, dtype, shape, samples, d0, d1, *, nbytes=0, flops=0,
     return {"kernel": kernel, "dtype": dtype, "shape": shape,
             "bytes": nbytes, "flops": flops,
             "ms": round(s["median_ms"], 6),
+            "median_ms": round(s["median_ms"], 6), "mean_ms": round(s["mean_ms"], 6),
             "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
+            "min_ms": round(s["min_ms"], 6), "max_ms": round(s["max_ms"], 6),
             "GBps": round(nbytes / sec / 1e9, 2) if nbytes else 0.0,
             "TFLOPps": round(flops / sec / 1e12, 4) if flops else 0.0,
             "n": s["n"], "correct": correct, "rel_err": rel_err,
@@ -142,7 +145,7 @@ def bandwidth_rows(repeats: int = 3) -> list[dict]:
         # within-run jitter — this device shows more of the former than the latter.
         best, allms = None, []
         for _ in range(repeats):
-            ms, d0, d1 = timed(fn, 10, 40)
+            ms, d0, d1 = timed(fn, 20, 100)
             allms += ms
             r = row(tag, dt, str(n), ms, d0, d1, nbytes=nb, note=note)
             if best is None or r["GBps"] > best["GBps"]:
@@ -159,7 +162,7 @@ def bandwidth_rows(repeats: int = 3) -> list[dict]:
     for mib in (256, 1024, 2048):
         n2 = mib * 1024 * 1024 // 2
         x = torch.empty(n2, device="cuda", dtype=torch.bfloat16).normal_()
-        ms, d0, d1 = timed(lambda: x.clone(), 10, 30)
+        ms, d0, d1 = timed(lambda: x.clone(), 20, 100)
         rows.append(row("clone_allocating", "bfloat16", str(n2), ms, d0, d1,
                         nbytes=2 * n2 * 2,
                         note=f"{mib} MiB; each call allocates a fresh output, so the caching "
@@ -197,7 +200,7 @@ def gemm_rows() -> list[dict]:
                        "float32": 1e-5, "int8": 0.0}[name]
                 ok = rel <= tol
                 del got, ref
-                ms, d0, d1 = timed(fn, 10, 50)
+                ms, d0, d1 = timed(fn, 20, 100)
                 el = 1 if dt is torch.int8 else (4 if dt is torch.float32 else 2)
                 note = ""
                 if name == "int8":
@@ -289,10 +292,15 @@ def main() -> int:
                      / "hw_constants.json").read_text())
     hw["measured_peaks"] = {
         "_status": f"measured by T005/E1 at MAXN, {time.strftime('%Y-%m-%d', time.gmtime())}",
-        "_method": "CUDA-event timing, median of 100 calls after 20 warm-ups, MAXN, "
-                   "jetson_clocks applied, GPU clock pinned at "
-                   f"{gate['gpu_cur_freq_hz']} Hz; every GEMM verified against an fp32 "
-                   "reference before its time was used. See this run's latency_summary.csv.",
+        "_method": "CUDA-event timing at MAXN, jetson_clocks applied, GPU clock pinned at "
+                   f"{gate['gpu_cur_freq_hz']} Hz. GEMM rows: median of 100 timed calls "
+                   "after 20 warm-ups. Bandwidth rows: 3 independent repeats of "
+                   "(20 warm-ups + 100 timed calls); the reported GB/s is the median of the "
+                   "BEST repeat, i.e. a deliberately optimistic best-of-three estimator, "
+                   "because this is a PEAK. The pooled median and p5-p95 across all three "
+                   "repeats are in each row's `note`, and every individual call is in "
+                   "raw/latency_samples.csv. Every GEMM was verified against an fp32 "
+                   "reference before its time was used.",
         "_power_mode": gate["power_mode"], "_sm_count": gate["sm_count"],
         "peak_memory_bandwidth_GBps": peak_bw,
         "peak_memory_bandwidth_kernel": bw_row["kernel"],
@@ -336,6 +344,8 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": None, "precision": "one row per dtype", "compile_mode": None,
         "batch": 1, "n_warmup": 20, "n_timed": 100,
+        "n_repeats_bandwidth": 3,
+        "estimator": "GEMM rows: median. Bandwidth rows: best-of-3 repeat medians (a peak).",
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
         "jetson_clocks": "applied before the run; GPU locked min==max",
@@ -365,9 +375,12 @@ def main() -> int:
             "hardware's dense INT8 capability. The result is bit-exact, so this is a "
             "kernel-selection limit in PyTorch on sm_87, not a hardware limit. Recorded as a "
             "software-path number and explicitly NOT offered as a hardware constant.",
-            "bf16 peaks at n=2048 and falls off at n=8192. That is not throttling (the clock "
-            "never moved and throughput rises with repetition); it is cuBLAS kernel "
-            "selection at large n.",
+            "bf16 peaks at n=2048 and falls off at n=8192. That is not throttling: the GPU "
+            "clock is sampled on both sides of every timed row and never left its pinned "
+            "value. `bench/sustained_load_probe.py` holds the 8192^2 bf16 GEMM under load "
+            "and records clock, temperature and throughput over time; its output is "
+            "committed as raw/sustained_load.csv. The fall-off is cuBLAS kernel selection "
+            "at large n.",
             "BIMODAL BANDWIDTH, unexplained, and the reason `peak_memory_bandwidth_GBps` is "
             "defined as the best value observed rather than this run's: this device sits in "
             "one of two memory-performance modes. A slow mode gives ~150-165 GB/s and a fast "

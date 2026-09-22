@@ -100,8 +100,37 @@ def scan_for_secrets(path: Path, limit: int = 64 << 20) -> str:
     return "clean"
 
 
+KIND_ENUM = {"nsys-rep", "nsys-sqlite", "ncu-rep", "ncu-csv", "sass", "ptx", "cubin",
+             "res-usage", "tegrastats", "torch-trace", "stdout", "other"}
+
+
+def classify_kind(f: Path) -> str:
+    """Map a file to protocol §5's `kind` enum. The enum is closed: anything unrecognised is
+    `other`, never the file extension."""
+    n = f.name
+    base = n[:-4] if n.endswith(".zst") else n
+    if base.endswith(".nsys-rep"):
+        return "nsys-rep"
+    if base.endswith(".sqlite"):
+        return "nsys-sqlite"
+    if base.endswith(".ncu-rep"):
+        return "ncu-rep"
+    if f.parent.name == "ncu" and base.endswith(".csv"):
+        return "ncu-csv"
+    if base.endswith((".sass", ".ptx", ".cubin")):
+        return base.rsplit(".", 1)[1]
+    if "tegrastats" in base:
+        return "tegrastats"
+    if "trace" in base and base.endswith(".json"):
+        return "torch-trace"
+    if base.endswith((".txt", ".log", ".out")) or "stdout" in base:
+        return "stdout"
+    return "other"
+
+
 def collect_raw(outdir: Path, produced_by: str, kind_of=None,
-                dirs=("raw", "ncu", "nsys")) -> list[dict]:
+                dirs=("raw", "ncu", "nsys"), produced_by_map=None,
+                originals: dict | None = None) -> list[dict]:
     """Every file under `<outdir>/raw/`, hashed, sized and scanned, as meta.json wants it.
 
     Written because `"raw_files": []` was hard-coded and shipped three times (found in the
@@ -117,9 +146,23 @@ def collect_raw(outdir: Path, produced_by: str, kind_of=None,
         for f in sorted(root.rglob("*")):
             if not f.is_file():
                 continue
-            kind = kind_of(f) if kind_of else f.suffix.lstrip(".") or "file"
-            out.append(raw_file_entry(f, base, kind, produced_by,
-                                      secrets_scan=scan_for_secrets(f)))
+            kind = kind_of(f) if kind_of else classify_kind(f)
+            rel = str(f.relative_to(base))
+            by = (produced_by_map or {}).get(rel, produced_by)
+            e = raw_file_entry(f, base, kind, by, secrets_scan=scan_for_secrets(f))
+            # protocol §5: a compressed file carries its compression command and the
+            # sha256 + bytes of the uncompressed original IN THE ENTRY, not only in a
+            # sidecar file.
+            o = (originals or {}).get(f.name)
+            if o:
+                e["compression"] = {"tool": o["tool"], "level": o["level"],
+                                    "command": o.get("command",
+                                                     f"zstd -{o['level']} --rm "
+                                                     f"{o['original_name']}")}
+                e["original"] = {"name": o["original_name"],
+                                 "sha256": o["original_sha256"],
+                                 "bytes": o["original_bytes"]}
+            out.append(e)
     return out
 
 

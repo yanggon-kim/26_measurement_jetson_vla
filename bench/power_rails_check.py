@@ -56,7 +56,14 @@ class Sampler(threading.Thread):
             time.sleep(max(0.0, self.period - (time.time() - t)))
 
 
-def measure(load_fn, seconds: float, tag: str) -> tuple[dict, list[dict]]:
+def measure(load_fn, seconds: float, tag: str, settle: float = 3.0) -> tuple[dict, list[dict]]:
+    """Run the load for `settle` seconds BEFORE sampling starts, so the rails are at their
+    steady value. Without it each mean carries a second or two of ramp, which showed up as a
+    `min_mW` equal to the idle reading."""
+    t_settle = time.time() + settle
+    while time.time() < t_settle:
+        load_fn()
+    torch.cuda.synchronize()
     s = Sampler()
     s.start()
     t_end = time.time() + seconds
@@ -137,6 +144,8 @@ def main() -> int:
                 "n": results[tag][r]["n"],
                 "above_idle_mW": round(results[tag][r]["mean_mW"]
                                        - results["idle"][r]["mean_mW"], 1),
+                "above_idle_median_mW": round(results[tag][r]["median_mW"]
+                                              - results["idle"][r]["median_mW"], 1),
                 "description": desc,
             })
         rows.append({
@@ -145,6 +154,9 @@ def main() -> int:
             "median_mW": "", "min_mW": "", "max_mW": "", "n": "",
             "above_idle_mW": round(sum(results[tag][r]["mean_mW"] - results["idle"][r]["mean_mW"]
                                        for r in rails), 1),
+            "above_idle_median_mW": round(sum(results[tag][r]["median_mW"]
+                                              - results["idle"][r]["median_mW"]
+                                              for r in rails), 1),
             "description": "arithmetic sum of the four rails — valid only if they are "
                            "independent, which is what this run tests",
         })
@@ -174,7 +186,7 @@ def main() -> int:
         "experiment": "E7-prep (rail double-count check)", "task": "T005",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": None, "precision": "bfloat16", "compile_mode": None,
-        "seconds_per_load": args.seconds, "sample_hz": 10,
+        "seconds_per_load": args.seconds, "sample_hz": 10, "settle_seconds": 3.0,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
         "emc_hz": int(sh_out(

@@ -1,0 +1,171 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0"}
+E1 peaks: 185.59 GB/s, 33.5471 TFLOP/s, ridge 180.76 FLOP/B
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+weights: {"checked": 400, "matched": 400, "checkpoint_file_sha256_source": "huggingface_hub cache", "verdict": "real weights"}
+expert geometry: {"hidden_size": 1024, "intermediate_size": 4096, "num_hidden_layers": 18, "num_attention_heads": 8, "num_key_value_heads": 1, "head_dim": 256}
+  q_proj      1024 ->  2048
+  k_proj      1024 ->   256
+  v_proj      1024 ->   256
+  o_proj      2048 ->  1024
+  gate_proj   1024 ->  4096
+  up_proj     1024 ->  4096
+  down_proj   4096 ->  1024
+
+=== per-projection sweep ===
+proj          S  1call_ms  chain_ms   gpu_ms  cpu_us  hot_x      AI  floor_ms  xfloor  %peakBW
+q_proj        1    0.1033    0.0622   0.0272    62.2   1.50     1.0    0.0226    1.20     83.2
+q_proj        2    0.1057    0.0639   0.0277    63.9   1.49     2.0    0.0227    1.22     81.7
+q_proj        4    0.1048    0.0635   0.0278    63.5   1.51     4.0    0.0227    1.22     81.9
+q_proj        8    0.1061    0.0638   0.0278    63.8   1.51     7.9    0.0229    1.22     82.2
+q_proj       16    0.1057    0.0636   0.0278    63.6   1.51    15.6    0.0231    1.20     83.1
+q_proj       32    0.1050    0.0625   0.0281    62.5   1.50    30.6    0.0237    1.19     84.2
+q_proj       51    0.1047    0.0621   0.0308    62.1   1.33    47.5    0.0243    1.27     78.8
+q_proj       64    0.1048    0.0624   0.0311    62.4   1.31    58.5    0.0247    1.26     79.6
+q_proj      128    0.1060    0.0639   0.0320    63.9   1.14   107.8    0.0268    1.19     83.9
+q_proj      256    0.1116    0.0630   0.0616    63.0   1.11   186.2    0.0320    1.92     50.5
+k_proj        1    0.1034    0.0622   0.0061    62.2   1.44     1.0    0.0028    2.14     46.8
+k_proj        2    0.1051    0.0623   0.0079    62.2   1.04     2.0    0.0029    2.77     36.1
+k_proj        4    0.1032    0.0616   0.0079    61.6   1.04     3.9    0.0029    2.75     36.4
+k_proj        8    0.1144    0.0732   0.0079    73.2   1.37     7.7    0.0029    2.71     37.0
+k_proj       16    0.1149    0.0724   0.0081    72.4   1.32    14.8    0.0030    2.66     37.6
+k_proj       32    0.1055    0.0631   0.0080    63.1   1.04    27.7    0.0033    2.44     40.9
+k_proj       51    0.1042    0.0620   0.0080    62.0   1.02    40.8    0.0035    2.28     43.8
+k_proj       64    0.1053    0.0620   0.0081    62.0   1.02    48.8    0.0037    2.17     46.0
+k_proj      128    0.1051    0.0629   0.0081    62.9   1.02    78.8    0.0046    1.77     56.5
+k_proj      256    0.1044    0.0623   0.0109    62.3   1.06   113.8    0.0064    1.71     58.6
+v_proj        1    0.1043    0.0624   0.0060    62.4   1.43     1.0    0.0028    2.13     47.0
+v_proj        2    0.1047    0.0624   0.0079    62.4   1.04     2.0    0.0029    2.77     36.2
+v_proj        4    0.1037    0.0618   0.0079    61.8   1.04     3.9    0.0029    2.74     36.5
+v_proj        8    0.1160    0.0731   0.0079    73.1   1.37     7.7    0.0029    2.70     37.0
+v_proj       16    0.1145    0.0726   0.0081    72.6   1.33    14.8    0.0030    2.66     37.6
+v_proj       32    0.1054    0.0637   0.0079    63.7   1.04    27.7    0.0033    2.43     41.2
+v_proj       51    0.1040    0.0622   0.0081    62.1   1.02    40.8    0.0035    2.28     43.8
+v_proj       64    0.1052    0.0621   0.0080    62.1   1.02    48.8    0.0037    2.16     46.2
+v_proj      128    0.1062    0.0635   0.0081    63.5   1.02    78.8    0.0046    1.76     56.8
+v_proj      256    0.1045    0.0620   0.0109    62.0   1.06   113.8    0.0064    1.71     58.4
+o_proj        1    0.1037    0.0618   0.0279    61.8   1.78     1.0    0.0226    1.23     81.2
+o_proj        2    0.1130    0.0698   0.0324    69.8   1.61     2.0    0.0227    1.43     70.0
+o_proj        4    0.1127    0.0696   0.0325    69.6   1.61     4.0    0.0227    1.43     69.9
+o_proj        8    0.1129    0.0696   0.0325    69.6   1.56     7.9    0.0229    1.42     70.3
+o_proj       16    0.1123    0.0696   0.0331    69.6   1.53    15.6    0.0231    1.43     69.9
+o_proj       32    0.1055    0.0631   0.0283    63.1   1.54    30.6    0.0237    1.20     83.5
+o_proj       51    0.1043    0.0620   0.0288    62.0   1.09    47.5    0.0243    1.18     84.5
+o_proj       64    0.1052    0.0620   0.0291    62.0   1.50    58.5    0.0247    1.18     85.0
+o_proj      128    0.1062    0.0638   0.0343    63.8   1.02   107.8    0.0268    1.28     78.2
+o_proj      256    0.1072    0.0637   0.0501    63.7   1.01   186.2    0.0320    1.56     62.1
+gate_proj     1    0.1084    0.0625   0.0529    62.5   1.00     1.0    0.0453    1.17     85.6
+gate_proj     2    0.1090    0.0620   0.0536    62.0   1.00     2.0    0.0453    1.18     84.6
+gate_proj     4    0.1086    0.0621   0.0537    62.1   1.01     4.0    0.0454    1.18     84.5
+gate_proj     8    0.1092    0.0622   0.0540    62.2   1.01     7.9    0.0456    1.18     84.6
+gate_proj    16    0.1090    0.0623   0.0540    62.3   1.00    15.7    0.0461    1.17     85.4
+gate_proj    32    0.1093    0.0636   0.0525    63.6   1.01    30.8    0.0470    1.12     89.4
+gate_proj    51    0.1101    0.0637   0.0534    63.7   1.01    48.0    0.0480    1.11     89.9
+gate_proj    64    0.1109    0.0641   0.0540    64.1   1.00    59.4    0.0487    1.11     90.3
+gate_proj   128    0.1307    0.1079   0.1039   107.9   0.99   110.7    0.0523    1.99     50.3
+gate_proj   256    0.2086    0.2085   0.2027   208.5   0.99   195.0    0.0640    3.17     29.3
+up_proj       1    0.1073    0.0622   0.0529    62.2   1.01     1.0    0.0453    1.17     85.5
+up_proj       2    0.1080    0.0625   0.0537    62.5   1.01     2.0    0.0453    1.19     84.3
+up_proj       4    0.1089    0.0625   0.0538    62.5   1.01     4.0    0.0454    1.19     84.4
+up_proj       8    0.1084    0.0627   0.0538    62.6   1.01     7.9    0.0456    1.18     84.9
+up_proj      16    0.1079    0.0625   0.0538    62.5   1.01    15.7    0.0461    1.17     85.6
+up_proj      32    0.1092    0.0640   0.0524    64.0   1.01    30.8    0.0470    1.12     89.6
+up_proj      51    0.1100    0.0641   0.0534    64.1   1.01    48.0    0.0480    1.11     90.0
+up_proj      64    0.1108    0.0640   0.0540    64.0   1.01    59.4    0.0487    1.11     90.2
+up_proj     128    0.1312    0.1085   0.1041   108.5   1.00   110.7    0.0523    1.99     50.2
+up_proj     256    0.2063    0.2060   0.2037   205.9   1.00   195.0    0.0640    3.18     29.1
+down_proj     1    0.1062    0.0624   0.0531    62.4   1.04     1.0    0.0453    1.17     85.1
+down_proj     2    0.1160    0.0698   0.0574    69.8   1.04     2.0    0.0453    1.27     78.9
+down_proj     4    0.1166    0.0699   0.0575    69.9   1.03     4.0    0.0454    1.27     79.0
+down_proj     8    0.1167    0.0692   0.0580    69.2   1.03     7.9    0.0456    1.27     78.7
+down_proj    16    0.1169    0.0698   0.0586    69.8   1.04    15.7    0.0461    1.27     78.6
+down_proj    32    0.1091    0.0634   0.0542    63.4   1.03    30.8    0.0470    1.15     86.6
+down_proj    51    0.1087    0.0625   0.0551    62.5   1.03    48.0    0.0480    1.15     87.1
+down_proj    64    0.1097    0.0626   0.0558    62.6   1.04    59.4    0.0487    1.14     87.4
+down_proj   128    0.1221    0.0672   0.0677    67.2   1.05   110.7    0.0523    1.29     77.2
+down_proj   256    0.1330    0.0990   0.0981    99.0   1.03   195.0    0.0640    1.53     60.5
+
+=== non-GEMM operators (attention, norms, pointwise) ===
+op                    S     T  1call_ms  chain_ms   gpu_ms  cpu_us  L2?  l2_GBps
+sdpa_attention        1   817    0.1200    0.0787   0.0328    78.7 True    25.74
+softmax               1   817    0.1062    0.0676   0.0073    67.6 True     5.35
+rmsnorm               1   817    0.3215    0.2784   0.0118   278.4 True     0.52
+rope                  1   817    0.2410    0.1995   0.0109   199.5 True     0.75
+gelu                  1   817    0.0683    0.0304   0.0026    30.4 True     6.28
+elementwise_add       1   817    0.0698    0.0295   0.0017    29.5 True     3.52
+sdpa_attention        2   818    0.1220    0.0786   0.0327    78.6 True    26.12
+softmax               2   818    0.1084    0.0685   0.0074    68.5 True    10.61
+rmsnorm               2   818    0.3266    0.2818   0.0132   281.8 True     0.77
+rope                  2   818    0.2425    0.2001   0.0111   200.1 True     1.48
+gelu                  2   818    0.0694    0.0308   0.0026    30.8 True    12.38
+elementwise_add       2   818    0.0699    0.0295   0.0017    29.5 True     7.19
+sdpa_attention        4   820    0.1227    0.0796   0.0328    79.6 True    26.59
+softmax               4   820    0.1097    0.0676   0.0075    67.6 True    20.93
+rmsnorm               4   820    0.3248    0.2801   0.0136   280.1 True     1.36
+rope                  4   820    0.2449    0.2002   0.0113   200.2 True      2.9
+gelu                  4   820    0.0696    0.0310   0.0027    31.0 True    24.17
+elementwise_add       4   820    0.0698    0.0296   0.0017    29.6 True    14.14
+sdpa_attention        8   824    0.1235    0.0791   0.0329    79.1 True     27.6
+softmax               8   824    0.1088    0.0689   0.0079    68.9 True    40.08
+rmsnorm               8   824    0.3272    0.2826   0.0142   282.6 True     2.44
+rope                  8   824    0.2439    0.1982   0.0116   198.2 True     5.65
+gelu                  8   824    0.0691    0.0305   0.0028    30.5 True    47.46
+elementwise_add       8   824    0.0709    0.0301   0.0018    30.1 True    27.52
+sdpa_attention       16   832    0.1213    0.0792   0.0341    79.2 True    28.87
+softmax              16   832    0.1090    0.0692   0.0107    69.2 True    59.74
+rmsnorm              16   832    0.3267    0.2826   0.0153   282.6 True     4.42
+rope                 16   832    0.2447    0.1985   0.0131   198.5 True    10.01
+gelu                 16   832    0.0687    0.0305   0.0028    30.5 True    94.52
+elementwise_add      16   832    0.0709    0.0296   0.0018    29.6 True    54.05
+sdpa_attention       32   848    0.1224    0.0792   0.0364    79.2 True    31.09
+softmax              32   848    0.1085    0.0685   0.0148    68.5 True    87.73
+rmsnorm              32   848    0.3278    0.2824   0.0161   282.4 True     8.25
+rope                 32   848    0.2458    0.1998   0.0159   199.8 True    16.44
+gelu                 32   848    0.0692    0.0314   0.0036    31.4 True   144.99
+elementwise_add      32   848    0.0705    0.0297   0.0020    29.7 True   100.17
+sdpa_attention       51   867    0.1216    0.0785   0.0410    78.5 True    31.83
+softmax              51   867    0.1086    0.0678   0.0220    67.8 True    96.43
+rmsnorm              51   867    0.3268    0.2820   0.0176   282.0 True    11.96
+rope                 51   867    0.2453    0.1986   0.0212   198.6 True    19.73
+gelu                 51   867    0.0695    0.0305   0.0048    30.5 True   175.44
+elementwise_add      51   867    0.0705    0.0292   0.0021    29.2 True   148.74
+sdpa_attention       64   880    0.1242    0.0792   0.0433    79.2 True    32.89
+softmax              64   880    0.1078    0.0685   0.0345    68.5 True     78.4
+rmsnorm              64   880    0.3273    0.2814   0.0187   281.4 True    14.15
+rope                 64   880    0.2430    0.1995   0.0230   199.5 True     22.8
+gelu                 64   880    0.0697    0.0309   0.0054    30.9 True   193.19
+elementwise_add      64   880    0.0700    0.0299   0.0022    29.9 True   176.52
+sdpa_attention      128   944    0.1320    0.0795   0.0697    79.5 True    28.91
+softmax             128   944    0.1251    0.0935   0.0866    93.5 False    67.01
+rmsnorm             128   944    0.3257    0.2836   0.0261   283.6 True    20.16
+rope                128   944    0.2464    0.1990   0.0375   199.0 True    27.93
+gelu                128   944    0.0695    0.0312   0.0090    31.2 True   233.96
+elementwise_add     128   944    0.0696    0.0297   0.0027    29.7 True   288.66
+sdpa_attention      256  1072    0.1344    0.0883   0.0860    88.3 True    37.16
+softmax             256  1072    0.2056    0.2034   0.1978   203.4 False    66.61
+rmsnorm             256  1072    0.3308    0.2834   0.0423   283.4 True    24.83
+rope                256  1072    0.2431    0.1994   0.0790   199.4 True    26.56
+gelu                256  1072    0.0692    0.0307   0.0186    30.7 True   225.63
+elementwise_add     256  1072    0.0686    0.0296   0.0035    29.6 True   447.29
+
+=== launch cost ===
+  empty_kernel            69.02 us   add_ on a 1-element tensor
+  smallest_real_gemm     106.53 us   q_proj at S=1 (1x1024 @ 1024x2048)
+  chain_1                105.54 us   1 back-to-back q_proj at S=51, Python-driven
+  chain_8                 65.94 us   8 back-to-back q_proj at S=51, Python-driven
+  chain_64                60.74 us   64 back-to-back q_proj at S=51, Python-driven
+  chain_64_cuda_graph     21.52 us   same 64 q_proj calls replayed as one graph (GPU time only)
+
+=== the 18-layer projection stack, eager vs CUDA graph ===
+  eager                   8.674 ms   68.84 us/launch  issued back to back from Python
+  cuda_graph_replay       4.411 ms   35.01 us/launch  one graph launch replaces 126 kernel launches
+  wrote 33000 per-iteration samples to raw/latency_samples.csv
+
+wrote results/20260921_E2_ae_kernels_v2
+E2_EXIT=0

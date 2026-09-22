@@ -8,6 +8,7 @@ OUT="${1:?usage: run_ncu_validation.sh <result-dir>}"
 PY="${PY:-$HOME/venvs/pi0/bin/python}"
 NCU="$(command -v ncu)"
 mkdir -p "$OUT/ncu" "$OUT/raw"
+echo "case,exit,gpu_cur_freq_hz,gpu_min_freq_hz,gpu_max_freq_hz,emc_rate_hz,gpu_thermal_millideg,cache_control" > "$OUT/raw/ncu_clock_check.csv"
 
 METRICS=$(tr -d ' \n' <<'M'
 lts__t_sectors_aperture_sysmem_op_read_lookup_miss.sum,
@@ -42,8 +43,15 @@ for CASE in copy_256mib gemm_cold gemm_warm gemm_l2 gemm_l2_twice; do
       --export "$OUT/ncu/${CASE}.ncu-rep" --force-overwrite \
       "$PY" bench/ncu_validation.py --case "$CASE" \
       > "$OUT/raw/ncu_${CASE}_stdout.txt" 2>&1
-  echo "  exit=$? rows=$(grep -c , "$OUT/ncu/${CASE}.csv" 2>/dev/null || echo 0)"
-  # protocol §3.2: confirm the SM clock did not move during the profiled run
-  echo "  gpu_cur_freq=$(cat /sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq)"
+  RC=$?
+  echo "  exit=$RC rows=$(grep -c , "$OUT/ncu/${CASE}.csv" 2>/dev/null || echo 0)"
+  # protocol §3.2: the per-run clock check must be COMMITTED, not just echoed.
+  FREQ=$(cat /sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq)
+  MINF=$(cat /sys/devices/platform/17000000.gpu/devfreq_dev/min_freq)
+  MAXF=$(cat /sys/devices/platform/17000000.gpu/devfreq_dev/max_freq)
+  EMC=$(sudo -n sh -c 'cat /sys/kernel/debug/bpmp/debug/clk/emc/rate' 2>/dev/null)
+  GPUC=$(cat /sys/class/thermal/thermal_zone1/temp 2>/dev/null)
+  echo "$CASE,$RC,$FREQ,$MINF,$MAXF,$EMC,$GPUC,${CACHE:-default}" >> "$OUT/raw/ncu_clock_check.csv"
+  echo "  gpu_cur_freq=$FREQ emc=$EMC"
 done
 echo "done -> $OUT/ncu"

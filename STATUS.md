@@ -19,6 +19,65 @@ The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGE
 After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
 power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
 
+## Headline after T005 (E1/E2): the expert's GEMMs are already at the speed of memory
+
+**The gap is not weight streaming.** E2 put the action expert's 126 projection GEMMs — 622.85 MB,
+97.6 % of the 638 MB that T002's `ae_step` floor was built on — into one CUDA graph, so the
+Python interpreter is out of the timed region:
+
+| | ms | × floor |
+|---|---|---|
+| analytic floor (622.85 MB ÷ **measured** 185.59 GB/s) | 3.356 | 1.00× |
+| **the 126 projections, replayed as one CUDA graph** | **4.411** | **1.31×** |
+| the same, issued back to back from Python | 8.674 | 2.58× |
+| a whole eager denoising step (T002/E3), floor 3.438 ms | 52.56 | 15.3× |
+
+The three MLP projections hold 73 % of the weight bytes and run at **87–90 % of measured peak
+bandwidth**. A memory system that removed *all* off-chip weight traffic for the projections
+would save at most 4.4 ms of a 52.6 ms step.
+
+**A denoising step launches 969 GPU kernels, and only 17 % of them are GEMMs** (measured by
+slope over N ∈ {2, 10}; the fit predicts N = 4 exactly). 48 % are elementwise kernels, 12 %
+copies, 8 % KV-cache concatenation, 8 % normalisation. **CPU dispatch is ~62 µs per `F.linear`
+regardless of shape** — a 0.52 MB `k_proj` and an 8.39 MB `gate_proj` cost the CPU the same —
+against 8–55 µs of GPU work, so every projection is launch-bound at S = 51. `PiGemmaRMSNorm`
+costs **282 µs of CPU against 17.6 µs of GPU**, and it is called 36 times per step.
+
+**Measured peaks (protocol §8), replacing the spec sheet everywhere:**
+
+| quantity | spec | measured | ratio |
+|---|---|---|---|
+| memory bandwidth | 204.8 GB/s | **185.59 GB/s** | 0.906 |
+| bf16 dense GEMM | 42 TFLOP/s | **33.55 TFLOP/s** | 0.799 |
+| ridge point | ≈ 205–208 FLOP/B | **180.8 FLOP/B** | 0.87 |
+
+**E11's analytic host model is 2× pessimistic on compute**: `eff_flops_frac` 0.40 assumed vs
+**0.799** measured, `eff_bw_frac` 0.70 vs **0.906**. **`bench/fill_measured_floors.py` filled the
+90 `peak_source = measured` rows** every `floor.csv` had left blank since T002 — with measured
+peaks `vlm_prefix` turns out **compute**-bound, not memory-bound (122.0 ms vs 27.0 ms).
+
+**Two research-side questions answered.** (1) The L2 sysmem-miss substitute for DRAM traffic is
+exact for **reads** (1.000–1.009 on four kernels with analytically known traffic) but the write
+path is **identically zero** in every `*_lookup_miss` counter — writes register as L2 *hits*.
+Off-chip traffic must be `op_read_lookup_miss.sum × 32 B` **+** `op_write.sum × 32 B`; using the
+miss counter for both, as protocol §3.3 has it, reports zero write traffic. (2) The four INA3221
+rails do **not** double-count and may be summed: a load that raises `VDD_GPU_SOC` by 50.7 W
+raises `VIN_SYS_5V0` by only 8.8 W.
+
+### ⚠ Unexplained: bandwidth varies run to run by up to 1.14×
+
+22 fresh processes running the identical kernel span 165.1–188.6 GB/s, and three whole-E1 passes
+gave peaks of 161.8, 183.4 and 189.1 GB/s — with the GPU clock (1300.5 MHz), the EMC clock
+(3199 MHz, sampled *during* the timed loop) and the die temperature (45–47 °C) constant across
+the whole range, and identical device pointers. Sustained load does not throttle it either
+(12 repeats of an 8192² GEMM: clock stable, no decay). Five elimination tests are backed by
+committed files in `results/20260921_E1_peak/raw/`; six more were run interactively and not
+retained, and are reported as reasoning rather than evidence. **Consequence: any
+bandwidth-derived floor carries roughly ±7 %, and a measured-vs-floor ratio should use a peak
+from the same session.** Re-check after the power-mode reboots.
+
+Report: `reports/E1_E2_microbench.md`.
+
 ## Headline after T003 (E4): compilation closes two thirds of the gap, and one line closes half of what is left
 
 **The ladder is complete** (ms per denoising step, π0, MAXN):
@@ -259,6 +318,18 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 
 ## Done
 
+* **T005 (E1, E2) — microbenchmarks, substitute validation, rail check.** Result directories
+  `results/20260921_E1_peak/`, `results/20260921_E2_ae_kernels/`,
+  `results/20260921_E2_kernel_counts{,_N2,_N10}/`, `results/20260921_E7_rails_check/` ·
+  Report: `reports/E1_E2_microbench.md` ·
+  Harness: `bench/micro_peak.py`, `micro_ae_kernels.py`, `ncu_validation.py`,
+  `run_ncu_validation.sh`, `parse_ncu_validation.py`, `power_rails_check.py`,
+  `refresh_raw_files.py`, `sustained_load_probe.py`, `bandwidth_mode_probe.py`,
+  `count_step_kernels.py`, `analyze_step_kernels.py`, `fill_measured_floors.py`, plus
+  `collect_raw()` / `scan_for_secrets()` / `classify_kind()` in `common.py`.
+  `hw_constants.json` is complete (protocol §8). Corrected `docs/01_measurement_plan.md`'s
+  E2 table as owner (k and v are two separate 1024→256 projections, not one 1024→512).
+
 * **T002 (E3) — π0 end-to-end latency, eager.** Six result directories
   `results/20260921_E3_pi0_eager_N{1,2,4,6,8,10}/` · Report: `reports/E3_pi0_eager.md` ·
   Environment: `env/setup_pi0.sh`, `env/requirements_pi0.txt`, `env/README.md` §10 ·
@@ -284,8 +355,12 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
   `devfreq cur_freq` alongside each one (`bench/gpu_clock_probe.py`). In this run the two
   toy profiler captures were taken with `schedutil` free to scale 306–612 MHz, and that
   clock was not recorded.
-* Re-validate the L2 sysmem-miss substitute for off-chip **write** traffic, and against the
-  measured bandwidth peak from E1. Only the read path is validated so far.
+* ~~Re-validate the L2 sysmem-miss substitute for off-chip **write** traffic, and against the
+  measured bandwidth peak from E1.~~ **DONE in T005.** Reads validate to 1.000–1.009 on four
+  kernels with analytically known traffic. Writes are **identically zero** in every
+  `*_lookup_miss` counter — a write sector is recorded as an L2 *hit* — and are recovered
+  exactly by `lts__t_sectors_aperture_sysmem_op_write.sum × 32 B` instead. See
+  `results/20260921_E2_ae_kernels/ncu/sysmem_miss_validation.csv`.
 * Confirm 16 SMs and re-check `max-autotune` (it is refused at 8 SMs).
 
 ## In progress
@@ -308,10 +383,26 @@ Historical, for the record: T002 was blocked until the reboot, because it would 
    *measured (L2 sysmem-miss sectors)*. Please confirm that is acceptable for the roofline
    points of E6, and note that ncu's `Memory Throughput` on this device must be read as
    **L2** throughput wherever it appears.
+   **T005 update — the substitute is validated, but not in the form the protocol states it.**
+   On four kernels with analytically known traffic, reads recover to **1.000–1.009** via
+   `lts__t_sectors_aperture_sysmem_op_read_lookup_miss.sum × 32 B`. The **write** path is
+   **identically zero** in every `*_lookup_miss` counter, including on a kernel that
+   demonstrably writes 256 MiB: a write sector is recorded as an L2 lookup *hit*, because the
+   L2 is write-back / write-allocate, so it can never appear in a miss counter. Writes are
+   recovered exactly (1.001–1.008) by `lts__t_sectors_aperture_sysmem_op_write.sum × 32 B`.
+   **So off-chip traffic = `op_read_lookup_miss.sum × 32 B` + `op_write.sum × 32 B`.** Using
+   the miss counter for both, as §3.3 has it, would report every kernel's write traffic as
+   zero. Evidence: `results/20260921_E2_ae_kernels/ncu/sysmem_miss_validation.csv`.
 2. **Memory-rail power.** `VDDQ_VDD2_1V8AO` exists only in sysfs, and the bus voltage its
    INA3221 channel reports is ≈ 5 V, not 1.8 V. Before E7 quotes memory power we will have
    to establish the correct scaling; if the research side knows the intended interpretation
    of this rail on the AGX Orin devkit carrier, that would save a calibration step.
+   **T005 update.** The rail behaves sensibly whatever its scaling: it rises +5.0 W on a pure
+   DRAM-copy load and only +5.5 W on a tensor-core load, i.e. it tracks memory traffic rather
+   than compute, which is what the name implies. The four rails were also checked for
+   double-counting and are independent — a load that raises `VDD_GPU_SOC` by 49.9 W raises
+   `VIN_SYS_5V0` by only 8.7 W — so E7 may sum them. What remains open is only the absolute
+   scaling of this one rail. Evidence: `results/20260921_E7_rails_check/power_rails_check.csv`.
 3. **Power-mode plan.** Since MAXN needs a reboot on this board, so does every return from a
    capped mode. E7's power-mode sweep therefore cannot be done inside one session: it will
    need one reboot per mode, each authorised by the human. Is that acceptable, or should E7
@@ -319,12 +410,12 @@ Historical, for the record: T002 was blocked until the reboot, because it would 
 
 ## Repository size (protocol §6f)
 
-After T003 (2026-09-22):
+After T005 (2026-09-22):
 
 ```
-du -sh results/   11M
-du -sh .git       5.0M
-git count-objects -vH:  count: 592   size-pack: 62.49 KiB
+du -sh results/   17M
+du -sh .git       5.5M
+git count-objects -vH:  count: 668   size-pack: 62.49 KiB
 ```
 
 `find results -size +50M` is empty. Largest committed addition in T003 is the action-expert

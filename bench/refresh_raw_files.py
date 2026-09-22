@@ -30,7 +30,33 @@ def main() -> int:
             rc = 1
             continue
         meta = json.loads(mf.read_text())
-        entries = collect_raw(p, meta.get("command", "unknown"))
+        # `produced_by` must be the command that actually made the file. Using the result
+        # directory's own `command` for everything would claim, falsely, that the ncu
+        # artifacts came out of the benchmark script.
+        by_map = {}
+        for sub, cmd in (("ncu", "bash bench/run_ncu_validation.sh " + str(p)),
+                         ("nsys", "bash bench/run_nsys.sh " + str(p))):
+            root = p / sub
+            if root.exists():
+                for f in root.rglob("*"):
+                    if f.is_file():
+                        by_map[str(f.relative_to(p))] = cmd
+        if (p / "ncu" / "sysmem_miss_validation.csv").exists():
+            by_map["ncu/sysmem_miss_validation.csv"] = (
+                f"python bench/parse_ncu_validation.py {p}")
+        for f in (p / "raw").glob("ncu_*"):
+            by_map[str(f.relative_to(p))] = "bash bench/run_ncu_validation.sh " + str(p)
+
+        # protocol §3.5/§5: a compressed file carries its compression command and the
+        # original's sha256 + bytes. Those are recorded by whoever compressed it, in an
+        # ORIGINALS.json beside the files; pick up every one of them.
+        originals = {}
+        for oj in p.rglob("ORIGINALS.json"):
+            for o in json.loads(oj.read_text())["files"]:
+                originals[o["compressed_name"]] = o
+
+        entries = collect_raw(p, meta.get("command", "unknown"),
+                              produced_by_map=by_map, originals=originals)
         meta["raw_files"] = entries
         write_json(mf, meta)
         total = sum(e["bytes"] for e in entries)

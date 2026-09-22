@@ -46,21 +46,21 @@
   "max_warps_per_sm_source": "torch max_threads_per_multi_processor / 32 (1536/32 = 48); not taken from ncu",
   "measured_peaks": {
     "_status": "measured by T005/E1 at MAXN, 2026-09-22",
-    "_method": "CUDA-event timing, median of 100 calls after 20 warm-ups, MAXN, jetson_clocks applied, GPU clock pinned at 1300500000 Hz; every GEMM verified against an fp32 reference before its time was used. See this run's latency_summary.csv.",
+    "_method": "CUDA-event timing at MAXN, jetson_clocks applied, GPU clock pinned at 1300500000 Hz. GEMM rows: median of 100 timed calls after 20 warm-ups. Bandwidth rows: 3 independent repeats of (20 warm-ups + 100 timed calls); the reported GB/s is the median of the BEST repeat, i.e. a deliberately optimistic best-of-three estimator, because this is a PEAK. The pooled median and p5-p95 across all three repeats are in each row's `note`, and every individual call is in raw/latency_samples.csv. Every GEMM was verified against an fp32 reference before its time was used.",
     "_power_mode": "NV Power Mode: MAXN",
     "_sm_count": 16,
-    "peak_memory_bandwidth_GBps": 189.11,
-    "peak_memory_bandwidth_kernel": "axpy_inplace",
-    "peak_bf16_TFLOPps": 33.6354,
+    "peak_memory_bandwidth_GBps": 185.59,
+    "peak_memory_bandwidth_kernel": "mul_scalar_fp32",
+    "peak_bf16_TFLOPps": 33.5471,
     "peak_bf16_shape": "2048x2048x2048",
-    "peak_fp16_TFLOPps": 28.6461,
-    "peak_fp32_TFLOPps": 3.4773,
-    "peak_tf32_TFLOPps": 15.7469,
-    "peak_int8_TOPps_torch_int_mm": 10.5022,
+    "peak_fp16_TFLOPps": 27.2516,
+    "peak_fp32_TFLOPps": 3.4775,
+    "peak_tf32_TFLOPps": 15.655,
+    "peak_int8_TOPps_torch_int_mm": 10.4942,
     "peak_int8_CAVEAT": "torch._int_mm does not reach the tensor cores on sm_87; this is a PyTorch-path throughput, NOT the hardware's dense INT8 peak. Do not use it as a hardware constant.",
-    "ridge_point_FLOP_per_byte": 177.86,
-    "pct_of_spec_bandwidth": 92.3,
-    "pct_of_spec_bf16": 80.1
+    "ridge_point_FLOP_per_byte": 180.76,
+    "pct_of_spec_bandwidth": 90.6,
+    "pct_of_spec_bf16": 79.9
   },
   "expected_from_spec_do_not_use_as_measurement": {
     "peak_memory_bandwidth_GBps": 204.8,
@@ -136,9 +136,9 @@
   "efficiency_fractions": {
     "_purpose": "docs/00_context.md carries these as **[ASSUMPTION]** in E11's analytic host model (`achieved_tflops = peak x eff_flops_frac`, `achieved_bw_GBps = ext_bw x eff_bw_frac`). These are the measured values. Both assumptions are pessimistic.",
     "eff_flops_frac_assumed": 0.4,
-    "eff_flops_frac_measured": 0.8008,
+    "eff_flops_frac_measured": 0.7987,
     "eff_bw_frac_assumed": 0.7,
-    "eff_bw_frac_measured": 0.9234,
+    "eff_bw_frac_measured": 0.9062,
     "_caveat": "Measured on dense square GEMM and a streaming kernel \u2014 the best case. The action expert's own shapes are small and skinny and do far worse; E2 (micro_ae_kernels.py) measures what THOSE shapes achieve."
   }
 }

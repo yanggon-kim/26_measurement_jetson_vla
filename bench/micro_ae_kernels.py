@@ -22,7 +22,7 @@ What it produces:
 
   * `kernels.csv` — per projection per S: time, FLOPs, bytes, arithmetic intensity, the
     memory and compute floors from E1's *measured* peaks, and the multiple of floor achieved;
-  * `launch_cost.csv` — the cost of a launch, measured three ways, and what it implies for a
+  * `launch_cost.csv` — the cost of a launch, measured four ways, and what it implies for a
     step made of 18 x 7 = 126 projection launches;
   * `cuda_graph.csv` — the same 18-layer stack replayed as a graph, which separates "the
     kernels are slow" from "there are too many launches".
@@ -90,7 +90,7 @@ def expert_geometry(policy):
     return projs, layers, cfg
 
 
-def timed(fn, warmup: int = 20, n: int = 200) -> list[float]:
+def timed(fn, warmup: int = 20, n: int = 100) -> list[float]:
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -101,6 +101,28 @@ def timed(fn, warmup: int = 20, n: int = 200) -> list[float]:
         b.record()
     torch.cuda.synchronize()
     return [a.elapsed_time(b) for a, b in ev]
+
+
+def chain_marginal(fn, k_lo: int = 8, k_hi: int = 64) -> tuple[float, float]:
+    """Marginal CPU cost of ONE call, and the fixed cost of a timed region.
+
+    A single call measured between one CUDA-event pair is not the cost of that call. On this
+    device the event pair plus loop costs a fixed ~45 us, which is comparable to the call
+    itself -- an earlier version of this experiment multiplied that constant by 18 or 36 and
+    reported it as model time. Timing a chain of k calls between ONE event pair and fitting
+    t(k) = fixed + k * marginal separates the two. `marginal` is what an operation costs when
+    the model issues it back to back, which is what a model does.
+
+    Returns (marginal_ms, fixed_ms).
+    """
+    def chain(k):
+        for _ in range(k):
+            fn()
+
+    lo = summarize(timed(lambda: chain(k_lo), 10, 30))["median_ms"]
+    hi = summarize(timed(lambda: chain(k_hi), 10, 30))["median_ms"]
+    marginal = (hi - lo) / (k_hi - k_lo)
+    return marginal, lo - k_lo * marginal
 
 
 def capture(run):
@@ -126,7 +148,12 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
     interpreter cannot feed the GPU, so that measured Python dispatch, not the kernel. The
     numbers here are therefore taken three ways:
 
-      `eager_ms`      one Python-driven call -- what the model actually experiences;
+      `eager_single_ms`  one Python-driven call between one CUDA-event pair. This carries a
+                     FIXED ~45 us cost for the timed region itself, comparable to the call,
+                     so it is reported but never multiplied out into a per-step budget;
+  `eager_chain_ms`   the marginal cost of one call inside a 64-call chain, from fitting
+                     t(k) = fixed + k * marginal. THIS is what an operation costs when the
+                     model issues it back to back;
       `graph_cold_ms` the same projection across all 18 layers inside one CUDA graph, so the
                       weights (18 x the matrix, far past the 4 MB L2) stream from DRAM as they
                       do in the real model. This is the honest kernel time;
@@ -165,7 +192,8 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
                     with nvtx(tag):
                         return one()
 
-            eager = summarize(stash(p["name"], S, "eager", timed(fn, 20, 100)))
+            eager = summarize(stash(p["name"], S, "eager_single", timed(fn, 20, 100)))
+            marg, fixed = chain_marginal(fn)
 
             def cold(x=x, ws=ws, F=F):
                 for w in ws:
@@ -179,12 +207,12 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
             try:
                 g = capture(cold)
                 gc_ = summarize(stash(p["name"], S, "graph_cold_18x",
-                                      timed(lambda g=g: g.replay(), 10, 50)))
+                                      timed(lambda g=g: g.replay(), 20, 100)))
                 del g
                 torch.cuda.empty_cache()
                 g = capture(hot)
                 gh_ = summarize(stash(p["name"], S, "graph_hot_18x",
-                                      timed(lambda g=g: g.replay(), 10, 50)))
+                                      timed(lambda g=g: g.replay(), 20, 100)))
                 del g
                 torch.cuda.empty_cache()
             except Exception as e:
@@ -203,16 +231,39 @@ def kernel_rows(projs, layers, cfg, S_list, mp, use_nvtx: bool, only: str | None
             sec = (cold_ms / 1e3) if cold_ms else None
             rows.append({
                 "proj": p["name"], "S": S, "in": p["in"], "out": p["out"],
-                "eager_ms": round(eager["median_ms"], 6),
-                "eager_p5_ms": round(eager["p5_ms"], 6),
-                "eager_p95_ms": round(eager["p95_ms"], 6),
+                "eager_single_ms": round(eager["median_ms"], 6),
+                "eager_single_mean_ms": round(eager["mean_ms"], 6),
+                "eager_single_p5_ms": round(eager["p5_ms"], 6),
+                "eager_single_p95_ms": round(eager["p95_ms"], 6),
+                "eager_single_min_ms": round(eager["min_ms"], 6),
+                "eager_chain_ms": round(marg, 6),
+                "timed_region_fixed_ms": round(fixed, 6),
                 "graph_cold_ms": round(cold_ms, 6) if cold_ms else "",
+                "graph_cold_mean_ms": round(gc_["mean_ms"] / nl, 6) if gc_ else "",
+                "graph_cold_p5_ms": round(gc_["p5_ms"] / nl, 6) if gc_ else "",
+                "graph_cold_p95_ms": round(gc_["p95_ms"] / nl, 6) if gc_ else "",
+                "graph_cold_min_ms": round(gc_["min_ms"] / nl, 6) if gc_ else "",
                 "graph_hot_ms": round(hot_ms, 6) if hot_ms else "",
-                "dispatch_overhead_us": round((eager["median_ms"] - cold_ms) * 1e3, 2)
-                                        if cold_ms else "",
+                "graph_hot_p5_ms": round(gh_["p5_ms"] / nl, 6) if gh_ else "",
+                "graph_hot_p95_ms": round(gh_["p95_ms"] / nl, 6) if gh_ else "",
+                # The chained marginal cost. Launches are asynchronous, so a chain runs at
+                # max(CPU dispatch, GPU time) per call -- this column is that maximum, NOT
+                # CPU time alone, and NOT (eager - graph), which would understate the CPU
+                # cost by assuming the two serialise. Where it sits at ~62 us while GPU time
+                # is well below that, the call is CPU-bound and 62 us IS the dispatch cost;
+                # where it tracks gpu_time_us the call has become GPU-bound.
+                "marginal_us": round(marg * 1e3, 2),
+                "cpu_dispatch_us": round(marg * 1e3, 2),   # kept: same value, older name
+                "gpu_time_us": round(cold_ms * 1e3, 2) if cold_ms else "",
+                "marginal_over_gpu": round(marg / cold_ms, 2) if cold_ms else "",
+                "regime": ("cpu_bound (dispatch)" if cold_ms and marg > 1.15 * cold_ms
+                           else "gpu_bound") if cold_ms else "",
                 "hot_speedup": round(cold_ms / hot_ms, 3) if cold_ms and hot_ms else "",
                 "n_eager": eager["n"], "n_graph": gc_["n"] if gc_ else 0,
                 "flops": flops, "weight_bytes": wb, "act_bytes": ab, "total_bytes": nb,
+                "floor_bytes_definition": "weights + input activations + output activations",
+                "graph_cold_working_set_bytes": wb * nl,
+                "graph_cold_exceeds_L2": wb * nl > 4 * 1024 * 1024,
                 "weight_frac_of_bytes": round(wb / nb, 4),
                 "arith_intensity_FLOP_per_B": round(flops / nb, 3),
                 "ridge_FLOP_per_B": mp["ridge_point_FLOP_per_byte"],
@@ -289,7 +340,8 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
             ("elementwise_add", lambda h=h, h2=h2: h + h2, S * Hn * 2 * 3, 0, f"[{S},{Hn}]"),
         ]
         for name, fn, nb, flops, note in ops:
-            eager = summarize(stash(name, S, "eager", timed(fn, 20, 100)))
+            eager = summarize(stash(name, S, "eager_single", timed(fn, 20, 100)))
+            marg, fixed = chain_marginal(fn)
             gms = None
             try:
                 def rep(fn=fn):
@@ -297,26 +349,46 @@ def op_rows(cfg, S_list, mp, P_tokens: int = 816) -> list[dict]:
                         fn()
                 g = capture(rep)
                 gr = summarize(stash(name, S, "graph_18x",
-                                     timed(lambda g=g: g.replay(), 10, 50)))
+                                     timed(lambda g=g: g.replay(), 20, 100)))
                 gms = gr["median_ms"] / 18
                 del g
                 torch.cuda.empty_cache()
             except Exception as e:
                 print(f"    graph capture failed for {name} S={S}: {type(e).__name__}")
             sec = (gms / 1e3) if gms else None
+            # These operators run on activations, not weights: at the model's own sizes the
+            # whole working set is a couple of MB and never leaves the 4 MB L2. So `bytes`
+            # here is L2 traffic, NOT off-chip traffic, and dividing it by a DRAM peak is
+            # meaningless -- several rows exceed 100 % of "peak" for exactly that reason,
+            # which is the proof rather than an anomaly. The columns are named accordingly
+            # and a DRAM-roofline column is deliberately NOT provided.
+            ws = nb
+            l2 = ws <= 4 * 1024 * 1024
             rows.append({
                 "op": name, "S": S, "T": T,
-                "eager_ms": round(eager["median_ms"], 6),
+                "eager_single_ms": round(eager["median_ms"], 6),
+                "eager_single_mean_ms": round(eager["mean_ms"], 6),
+                "eager_single_p5_ms": round(eager["p5_ms"], 6),
+                "eager_single_p95_ms": round(eager["p95_ms"], 6),
+                "eager_chain_ms": round(marg, 6),
+                "timed_region_fixed_ms": round(fixed, 6),
+                "marginal_us": round(marg * 1e3, 2),
+                "cpu_dispatch_us": round(marg * 1e3, 2),   # kept: same value, older name
                 "graph_ms": round(gms, 6) if gms else "",
-                "dispatch_overhead_us": round((eager["median_ms"] - gms) * 1e3, 2)
-                                        if gms else "",
+                "graph_p5_ms": round(gr["p5_ms"] / 18, 6) if gms else "",
+                "graph_p95_ms": round(gr["p95_ms"] / 18, 6) if gms else "",
+                "gpu_time_us": round(gms * 1e3, 2) if gms else "",
+                "marginal_over_gpu": round(marg / gms, 2) if gms else "",
+                "regime": ("cpu_bound (dispatch)" if gms and marg > 1.15 * gms
+                           else "gpu_bound") if gms else "",
                 "n": eager["n"],
-                "bytes": nb, "flops": flops,
-                "mem_floor_ms": round(nb / bw * 1e3, 6),
-                "x_floor": round(gms / (nb / bw * 1e3), 2) if gms else "",
-                "achieved_GBps": round(nb / sec / 1e9, 2) if sec else "",
-                "pct_of_peak_bw": round(100 * (nb / sec) / bw, 1) if sec else "",
-                "note": note,
+                "bytes_touched": nb, "flops": flops,
+                "working_set_bytes": ws, "l2_resident": l2,
+                "l2_GBps": round(nb / sec / 1e9, 2) if sec else "",
+                "dram_floor_ms_NOT_APPLICABLE_IF_L2_RESIDENT": round(nb / bw * 1e3, 6),
+                "note": note + ("; working set fits the 4 MB L2, so l2_GBps is CACHE "
+                                "bandwidth and must not be compared with the DRAM peak"
+                                if l2 else "; working set exceeds the 4 MB L2"),
             })
         del q, k, v, ke, ve, h, h2, mlp, scores, rope, cos, sin, norm_w
         torch.cuda.empty_cache()
@@ -365,7 +437,7 @@ def launch_rows(projs, mp) -> list[dict]:
 
     try:
         g = capture(chain64)
-        s = summarize(timed(lambda: g.replay(), 10, 50))
+        s = summarize(timed(lambda: g.replay(), 20, 100))
         rows.append({"method": "chain_64_cuda_graph",
                      "detail": "same 64 q_proj calls replayed as one graph (GPU time only)",
                      "median_ms": round(s["median_ms"], 6),
@@ -408,13 +480,24 @@ def graph_rows(projs, layers, cfg, mp, S: int = 51) -> list[dict]:
             torch.nn.functional.linear(gg, d.weight)
 
     rows = []
-    ms = timed(run_stack, 10, 50)
+    ms = timed(run_stack, 20, 100)
     s = summarize(ms)
     n_launch = nl * 7
+    wb_layer = sum(m.weight.numel() * BYTES_PER_EL for m in stack[0])
+    wb_total = wb_layer * nl
     rows.append({"mode": "eager", "S": S, "n_launches": n_launch,
                  "median_ms": round(s["median_ms"], 6),
-                 "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6), "n": s["n"],
-                 "us_per_launch": round(s["median_ms"] * 1e3 / n_launch, 2), "note": ""})
+                 "mean_ms": round(s["mean_ms"], 6),
+                 "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
+                 "min_ms": round(s["min_ms"], 6), "n": s["n"],
+                 "us_per_launch": round(s["median_ms"] * 1e3 / n_launch, 2),
+                 "weight_bytes_total": wb_total,
+                 "act_bytes_total": sum(S * (m.in_features + m.out_features) * BYTES_PER_EL
+                                        for m in stack[0]) * nl,
+                 "floor_bytes_definition": "WEIGHTS ONLY (see weight_bytes_total); the "
+                                           "per-projection floors in kernels.csv add "
+                                           "activations, so the two are not the same floor",
+                 "note": "issued back to back from Python"})
 
     try:
         g = torch.cuda.CUDAGraph()
@@ -426,17 +509,22 @@ def graph_rows(projs, layers, cfg, mp, S: int = 51) -> list[dict]:
         torch.cuda.current_stream().wait_stream(st)
         with torch.cuda.graph(g):
             run_stack()
-        ms = timed(lambda: g.replay(), 10, 50)
+        ms = timed(lambda: g.replay(), 20, 100)
         s = summarize(ms)
         rows.append({"mode": "cuda_graph_replay", "S": S, "n_launches": n_launch,
                      "median_ms": round(s["median_ms"], 6),
+                     "mean_ms": round(s["mean_ms"], 6),
                      "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
-                     "n": s["n"],
+                     "min_ms": round(s["min_ms"], 6), "n": s["n"],
                      "us_per_launch": round(s["median_ms"] * 1e3 / n_launch, 2),
+                     "weight_bytes_total": wb_total,
+                     "act_bytes_total": "", "floor_bytes_definition": "WEIGHTS ONLY",
                      "note": "one graph launch replaces 126 kernel launches"})
     except Exception as e:
         rows.append({"mode": "cuda_graph_replay", "S": S, "n_launches": n_launch,
-                     "median_ms": "", "p5_ms": "", "p95_ms": "", "n": 0, "us_per_launch": "",
+                     "median_ms": "", "mean_ms": "", "p5_ms": "", "p95_ms": "", "min_ms": "",
+                     "n": 0, "us_per_launch": "", "weight_bytes_total": wb_total,
+                     "act_bytes_total": "", "floor_bytes_definition": "WEIGHTS ONLY",
                      "note": f"FAILED: {type(e).__name__}: {str(e)[:120]}"})
     return rows
 
@@ -509,12 +597,14 @@ def main() -> int:
 
     print("\n=== per-projection sweep ===", flush=True)
     krows = kernel_rows(projs, layers, cfg, S_list, mp, args.nvtx, args.layer)
-    print(f"{'proj':10s} {'S':>4s} {'eager_ms':>9s} {'gpu_ms':>8s} {'disp_us':>8s} "
-          f"{'hot_x':>6s} {'AI':>7s} {'floor_ms':>9s} {'xfloor':>7s} {'%peakBW':>8s}")
+    print(f"{'proj':10s} {'S':>4s} {'1call_ms':>9s} {'chain_ms':>9s} {'gpu_ms':>8s} "
+          f"{'cpu_us':>7s} {'hot_x':>6s} {'AI':>7s} {'floor_ms':>9s} {'xfloor':>7s} "
+          f"{'%peakBW':>8s}")
     for r in krows:
-        print(f"{r['proj']:10s} {r['S']:4d} {r['eager_ms']:9.4f} "
-              f"{r['graph_cold_ms']:8.4f} {r['dispatch_overhead_us']:8.1f} "
-              f"{r['hot_speedup']:6.2f} {r['arith_intensity_FLOP_per_B']:7.1f} "
+        print(f"{r['proj']:10s} {r['S']:4d} {r['eager_single_ms']:9.4f} "
+              f"{r['eager_chain_ms']:9.4f} {r['graph_cold_ms']:8.4f} "
+              f"{r['cpu_dispatch_us']:7.1f} {r['hot_speedup']:6.2f} "
+              f"{r['arith_intensity_FLOP_per_B']:7.1f} "
               f"{r['floor_ms']:9.4f} {r['x_floor']:7.2f} {r['pct_of_peak_bw']:8.1f}")
     with (out / "kernels.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(krows[0].keys()))
@@ -523,12 +613,13 @@ def main() -> int:
 
     print("\n=== non-GEMM operators (attention, norms, pointwise) ===", flush=True)
     orows = op_rows(cfg, S_list, mp)
-    print(f"{'op':18s} {'S':>4s} {'T':>5s} {'eager_ms':>9s} {'gpu_ms':>8s} {'disp_us':>8s} "
-          f"{'floor_ms':>9s} {'xfloor':>7s} {'%peakBW':>8s}")
+    print(f"{'op':18s} {'S':>4s} {'T':>5s} {'1call_ms':>9s} {'chain_ms':>9s} "
+          f"{'gpu_ms':>8s} {'cpu_us':>7s} {'L2?':>4s} {'l2_GBps':>8s}")
     for r in orows:
-        print(f"{r['op']:18s} {r['S']:4d} {r['T']:5d} {r['eager_ms']:9.4f} "
-              f"{r['graph_ms']:8.4f} {r['dispatch_overhead_us']:8.1f} "
-              f"{r['mem_floor_ms']:9.4f} {r['x_floor']:7.2f} {r['pct_of_peak_bw']:8.1f}")
+        print(f"{r['op']:18s} {r['S']:4d} {r['T']:5d} {r['eager_single_ms']:9.4f} "
+              f"{r['eager_chain_ms']:9.4f} {r['graph_ms']:8.4f} "
+              f"{r['cpu_dispatch_us']:7.1f} {str(r['l2_resident']):>4s} "
+              f"{r['l2_GBps']:>8}")
     with (out / "ops.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(orows[0].keys()))
         w.writeheader()
@@ -570,7 +661,9 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": P.CHECKPOINT, "model_revision": P.REVISION,
         "precision": "bfloat16", "compile_mode": None,
-        "batch": 1, "n_warmup": 20, "n_timed": 200,
+        "batch": 1, "n_warmup": 20, "n_timed": 100,
+        "n_warmup_chain": 10, "n_timed_chain": 30, "chain_k": [8, 64],
+        "estimator": "median; chained rows are a 2-point fit of t(k) = fixed + k*marginal",
         "S_swept": S_list, "expert_geometry": cfg,
         "projections": [{"name": p["name"], "in": p["in"], "out": p["out"]} for p in projs],
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
@@ -585,6 +678,16 @@ def main() -> int:
         "bench_files_sha256": sw.get("bench_files_sha256"),
         "weights_verified": real, "shipped_config": shipped,
         "peaks_used": mp,
+        # protocol §5 profiler fields: this directory also carries ncu artifacts, written by
+        # bench/run_ncu_validation.sh into ncu/.
+        "gpu_arch": "sm_87",
+        "ncu_version": sh_out("ncu --version 2>/dev/null | head -3 | tail -1"),
+        "ncu_set": "explicit --metrics list (no --set)",
+        "ncu_filter": '--profile-from-start off --nvtx --nvtx-include "micro/" -c 1; '
+                      "cold cases use ncu's default cache control, warm cases "
+                      "--cache-control none",
+        "cuobjdump_version": sh_out("cuobjdump --version 2>/dev/null | tail -2 | head -1"),
+        "nsys_version": None,
         "raw_files": collect_raw(out, "bench/micro_ae_kernels.py"),
         "command": f"python bench/micro_ae_kernels.py --outdir {args.outdir} --S {args.S}"
                    + (f" --layer {args.layer}" if args.layer else "")

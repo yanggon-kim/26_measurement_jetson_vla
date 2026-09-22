@@ -1,0 +1,455 @@
+{
+  "experiment": "E2",
+  "task": "T005",
+  "date_utc": "2026-09-22T04:04:29Z",
+  "model": "lerobot/pi0_libero_finetuned_v044",
+  "model_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "precision": "bfloat16",
+  "compile_mode": null,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "n_warmup_chain": 10,
+  "n_timed_chain": 30,
+  "chain_k": [
+    8,
+    64
+  ],
+  "estimator": "median; chained rows are a 2-point fit of t(k) = fixed + k*marginal",
+  "S_swept": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    51,
+    64,
+    128,
+    256
+  ],
+  "expert_geometry": {
+    "hidden_size": 1024,
+    "intermediate_size": 4096,
+    "num_hidden_layers": 18,
+    "num_attention_heads": 8,
+    "num_key_value_heads": 1,
+    "head_dim": 256
+  },
+  "projections": [
+    {
+      "name": "q_proj",
+      "in": 1024,
+      "out": 2048
+    },
+    {
+      "name": "k_proj",
+      "in": 1024,
+      "out": 256
+    },
+    {
+      "name": "v_proj",
+      "in": 1024,
+      "out": 256
+    },
+    {
+      "name": "o_proj",
+      "in": 2048,
+      "out": 1024
+    },
+    {
+      "name": "gate_proj",
+      "in": 1024,
+      "out": 4096
+    },
+    {
+      "name": "up_proj",
+      "in": 1024,
+      "out": 4096
+    },
+    {
+      "name": "down_proj",
+      "in": 4096,
+      "out": 1024
+    }
+  ],
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_hz": 1300500000,
+  "gate": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0"
+  },
+  "jetson_clocks": "applied before the run; GPU locked min==max",
+  "emc_hz": 3199000000,
+  "jetpack": "6.2.3+b81",
+  "l4t": "R36.5.0",
+  "cuda": "12.6",
+  "torch": "2.8.0",
+  "python": "3.10.12",
+  "venv": "/home/yanggon/venvs/pi0/bin/python",
+  "bench_commit": "f747ac24adcbf0ee3d14fa815cc1ead2571a833c",
+  "bench_files_sha256": {
+    "analyze_e3.py": "3b491c033b47e2f27b992278862db29624241adb0de7f12c0500610d7baf9285",
+    "analyze_e4.py": "80802a84e636e40cd5a8b94e90c3c7a857e9f073977af1d9f8e2bc9d2782f9d4",
+    "analyze_step_kernels.py": "f235090c4b2dcce38df314ce2148da916522b9ed724454d6b1baba5971568e49",
+    "bandwidth_mode_probe.py": "3528097b17884563df8ec886c0b2dcde017202b045b23d543d0b962a93711911",
+    "check_equivalence.py": "81fefa349049acfe9e1161a010a4dc3343ab5c1fa909af00ed5535b1f21cdac1",
+    "collect_platform.py": "8d0993d0142fd6190a49d838c5b33405c53835021e15364f9364228385952458",
+    "common.py": "aaeb243e67691aabda8b9e9e939f384ee89200e9e29a58cce0ba1b94daba28ea",
+    "count_step_kernels.py": "2251d643b2614463b8bf404e52650ca017db8f49848017ff04131ad5ba7b96c1",
+    "fetch_fixture.py": "544a9c9efb9959733f0844702cd5df172a751bb59772f4d4d980bd4f5edab7ba",
+    "fill_measured_floors.py": "a226d05e78eaf65a62efc4a90352428be66f5a5a4120fb924e361736a1871cf9",
+    "finalize_raw.py": "f59d628a1a5ea220c0879da785f08251f93e6dff4c01ea6b3d3621b74fdfda45",
+    "gpu_clock_probe.py": "115200b2b26d3127e8bd583a65d480faad6338b477acaa003076c006cee4837a",
+    "hw_constants.py": "90dc6cb69469496494230ac28163c6ed23ee3683efa3446e3112298deaaa6576",
+    "make_meta_e0.py": "7e3581494c5913bf2ef6e17fd5e920e0f45f289ec2b8462571f7048f3fc4c6ce",
+    "measure_preprocess.py": "eb2e3ecfd23d68da9e4953181117da46e65bb7f43f68ece8a9c0fac34f92c686",
+    "micro_ae_kernels.py": "569d08fa9d3cf4aa3d12dad2bf9113574588d00d829ea9d271a3db59ced91701",
+    "micro_peak.py": "7bf58e95f93f66d2e20acc991a8f4920149472f9e31b2b4cd4d18246d19143ea",
+    "ncu_columns.py": "d09d747491e214ea940a43b819232b82358717094f02e80396a575c767625051",
+    "ncu_toy.py": "5cf3a61be8b12482ecbd4bc0816a71b4ba6bb1f5aa06156168b2753f43f1b8d4",
+    "ncu_validation.py": "8b2fcf105b64946829a8125ee047d45092f0d676f7aa2b68576096147a3fba8a",
+    "parse_autotune.py": "219da6daf5409623844a6747698666470ca11f1cdf1ac325735893d0100df81b",
+    "parse_ncu_validation.py": "efc5655c745ef917b0b7758930cb6a6a4048306e7a70bc5f30271d7cd7633a65",
+    "pi0_common.py": "a63ad5c47bd0d4634a4b87daef3056e3d705a7d012ea4e377d7b540a04eb97b0",
+    "power_rails_check.py": "775f84e552a240fe67f82ac0694e6422b27af9a445bb5176a0b0e226b2b278ea",
+    "probe_e3.py": "fd9f38f9a1a11dfbf6039b7f545f762da79740c0730e659c8b33311d8d971ee7",
+    "refresh_raw_files.py": "0134ae5fe02e481fb17f9ca994c7ec3dd734c773e065992c72ac0d34524cc6b0",
+    "regen_floor.py": "addbe71c0bcf145cde552fbc479ccb9e902c77c9f383da2a8e3f493ad11f8632",
+    "regions.py": "76231880f704a458c3c4459956fe719c8853db6cb3a90d52ce7fcf381b59d6b0",
+    "run_e3.py": "0b503651c847f1ca8607f622f4ec7064a2a0ed98fe9559571a1cf6288c45c5ad",
+    "run_e4.py": "5fcb0012313159f2cba0a1075cf52c0516d4c2f1907386aa55eeb5319a8abb0e",
+    "sustained_load_probe.py": "89366f48563631bd26db3072ece9b7ff1b24b26d301085ba839c2c6d27345a9f",
+    "verify_stack.py": "c6ad5d8ec9a8dc5169045579a76a1af747347f3797455e1ea5bc2bdb5426c793"
+  },
+  "weights_verified": {
+    "checked": 400,
+    "matched": 400,
+    "checkpoint_file_sha256_source": "huggingface_hub cache",
+    "verdict": "real weights"
+  },
+  "shipped_config": {
+    "compile_model": true,
+    "compile_mode": "max-autotune",
+    "gradient_checkpointing": true,
+    "num_inference_steps": 10,
+    "dtype": "bfloat16"
+  },
+  "peaks_used": {
+    "_status": "measured by T005/E1 at MAXN, 2026-09-22",
+    "_method": "CUDA-event timing at MAXN, jetson_clocks applied, GPU clock pinned at 1300500000 Hz. GEMM rows: median of 100 timed calls after 20 warm-ups. Bandwidth rows: 3 independent repeats of (20 warm-ups + 100 timed calls); the reported GB/s is the median of the BEST repeat, i.e. a deliberately optimistic best-of-three estimator, because this is a PEAK. The pooled median and p5-p95 across all three repeats are in each row's `note`, and every individual call is in raw/latency_samples.csv. Every GEMM was verified against an fp32 reference before its time was used.",
+    "_power_mode": "NV Power Mode: MAXN",
+    "_sm_count": 16,
+    "peak_memory_bandwidth_GBps": 185.59,
+    "peak_memory_bandwidth_kernel": "mul_scalar_fp32",
+    "peak_bf16_TFLOPps": 33.5471,
+    "peak_bf16_shape": "2048x2048x2048",
+    "peak_fp16_TFLOPps": 27.2516,
+    "peak_fp32_TFLOPps": 3.4775,
+    "peak_tf32_TFLOPps": 15.655,
+    "peak_int8_TOPps_torch_int_mm": 10.4942,
+    "peak_int8_CAVEAT": "torch._int_mm does not reach the tensor cores on sm_87; this is a PyTorch-path throughput, NOT the hardware's dense INT8 peak. Do not use it as a hardware constant.",
+    "ridge_point_FLOP_per_byte": 180.76,
+    "pct_of_spec_bandwidth": 90.6,
+    "pct_of_spec_bf16": 79.9
+  },
+  "gpu_arch": "sm_87",
+  "ncu_version": "Version 2024.3.1.0 (build 34702747) (public-release)",
+  "ncu_set": "explicit --metrics list (no --set)",
+  "ncu_filter": "--profile-from-start off --nvtx --nvtx-include \"micro/\" -c 1; cold cases use ncu's default cache control, warm cases --cache-control none",
+  "cuobjdump_version": "Cuda compilation tools, release 12.6, V12.6.68",
+  "nsys_version": null,
+  "raw_files": [
+    {
+      "path": "raw/latency_samples.csv",
+      "sha256": "c85b96875478e9176bc6b87f72e4edca7c4088e31f732cd4e1cb1c6a361f40e0",
+      "bytes": 1577638,
+      "kind": "other",
+      "produced_by": "python bench/micro_ae_kernels.py --outdir results/20260921_E2_ae_kernels_v2 --S 1,2,4,8,16,32,51,64,128,256",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_clock_check.csv",
+      "sha256": "d556b0d5bc9f20cb86217fd30998730bdd6b00cf0232e9ffbd961beb1affa9bb",
+      "bytes": 498,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_copy_256mib_analytic.json",
+      "sha256": "54cc6a45f89ee6c628bf71fe04e827cc0e99b804f7d10ab8f9e9b00a5d4177f0",
+      "bytes": 262,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_copy_256mib_stdout.txt",
+      "sha256": "54cc6a45f89ee6c628bf71fe04e827cc0e99b804f7d10ab8f9e9b00a5d4177f0",
+      "bytes": 262,
+      "kind": "stdout",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_cold_analytic.json",
+      "sha256": "9613cc722445e3da3c6491eda657cc3371b6af74322aa7c5b3f997dc41521013",
+      "bytes": 170,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_cold_stdout.txt",
+      "sha256": "9613cc722445e3da3c6491eda657cc3371b6af74322aa7c5b3f997dc41521013",
+      "bytes": 170,
+      "kind": "stdout",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_l2_analytic.json",
+      "sha256": "5e2d88c09b3e5739215cb4944d4cb1e44478c37468984a7163fee9e958fb0a64",
+      "bytes": 226,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_l2_stdout.txt",
+      "sha256": "5e2d88c09b3e5739215cb4944d4cb1e44478c37468984a7163fee9e958fb0a64",
+      "bytes": 226,
+      "kind": "stdout",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_l2_twice_analytic.json",
+      "sha256": "c0d63539cb1065950ddc6f6ea8866d44c81015a7e85ab961eda23e8138f01b1c",
+      "bytes": 236,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_l2_twice_stdout.txt",
+      "sha256": "c0d63539cb1065950ddc6f6ea8866d44c81015a7e85ab961eda23e8138f01b1c",
+      "bytes": 236,
+      "kind": "stdout",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_warm_analytic.json",
+      "sha256": "0036e4f3c73908b43a98899282ab135d87c934c6fe65ee2a44b4424d306e34f3",
+      "bytes": 204,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/ncu_gemm_warm_stdout.txt",
+      "sha256": "0036e4f3c73908b43a98899282ab135d87c934c6fe65ee2a44b4424d306e34f3",
+      "bytes": 204,
+      "kind": "stdout",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "raw/stdout.txt",
+      "sha256": "c11656fd2bdf8a5118a98ace136f9661a4a0dbbfa847d0a5fa0692c18deeebb8",
+      "bytes": 14040,
+      "kind": "stdout",
+      "produced_by": "python bench/micro_ae_kernels.py --outdir results/20260921_E2_ae_kernels_v2 --S 1,2,4,8,16,32,51,64,128,256",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/ORIGINALS.json",
+      "sha256": "cffcfee873f0ac02cd5b5b65a66258f38f72fa1121b3cc11314c7ae115df8af8",
+      "bytes": 2217,
+      "kind": "other",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/copy_256mib.csv",
+      "sha256": "b347923432a42838bd2e6ac1991f13dfb67a9bd5e1651f762097e7b9f7547d39",
+      "bytes": 14549,
+      "kind": "ncu-csv",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/copy_256mib.ncu-rep.zst",
+      "sha256": "2542c83d0451238fa387cf90acc7e6e054dff6a976cb46d79b3259dc9301366b",
+      "bytes": 108156,
+      "kind": "ncu-rep",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true,
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 --rm copy_256mib.ncu-rep"
+      },
+      "original": {
+        "name": "copy_256mib.ncu-rep",
+        "sha256": "fb3278c793d5e63545aa8d911e8038f33b95d5212dfa9bb6212fc17ffae56f89",
+        "bytes": 3446034
+      }
+    },
+    {
+      "path": "ncu/gemm_cold.csv",
+      "sha256": "5703889f52e0449c6fff5ebff875992ab96c5e030148eb95e55604be4fff2543",
+      "bytes": 14403,
+      "kind": "ncu-csv",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/gemm_cold.ncu-rep.zst",
+      "sha256": "721aacc040aa2a1d22449b0dc0732c25e2fe567ddb1e5d1e0be0082addcbd44e",
+      "bytes": 58503,
+      "kind": "ncu-rep",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true,
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 --rm gemm_cold.ncu-rep"
+      },
+      "original": {
+        "name": "gemm_cold.ncu-rep",
+        "sha256": "f833c893cb8ebb5af0c4b542233145bb9fc5bd05486bc8539094b4e8deae981d",
+        "bytes": 6672810
+      }
+    },
+    {
+      "path": "ncu/gemm_l2.csv",
+      "sha256": "8161ec969e2b0ad293ca86617f01e3cccaaa53a167ceb95a3e47dee4fbcd1990",
+      "bytes": 14447,
+      "kind": "ncu-csv",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/gemm_l2.ncu-rep.zst",
+      "sha256": "3d8f9be451dce250f95d518e35ed3b8a529a81210c5121001c1961151392d4ce",
+      "bytes": 58190,
+      "kind": "ncu-rep",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true,
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 --rm gemm_l2.ncu-rep"
+      },
+      "original": {
+        "name": "gemm_l2.ncu-rep",
+        "sha256": "504e25b17624541e85d55954d7e19213ad259a539524ec594a782fb6d2e39756",
+        "bytes": 5924551
+      }
+    },
+    {
+      "path": "ncu/gemm_l2_twice.csv",
+      "sha256": "91c689e7e808c8d156f15ee49274365ed07a23c28b465a9e7109e40d6f9d290f",
+      "bytes": 16440,
+      "kind": "ncu-csv",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/gemm_l2_twice.ncu-rep.zst",
+      "sha256": "e90d1a3ee62226259cce70309331e96e656e3dd470dd4a5110e47cfa4e343554",
+      "bytes": 58741,
+      "kind": "ncu-rep",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true,
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 --rm gemm_l2_twice.ncu-rep"
+      },
+      "original": {
+        "name": "gemm_l2_twice.ncu-rep",
+        "sha256": "9e52c154b6f1726cb9a7405d0cfc3c24ac3b2a1bb0d278ab806bb2d1602c4936",
+        "bytes": 5940214
+      }
+    },
+    {
+      "path": "ncu/gemm_warm.csv",
+      "sha256": "7f2ba6dc7640087681417fcfeb90f30c85bf8c08998e9c030e03ec8207e3bac1",
+      "bytes": 14498,
+      "kind": "ncu-csv",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    },
+    {
+      "path": "ncu/gemm_warm.ncu-rep.zst",
+      "sha256": "dd8b7d06bd189bbe8bea5667827e2949fded1d1b9474460dab8fe2851a2d725c",
+      "bytes": 58519,
+      "kind": "ncu-rep",
+      "produced_by": "bash bench/run_ncu_validation.sh results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true,
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 --rm gemm_warm.ncu-rep"
+      },
+      "original": {
+        "name": "gemm_warm.ncu-rep",
+        "sha256": "37124dab600b42feb5fda51e84ad49789792a1c44b77d0c529ad3b4e567ae62b",
+        "bytes": 6672831
+      }
+    },
+    {
+      "path": "ncu/sysmem_miss_validation.csv",
+      "sha256": "1fddd5d8623c59f550a02473b19d7745fb8bffe2e08cff1f30c1e0228bd1ed1d",
+      "bytes": 1900,
+      "kind": "ncu-csv",
+      "produced_by": "python bench/parse_ncu_validation.py results/20260921_E2_ae_kernels",
+      "secrets_scan": "clean",
+      "committed": true
+    }
+  ],
+  "command": "python bench/micro_ae_kernels.py --outdir results/20260921_E2_ae_kernels_v2 --S 1,2,4,8,16,32,51,64,128,256",
+  "throttled": false,
+  "throttled_evidence": "GPU clock pinned min==max and recorded in `gate` before the run; E1 established that sustained load on this device does not move the clock.",
+  "notes": [
+    "Shapes are read from the loaded checkpoint, not from a table.",
+    "docs/01_measurement_plan.md's E2 table lists `kv_proj (k and v)` as 1024 -> 512. The expert is multi-query (num_key_value_heads=1), so k and v are two separate 1024 -> 256 GEMMs. Same weight bytes, two kernels instead of one.",
+    "Floors use E1's MEASURED peaks, not the spec sheet.",
+    "`bytes` counts the weight matrix once plus the input and output activations. At S = 51 the weights are ~95 % of the traffic, which is why the projections are memory-bound despite being GEMMs.",
+    "The CUDA-graph stack runs the 126 projections in the real order at the real widths but omits attention and the activation function. It is a launch-count experiment, not a numerically faithful expert."
+  ]
+}
