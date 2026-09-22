@@ -19,3 +19,5 @@ the write path does not appear in any sysmem-miss counter, say so — the substi
 **Rail double-count check (protocol §4).** Four rails from sysfs at idle, during the ≥ 60 s `clone()` loop and during
 the ≥ 60 s 8192² bf16 GEMM loop → `power_rails_check.csv` (`load, rail, mean_mW, above_idle_mW`) and one paragraph.
 Raw files (protocol §3.5 / §6): every per-iteration sample and the run stdout committed under the result directories' `raw/`.
+
+status: claimed 2026-09-22
