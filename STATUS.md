@@ -19,6 +19,57 @@ The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGE
 After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
 power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
 
+## Headline after T003 (E4): compilation closes two thirds of the gap, and one line closes half of what is left
+
+**The ladder is complete** (ms per denoising step, π0, MAXN):
+
+| rung | ms/step | × floor |
+|---|---|---|
+| analytic bandwidth floor | 3.115 | 1.0× |
+| research-side "optimistic bound" (2 × floor), *assumed unreachable* | 6.230 | 2.0× |
+| measured eager (T002) | 52.56 | 16.9× |
+| **measured compiled, best stock mode (`reduce-overhead`)** | **16.30** | **5.2×** |
+| *modified: crop instead of cloning the KV cache* | *10.37* | *3.3×* |
+
+The research side's ~90 ms/step estimate is **5.5× too pessimistic** — it applied Jetson
+**Thor's** 1.51× compile gain to a derived 136 ms eager step, and both inputs were wrong here.
+Measured compile gain is **3.22× per step** (1.39× end-to-end at N = 4, 1.69× at N = 10): a
+single end-to-end factor is not transferable across N, only the slope is.
+
+**What each mechanism contributes.** Compilation 2.32×, CUDA graphs a further 1.39×,
+autotuning **nothing measurable**. `max-autotune` costs 5× the compile time of `default` for
+latency it only gets from CUDA graphs — use `reduce-overhead`.
+
+**Triton GEMM templates win no action-expert shape.** With Inductor's `min_sms = 68` gate
+defeated in-process, Triton won **0 of 126** action-expert autotune blocks and 54 of 697
+vision/prefix blocks; on four of five expert shapes the best Triton candidate is **~2× slower**
+than cuBLAS. The committed `output_code` shows why: the expert graph is **127
+`extern_kernels.mm`** — every matmul to cuBLAS — with Triton only for fused RoPE, GeGLU,
+RMSNorm and casts. **The SM-count restriction is not why the expert sits above its floor.**
+
+**One line still dominates.** `copy.deepcopy(past_key_values)` at `modeling_pi0.py:919` is
+every graph break in the model (33 of 33 break events across all logs). It **cannot be
+deleted** — the negative control fails, because the expert appends its suffix K/V regardless
+of `use_cache=False` — but `DynamicCache.crop(P)` is an exact substitute: **bitwise identical
+actions**, zero graph breaks, 10.37 ms/step. That reaches **1.67× the "optimistic bound"**
+that `docs/00_context.md` calls a stand-in for a perfect software stack. **The headroom a PIM
+design must beat is much smaller than the original ladder implied.**
+
+Full report: `reports/E4_pi0_compile.md`.
+
+### Errors caught in T003, for the record
+
+Two I caught myself before they reached the report: my own region instrumentation
+graph-breaks a compiled model (so E4's primary numbers are uninstrumented, per protocol §2),
+and the `forced` variant silently reused cached kernels until both arms were re-run with cold
+caches. Three the independent review caught: **all 20 result directories had empty `raw/` and
+`raw_files: []`** — the same defect T002's review found, reintroduced verbatim in new code, so
+every log-derived number was unverifiable from the repository; CUDA-graph use was *inferred*
+from a timing gap rather than measured (now confirmed directly); and several counts were
+wrong (autotune blocks double-counted 494→247, 1646→823) including a quoted log line that
+existed in no file. Two protocol violations disclosed: a result directory overwritten in
+place (§5), and `throttled: false` asserted with no tegrastats log (§1).
+
 ## Headline after T002 (E3): the action expert is **not** the dominant phase
 
 **π0, LeRobot implementation, eager, MAXN: one denoising step costs 52.94 ms** (slope fit over
@@ -268,25 +319,16 @@ Historical, for the record: T002 was blocked until the reboot, because it would 
 
 ## Repository size (protocol §6f)
 
-After T002 (2026-09-21):
+After T003 (2026-09-22):
 
 ```
-du -sh results/   4.0M
-du -sh .git       3.6M
-git count-objects -vH:  count: 362   size-pack: 62.49 KiB
+du -sh results/   11M
+du -sh .git       5.0M
+git count-objects -vH:  count: 592   size-pack: 62.49 KiB
 ```
 
-Five largest committed files:
-
-| bytes | file |
-|---|---|
-| 794544 | `env/tool_help/ncu_query_metrics.txt` |
-| 536576 | `results/20260921_E0_platform/raw/nsys_toy.sqlite` |
-| 528384 | `results/20260921_E0_platform_maxn/raw/nsys_toy.sqlite` |
-| 201105 | `results/20260921_E0_platform_maxn/raw/tegrastats_idle.log` |
-| 190947 | `results/20260921_E0_platform/raw/tegrastats_idle.log` |
-
-`find results -size +50M` is empty. T001's figures were 2.9 M / 2.5 M / 228 objects.
+`find results -size +50M` is empty. Largest committed addition in T003 is the action-expert
+`output_code.py` at 266 KB. T002's figures were 3.8 M / 3.6 M / 362 objects.
 
 ### Size budget calibration from the toy captures (T001 step 3c)
 

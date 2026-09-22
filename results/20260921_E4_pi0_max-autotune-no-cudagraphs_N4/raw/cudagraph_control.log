@@ -1,0 +1,148 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+=== E4  mode=max-autotune-no-cudagraphs  variant=whole  N=[4] ===
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0"}
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+
+--- N=4 ---
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] Graph break in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] User code traceback:
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/run_e4.py", line 370, in <module>
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     raise SystemExit(main())
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/run_e4.py", line 241, in main
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     policy.predict_action_chunk(batch)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/external_utils.py", line 68, in inner
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return fn(*args, **kwargs)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return self.denoise_step(
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V0921 18:32:07.445000 45281 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] 
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:32:16.961000 45281 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] 
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+I0921 18:32:18.901000 45281 torch/_inductor/compile_fx.py:640] [2/0] [__perf_hints] Skip comprehensive padding on CPU
+I0921 18:32:18.907000 45281 torch/_inductor/graph.py:858] [2/0] [__perf_hints] Using FallbackKernel: torch.ops.prims.normal.default
+W0921 18:32:19.573000 45281 torch/_inductor/debug.py:480] [2/0] model__0_inference_0 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__0_inference_0.0
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:305: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+W0921 18:32:53.283000 45281 torch/_inductor/utils.py:1446] [3/0] Not enough SMs to use max_autotune_gemm mode
+I0921 18:32:53.365000 45281 torch/_inductor/graph.py:858] [3/0] [__perf_hints] Using FallbackKernel: torch.ops.aten._scaled_dot_product_efficient_attention.default
+I0921 18:33:07.380000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:07.383000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:08.275000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:08.276000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:08.522000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:08.524000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:09.197000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:09.246000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:09.297000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+AUTOTUNE addmm(256x1152, 256x1152, 1152x1152)
+strides: [0, 1], [1152, 1], [1, 1152]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.2320 ms 100.0% 
+  addmm 0.2433 ms 95.3% 
+SingleProcess AUTOTUNE benchmarking takes 0.0760 seconds and 0.0004 seconds precompiling for 2 choices
+I0921 18:33:12.758000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:12.758000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:33:12.758000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:33:12.758000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:12.842000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:12.873000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:12.873000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:33:12.873000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:33:12.873000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:15.442000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:15.442000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:33:15.442000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:33:15.442000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:15.495000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:15.520000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:15.520000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:33:15.520000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:33:15.520000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:17.677000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:17.677000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:33:17.677000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:33:17.677000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:17.730000 45281 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:33:17.753000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:33:17.753000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:33:17.753000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:33:17.753000 45281 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+W0921 18:33:24.182000 45281 torch/_inductor/debug.py:480] [3/0] model__1_inference_1 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__1_inference_1.1
+W0921 18:33:53.673000 45281 torch/_inductor/debug.py:480] [4/0] model__2_inference_2 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__2_inference_2.2
+W0921 18:33:55.363000 45281 torch/_inductor/debug.py:480] [5/0] model__3_inference_3 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__3_inference_3.3
+W0921 18:34:23.956000 45281 torch/_inductor/debug.py:480] [6/0] model__4_inference_4 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__4_inference_4.4
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] 
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:34:57.742000 45281 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] 
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] 
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:34:57.905000 45281 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] 
+AUTOTUNE addmm(1x1024, 1x32, 32x1024)
+strides: [0, 1], [32, 1], [1, 32]
+dtypes: torch.float32, torch.float32, torch.float32
+  addmm 0.1264 ms 100.0% 
+  bias_addmm 0.1576 ms 80.2% 
+SingleProcess AUTOTUNE benchmarking takes 0.0697 seconds and 0.0003 seconds precompiling for 2 choices
+AUTOTUNE addmm(50x1024, 50x32, 32x1024)
+strides: [0, 1], [32, 1], [1, 32]
+dtypes: torch.float32, torch.float32, torch.float32
+  addmm 0.1210 ms 100.0% 
+  bias_addmm 0.1540 ms 78.6% 
+SingleProcess AUTOTUNE benchmarking takes 0.0673 seconds and 0.0003 seconds precompiling for 2 choices
+AUTOTUNE addmm(50x1024, 50x1024, 1024x1024)
+strides: [0, 1], [1024, 1], [1, 1024]
+dtypes: torch.float32, torch.float32, torch.float32
+  addmm 0.1660 ms 100.0% 
+  bias_addmm 0.1835 ms 90.5% 
+SingleProcess AUTOTUNE benchmarking takes 0.0724 seconds and 0.0002 seconds precompiling for 2 choices
+W0921 18:34:59.995000 45281 torch/_inductor/debug.py:480] [9/0_1] model__5_inference_5 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__5_inference_5.5
+AUTOTUNE addmm(50x32, 50x1024, 1024x32)
+strides: [0, 1], [1024, 1], [1, 1024]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.0474 ms 100.0% 
+  addmm 0.0513 ms 92.4% 
+SingleProcess AUTOTUNE benchmarking takes 0.0691 seconds and 0.0003 seconds precompiling for 2 choices
+W0921 18:35:35.303000 45281 torch/_inductor/debug.py:480] [10/0] model__6_inference_6 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_31_57_033078-pid_45281/torchinductor/model__6_inference_6.6
+  first call (incl. compile): 237.3 s
+  e2e 530.2 ms  (ae_total unavailable — graph)
+  wrote /home/yanggon/00_VLA/26_measurement_jetson_vla/results/evidence_E4_pi0_max-autotune-no-cudagraphs_N4

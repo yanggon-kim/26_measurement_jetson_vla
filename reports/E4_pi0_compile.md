@@ -225,16 +225,18 @@ from, because cuBLAS already wins every expert shape.
 
 ### 3.5 CUDA graphs are genuinely recorded — confirmed, not inferred
 
-An earlier draft inferred CUDA-graph use from the 36 % gap between the mode pairs. That is now
-measured: a run with `TORCH_LOGS=...,cudagraphs` logs
+An earlier draft inferred CUDA-graph use from the 36 % gap between the mode pairs — which was
+circular, since the gap was then explained *by* the graphs. It is now measured, with a
+negative control:
 
-```
-recording cudagraph tree for graph without symints      (x7)
-Running warmup of function 2..6
-```
+| mode | `recording cudagraph tree` | other evidence |
+|---|---|---|
+| `reduce-overhead` | **7** | `Recording function 0/1/2 of graph recording id 0/1/2`, `Running warmup of function 2..6`, **0** "skipping cudagraphs" |
+| `max-autotune-no-cudagraphs` | **0** | nothing — the mode name is the only match in its log |
 
-with **zero** "skipping cudagraphs" messages. Evidence:
-`results/20260921_E4_pi0_reduce-overhead_N4/raw/cudagraph_evidence.log`.
+So graphs are recorded in exactly the arm that is 36 % faster, and absent in the arm that is
+not. Evidence: `results/20260921_E4_pi0_reduce-overhead_N4/raw/cudagraph_evidence.log` and
+`results/20260921_E4_pi0_max-autotune-no-cudagraphs_N4/raw/cudagraph_control.log`.
 
 ---
 
