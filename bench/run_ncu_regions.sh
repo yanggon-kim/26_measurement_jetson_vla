@@ -22,14 +22,31 @@ TIMEOUT_S="${TIMEOUT_S:-3600}"
 EXTRA=""
 [ "$MODE" != "eager" ] && EXTRA="--no-regions"     # regions.py graph-breaks a compiled model
 
+CLK="$OUT/raw/ncu_clock_check.csv"
+[ -s "$CLK" ] || echo "tag,exit,elapsed_s,devfreq_before_hz,devfreq_after_hz,mode,region,ncu_sm_frequency,ncu_sm_frequency_unit" > "$CLK"
+
 for R in "${REGIONS[@]}"; do
   TAG=$(echo "$R" | tr -d '[]' | tr -c 'A-Za-z0-9_' '_' | sed 's/_*$//')
-  echo "########## $R  (mode=$MODE, tag=$TAG)"
+  # ncu's --nvtx-include expression language gives `[` and `]` special meaning, so
+  # "ae_layer[0]/" matched nothing and the run reported "No kernels were profiled"
+  # after 4 minutes of work. regions.py pushes a bracket-free alias next to every
+  # bracketed range (ae_layer[0] -> ae_layer_0) precisely for this; filter on that.
+  NVTX_R=$(echo "$R" | sed 's/\[/_/; s/\]//')
+  echo "########## $R  (mode=$MODE, tag=$TAG, nvtx-include=$NVTX_R/)"
   FREQ_BEFORE=$(cat /sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq)
   START=$(date +%s)
+  # §3.2 form (A) captures the WHOLE range. The only reasons to cap with -c are the
+  # 60-minute wall-clock rule and §6's 50 MB per committed file: `--set full` costs about
+  # 5 MB of .ncu-rep per kernel here (measured: one vision kernel -> 5,232,382 B), which
+  # zstd -19 shrinks ~84x, so ~800 kernels is the point where the compressed report reaches
+  # 50 MB. A capped region reports its kernel-time coverage in the report.
+  case "$TAG" in
+    ae_layer0) CAP="" ;;                       # ~54 kernels, capture all of them
+    *)         CAP="-c ${NCU_COUNT:-400}" ;;   # bounded; coverage reported
+  esac
   timeout "$TIMEOUT_S" sudo -n "$NCU" \
-      --profile-from-start off --nvtx --nvtx-include "$R/" \
-      -c 1 --set full \
+      --profile-from-start off --nvtx --nvtx-include "$NVTX_R/" \
+      $CAP --set full \
       --csv --page details --log-file "$OUT/ncu/${TAG}_details.csv" \
       --export "$OUT/ncu/${TAG}" --force-overwrite \
       env HOME="$HOME" HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}" \
@@ -48,6 +65,37 @@ for R in "${REGIONS[@]}"; do
         echo "  raw page export failed; see raw/ncu_${TAG}_rawpage.log"
   fi
   sudo -n chown -R "$(id -un):$(id -gn)" "$OUT" 2>/dev/null
-  echo "$TAG,$RC,$ELAPSED,$FREQ_BEFORE,$FREQ_AFTER,$MODE,$R" >> "$OUT/raw/ncu_clock_check.csv"
+  # §3.2: ncu's own SM Frequency against devfreq cur_freq, for EVERY run. More than 2 %
+  # apart and the capture is not used. Parsed with csv.DictReader; kernel names contain commas.
+  SMF=$("$PY" - "$OUT/ncu/${TAG}_details.csv" <<'EOF'
+import csv, statistics, sys
+vals = []
+try:
+    with open(sys.argv[1], newline="") as f:
+        for r in csv.DictReader(l for l in f if l.startswith('"')):
+            if (r.get("Metric Name") or "").strip() == "SM Frequency":
+                try:
+                    vals.append(float((r.get("Metric Value") or "").replace(",", "")))
+                except ValueError:
+                    pass
+except OSError:
+    pass
+print(f"{statistics.median(vals):.6g}" if vals else "")
+EOF
+)
+  SMU=$("$PY" - "$OUT/ncu/${TAG}_details.csv" <<'EOF'
+import csv, sys
+try:
+    with open(sys.argv[1], newline="") as f:
+        for r in csv.DictReader(l for l in f if l.startswith('"')):
+            if (r.get("Metric Name") or "").strip() == "SM Frequency":
+                print((r.get("Metric Unit") or "").strip()); break
+except OSError:
+    pass
+EOF
+)
+  echo "  ncu SM Frequency: ${SMF:-n/a} ${SMU:-} vs devfreq ${FREQ_AFTER} Hz"
+  echo "$TAG,$RC,$ELAPSED,$FREQ_BEFORE,$FREQ_AFTER,$MODE,$R,$SMF,$SMU" \
+      >> "$OUT/raw/ncu_clock_check.csv"
 done
 echo "NCU_REGIONS_DONE"

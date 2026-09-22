@@ -31,7 +31,9 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
 import phase_loops as PL  # noqa: E402
-from common import REPO, collect_raw, sh_out, software_versions, summarize, write_json  # noqa: E402
+from e11_summaries import e11f  # noqa: E402
+from common import (REPO, collect_raw, sh_out, software_versions, summarize,  # noqa: E402
+                    write_json)
 from host_segments import LayerCapture, ModelInputs, build_segments, intermediates  # noqa: E402
 
 
@@ -185,7 +187,8 @@ def main() -> int:
             fn = PL.make_phase(policy, batch, phase, args.steps)
             r = PL.run_loop(fn, args.seconds, phase)
             r.pop("samples")
-            trows.append({"mode": mode, "phase": phase, **r})
+            trows.append({"mode": mode, "phase": phase,
+                          "effective_exec_style": PL.effective_exec_style(phase, cm), **r})
             print(f"  {phase:8s} {r['throughput_inf_per_s']:7.3f} inf/s  "
                   f"median {r['median_ms']:8.2f} ms", flush=True)
 
@@ -193,6 +196,14 @@ def main() -> int:
         print(f"=== {mode}: concurrency ===", flush=True)
         seq_fn, n_segs = host_sequence_fn(policy, batch, 18, args.pause_ms)
         prefix_fn = PL.make_phase(policy, batch, "prefix", args.steps)
+
+        # The mapping's 2 ms pause x 6 segments x 18 layers puts 216 ms of time.sleep inside
+        # a ~250 ms measurement. A raw before/after ratio is diluted by 250/34 = 7.3x and
+        # cannot represent a slowdown above ~1.14 however hard the GPU is contended, so every
+        # concurrency row also carries the ratio on the NON-SLEEP portion.
+        sleep_ms = 18 * len([s_ for s_ in ("rmsnorm1", "rope", "softmax", "residual_rmsnorm2",
+                                           "gelu_gate_mul_up", "partials_residual")]) \
+            * args.pause_ms
 
         def bench_seq(label, sharing):
             for _ in range(3):
@@ -208,47 +219,84 @@ def main() -> int:
             crows.append({"mode": mode, "sharing": sharing, "activity": "host_sequence",
                           "condition": label, "median_ms": round(s["median_ms"], 4),
                           "p95_ms": round(s["p95_ms"], 4), "max_ms": round(s["max_ms"], 4),
-                          "n": s["n"], "slowdown": ""})
+                          "n": s["n"], "slowdown": "",
+                          "sleep_ms": round(sleep_ms, 3),
+                          "non_sleep_ms": round(s["median_ms"] - sleep_ms, 4)})
             return s["median_ms"]
 
         alone = bench_seq("alone", "none")
-        # two streams in one process
-        s_hi = torch.cuda.Stream(priority=-1)
-        prio_ok = True
-        try:
-            _ = s_hi.priority
-        except Exception:                                          # noqa: BLE001
-            prio_ok = False
-        stop = {"v": False}
 
-        def prefix_spam():
-            while not stop["v"]:
+        # --- two CUDA streams in ONE process, launched from ONE thread (§13.7).
+        # The first version created a high-priority stream, never used it, and ran the
+        # contender on a second Python THREAD -- so both activities went to the default
+        # stream and the 1.9x it measured was largely GIL contention. Here the contender is
+        # issued onto s_hi from this thread, between chunks of the measured sequence, so the
+        # two really do share the GPU through two streams.
+        lo, hi = torch.cuda.current_stream().priority_range()
+        s_hi = torch.cuda.Stream(priority=lo)          # lo is the HIGHEST priority value
+        prio_ok = (s_hi.priority == lo)
+        print(f"  stream priority range {(lo, hi)}; requested {lo}, got {s_hi.priority} "
+              f"-> accepted={prio_ok}", flush=True)
+
+        def seq_with_contender():
+            with torch.cuda.stream(s_hi):
                 prefix_fn()
+            seq_fn()
+            torch.cuda.synchronize()
 
-        import threading
-        th = threading.Thread(target=prefix_spam, daemon=True)
-        th.start()
-        time.sleep(2)
-        med = bench_seq("with_prefix_loop", "two_streams")
-        stop["v"] = True
-        th.join(timeout=30)
+        for _ in range(2):
+            seq_with_contender()
+        torch.cuda.synchronize()
+        ms = []
+        for _ in range(args.conc_reps):
+            torch.cuda.synchronize()
+            t0 = time.perf_counter()
+            seq_with_contender()
+            ms.append((time.perf_counter() - t0) * 1e3)
+        st = summarize(ms)
+        crows.append({"mode": mode, "sharing": "two_streams", "activity": "host_sequence",
+                      "condition": "with_prefix_loop", "median_ms": round(st["median_ms"], 4),
+                      "p95_ms": round(st["p95_ms"], 4), "max_ms": round(st["max_ms"], 4),
+                      "n": st["n"], "slowdown": ""})
+        med = st["median_ms"]
+        crows[-1]["sleep_ms"] = round(sleep_ms, 3)
+        crows[-1]["non_sleep_ms"] = round(med - sleep_ms, 4)
         crows[-1]["slowdown"] = round(med / alone, 4)
-        print(f"  two_streams   host_sequence {med:8.2f} ms  slowdown {med/alone:.3f}",
-              flush=True)
+        crows[-1]["slowdown_non_sleep"] = round((med - sleep_ms) / (alone - sleep_ms), 4)
+        print(f"  two_streams   host_sequence {med:8.2f} ms  slowdown {med/alone:.3f} "
+              f"(non-sleep {crows[-1]['slowdown_non_sleep']:.3f})", flush=True)
 
         # two processes
         proc = subprocess.Popen(
             [sys.executable, str(REPO / "bench" / "phase_loops.py"), "--phase", "prefix",
              "--seconds", str(args.conc_reps * 2 + 30), "--steps", str(args.steps)]
             + ([] if cm is None else ["--compile-mode", cm]),
-            stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            stdout=open(out / "raw" / f"contender_{mode}.log", "w"),
+            stderr=subprocess.STDOUT)
         time.sleep(45 if cm else 25)               # let it load (and compile) before timing
         med2 = bench_seq("with_prefix_loop", "two_processes")
         proc.terminate()
         proc.wait(timeout=30)
+        crows[-1]["sleep_ms"] = round(sleep_ms, 3)
+        crows[-1]["non_sleep_ms"] = round(med2 - sleep_ms, 4)
         crows[-1]["slowdown"] = round(med2 / alone, 4)
-        print(f"  two_processes host_sequence {med2:8.2f} ms  slowdown {med2/alone:.3f}",
-              flush=True)
+        crows[-1]["slowdown_non_sleep"] = round((med2 - sleep_ms) / (alone - sleep_ms), 4)
+        print(f"  two_processes host_sequence {med2:8.2f} ms  slowdown {med2/alone:.3f} "
+              f"(non-sleep {crows[-1]['slowdown_non_sleep']:.3f})", flush=True)
+        # --- (b0) the UNPROFILED baseline for each N, in this same process.
+        # nsys inflates wall time: it instruments every CUDA API call, and this workload is
+        # launch-bound, so the region it reports is much longer than the same region unprofiled.
+        # Kernel durations are not inflated (nsys reads them from the GPU), so an idle fraction
+        # of (profiled wall - busy)/profiled wall counts nsys's own overhead as model idle.
+        # Measure the same loop here, with no profiler attached, and correct with it.
+        unprof = {}
+        for n in (4, 10):
+            fn = PL.make_phase(policy, batch, "ae", n)
+            r = PL.run_loop(fn, 20.0, f"ae_unprofiled_N{n}")
+            r.pop("samples")
+            unprof[n] = r["median_ms"]
+            print(f"  unprofiled ae loop N={n}: {r['median_ms']:.2f} ms "
+                  f"(p5 {r['p5_ms']:.2f}, p95 {r['p95_ms']:.2f}, n={r['n']})", flush=True)
         del policy
         torch.cuda.empty_cache()
 
@@ -264,13 +312,25 @@ def main() -> int:
             (out / "raw" / f"nsys_{tag}_driver.log").write_text(r.stdout + r.stderr)
             g = gpu_idle_from_nsys(out / "nsys", tag)
             if g:
+                u = unprof.get(n)
+                g["ae_total_ms_unprofiled"] = round(u, 4) if u else ""
+                g["profiling_inflation"] = round(g["ae_total_ms"] / u, 4) if u else ""
+                # the number to quote: nsys's own overhead is not GPU idle in the model
+                g["gpu_idle_ms_corrected"] = round(u - g["kernel_busy_ms"], 4) if u else ""
+                g["gpu_idle_frac_corrected"] = (
+                    round((u - g["kernel_busy_ms"]) / u, 4) if u else "")
                 irows.append({"mode": mode, "N": n, **g})
                 print(f"  nsys {tag}: ae_total {g['ae_total_ms']:.2f} ms  busy "
                       f"{g['kernel_busy_ms']:.2f}  idle {g['gpu_idle_ms']:.2f} "
-                      f"({100*g['gpu_idle_frac']:.1f} %)", flush=True)
+                      f"({100*g['gpu_idle_frac']:.1f} %)  ->  unprofiled "
+                      f"{g['ae_total_ms_unprofiled']} ms (x{g['profiling_inflation']}), "
+                      f"corrected idle {g['gpu_idle_frac_corrected']}", flush=True)
             else:
                 irows.append({"mode": mode, "N": n, "ae_total_ms": "", "kernel_busy_ms": "",
                               "gpu_idle_ms": "", "gpu_idle_frac": "",
+                              "ae_total_ms_unprofiled": round(unprof.get(n, 0), 4) or "",
+                              "profiling_inflation": "", "gpu_idle_ms_corrected": "",
+                              "gpu_idle_frac_corrected": "",
                               "n_kernels_in_region": "", "n_ae_step_spans": "",
                               "note": "nsys exports missing or no ae_step NVTX ranges "
                                       "(compiled captures run with --no-regions because the "
@@ -302,6 +362,17 @@ def main() -> int:
                    variant=f"sharing={r['sharing']};mode={r['mode']}", exec_style=st,
                    timing="wall_isolated")
     for r in irows:
+        if r.get("gpu_idle_frac_corrected") not in ("", None):
+            mi.add("gpu_idle_ae_total", r["gpu_idle_ms_corrected"], "ms", "value", 1,
+                   "gpu_idle.csv", variant=f"mode={r['mode']};N={r['N']};"
+                   f"basis=unprofiled_wall_minus_profiled_kernel_busy",
+                   exec_style="eager" if r["mode"] == "eager" else "compiled",
+                   timing="nsys")
+            mi.add("gpu_idle_frac_ae_total", r["gpu_idle_frac_corrected"], "ratio", "value", 1,
+                   "gpu_idle.csv", variant=f"mode={r['mode']};N={r['N']};"
+                   f"basis=unprofiled_wall_minus_profiled_kernel_busy",
+                   exec_style="eager" if r["mode"] == "eager" else "compiled",
+                   timing="nsys")
         if r.get("gpu_idle_ms") not in ("", None):
             st = "eager" if r["mode"] == "eager" else "compiled"
             mi.add("gpu_idle_ae_total", r["gpu_idle_ms"], "ms", "value", 1, "gpu_idle.csv",
@@ -351,6 +422,7 @@ def main() -> int:
         ],
     })
     meta = json.loads((out / "meta.json").read_text())
+    e11f(out)
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)
     print(f"\nwrote {out} ({n_mi} rows)")

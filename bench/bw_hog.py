@@ -38,12 +38,17 @@ def gpu_hog(duty: float, seconds: float, log, label: str):
     on = PERIOD_S * duty / 100.0
     t_end = time.perf_counter() + seconds
     win_b, win_t0 = 0, time.perf_counter()
+    # One copy takes ~3.4 ms of GPU time. Queuing copies for `on` seconds and only THEN
+    # synchronising drains a queue far longer than the 20 ms period, so `rest` was always
+    # negative, the sleep never ran, and every duty cycle collapsed to 100 % -- which is why
+    # the first run showed "duty cycle barely matters". Synchronise inside the window so the
+    # GPU is actually idle for the rest of the period.
     while time.perf_counter() < t_end:
         t0 = time.perf_counter()
         while time.perf_counter() - t0 < on:
             dst.copy_(src)
+            torch.cuda.synchronize()          # bound the in-flight queue to one copy
             win_b += moved
-        torch.cuda.synchronize()
         rest = PERIOD_S - (time.perf_counter() - t0)
         if rest > 0:
             time.sleep(rest)
@@ -66,14 +71,19 @@ def gpu_spin_control(duty: float, seconds: float, log, label: str):
         t0 = time.perf_counter()
         while time.perf_counter() - t0 < on:
             a @ b
+            torch.cuda.synchronize()          # same queue bound as gpu_hog
             win_n += 1
-        torch.cuda.synchronize()
         rest = PERIOD_S - (time.perf_counter() - t0)
         if rest > 0:
             time.sleep(rest)
         if time.perf_counter() - win_t0 >= 1.0:
             dt = time.perf_counter() - win_t0
+            # Report BOTH: the compute rate, and the DRAM traffic this control actually
+            # moves. The second is the number the E11e analysis divides by; publishing only
+            # TFLOP/s (and having the caller store it in a GB/s column) is how "5.5 GB/s"
+            # got into the report when the value was 5.5 TFLOP/s.
             emit(log, label, 2 * 512 ** 3 * win_n / dt / 1e12, unit="TFLOPps")
+            emit(log, label, 3 * 512 * 512 * 2 * win_n / dt / 1e9, unit="GBps")
             win_t0, win_n = time.perf_counter(), 0
 
 

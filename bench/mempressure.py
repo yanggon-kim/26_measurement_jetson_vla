@@ -34,8 +34,10 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
 import phase_loops as PL  # noqa: E402
-from common import (REPO, collect_raw, compress_and_record, ina3221_rails,  # noqa: E402
-                    sh_out, software_versions, write_json)
+from e11_summaries import e11e  # noqa: E402
+from common import (CPU_UTIL_FIELDS, REPO, CpuSampler, collect_raw,  # noqa: E402
+                    compress_and_record, ina3221_rails, sh_out, software_versions,
+                    summarize, write_json)
 from host_segments import ModelInputs  # noqa: E402
 
 PEAK_GBPS = 187.47              # T005/E1 measured, results/20260922_E1_peak/hw_constants.json
@@ -52,13 +54,21 @@ def start_hog(kind, duty, seconds, log):
     return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 
-def hog_rate(log: Path) -> float | None:
+def hog_rate(log: Path, unit: str = "GBps") -> float | None:
+    """Median rate of the requested UNIT.
+
+    bw_hog emits GB/s for the copy hogs and both TFLOP/s and GB/s for the spin control. An
+    earlier version ignored `unit` and stored whichever value came last, which put the spin
+    control's 5.5 TFLOP/s into a GB/s column and into model_inputs.csv as bg_bw_GBps.
+    """
     if not log.exists():
         return None
     vals = []
     for ln in log.read_text().splitlines():
         try:
-            vals.append(json.loads(ln)["rate"])
+            d = json.loads(ln)
+            if d.get("unit", "GBps") == unit:
+                vals.append(d["rate"])
         except Exception:                                          # noqa: BLE001
             pass
     if not vals:
@@ -179,29 +189,54 @@ def main() -> int:
             w.writerows(rows)
 
         # --- CPU utilisation per phase, in a SEPARATE run (§13.6)
-        cpu_rows = []
+        # Three scopes, because they answer different questions and disagree by 10x:
+        # this thread's CPU time (what the Python loop itself burns), this process's
+        # (adds the driver's worker threads), and the kernel's own per-core accounting
+        # from /proc/stat (the only one that sees the whole machine).
+        cpu_rows, sampler = [], CpuSampler(0.5)
         for phase in ("prefix", "ae", "full"):
             fn = PL.make_phase(policy, batch, phase, args.steps)
             for _ in range(3):
                 fn()
             torch.cuda.synchronize()
+            sampler.start(phase)
             t0, c0, p0 = time.perf_counter(), time.thread_time(), time.process_time()
-            n = 0
+            n, win, prev = 0, [], (t0, c0, p0)
             while time.perf_counter() - t0 < 30.0:
                 fn()
                 n += 1
+                now = time.perf_counter()
+                if now - prev[0] >= 3.0:            # a distribution, not one number (§5)
+                    c, pr = time.thread_time(), time.process_time()
+                    win.append((100 * (c - prev[1]) / (now - prev[0]),
+                                100 * (pr - prev[2]) / (now - prev[0])))
+                    prev = (now, c, pr)
             torch.cuda.synchronize()
+            sampler.stop()
             wall = time.perf_counter() - t0
-            cpu_rows.append({"phase": phase, "scope": "thread",
-                             "pct": round(100 * (time.thread_time() - c0) / wall, 2), "n": n})
-            cpu_rows.append({"phase": phase, "scope": "process",
-                             "pct": round(100 * (time.process_time() - p0) / wall, 2), "n": n})
-            print(f"  cpu_util {phase:8s} thread {cpu_rows[-2]['pct']:6.2f} %  "
-                  f"process {cpu_rows[-1]['pct']:6.2f} %", flush=True)
+            for i, scope in enumerate(("thread", "process")):
+                tot = (time.thread_time() - c0, time.process_time() - p0)[i]
+                st = summarize([w_[i] for w_ in win]) if win else None
+                cpu_rows.append({
+                    "phase": phase, "scope": scope, "pct": round(100 * tot / wall, 2),
+                    "median_pct": round(st["median_ms"], 2) if st else "",
+                    "p5_pct": round(st["p5_ms"], 2) if st else "",
+                    "p95_pct": round(st["p95_ms"], 2) if st else "",
+                    "n": st["n"] if st else n, "cores_busy": ""})
+            cpu_rows += sampler.summary(phase)
+            sysrow = next((r for r in cpu_rows
+                           if r["phase"] == phase and r["scope"] == "system_all_cores"), None)
+            print(f"  cpu_util {phase:8s} thread {cpu_rows[-len(sampler.summary(phase))-2]['pct']:6.2f} %"
+                  f"  system {sysrow['pct'] if sysrow else '?'} % "
+                  f"({sysrow['cores_busy'] if sysrow else '?'} cores)  n_iter={n}", flush=True)
         with (out / "cpu_util.csv").open("w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=["phase", "scope", "pct", "n"])
+            w = csv.DictWriter(f, fieldnames=CPU_UTIL_FIELDS)
             w.writeheader()
             w.writerows(cpu_rows)
+        with (out / "raw" / "cpu_util_samples.csv").open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=["phase", "t_s", "cpu", "busy_pct"])
+            w.writeheader()
+            w.writerows(sampler.rows)
 
         # --- power per phase, from the four rails
         prows = []
@@ -214,13 +249,25 @@ def main() -> int:
                 for rail, d in ina3221_rails().items():
                     acc.setdefault(rail, []).append(d.get("mW") or 0)
             for rail, vals in acc.items():
+                st = summarize(vals)
                 prows.append({"phase": phase, "rail": rail,
-                              "mean_mW": round(sum(vals) / len(vals), 1), "n": len(vals)})
+                              "mean_mW": round(sum(vals) / len(vals), 1),
+                              "median_mW": round(st["median_ms"], 1),
+                              "p5_mW": round(st["p5_ms"], 1),
+                              "p95_mW": round(st["p95_ms"], 1), "n": len(vals)})
+            # the module total per sample, so its spread is the spread of the sum and
+            # not the sum of four independently-taken spreads
+            k = min(len(v) for v in acc.values())
+            tot = [sum(v[i] for v in acc.values()) for i in range(k)]
+            st = summarize(tot)
             prows.append({"phase": phase, "rail": "module",
-                          "mean_mW": round(sum(sum(v) / len(v) for v in acc.values()), 1),
-                          "n": len(next(iter(acc.values())))})
+                          "mean_mW": round(st["mean_ms"], 1),
+                          "median_mW": round(st["median_ms"], 1),
+                          "p5_mW": round(st["p5_ms"], 1),
+                          "p95_mW": round(st["p95_ms"], 1), "n": k})
         with (out / "power.csv").open("w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=["phase", "rail", "mean_mW", "n"])
+            w = csv.DictWriter(f, fieldnames=["phase", "rail", "mean_mW", "median_mW",
+                                              "p5_mW", "p95_mW", "n"])
             w.writeheader()
             w.writerows(prows)
 
@@ -240,12 +287,16 @@ def main() -> int:
                    r["n"], "mempressure.csv", variant=f"load={r['load_label']}",
                    exec_style=style, timing="wall_loop")
         for c in cpu_rows:
+            if c["scope"].startswith("cpu"):
+                continue                       # per-core detail stays in cpu_util.csv
             mi.add("cpu_util", c["pct"], "pct", "value", c["n"], "cpu_util.csv",
                    key={"prefix": "vlm_prefix", "ae": "ae_total", "full": "e2e"}[c["phase"]],
                    variant=f"scope={c['scope']}", exec_style=style)
         for pr in prows:
             mi.add("p_mean_W", pr["mean_mW"] / 1000.0, "W", "mean", pr["n"], "power.csv",
                    key=f"{pr['phase']}/{pr['rail']}", exec_style=style)
+            mi.add("p_mean_W", pr["median_mW"] / 1000.0, "W", "median", pr["n"],
+                   "power.csv", key=f"{pr['phase']}/{pr['rail']}", exec_style=style)
         n_mi = mi.write(out / "model_inputs.csv")
 
         for f_ in sorted((out / "raw").glob("latency_samples_*.csv")):
@@ -291,6 +342,7 @@ def main() -> int:
             ],
         })
         meta = json.loads((out / "meta.json").read_text())
+        e11e(out)
         meta["raw_files"] = collect_raw(out, meta["command"])
         write_json(out / "meta.json", meta)
         print(f"wrote {out} ({n_mi} rows)", flush=True)

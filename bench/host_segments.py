@@ -48,8 +48,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
-from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E402
-                    software_versions, summarize, write_json)
+from common import (REPO, collect_raw, compress_and_record, nvtx, sh_out,  # noqa: E402
+                    software_versions, summarize, write_json, write_summary)
 
 LAYERS = (0, 9)
 
@@ -180,7 +180,7 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
     layer, attn, cond = t["layer"], t["attn"], t["adarms_cond"]
     B2 = 2                                                    # bf16
     segs = [
-        dict(segment="rmsnorm1", order=0, in_model="yes",
+        dict(bytes_formula="read x[S,D] bf16 + weight[D] bf16; write normed[S,D] bf16", segment="rmsnorm1", order=0, in_model="yes",
              source_ref="lerobot/policies/pi_gemma.py:111-135 (call site :171)",
              ops="PiGemmaRMSNorm: x.float(); mean(x^2); rsqrt; mul; * (1 + weight.float()); to(bf16)",
              fn=lambda: layer.input_layernorm(t["x"], cond=cond),
@@ -196,7 +196,11 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              fn=lambda: MG.apply_rotary_pos_emb(t["q"], t["k"], t["cos"], t["sin"]),
              inputs=f"q:{tuple(t['q'].shape)}:{t['q'].dtype};k:{tuple(t['k'].shape)}:{t['k'].dtype}",
              outputs=f"q_r:{tuple(t['q_r'].shape)};k_r:{tuple(t['k_r'].shape)}",
-             bytes_read=S * (H + 1) * HD * B2 * 2, bytes_written=S * (H + 1) * HD * B2,
+             bytes_read=S * (H + 1) * HD * B2 + 2 * S * HD * B2,
+             bytes_written=S * (H + 1) * HD * B2,
+             bytes_formula="read q[S,H,hd] + k[S,1,hd] + cos[S,hd] + sin[S,hd]; "
+                           "write q_r + k_r. An earlier version doubled the q/k term and "
+                           "omitted cos/sin, overcounting by ~183 kB",
              flops=6 * S * (H * HD + HD),
              flops_formula="6*S*(H*head_dim + kv_heads*head_dim); q and k both rotated",
              notes="applied to q AND k; rotate_half does a torch.cat, so >= 3 kernels each"),
@@ -207,11 +211,17 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
                  t["scores"], dim=-1, dtype=torch.float32).to(t["q_r"].dtype),
              inputs=f"scores:{tuple(t['scores'].shape)}:{t['scores'].dtype}",
              outputs=f"probs:{tuple(t['probs_cast'].shape)}:{t['probs_cast'].dtype}",
-             bytes_read=H * S * T_keys * B2, bytes_written=H * S * T_keys * B2,
+             # the model's softmax is fp32-internal: it reads bf16 scores, materialises an
+             # fp32 buffer, then casts back to bf16. Pricing it bf16-in/bf16-out ignored the
+             # fp32 intermediate and understated the traffic by 3x.
+             bytes_read=H * S * T_keys * B2 + H * S * T_keys * 4,
+             bytes_written=H * S * T_keys * 4 + H * S * T_keys * B2,
+             bytes_formula="read scores bf16 (H*S*T*2) + read the fp32 buffer (H*S*T*4); "
+                           "write the fp32 buffer (H*S*T*4) + the bf16 result (H*S*T*2)",
              flops=5 * H * S * T_keys, flops_formula="5*H*S*T (max, sub, exp, sum, div)",
              notes="the model's softmax is fp32-internal with a cast back to bf16, not fp16; "
                    "the mask add is fused into this segment per the plan's definition"),
-        dict(segment="residual_rmsnorm2", order=3, in_model="yes",
+        dict(bytes_formula="read x + attn_out + weight; write the sum and the normed result", segment="residual_rmsnorm2", order=3, in_model="yes",
              source_ref="lerobot/policies/pi_gemma.py:182-186 (_gated_residual at :54-67)",
              ops="x + attn_out (gate None); then PiGemmaRMSNorm",
              fn=lambda: layer.post_attention_layernorm(
@@ -221,7 +231,7 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              bytes_read=3 * S * D * B2, bytes_written=2 * S * D * B2,
              flops=9 * S * D, flops_formula="S*D (add) + 8*S*D (rmsnorm)",
              notes="gate is None for pi0, so _gated_residual reduces to x + y"),
-        dict(segment="gelu_gate_mul_up", order=4, in_model="yes",
+        dict(bytes_formula="read gate[S,I] + up[S,I]; write h[S,I], all bf16", segment="gelu_gate_mul_up", order=4, in_model="yes",
              source_ref="transformers/models/gemma/modeling_gemma.py:81",
              ops="act_fn(gate_proj_out) * up_proj_out; act_fn = gelu_pytorch_tanh",
              fn=lambda: layer.mlp.act_fn(t["g"]) * t["u"],
@@ -231,7 +241,7 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              flops=9 * S * I, flops_formula="9*S*I (tanh-approx GeLU ~8 flops + 1 multiply)",
              notes="the three projections around it are large linears and are NOT part of the "
                    "segment (protocol §13.2)"),
-        dict(segment="partials_residual", order=5, in_model="mapping_only",
+        dict(bytes_formula="read partials[4,S,D] + x[S,D]; write out[S,D], all bf16", segment="partials_residual", order=5, in_model="mapping_only",
              source_ref="docs/01_measurement_plan.md segment table (no such tensor in the model)",
              ops="partials.sum(0) + x, partials [4, S, D]",
              fn=lambda: t["_partials"].sum(0) + t["x"][0],
@@ -241,7 +251,7 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              flops=4 * S * D, flops_formula="4*S*D (3 adds to reduce 4 partials + 1 residual add)",
              notes="mapping_only: the PIM design splits the down projection into 4 partial "
                    "results; the model has no such tensor, so random bf16 values are used"),
-        dict(segment="residual", order=6, in_model="yes",
+        dict(bytes_formula="read x[S,D] + y[S,D]; write out[S,D], all bf16", segment="residual", order=6, in_model="yes",
              source_ref="lerobot/policies/pi_gemma.py:54-67 (call sites :182, :188)",
              ops="x + y (gate is None for pi0)",
              fn=lambda: PG._gated_residual(t["x"], t["attn_out"], None),
@@ -258,13 +268,26 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              inputs=f"q:{tuple(t['q_r'].shape)};k:{tuple(t['k_full'].shape)};"
                     f"v:{tuple(t['v_full'].shape)}",
              outputs=f"ctx:{tuple(t['ctx'].shape)}",
-             bytes_read=S * H * HD * B2 + 2 * T_keys * HD * B2,
-             bytes_written=S * H * HD * B2,
+             # repeat_kv expands the single KV head to H before both matmuls, the score
+             # matrix is materialised, and softmax runs in fp32. An earlier version counted
+             # only q, the UNIQUE K/V and the output, a >10x undercount.
+             bytes_read=(S * H * HD * B2                      # q
+                         + 2 * T_keys * HD * B2               # unique K and V
+                         + 2 * (H - 1) * T_keys * HD * B2     # the repeat_kv expansion
+                         + H * S * T_keys * B2                # re-read of the scores
+                         + H * S * T_keys * 4),               # re-read of the fp32 buffer
+             bytes_written=(H * S * T_keys * B2               # scores
+                            + H * S * T_keys * 4              # fp32 softmax buffer
+                            + H * S * T_keys * B2             # probs back in bf16
+                            + S * H * HD * B2),               # context
+             bytes_formula="q + unique K,V + the repeat_kv expansion to H heads + the "
+                           "[1,H,S,T] score matrix + the fp32 softmax buffer + the context; "
+                           "read and write counted separately",
              flops=2 * 2 * H * S * T_keys * HD,
              flops_formula="2*(2*H*S*T*head_dim): QK^T and probs@V",
              notes="design variant: the whole attention on the GPU. repeat_kv materialises the "
                    "single KV head into H=8 before both matmuls; unique KV bytes counted once"),
-        dict(segment="cast_scores_fp32_fp16", order=8, in_model="mapping_only",
+        dict(bytes_formula="read H*S*T fp32; write H*S*T fp16", segment="cast_scores_fp32_fp16", order=8, in_model="mapping_only",
              source_ref="docs/01_measurement_plan.md segment table; the model's own cast is the "
                         "bf16 one inside softmax at modeling_gemma.py:213",
              ops="scores_fp32.to(float16)",
@@ -346,8 +369,39 @@ def make_style(fn, style: str):
     raise ValueError(style)
 
 
-def count_kernels(fn, n: int = 10) -> int:
-    """Kernels per call, from one torch.profiler run over n calls (§13.1)."""
+KA_ROWS: list[dict] = []
+KA_FIELDS = ["segment", "layer", "exec_style", "name", "count", "cpu_time_total_us",
+             "self_cpu_time_total_us", "device_time_total_us", "self_device_time_total_us",
+             "device_memory_usage", "flops"]
+
+
+def _key_averages_rows(pr, segment, layer, style) -> list[dict]:
+    """§13.1: commit the key_averages table, not only the kernel count taken from it."""
+    rows = []
+    for e in pr.key_averages():
+        rows.append({
+            "segment": segment, "layer": layer, "exec_style": style,
+            "name": getattr(e, "key", None) or e.name, "count": int(e.count),
+            "cpu_time_total_us": round(float(e.cpu_time_total), 3),
+            "self_cpu_time_total_us": round(float(e.self_cpu_time_total), 3),
+            "device_time_total_us": round(float(getattr(e, "device_time_total",
+                                                        getattr(e, "cuda_time_total", 0))), 3),
+            "self_device_time_total_us": round(float(
+                getattr(e, "self_device_time_total",
+                        getattr(e, "self_cuda_time_total", 0))), 3),
+            "device_memory_usage": int(getattr(e, "device_memory_usage", 0) or 0),
+            "flops": int(getattr(e, "flops", 0) or 0)})
+    return rows
+
+
+def count_kernels(fn, n: int = 10, trace_path: Path | None = None,
+                  ka_sink: list | None = None, ka_id: tuple = ("", "", "")) -> int:
+    """Kernels per call, from one torch.profiler run over n calls (§13.1).
+
+    `trace_path` exports the Chrome trace of that same profiler run. AGENTS.md says to
+    commit the raw profiler output, not only the count derived from it; the traces
+    compress ~23x with zstd -19, so they fit the §6 budget.
+    """
     from torch.profiler import ProfilerActivity, profile
     for _ in range(5):
         fn()
@@ -360,6 +414,14 @@ def count_kernels(fn, n: int = 10) -> int:
         k = sum(1 for e in pr.events() for _ in (getattr(e, "kernels", []) or []))
         if k == 0:                       # CUPTI needs root here; fall back to the CUDA total
             k = sum(int(e.count) for e in pr.key_averages() if e.device_time_total > 0)
+        if trace_path is not None:
+            try:
+                trace_path.parent.mkdir(parents=True, exist_ok=True)
+                pr.export_chrome_trace(str(trace_path))
+            except Exception as e:                                # noqa: BLE001
+                print(f"    trace export failed for {trace_path.name}: {e!r}", flush=True)
+        if ka_sink is not None:
+            ka_sink.extend(_key_averages_rows(pr, *ka_id))
         return round(k / n, 2)
     except Exception:                                             # noqa: BLE001
         return -1
@@ -412,6 +474,58 @@ class ModelInputs:
         return len(self.rows)
 
 
+
+def _write_summary(out, all_rows, layer_rows, seg_rows, notes, args, n_mi) -> None:
+    """The §5 summary.md: the answer first, then how it was produced."""
+    def pick(**kw):
+        for r in all_rows:
+            if all(str(r.get(k)) == str(v) for k, v in kw.items()):
+                return r
+        return None
+
+    tbl = ["| segment | layer | style | timing | median ms | p5 | p95 | n |",
+           "|---|---|---|---|---:|---:|---:|---:|"]
+    for r in all_rows:
+        if r["timing"] != "cuda_event" or r["variant"] not in ("", "gap_ms=0"):
+            continue
+        tbl.append(f"| {r['segment']} | {r['layer']} | {r['exec_style']} | {r['timing']} | "
+                   f"{r['median_ms']:.4f} | {r['p5_ms']:.4f} | {r['p95_ms']:.4f} | {r['n']} |")
+
+    seq = [r for r in all_rows if r["segment"].startswith("six_segment_sequence")]
+    seq_lines = [f"- `{r['segment']}` {r['exec_style']}: **{r['median_ms']:.4f} ms** "
+                 f"(p5 {r['p5_ms']:.4f}, p95 {r['p95_ms']:.4f}, n={r['n']})" for r in seq]
+    whole = [r for r in all_rows if r["segment"] == "whole_layer_graph"]
+    seq_lines += [f"- `whole_layer_graph` {r['exec_style']}: **{r['median_ms']:.4f} ms** "
+                  f"(n={r['n']})" for r in whole]
+
+    sections = [
+        ("Answer — per-segment host-replay latency (cuda_event, gap_ms=0)",
+         "\n".join(tbl) + "\n\nFull distributions, every style, timing and variant, and "
+         "the per-segment byte and FLOP formulas are in `segment_summary.csv` and "
+         "`segments.csv`; per-iteration samples in `raw/segment_samples.csv.zst`."),
+        ("Sequence vs whole layer",
+         "\n".join(seq_lines) or "not measured"),
+        ("Conditions",
+         f"pi0 @ `{P.REVISION}`, bf16, MAXN + jetson_clocks, P=816 (533 valid), S=51, "
+         f"N={args.steps}. Layers 0 and 9 of the action expert. "
+         f"{args.warmup} warm-ups and {args.timed} timed calls per point (protocol §2 "
+         f"asks for >=20 and >=100). Inputs are the model's own tensors captured from one "
+         f"real denoising step and replayed; prefix K/V are read from the cache *before* "
+         f"the layer updates it, so the replayed attention runs over the real T=P+S=867 "
+         f"keys."),
+        ("Caveat that governs every compiled number",
+         "A compiled callable whose outputs are discarded is dead-code-eliminated. Measured "
+         "on this device: a compiled 2048^3 bf16 matmul costs 0.066 ms when its result is "
+         "discarded and 0.661 ms when it is returned. Every timed callable here therefore "
+         "returns its results."),
+        ("Reproduce",
+         f"```\npython bench/host_segments.py --outdir {args.outdir} "
+         f"--warmup {args.warmup} --timed {args.timed} --mode count   # kernel counts, needs root\n"
+         f"python bench/host_segments.py --outdir {args.outdir} "
+         f"--warmup {args.warmup} --timed {args.timed} --kernels-csv <that>/kernels_per_call.csv\n```"),
+    ]
+    write_summary(out, "E11a - pi0 host segments (protocol §13.1)", sections, notes)
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
@@ -420,7 +534,7 @@ def main() -> int:
     ap.add_argument("--steps", type=int, default=4)
     ap.add_argument("--skip-sequence", action="store_true")
     ap.add_argument("--styles", default="eager,compiled,cudagraph")
-    ap.add_argument("--mode", choices=("time", "count"), default="time",
+    ap.add_argument("--mode", choices=("time", "count", "nsys"), default="time",
                     help="`count` only counts kernels per call with torch.profiler and writes "
                          "kernels_per_call.csv; it needs root for CUPTI on this device. "
                          "`time` does the timing and never attaches a profiler, because CUPTI "
@@ -486,6 +600,7 @@ def main() -> int:
                     "ops": sd["ops"], "inputs": sd["inputs"], "outputs": sd["outputs"],
                     "bytes_read": sd["bytes_read"], "bytes_written": sd["bytes_written"],
                     "flops": sd["flops"], "flops_formula": sd["flops_formula"],
+                    "bytes_formula": sd.get("bytes_formula", ""),
                     "in_model_code": sd["in_model"], "notes": sd["notes"]})
             for style in styles:
                 fn, err = make_style(sd["fn"], style)
@@ -495,7 +610,9 @@ def main() -> int:
                     print(f"  {sd['segment']:22s} {style:9s} NOT MEASURED: {err[:70]}")
                     continue
                 if args.mode == "count":
-                    nk = count_kernels(fn)
+                    nk = count_kernels(fn, trace_path=out / "raw" / "profiler" /
+                                       f"{sd['segment']}_L{li}_{style}.json",
+                                       ka_sink=KA_ROWS, ka_id=(sd["segment"], li, style))
                     all_rows.append({"segment": sd["segment"], "layer": li,
                                      "exec_style": style, "n_kernels": nk})
                     print(f"  {sd['segment']:22s} {style:9s} kernels={nk}", flush=True)
@@ -518,18 +635,30 @@ def main() -> int:
                            "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
                            "min_ms": round(s["min_ms"], 6), "n": s["n"], "n_kernels": nk,
                            "bytes": sd["bytes_read"] + sd["bytes_written"], "flops": sd["flops"],
-                           "achieved_GBps": "", "achieved_TFLOPps": ""}
+                           "achieved_GBps": "", "achieved_TFLOPps": "",
+                           "gpu_event_is_device_time": ""}
+                    # §13.8 wants achieved_* from `gpu_event` time. On this device the
+                    # eager `gpu_event` median EXCEEDS the fully synchronised wall_isolated
+                    # median for every segment (rmsnorm1 0.4002 vs 0.3927): the events
+                    # bracket a dispatch-bound Python call, so it is not device time, and
+                    # rates derived from it are ~7x off T005's graph-timed measurement of the
+                    # same op. The `cudagraph` style replays one graph launch and IS device
+                    # time, so the rates are published from that and the eager/compiled
+                    # numbers are left out rather than published as device rates.
                     if timing == "gpu_event" and s["median_ms"] > 0:
                         sec = s["median_ms"] / 1e3
                         row["achieved_GBps"] = round(row["bytes"] / sec / 1e9, 3)
                         row["achieved_TFLOPps"] = round(sd["flops"] / sec / 1e12, 5)
-                        mi.add("achieved_bw_GBps", row["achieved_GBps"], "GBps", "median",
-                               s["n"], "segment_summary.csv", key=sd["segment"],
-                               variant=variant, exec_style=style, timing="gpu_event")
-                        if sd["flops"]:
-                            mi.add("achieved_tflops", row["achieved_TFLOPps"], "TFLOPps",
-                                   "median", s["n"], "segment_summary.csv", key=sd["segment"],
+                        row["gpu_event_is_device_time"] = (style == "cudagraph")
+                        if style == "cudagraph":
+                            mi.add("achieved_bw_GBps", row["achieved_GBps"], "GBps", "median",
+                                   s["n"], "segment_summary.csv", key=sd["segment"],
                                    variant=variant, exec_style=style, timing="gpu_event")
+                            if sd["flops"]:
+                                mi.add("achieved_tflops", row["achieved_TFLOPps"], "TFLOPps",
+                                       "median", s["n"], "segment_summary.csv",
+                                       key=sd["segment"], variant=variant, exec_style=style,
+                                       timing="gpu_event")
                     all_rows.append(row)
                     mi.add_stats("t_host_segment", s, "ms", s["n"], "segment_summary.csv",
                                  key=sd["segment"], variant=variant, exec_style=style,
@@ -551,21 +680,55 @@ def main() -> int:
                        key=sd["segment"], timing="analytic")
 
         # --- the per-layer sequence of the six mapping segments, and the whole-layer graph
-        if not args.skip_sequence and args.mode == "time":
+        if not args.skip_sequence and args.mode in ("time", "nsys"):
             six = [s for s in segs if s["segment"] in (
                 "rmsnorm1", "rope", "softmax", "residual_rmsnorm2", "gelu_gate_mul_up",
                 "partials_residual")]
 
             def seq():
-                for s_ in six:
-                    s_["fn"]()
+                # The results MUST be returned. A compiled callable whose outputs are
+                # discarded is dead-code-eliminated: measured on this device, a compiled
+                # 2048^3 bf16 matmul costs 0.066 ms when its result is discarded and 0.661 ms
+                # when it is returned. An earlier version of this function returned None and
+                # reported the six-segment sequence at 0.085 ms, which measured nothing.
+                return tuple(s_["fn"]() for s_ in six)
+
+            if args.mode == "nsys":
+                # §13.1: "one small nsys capture of ten consecutive per-layer host sequences
+                # per style". This process is launched by bench/run_nsys.sh, which sets
+                # --capture-range=cudaProfilerApi, so only what is between start() and stop()
+                # lands in the report.
+                built = []
+                for style in ("eager", "compiled", "cudagraph"):
+                    fn, err = make_style(seq, style)
+                    if fn is None:
+                        print(f"  nsys: {style} unavailable: {err[:80]}", flush=True)
+                        continue
+                    for _ in range(args.warmup):
+                        fn()
+                    built.append((style, fn))
+                torch.cuda.synchronize()
+                torch.cuda.profiler.start()
+                for style, fn in built:
+                    with nvtx(f"host_sequence[{style}]"):
+                        for k in range(10):
+                            with nvtx(f"host_sequence[{style}]#{k}"):
+                                fn()
+                            torch.cuda.synchronize()
+                torch.cuda.synchronize()
+                torch.cuda.profiler.stop()
+                print(f"  nsys: captured 10 sequences x {len(built)} style(s) at layer {li}",
+                      flush=True)
+                if li == LAYERS[0]:
+                    continue            # one capture is enough; keep going for layer 9 too
+                return 0
 
             for style in ("eager", "compiled"):
                 fn, err = make_style(seq, style)
                 if fn is None:
                     notes_not_measured.append(f"sequence layer={li} {style}: {err}")
                     continue
-                ms = time_segment(fn, "wall_isolated", args.warmup, max(200, args.timed // 5))
+                ms = time_segment(fn, "wall_isolated", args.warmup, args.timed)
                 s = summarize(ms)
                 layer_rows.append({"exec_style": style, "key": "sequence",
                                    "variant": f"layer={li}", "median_ms": round(s["median_ms"], 6),
@@ -579,7 +742,7 @@ def main() -> int:
             if gfn is None:
                 notes_not_measured.append(f"whole_layer_graph layer={li}: {err}")
             else:
-                ms = time_segment(gfn, "wall_isolated", args.warmup, max(200, args.timed // 5))
+                ms = time_segment(gfn, "wall_isolated", args.warmup, args.timed)
                 s = summarize(ms)
                 layer_rows.append({"exec_style": "cudagraph", "key": "whole_layer_graph",
                                    "variant": f"layer={li}", "median_ms": round(s["median_ms"], 6),
@@ -623,7 +786,9 @@ def main() -> int:
                 f_, e = make_style(fn, style)
                 if f_ is None:
                     continue
-                nk = count_kernels(f_)
+                nk = count_kernels(f_, trace_path=out / "raw" / "profiler" /
+                                   f"{name}_L-1_{style}.json",
+                                   ka_sink=KA_ROWS, ka_id=(name, -1, style))
                 all_rows.append({"segment": name, "layer": -1, "exec_style": style,
                                  "n_kernels": nk})
                 print(f"  {name:22s} {style:9s} kernels={nk}", flush=True)
@@ -633,7 +798,17 @@ def main() -> int:
             w = csv.DictWriter(fh, fieldnames=["segment", "layer", "exec_style", "n_kernels"])
             w.writeheader()
             w.writerows(all_rows)
-        print(f"\nwrote {f} ({len(all_rows)} rows)")
+        ka = out / "raw" / "profiler" / "key_averages.csv"
+        ka.parent.mkdir(parents=True, exist_ok=True)
+        with ka.open("w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=KA_FIELDS)
+            w.writeheader()
+            w.writerows(KA_ROWS)
+        print(f"wrote {ka} ({len(KA_ROWS)} rows)")
+        traces = sorted((out / "raw" / "profiler").glob("*.json"))
+        for t in traces:
+            compress_and_record(t)          # §3.5: scan + hash the original, then zstd
+        print(f"\nwrote {f} ({len(all_rows)} rows, {len(traces)} profiler traces)")
         return 0
     return finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
                   layer_rows, samples, mi, notes_not_measured, styles, Pn, Sn)
@@ -726,7 +901,8 @@ def measure_extras(policy, batch, args, mi, all_rows, notes, styles, last_hidden
                                  "p95_ms": round(s_["p95_ms"], 6),
                                  "min_ms": round(s_["min_ms"], 6), "n": s_["n"],
                                  "n_kernels": nk, "bytes": "", "flops": "",
-                                 "achieved_GBps": "", "achieved_TFLOPps": ""})
+                                 "achieved_GBps": "", "achieved_TFLOPps": "",
+                           "gpu_event_is_device_time": ""})
                 mi.add_stats("t_step_extra", s_, "ms", s_["n"], "segment_summary.csv",
                              key=name, variant=variant, exec_style=style, timing=timing)
                 if timing == "wall_launch" and nk > 0:
@@ -829,6 +1005,8 @@ def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
         "prefix_tokens": Pn, "suffix_tokens": Sn, "token_counts": tok,
         "n_warmup": args.warmup, "n_timed": args.timed,
         "exec_styles": styles,
+        "compile_seconds_per_callable": COMPILE_S,
+        "compile_seconds_total": round(sum(COMPILE_S), 2),
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
         "jetson_clocks": "applied before the run; GPU locked min==max",
@@ -864,6 +1042,7 @@ def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
             "exists. `partials_residual` and `cast_scores_fp32_fp16` are mapping_only.",
         ],
     })
+    _write_summary(out, all_rows, layer_rows, seg_rows, notes, args, n_mi)
     meta = json.loads((out / "meta.json").read_text())
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)

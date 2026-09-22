@@ -13,8 +13,11 @@ import re
 import shutil
 import statistics
 import subprocess
+import sys
+import threading
 import time
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -409,3 +412,136 @@ def summarize(samples: list[float]) -> dict:
 def write_json(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(obj, indent=2, sort_keys=False, default=str) + "\n")
+
+
+# --------------------------------------------------------------------------- CPU utilisation
+
+
+def _proc_stat() -> dict[str, tuple[int, int]]:
+    """{'cpu'|'cpu0'|...: (busy_jiffies, total_jiffies)} from /proc/stat.
+
+    busy excludes idle and iowait; both are time the core was not executing.
+    """
+    out = {}
+    for line in Path("/proc/stat").read_text().splitlines():
+        if not line.startswith("cpu"):
+            break
+        parts = line.split()
+        vals = [int(v) for v in parts[1:]]
+        total = sum(vals)
+        idle = vals[3] + (vals[4] if len(vals) > 4 else 0)   # idle + iowait
+        out[parts[0]] = (total - idle, total)
+    return out
+
+
+class CpuSampler:
+    """Per-core utilisation from /proc/stat, sampled on a thread.
+
+    §13.6 asks for CPU utilisation during each phase. `time.thread_time()` sees only
+    the calling thread, and `time.process_time()` only this process: neither sees the
+    CUDA driver's worker threads or anything else on the other 11 cores. This reads the
+    kernel's own accounting, so the numbers cover the whole machine.
+    """
+
+    def __init__(self, interval_s: float = 0.5):
+        self.interval_s = interval_s
+        self._rows: list[dict] = []
+        self._stop = threading.Event()
+        self._t: threading.Thread | None = None
+
+    def _run(self, phase: str):
+        prev, t_prev = _proc_stat(), time.perf_counter()
+        t0 = t_prev
+        while not self._stop.wait(self.interval_s):
+            cur, t_cur = _proc_stat(), time.perf_counter()
+            for cpu, (busy, total) in cur.items():
+                db, dt = busy - prev[cpu][0], total - prev[cpu][1]
+                if dt > 0:
+                    self._rows.append({"phase": phase, "t_s": round(t_cur - t0, 3),
+                                       "cpu": cpu, "busy_pct": round(100 * db / dt, 2)})
+            prev, t_prev = cur, t_cur
+
+    def start(self, phase: str):
+        self._stop.clear()
+        self._t = threading.Thread(target=self._run, args=(phase,), daemon=True)
+        self._t.start()
+
+    def stop(self):
+        self._stop.set()
+        if self._t:
+            self._t.join(timeout=5)
+            self._t = None
+
+    @property
+    def rows(self) -> list[dict]:
+        return self._rows
+
+    def summary(self, phase: str) -> list[dict]:
+        """One row per scope: the aggregate 'cpu' line, the busiest core, and each core."""
+        by_cpu: dict[str, list[float]] = {}
+        for r in self._rows:
+            if r["phase"] == phase:
+                by_cpu.setdefault(r["cpu"], []).append(r["busy_pct"])
+        if not by_cpu:
+            return []
+        out = []
+        n_cores = len(by_cpu) - 1                       # minus the aggregate 'cpu' line
+        for cpu, vals in sorted(by_cpu.items()):
+            scope = "system_all_cores" if cpu == "cpu" else cpu
+            s = summarize(vals)
+            row = {"phase": phase, "scope": scope,
+                   "pct": round(s["median_ms"], 2), "median_pct": round(s["median_ms"], 2),
+                   "p5_pct": round(s["p5_ms"], 2), "p95_pct": round(s["p95_ms"], 2),
+                   "n": s["n"]}
+            if cpu == "cpu":
+                # 'cpu' is the average over cores; x n_cores is "cores fully busy".
+                row["cores_busy"] = round(n_cores * s["median_ms"] / 100.0, 2)
+            else:
+                row["cores_busy"] = ""
+            out.append(row)
+        # busiest core, per sample, so the peak is not hidden by the average
+        per_t: dict[float, float] = {}
+        for r in self._rows:
+            if r["phase"] == phase and r["cpu"] != "cpu":
+                per_t[r["t_s"]] = max(per_t.get(r["t_s"], 0.0), r["busy_pct"])
+        if per_t:
+            s = summarize(list(per_t.values()))
+            out.insert(1, {"phase": phase, "scope": "busiest_core",
+                           "pct": round(s["median_ms"], 2),
+                           "median_pct": round(s["median_ms"], 2),
+                           "p5_pct": round(s["p5_ms"], 2), "p95_pct": round(s["p95_ms"], 2),
+                           "n": s["n"], "cores_busy": ""})
+        return out
+
+
+CPU_UTIL_FIELDS = ["phase", "scope", "pct", "median_pct", "p5_pct", "p95_pct", "n",
+                   "cores_busy"]
+
+
+# --------------------------------------------------------------------------- summary.md
+
+
+def write_summary(outdir: Path, title: str, sections: list[tuple[str, str]],
+                  not_measured: list[str] | None = None) -> Path:
+    """The per-directory summary.md protocol §5 requires.
+
+    `sections` is [(heading, body)]. `not_measured` lists the §13.8 quantities that are
+    absent from model_inputs.csv, which the checker forbids carrying a non-finite value:
+    the protocol says they must be named here instead.
+    """
+    lines = [f"# {title}", "",
+             f"Run directory: `{outdir.name}`  ",
+             f"Written by `bench/{Path(sys.argv[0]).name}` at "
+             f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}.", ""]
+    for heading, body in sections:
+        lines += [f"## {heading}", "", body.strip(), ""]
+    lines += ["## Not measured", ""]
+    if not_measured:
+        lines += [f"- {x}" for x in not_measured]
+    else:
+        lines.append("Every quantity this part is responsible for is present in "
+                     "`model_inputs.csv`.")
+    lines.append("")
+    p = outdir / "summary.md"
+    p.write_text("\n".join(lines))
+    return p

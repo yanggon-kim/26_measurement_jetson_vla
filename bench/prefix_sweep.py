@@ -33,7 +33,9 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
-from common import REPO, collect_raw, sh_out, software_versions, summarize, write_json  # noqa: E402
+from e11_summaries import e11d  # noqa: E402
+from common import (REPO, collect_raw, sh_out, software_versions, summarize,  # noqa: E402
+                    write_json)
 from host_segments import ModelInputs  # noqa: E402
 
 IMG_KEYS = ["observation.images.image", "observation.images.image2",
@@ -294,6 +296,7 @@ def main() -> int:
             ],
         })
         meta = json.loads((out / "meta.json").read_text())
+        e11d(out)
         meta["raw_files"] = collect_raw(out, meta["command"])
         write_json(out / "meta.json", meta)
         print(f"wrote {out} ({n_mi} rows)", flush=True)

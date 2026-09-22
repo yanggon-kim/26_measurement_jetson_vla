@@ -1,5 +1,14 @@
 """T010 — prefix-only, action-expert-only and full-inference loops.
 
+**Compiled-mode caveat, measured not assumed.** `PI0Policy` compiles `sample_actions`, so only
+the `full` loop goes through the compiled wrapper. `prefix` and `ae` call `embed_prefix`,
+`paligemma_with_expert.forward` and `denoise_step` directly, i.e. BELOW it, and therefore run
+eager even when the policy was loaded with a compile mode. The first version of this file did
+not say so, and the resulting table had the parts summing to 1.57x the whole (prefix 339.9 +
+ae 229.7 = 569.6 ms against full 362.4 ms) with nobody checking. Those two rows are now
+labelled `exec_style=eager_subpath` whatever the policy's compile mode, and the discrepancy is
+reported rather than hidden.
+
 Three loops that run back to back for a fixed wall time. E11e drives them under a background
 memory load, E11f uses them for throughput and concurrency, and **T004's E7 reuses them as its
 power phases** (`tasks/T004_pi0_nsys_power.md`: "reuse its `bench/phase_loops.py`
@@ -77,6 +86,10 @@ def make_ae(ctx, num_steps: int):
                         device=ctx["state"].device, dtype=torch.float32)
 
     def ae_once():
+        # DEVIATION (protocol §2): sample_actions drives its loop with a GPU-tensor test
+        # (`while time >= -dt/2`), which §2 names as a property to be reported and NOT fixed.
+        # Isolating the expert requires a bounded Python loop, so this is a PATCHED variant and
+        # is labelled as one wherever its numbers are used.
         with torch.no_grad():
             x_t = noise
             for step in range(num_steps):
@@ -111,6 +124,13 @@ def run_loop(fn, seconds: float, label: str, warmup: int = 5) -> dict:
             "median_ms": round(s.get("median_ms", 0), 4),
             "p5_ms": round(s.get("p5_ms", 0), 4), "p95_ms": round(s.get("p95_ms", 0), 4),
             "max_ms": round(s.get("max_ms", 0), 4), "n": n, "samples": samples}
+
+
+def effective_exec_style(phase: str, compile_mode) -> str:
+    """What actually executed, not what was requested. See the module docstring."""
+    if compile_mode is None:
+        return "eager"
+    return "compiled" if phase == "full" else "eager_subpath"
 
 
 def make_phase(policy, batch, phase: str, num_steps: int):

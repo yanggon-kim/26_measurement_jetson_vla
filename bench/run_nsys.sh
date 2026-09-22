@@ -25,9 +25,14 @@ for V in $(env | grep -oE "^[A-Za-z_]*(TOKEN|SECRET|PASSWORD|APIKEY|API_KEY)[A-Z
            | tr -d "=" ); do UNSET="$UNSET -u $V"; done
 [ -n "$UNSET" ] && echo "  scrubbing from the profiled environment:$UNSET"
 
+# --cuda-graph-trace=node is mandatory for the compiled captures. nsys defaults to
+# `graph`, which reports ONE row per graph launch instead of one per kernel; under
+# `reduce-overhead` the whole denoising step is a graph, so the default produced a trace
+# with a handful of rows and every derived per-kernel figure was empty.
 env $UNSET nsys profile \
     -t cuda,nvtx,osrt,cublas \
     --capture-range=cudaProfilerApi --capture-range-end=stop \
+    --cuda-graph-trace=node \
     --cuda-memory-usage=true \
     -f true -o "$REP" \
     "$@" > "$OUT/raw/${TAG}_stdout.log" 2>&1

@@ -32,6 +32,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
+from e11_summaries import e11b  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E402
                     software_versions, summarize, write_json)
 
@@ -134,13 +135,17 @@ def measure_sync(warmup: int, n: int) -> tuple[list[dict], dict]:
         a.add_(1.0)
         torch.cuda.synchronize()
 
+    ev_h = torch.cuda.Event()
+
     def handoff():
-        with torch.cuda.stream(s_b):
-            pass
+        # §13.3: work on stream A, record, stream B waits, tiny kernel on B, synchronise --
+        # and nothing else. An earlier version opened a no-op `with torch.cuda.stream(s_b):
+        # pass` and constructed a fresh Event INSIDE the timed region; the control paid
+        # neither, so the "net" cost was inflated by ~1.56x (the no-op block alone measured
+        # 32 us). The event is now hoisted and the no-op block is gone.
         a.add_(1.0)
-        ev = torch.cuda.Event()
-        ev.record()
-        s_b.wait_event(ev)
+        ev_h.record()
+        s_b.wait_event(ev_h)
         with torch.cuda.stream(s_b):
             a.add_(1.0)
         torch.cuda.synchronize()
@@ -173,16 +178,22 @@ def measure_sync(warmup: int, n: int) -> tuple[list[dict], dict]:
         rows.append({"sync": name, "median_ms": round(s["median_ms"], 6),
                      "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
                      "min_ms": round(s["min_ms"], 6), "n": s["n"],
-                     "net_of_control_ms": "",
+                     "net_of_control_ms": "", "net_p5_ms": "", "net_p95_ms": "",
                      "note": "control, subtracted from stream_handoff"
                              if name.startswith("_") else ""})
         print(f"  {name:26s} {s['median_ms']*1e3:8.2f} us", flush=True)
     # §13.3: stream_handoff is reported net of the same two kernels on one stream
-    net = med["stream_handoff"] - med["_two_kernels_one_stream"]
+    ctrl = med["_two_kernels_one_stream"]
+    net = med["stream_handoff"] - ctrl
     for r in rows:
         if r["sync"] == "stream_handoff":
             r["net_of_control_ms"] = round(net, 6)
-            r["note"] = "reported net of _two_kernels_one_stream"
+            # net every statistic, not just the median: netting only the median left
+            # p5 > median in the committed file, which is incoherent.
+            r["net_p5_ms"] = round(r["p5_ms"] - ctrl, 6)
+            r["net_p95_ms"] = round(r["p95_ms"] - ctrl, 6)
+            r["note"] = ("reported net of _two_kernels_one_stream, which is subtracted from "
+                         "the median, p5 and p95 alike")
     print(f"  stream_handoff net of control: {net*1e3:.2f} us")
 
     # spin-wait check: does the CPU burn a core while it waits?
@@ -260,9 +271,11 @@ def zero_copy_worker(sizes_json: str, warmup: int, n: int) -> int:
                 if sync:
                     torch.cuda.synchronize()
                 ms.append((time.perf_counter() - t0) * 1e3)
+            raw = list(ms)
             ms.sort()
             parts[name] = {"median_ms": ms[len(ms) // 2], "p5_ms": ms[int(0.05 * len(ms))],
-                           "p95_ms": ms[min(len(ms) - 1, int(0.95 * len(ms)))], "n": len(ms)}
+                           "p95_ms": ms[min(len(ms) - 1, int(0.95 * len(ms)))], "n": len(ms),
+                           "samples": raw}          # §13.3: every sample kept
         out.append({"size_label": label, "size_bytes": nel * 4, "parts": parts})
         del t, buf, arr
         torch.cuda.empty_cache()
@@ -305,7 +318,7 @@ def main() -> int:
                     help="internal: JSON size map; installs the managed allocator and exits")
     args = ap.parse_args()
     if args.zero_copy_worker:
-        return zero_copy_worker(args.zero_copy_worker, args.warmup, max(50, args.timed // 4))
+        return zero_copy_worker(args.zero_copy_worker, args.warmup, max(200, args.timed))
 
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
@@ -319,7 +332,7 @@ def main() -> int:
     rows = measure_transfers(sizes, args.warmup, args.timed)
 
     print("\n=== zero copy (separate process, managed allocator) ===", flush=True)
-    zc_rows, zc_err = [], None
+    zc_rows, zc_err, samples = [], None, []
     if not ZC_SO.exists():
         zc_err = f"{ZC_SO} not built; see env/README.md for the nvcc command"
     else:
@@ -336,6 +349,10 @@ def main() -> int:
         else:
             for e in json.loads(line[len("ZERO_COPY_JSON "):]):
                 for part, st in e["parts"].items():
+                    samples += [{"method": "zero_copy", "direction": part,
+                                 "size_bytes": e["size_bytes"], "iter": i, "ms": v}
+                                for i, v in enumerate(st.get("samples", []))] \
+                        if "samples" in st else []
                     zc_rows.append({"method": "zero_copy", "direction": part,
                                     "size_label": e["size_label"],
                                     "size_bytes": e["size_bytes"],
@@ -360,9 +377,9 @@ def main() -> int:
     sync_rows, spin = measure_sync(args.warmup, args.sync_timed)
 
     # --- files
-    samples = [{"method": r["method"], "direction": r["direction"],
-                "size_bytes": r["size_bytes"], "iter": i, "ms": v}
-               for r in rows + ctrl for i, v in enumerate(r.get("samples", []))]
+    samples += [{"method": r["method"], "direction": r["direction"],
+                 "size_bytes": r["size_bytes"], "iter": i, "ms": v}
+                for r in rows + ctrl for i, v in enumerate(r.get("samples", []))]
     for r in rows + zc_rows + ctrl:
         r.pop("samples", None)
     all_x = rows + zc_rows + ctrl
@@ -408,10 +425,12 @@ def main() -> int:
     for r in sync_rows:
         if r["sync"].startswith("_"):
             continue
-        v = r.get("net_of_control_ms") or r["median_ms"]
-        for stat, col in (("median", "median_ms"), ("p5", "p5_ms"), ("p95", "p95_ms")):
-            mi.add("t_sync", v if stat == "median" else r[col], "ms", stat, r["n"],
-                   "sync_summary.csv", key=r["sync"], timing="wall_isolated")
+        for stat, col, netcol in (("median", "median_ms", "net_of_control_ms"),
+                                  ("p5", "p5_ms", "net_p5_ms"),
+                                  ("p95", "p95_ms", "net_p95_ms")):
+            v = r.get(netcol) or r[col]
+            mi.add("t_sync", v, "ms", stat, r["n"], "sync_summary.csv", key=r["sync"],
+                   timing="wall_isolated")
     n_mi = mi.write(out / "model_inputs.csv")
 
     sw = software_versions()
@@ -454,6 +473,7 @@ def main() -> int:
         ],
     })
     meta = json.loads((out / "meta.json").read_text())
+    e11b(out)
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)
     print(f"\nwrote {out} ({n_mi} model_inputs rows)")

@@ -14,12 +14,14 @@ import argparse
 import csv
 import json
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import REPO, collect_raw, sh_out, software_versions, write_json  # noqa: E402
+from common import (REPO, collect_raw, sh_out, software_versions, write_json,  # noqa: E402
+                    write_summary)
 from host_segments import MI_HEADER  # noqa: E402
 
 PARTS = ["E11a_pi0_hostseg", "E11b_xfer", "E11c_pi0_handover",
@@ -184,6 +186,48 @@ def main() -> int:
             "is left out of the file rather than written as blank or NaN.",
         ],
     })
+    # Run the §13.8 checker and report what it actually said, rather than asserting it passes.
+    chk = subprocess.run([sys.executable,
+                          str(REPO / "docs/reference_scripts/check_model_inputs.py"),
+                          str(out / "model_inputs.csv")], capture_output=True, text=True)
+    (out / "raw" / "check_model_inputs.log").write_text(
+        f"$ python docs/reference_scripts/check_model_inputs.py "
+        f"{out}/model_inputs.csv\nexit={chk.returncode}\n{chk.stdout}{chk.stderr}")
+    check = ("exit 0 — passes" if chk.returncode == 0
+             else f"exit {chk.returncode} — FAILS; see `raw/check_model_inputs.log`")
+    print(f"  checker: {check}")
+    qcount = {}
+    for r in rows:
+        qcount[r[MI_HEADER.index("quantity")]] = qcount.get(
+            r[MI_HEADER.index("quantity")], 0) + 1
+    write_summary(out, "E11 — the consolidated hand-off (protocol §13.8)", [
+        ("Answer",
+         f"`model_inputs.csv` carries **{len(rows)} rows** covering "
+         f"**{len(quantities)} of the {len(ALL_Q)}** quantities §13.8 names, drawn from "
+         f"{len(provenance)} source runs.\n\nChecker "
+         f"(`docs/reference_scripts/check_model_inputs.py`, run in place, never adapted): "
+         f"**{check}**"),
+        ("Coverage",
+         "| quantity | rows |\n|---|---:|\n"
+         + "\n".join(f"| {q} | {qcount.get(q, 0)} |" for q in ALL_Q)),
+        ("Provenance",
+         "| part | run directory | rows |\n|---|---|---:|\n"
+         + "\n".join(f"| {p_['part']} | `{p_['run_dir']}` | {p_['rows']} |"
+                      for p_ in provenance)
+         + "\n\nRows restated from another run carry `from=<run dir>` in `variant` and "
+           "`source_file` points at a copy of that run's tidy CSV under "
+           "`raw/restated/<run dir>/`, never at a profiler report."),
+        ("Conditions",
+         "π0 `lerobot/pi0_libero_finetuned_v044` @ `45dcc8fc`, bf16, MAXN + jetson_clocks, "
+         "P = 816 processed (533 valid), S = 51. Each row's own run directory holds its gate "
+         "record, device state and raw files; this directory is derived and measures nothing "
+         "itself."),
+        ("Reproduce",
+         f"```\npython bench/consolidate_e11.py --outdir {args.outdir}\n"
+         f"python docs/reference_scripts/check_model_inputs.py "
+         f"{args.outdir}/model_inputs.csv\n```"),
+    ], [f"{q}: not measured — see reports/E11_pi0_hybrid_inputs.md" for q in absent]
+       + [f"part {m} missing" for m in missing])
     meta = json.loads((out / "meta.json").read_text())
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)

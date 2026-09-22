@@ -26,7 +26,9 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
-from common import REPO, collect_raw, sh_out, software_versions, summarize, write_json  # noqa: E402
+from e11_summaries import e11c  # noqa: E402
+from common import (REPO, collect_raw, sh_out, software_versions, summarize,  # noqa: E402
+                    write_json)
 from host_segments import ModelInputs  # noqa: E402
 from phase_loops import build, prefix_once  # noqa: E402
 
@@ -77,7 +79,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--warmup", type=int, default=20)
-    ap.add_argument("--timed", type=int, default=200)
+    ap.add_argument("--timed", type=int, default=1000)   # §13.1: >= 1,000 timed calls
     ap.add_argument("--steps", type=int, default=4)
     args = ap.parse_args()
     out = Path(args.outdir)
@@ -184,7 +186,7 @@ def main() -> int:
         policy.model.denoise_step = orig_ds
         pgx.forward = orig_pg
 
-    ms = timed_wall(lambda: copy.deepcopy(pkv), args.warmup, max(50, args.timed // 4))
+    ms = timed_wall(lambda: copy.deepcopy(pkv), args.warmup, args.timed)
     dc = summarize(ms)
     dc_ms = dc["median_ms"]
     print(f"  copy.deepcopy(past_key_values) (modeling_pi0.py:918): {dc_ms:.4f} ms/step")
@@ -238,7 +240,8 @@ def main() -> int:
     (out / "kv_reuse.md").write_text(f"""# How the denoising steps use the prefix KV cache (pi0)
 
 **Answer: every step deep-copies the whole cache before using it, so the prefix KV is
-re-materialised {len(ptr_log)} times per inference, not loaded once.**
+re-materialised {len([p for p in ptr_log if p["when"] == "entry"])} times per inference — once
+per denoising step — not loaded once.**
 
 ## Evidence from the source
 
@@ -313,6 +316,15 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
         if r["per"] == "step":
             mi.add("boundary_bytes_per_step", r["bytes"], "bytes", "value", 1,
                    "boundary.csv", key=r["tensor"])
+    with (out / "kv_copy.csv").open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["what", "median_ms", "p5_ms", "p95_ms", "min_ms", "n", "bytes", "source"])
+        w.writerow(["copy.deepcopy(past_key_values)", round(dc["median_ms"], 6),
+                    round(dc["p5_ms"], 6), round(dc["p95_ms"], 6), round(dc["min_ms"], 6),
+                    dc["n"], tot_bytes,
+                    "lerobot/policies/pi0/modeling_pi0.py:918, once per denoising step"])
+    mi.add_stats("t_kv_materialise", dc, "ms", dc["n"], "kv_copy.csv",
+                 key="stacked", variant="layout=deepcopy_per_step", timing="wall_isolated")
     with (out / "raw" / "kv_materialise.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["layout", "timing", "median_ms", "p5_ms", "p95_ms", "n"])
@@ -344,7 +356,9 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
         "command": f"python bench/handover.py --outdir {args.outdir}",
         "kv_bytes_total": tot_bytes, "kv_bytes_per_layer": per_layer,
         "deepcopy_ms_per_step": round(dc_ms, 6),
-        "distinct_layer0_key_ptrs": len(uniq), "denoise_steps_observed": len(ptr_log),
+        "distinct_layer0_key_ptrs": len(uniq),
+        "denoise_steps_observed": len([p for p in ptr_log if p["when"] == "entry"]),
+        "pointer_log_rows": len(ptr_log),
         "throttled": False,
         "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
         "model_inputs_rows": n_mi, "raw_files": [],
@@ -359,6 +373,7 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
         ],
     })
     meta = json.loads((out / "meta.json").read_text())
+    e11c(out)
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)
     print(f"\nwrote {out} ({n_mi} model_inputs rows)")
