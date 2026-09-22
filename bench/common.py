@@ -145,7 +145,11 @@ def device_state(sudo: str = "sudo -n") -> dict:
     st["nvpmodel_q"] = sh("nvpmodel -q")            # no sudo needed for query
     st["nvpmodel_q_verbose"] = sh(f"{sudo} nvpmodel -q --verbose")
     st["jetson_clocks_show"] = sh(f"{sudo} jetson_clocks --show")
-    st["emc_rate_hz"] = sh(f"{sudo} cat /sys/kernel/debug/bpmp/debug/clk/emc/rate")
+    # /sys/kernel/debug is root-only. The narrow sudoers rule the owner installed permits
+    # `sh` but not `cat`, so the read goes through `sh -c` -- `sudo cat` fails with
+    # "a password is required" and would silently record an empty EMC rate.
+    st["emc_rate_hz"] = sh(
+        f"{sudo} sh -c 'cat /sys/kernel/debug/bpmp/debug/clk/emc/rate'")
     st["dpkg_jetpack"] = sh("dpkg -l | grep -E 'nvidia-jetpack|cuda-toolkit|tensorrt|cudnn'")
     st["nvcc_version"] = sh("nvcc --version")
     st["free_h"] = sh("free -h")

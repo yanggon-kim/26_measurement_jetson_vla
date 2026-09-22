@@ -1,0 +1,144 @@
+{
+  "_comment": "protocol \u00a78 \u2014 constants derived on THIS device. Peaks marked null are measured in T005/E1 and must not be filled from a spec sheet.",
+  "date_utc": "2026-09-21T21:05:48Z",
+  "board_model": "NVIDIA Jetson AGX Orin Developer Kit",
+  "gpu_name": "Orin",
+  "compute_capability": "8.7",
+  "gpu_arch": "sm_87",
+  "multi_processor_count": null,
+  "multi_processor_count_READ_THIS_FIRST": "null on purpose. On Orin the SM count depends on the power mode: TPC power gating removes SMs, and CUDA reports only the ungated ones. Use multi_processor_count_by_power_mode[<mode recorded for your run>]. The Orin AGX 64GB has 8 TPCs x 2 SMs = 16 SMs when no TPC is gated (MAXN / MODE_50W).",
+  "multi_processor_count_in_this_power_mode": 16,
+  "multi_processor_count_by_power_mode": {
+    "_source": "TPC_PG_MASK per mode from /etc/nvpmodel.conf (see nvpmodel_modes.csv); 2 SMs per TPC. Only the mode this run was taken in is OBSERVED; the others are derived from the mask and must be confirmed by running in them.",
+    "MAXN(0)": {
+      "sms": 16,
+      "status": "derived from TPC_PG_MASK=0, NOT observed"
+    },
+    "MODE_15W(1)": {
+      "sms": 2,
+      "status": "derived from TPC_PG_MASK=248"
+    },
+    "MODE_30W(2)": {
+      "sms": 16,
+      "status": "OBSERVED"
+    },
+    "MODE_50W(3)": {
+      "sms": 16,
+      "status": "derived from TPC_PG_MASK=0"
+    }
+  },
+  "total_memory_bytes": 65879891968,
+  "warp_size": 32,
+  "max_threads_per_multi_processor": 1536,
+  "regs_per_multiprocessor": 65536,
+  "shared_memory_per_multiprocessor": 167936,
+  "l2_cache_size_bytes": 4194304,
+  "device_state_when_recorded": {
+    "power_mode": "NV Power Mode: MAXN",
+    "power_mode_id": "0",
+    "tpc_pg_mask": "0",
+    "gpu_max_freq_hz": "1300500000",
+    "gpu_cur_freq_hz": "1300500000",
+    "cpu_online": "0-11",
+    "warning": "multi_processor_count and the peaks depend on the power mode: TPC power gating removes SMs. Record the mode with every use."
+  },
+  "max_warps_per_sm": 48,
+  "max_warps_per_sm_source": "torch max_threads_per_multi_processor / 32 (1536/32 = 48); not taken from ncu",
+  "measured_peaks": {
+    "_status": "measured by T005/E1 at MAXN, 2026-09-22",
+    "_method": "CUDA-event timing, median of 100 calls after 20 warm-ups, MAXN, jetson_clocks applied, GPU clock pinned at 1300500000 Hz; every GEMM verified against an fp32 reference before its time was used. See this run's latency_summary.csv.",
+    "_power_mode": "NV Power Mode: MAXN",
+    "_sm_count": 16,
+    "peak_memory_bandwidth_GBps": 161.75,
+    "peak_memory_bandwidth_kernel": "mul_scalar_fp32",
+    "peak_bf16_TFLOPps": 33.567,
+    "peak_bf16_shape": "2048x2048x2048",
+    "peak_fp16_TFLOPps": 30.5822,
+    "peak_fp32_TFLOPps": 3.4443,
+    "peak_tf32_TFLOPps": 15.706,
+    "peak_int8_TOPps_torch_int_mm": 10.4127,
+    "peak_int8_CAVEAT": "torch._int_mm does not reach the tensor cores on sm_87; this is a PyTorch-path throughput, NOT the hardware's dense INT8 peak. Do not use it as a hardware constant.",
+    "ridge_point_FLOP_per_byte": 207.52,
+    "pct_of_spec_bandwidth": 79.0,
+    "pct_of_spec_bf16": 79.9
+  },
+  "expected_from_spec_do_not_use_as_measurement": {
+    "peak_memory_bandwidth_GBps": 204.8,
+    "peak_bf16_TFLOPps": 42.0,
+    "ridge_point_FLOP_per_byte": 205.1,
+    "source": "docs/00_context.md / NVIDIA AGX Orin 64GB spec; LPDDR5-6400, 256-bit"
+  },
+  "torch": {
+    "version": "2.8.0",
+    "cuda": "12.6",
+    "cudnn": 90300,
+    "arch_list": [
+      "sm_87"
+    ]
+  },
+  "cublas": {
+    "loaded_cublas_libraries": [
+      "/usr/local/cuda-12.6/targets/aarch64-linux/lib/libcublas.so.12.6.1.4",
+      "/usr/local/cuda-12.6/targets/aarch64-linux/lib/libcublasLt.so.12.6.1.4"
+    ],
+    "analysed": "/usr/local/cuda-12.6/targets/aarch64-linux/lib/libcublas.so.12.6.1.4",
+    "bytes": 124560296,
+    "cuobjdump_returncode": 0,
+    "sm_architectures_in_library": [
+      "sm_53",
+      "sm_61",
+      "sm_62",
+      "sm_70",
+      "sm_72",
+      "sm_75",
+      "sm_80",
+      "sm_86",
+      "sm_87",
+      "sm_90"
+    ],
+    "cuobjdump_list_text_lines": 37271
+  },
+  "ncu_per_sm_limits": {
+    "source": "results/20260921_E0_platform_maxn/ncu/toy_raw.csv",
+    "_warning": "Everything under per_kernel_NOT_a_device_limit describes the ONE kernel this export holds (the T001 toy GEMM: 158 registers/thread, 49 KB static + 24.6 KB dynamic shared memory). Those numbers are properties of that launch, not of the GPU. Do not read them as hardware constants.",
+    "device_limits": {
+      "sm__warps_active.avg.peak_sustained": null,
+      "sm__maximum_warps_per_active_cycle_pct": 16.666667
+    },
+    "per_kernel_NOT_a_device_limit": {
+      "sm__maximum_warps_avg_per_active_cycle": 8.0,
+      "launch__occupancy_limit_warps": 12.0,
+      "launch__occupancy_limit_blocks": 16.0,
+      "launch__occupancy_limit_registers": 3.0,
+      "launch__occupancy_limit_shared_mem": 2.0
+    },
+    "dram__cycles_elapsed.sum": 0.0,
+    "dram_note": "0. ncu --query-metrics offers 4426 metrics on this device and none is dram__*; an explicit --metrics dram__bytes.sum returns 'n/a'. See results/<run>/raw/ncu_dram_probe.log."
+  },
+  "gpu_arch_confirmed_by": {
+    "torch_get_arch_list": [
+      "sm_87"
+    ],
+    "compute_capability": "8.7",
+    "cuobjdump_on_cublas": [
+      "sm_53",
+      "sm_61",
+      "sm_62",
+      "sm_70",
+      "sm_72",
+      "sm_75",
+      "sm_80",
+      "sm_86",
+      "sm_87",
+      "sm_90"
+    ]
+  },
+  "efficiency_fractions": {
+    "_purpose": "docs/00_context.md carries these as **[ASSUMPTION]** in E11's analytic host model (`achieved_tflops = peak x eff_flops_frac`, `achieved_bw_GBps = ext_bw x eff_bw_frac`). These are the measured values. Both assumptions are pessimistic.",
+    "eff_flops_frac_assumed": 0.4,
+    "eff_flops_frac_measured": 0.7992,
+    "eff_bw_frac_assumed": 0.7,
+    "eff_bw_frac_measured": 0.7898,
+    "_caveat": "Measured on dense square GEMM and a streaming kernel \u2014 the best case. The action expert's own shapes are small and skinny and do far worse; E2 (micro_ae_kernels.py) measures what THOSE shapes achieve."
+  }
+}
