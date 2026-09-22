@@ -708,7 +708,8 @@ def main() -> int:
                         fn()
                     built.append((style, fn))
                 torch.cuda.synchronize()
-                torch.cuda.profiler.start()
+                cudart = torch.cuda.cudart()      # same call nsys_target.py uses
+                cudart.cudaProfilerStart()
                 for style, fn in built:
                     with nvtx(f"host_sequence[{style}]"):
                         for k in range(10):
@@ -716,7 +717,7 @@ def main() -> int:
                                 fn()
                             torch.cuda.synchronize()
                 torch.cuda.synchronize()
-                torch.cuda.profiler.stop()
+                cudart.cudaProfilerStop()
                 print(f"  nsys: captured 10 sequences x {len(built)} style(s) at layer {li}",
                       flush=True)
                 if li == LAYERS[0]:
