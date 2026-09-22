@@ -131,7 +131,11 @@ def _cpu_worker(duty, seconds, cores, q, arithmetic_only):
 
     def do_chunk():
         if arithmetic_only:
-            a *= 1.0000001
+            # np.multiply(..., out=a), not `a *= …`: augmented assignment REBINDS the name,
+            # which makes `a` local to this closure and raises UnboundLocalError. Every
+            # cpu_spin_control worker died on its first iteration and the control produced
+            # an empty log — a blank row where §13.5 requires a measurement.
+            np.multiply(a, 1.0000001, out=a)
         else:
             i = pos[0]
             np.copyto(dst[i:i + chunk], src[i:i + chunk])
@@ -199,17 +203,58 @@ def emit(log, label, rate, unit="GBps", **extra):
             f.write(line + "\n")
 
 
+def self_test(cores, workers) -> int:
+    """Run every hog kind for two seconds and fail if one produced no samples.
+
+    A hog that dies in a worker process prints its traceback to a log nobody reads and
+    then reports nothing; mempressure stores a blank and carries on for 47 minutes. That
+    is how cpu_spin_control reached a finished result directory as an empty row. Two
+    seconds per kind up front is cheaper than finding out afterwards.
+    """
+    import tempfile
+    bad = []
+    for kind in ("gpu", "gpu_spin_control", "cpu", "cpu_spin_control"):
+        with tempfile.NamedTemporaryFile("w+", suffix=".log", delete=False) as f:
+            log = f.name
+        if kind == "gpu":
+            gpu_hog(100.0, 2.0, log, kind)
+        elif kind == "gpu_spin_control":
+            gpu_spin_control(100.0, 2.0, log, kind)
+        else:
+            cpu_hog(100.0, 2.0, log, kind, workers, cores,
+                    arithmetic_only=kind.endswith("spin_control"))
+        lines = [ln for ln in open(log).read().splitlines() if ln.strip().startswith("{")]
+        rates = [json.loads(ln) for ln in lines]
+        gb = [r for r in rates if r.get("unit") == "GBps"]
+        os.unlink(log)
+        ok = bool(gb) and all(r.get("achieved_duty_pct") is not None for r in gb)
+        print(f"  {kind:18s} {'ok  ' if ok else 'FAIL'} "
+              f"{len(gb)} GBps sample(s)"
+              + (f", median {sorted(r['rate'] for r in gb)[len(gb)//2]:.1f} GB/s" if gb else ""),
+              flush=True)
+        if not ok:
+            bad.append(kind)
+    if bad:
+        print(f"bw_hog self-test FAILED for: {', '.join(bad)}")
+        return 1
+    print("bw_hog self-test passed")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kind", required=True,
-                    choices=("gpu", "cpu", "gpu_spin_control", "cpu_spin_control"))
+    ap.add_argument("--kind", choices=("gpu", "cpu", "gpu_spin_control", "cpu_spin_control"))
     ap.add_argument("--duty", type=float, default=100.0)
+    ap.add_argument("--self-test", action="store_true",
+                    help="run every kind for 2 s and fail if one produced no samples")
     ap.add_argument("--seconds", type=float, default=90.0)
     ap.add_argument("--log", default=None)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--cores", default="", help="comma-separated core ids for the CPU hog")
     args = ap.parse_args()
     cores = {int(c) for c in args.cores.split(",") if c.strip()}
+    if args.self_test:
+        return self_test(cores, args.workers)
     label = f"{args.kind}_{int(args.duty)}"
     if args.log:
         open(args.log, "w").close()

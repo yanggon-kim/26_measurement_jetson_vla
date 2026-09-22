@@ -51,7 +51,25 @@ def start_hog(kind, duty, seconds, log):
     if kind.startswith("cpu"):
         cmd += ["--cores", BG_CORES, "--workers", "6"]
         cmd = ["taskset", "-c", BG_CORES] + cmd
-    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    # Keep the hog's stderr. It used to go to DEVNULL with its stdout, so when every
+    # cpu_spin_control worker died with UnboundLocalError the only evidence was an empty
+    # rate log and a blank cell in the result table.
+    err = Path(str(log) + ".stderr")
+    return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err.open("w"))
+
+
+def hog_self_test(out: Path) -> None:
+    """Prove every hog kind produces samples before spending 47 minutes on the sweep."""
+    log = out / "raw" / "bw_hog_self_test.log"
+    r = subprocess.run([sys.executable, str(REPO / "bench" / "bw_hog.py"), "--self-test",
+                        "--workers", "6", "--cores", BG_CORES],
+                       capture_output=True, text=True, timeout=600)
+    log.write_text(r.stdout + r.stderr)
+    for ln in r.stdout.splitlines():
+        if ln.startswith("  ") or "self-test" in ln:
+            print(ln, flush=True)
+    if r.returncode != 0:
+        raise SystemExit(f"bw_hog self-test failed; see {log}")
 
 
 def hog_rate(log: Path, unit: str = "GBps") -> float | None:
@@ -145,6 +163,7 @@ def main() -> int:
     for mode in [m for m in args.modes.split(",") if m]:
         out = Path(f"{args.outdir_prefix}_{mode}_mempressure")
         (out / "raw").mkdir(parents=True, exist_ok=True)
+        hog_self_test(out)          # before the model loads and the 47 minutes start
         cm = None if mode == "eager" else mode
         policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=cm)
         real = P.assert_real_weights(policy)
