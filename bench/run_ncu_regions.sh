@@ -44,9 +44,18 @@ for R in "${REGIONS[@]}"; do
     ae_layer0) CAP="" ;;                       # ~54 kernels, capture all of them
     *)         CAP="-c ${NCU_COUNT:-400}" ;;   # bounded; coverage reported
   esac
+  # §3.3's DRAM substitute. `--set full` collects lts__t_sectors_aperture_sysmem_op_write
+  # and the undifferentiated ..._lookup_miss, but NOT the read-miss counter the substitute
+  # is built from, so ask for it explicitly. The write pair is collected alongside because
+  # T005 found writes register as L2 hits (op_write_lookup_miss is identically zero while
+  # op_write is not) — that is the correction to §3.3, and it has to stay checkable per run.
+  METRICS="lts__t_sectors_aperture_sysmem_op_read_lookup_miss.sum"
+  METRICS="$METRICS,lts__t_sectors_aperture_sysmem_op_read.sum"
+  METRICS="$METRICS,lts__t_sectors_aperture_sysmem_op_write_lookup_miss.sum"
+  METRICS="$METRICS,lts__t_sectors_aperture_sysmem_op_write.sum"
   timeout "$TIMEOUT_S" sudo -n "$NCU" \
       --profile-from-start off --nvtx --nvtx-include "$NVTX_R/" \
-      $CAP --set full \
+      $CAP --set full --metrics "$METRICS" \
       --csv --page details --log-file "$OUT/ncu/${TAG}_details.csv" \
       --export "$OUT/ncu/${TAG}" --force-overwrite \
       env HOME="$HOME" HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}" \

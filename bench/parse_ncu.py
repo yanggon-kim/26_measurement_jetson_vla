@@ -54,6 +54,8 @@ KEEP = {
 }
 SYSMEM = {
     "lts__t_sectors_aperture_sysmem_op_read_lookup_miss.sum": "sysmem_read_miss_sectors",
+    "lts__t_sectors_aperture_sysmem_op_read.sum": "sysmem_read_sectors",
+    "lts__t_sectors_aperture_sysmem_op_write_lookup_miss.sum": "sysmem_write_miss_sectors",
     "lts__t_sectors_aperture_sysmem_op_write.sum": "sysmem_write_sectors",
     "lts__t_sectors_aperture_sysmem_lookup_miss.sum": "sysmem_miss_sectors_all",
 }
