@@ -166,6 +166,18 @@ def e11e(out: Path) -> Path:
          "achieved rate is measured inside its own duty window and compared with the "
          "**measured** peak of 187.47 GB/s (T005/E1), not the 204.8 GB/s spec. Each "
          "foreground point runs ≥ 60 s with tegrastats attached."),
+        ("Limits — what this is and is not (protocol §13.5, repeated verbatim as it asks)",
+         "This is a **proxy** for memory-side activity on the same DRAM. A real PIM occupies "
+         "DRAM channels through the command bus and blocks ordinary accesses to them; a "
+         "software hog instead competes at the memory controller and in the caches, and "
+         "additionally takes GPU time slices (`gpu_hog`) or CPU cores (`cpu_hog`). The "
+         "controls bound those side effects; **the result is the sensitivity of the GPU work "
+         "to lost memory bandwidth, not a measurement of PIM interference.**\n\n"
+         "The two controls at d = 100 % are `gpu_spin_control` (a compute-bound GPU load with "
+         "a small memory footprint — small GEMMs) and `cpu_spin_control` (the same worker "
+         "processes on the same cores doing arithmetic that stays in cache). They separate "
+         "\"the GPU or CPU was taken\" from \"the memory bandwidth was taken\"; both are "
+         "rows of the table above."),
         ("Anomaly to keep in mind",
          "T005 measured up to 1.19× run-to-run variation in achieved bandwidth with clocks "
          "and temperature held constant and no competing process; the cause is not "
@@ -173,7 +185,7 @@ def e11e(out: Path) -> Path:
         ("Reproduce",
          f"```\npython bench/mempressure.py --outdir {out} --seconds 60\n```"),
     ]
-    return write_summary(out, "E11e — memory pressure and CPU (protocol §13.6)",
+    return write_summary(out, "E11e — memory pressure and CPU (protocol §13.5, §13.6)",
                          sections, _absent(out))
 
 
@@ -248,7 +260,7 @@ def e11d(out: Path) -> Path:
         ("Reproduce",
          f"```\npython bench/prefix_sweep.py --outdir-prefix {out.parent}/{out.name.rsplit('_', 2)[0]}\n```"),
     ]
-    return write_summary(out, "E11d — prefix sweep (protocol §13.5)", sections, _absent(out))
+    return write_summary(out, "E11d — prefix latency vs its input (measurement plan, part 4)", sections, _absent(out))
 
 
 DISPATCH = {"E11b": e11b, "E11c": e11c, "E11d": e11d, "E11e": e11e, "E11f": e11f}
