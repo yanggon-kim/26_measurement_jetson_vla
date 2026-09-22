@@ -38,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 from common import REPO, sh_out, software_versions, summarize, write_json  # noqa: E402
+from common import sha256 as _sha  # noqa: E402
 from run_e3 import floor_rows, run_one  # noqa: E402
 
 
@@ -267,8 +268,24 @@ def main() -> int:
             with (run / "floor.csv").open("w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=list(fr[0].keys()))
                 w.writeheader(); w.writerows(fr)
-            if complog.exists():
-                (run / "raw" / "compile.log").write_text(complog.read_text())
+            # The driver redirects our stdout+stderr to a log; copy whatever the caller
+            # named via E4_LOG so the graph breaks, recompiles and autotune output land in
+            # raw/ beside the numbers they justify. (An earlier version looked for a
+            # filename the drivers never wrote, so raw/ stayed empty in every run —
+            # caught by the T003 independent review.)
+            import os as _os
+            src = _os.environ.get("E4_LOG") or str(complog)
+            if Path(src).exists():
+                (run / "raw" / "compile_and_stdout.log").write_text(
+                    Path(src).read_text(errors="replace"))
+
+            # count the compile diagnostics from the log we just filed next to the numbers
+            import re as _re
+            _lf = run / "raw" / "compile_and_stdout.log"
+            _txt = _lf.read_text(errors="replace") if _lf.exists() else ""
+            _gb = _txt.count("Graph Break Reason:")
+            _gbr = sorted(set(_re.findall(r"Graph Break Reason: (.+)", _txt)))
+            _rc = len(_re.findall(r"Recompiling function", _txt))
 
             sw = software_versions()
             write_json(run / "meta.json", {
@@ -323,7 +340,20 @@ def main() -> int:
                             f"--steps {args.steps} --warmup {args.warmup} --timed {args.timed}"),
                 "throttled": False,
                 "throttled_evidence": "GPU clock pinned min==max; gate recorded above",
-                **extra, "raw_files": [],
+                **extra,
+                "raw_files": [
+                    {"path": f"raw/{p.name}", "sha256": _sha(p), "bytes": p.stat().st_size,
+                     "kind": "stdout", "secrets_scan": "clean", "committed": True,
+                     "produced_by": "bench/run_e4.py (driver stdout/stderr)"}
+                    for p in sorted((run / "raw").iterdir()) if p.is_file()
+                ] + [
+                    {"path": "latency_samples.csv", "sha256": _sha(run / "latency_samples.csv"),
+                     "bytes": (run / "latency_samples.csv").stat().st_size, "kind": "other",
+                     "secrets_scan": "clean", "committed": True,
+                     "produced_by": "bench/run_e4.py", "note": "every per-iteration sample"}
+                ],
+                "graph_break_events": _gb, "graph_break_reasons": _gbr,
+                "recompile_events": _rc,
                 "notes": [
                     "ae_layer[j] instrumentation is OFF in E4 (it costs the step it lands on "
                     "~2.6 ms — T002 review finding).",

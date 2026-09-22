@@ -1,0 +1,151 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+=== E4  mode=reduce-overhead  variant=whole  N=[4] ===
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0"}
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+
+--- N=4 ---
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] Graph break in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] User code traceback:
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/run_e4.py", line 340, in <module>
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     raise SystemExit(main())
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/run_e4.py", line 240, in main
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     policy.predict_action_chunk(batch)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/external_utils.py", line 68, in inner
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return fn(*args, **kwargs)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return self.denoise_step(
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V0921 18:25:07.025000 43591 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] 
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:25:16.742000 43591 torch/_dynamo/symbolic_convert.py:581] [1/0] [__graph_breaks] 
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+I0921 18:25:39.760000 43591 torch/_inductor/compile_fx.py:640] [2/0] [__perf_hints] Skip comprehensive padding on CPU
+I0921 18:25:39.766000 43591 torch/_inductor/graph.py:858] [2/0] [__perf_hints] Using FallbackKernel: torch.ops.prims.normal.default
+W0921 18:25:40.598000 43591 torch/_inductor/debug.py:480] [2/0] model__0_inference_0 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__0_inference_0.0
+I0921 18:25:40.625000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:25:41.073000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 0
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:305: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+W0921 18:26:14.765000 43591 torch/_inductor/utils.py:1446] [3/0] Not enough SMs to use max_autotune_gemm mode
+I0921 18:26:14.866000 43591 torch/_inductor/graph.py:858] [3/0] [__perf_hints] Using FallbackKernel: torch.ops.aten._scaled_dot_product_efficient_attention.default
+I0921 18:26:29.879000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:29.881000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:30.750000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:30.751000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:30.989000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:30.990000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:31.653000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:31.703000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:31.753000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:34.355000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:34.355000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:26:34.355000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:26:34.355000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:34.441000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:34.473000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:34.473000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:26:34.473000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:26:34.473000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:36.909000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:36.909000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:26:36.909000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:26:36.909000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:36.964000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:36.987000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:36.987000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:26:36.987000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:26:36.987000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:39.208000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:39.208000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:26:39.208000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:26:39.208000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:39.263000 43591 torch/_inductor/codegen/simd.py:2522] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I0921 18:26:39.287000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+I0921 18:26:39.287000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I0921 18:26:39.287000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I0921 18:26:39.287000 43591 torch/_inductor/codegen/simd.py:2451] [3/0] [__perf_hints] 
+W0921 18:26:43.156000 43591 torch/_inductor/debug.py:480] [3/0] model__1_inference_1 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__1_inference_1.1
+I0921 18:26:44.579000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:26:44.584000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 1
+W0921 18:26:46.024000 43591 torch/_inductor/debug.py:480] [4/0] model__2_inference_2 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__2_inference_2.2
+I0921 18:26:46.044000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:26:46.045000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 2
+W0921 18:26:46.467000 43591 torch/_inductor/debug.py:480] [5/0] model__3_inference_3 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__3_inference_3.3
+I0921 18:26:46.488000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:26:46.489000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 3
+W0921 18:27:12.418000 43591 torch/_inductor/debug.py:480] [6/0] model__4_inference_4 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__4_inference_4.4
+I0921 18:27:13.099000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:27:13.102000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 4
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] 
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:27:13.941000 43591 torch/_dynamo/symbolic_convert.py:581] [8/0] [__graph_breaks] 
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] 
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 18:27:14.106000 43591 torch/_dynamo/symbolic_convert.py:581] [9/0] [__graph_breaks] 
+W0921 18:27:16.075000 43591 torch/_inductor/debug.py:480] [9/0_1] model__5_inference_5 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__5_inference_5.5
+I0921 18:27:16.127000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:27:16.128000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 5
+W0921 18:27:46.831000 43591 torch/_inductor/debug.py:480] [10/0] model__6_inference_6 debug trace: /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/T003/dbg/torch_compile_debug/run_2026_09_21_18_24_56_152302-pid_43591/torchinductor/model__6_inference_6.6
+I0921 18:27:47.542000 43591 torch/_inductor/cudagraph_trees.py:391] [__cudagraphs] recording cudagraph tree for graph without symints
+V0921 18:27:47.545000 43591 torch/_inductor/cudagraph_trees.py:2256] [__cudagraphs] Running warmup of function 6
+V0921 18:27:47.988000 43591 torch/_inductor/cudagraph_trees.py:2258] [__cudagraphs] Running eager of function 5 because ancestor needed to warm up
+V0921 18:27:47.998000 43591 torch/_inductor/cudagraph_trees.py:2258] [__cudagraphs] Running eager of function 6 because ancestor needed to warm up
+V0921 18:27:48.020000 43591 torch/_inductor/cudagraph_trees.py:2258] [__cudagraphs] Running eager of function 5 because ancestor needed to warm up
+V0921 18:27:48.029000 43591 torch/_inductor/cudagraph_trees.py:2258] [__cudagraphs] Running eager of function 6 because ancestor needed to warm up
+V0921 18:27:48.050000 43591 torch/_inductor/cudagraph_trees.py:2258] [__cudagraphs] Running eager of function 5 because ancestor needed to warm up
+V0921 18:27:48.059000 43591 torch/_inductor/cudagraph_trees.py:2258] [__cudagraphs] Running eager of function 6 because ancestor needed to warm up
+V0921 18:27:48.087000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 0 of graph recording id 0
+V0921 18:27:49.434000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 1 of graph recording id 1
+V0921 18:27:50.528000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 2 of graph recording id 2
+V0921 18:27:51.317000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 3 of graph recording id 3
+V0921 18:27:52.108000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 4 of graph recording id 4
+V0921 18:27:53.125000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 5 of graph recording id 5
+V0921 18:27:53.925000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 6 of graph recording id 6
+V0921 18:27:54.775000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 5 of graph recording id 7
+V0921 18:27:55.580000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 6 of graph recording id 8
+V0921 18:27:56.445000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 5 of graph recording id 9
+V0921 18:27:57.255000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 6 of graph recording id 10
+V0921 18:27:58.137000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 5 of graph recording id 11
+V0921 18:27:58.952000 43591 torch/_inductor/cudagraph_trees.py:2213] [__cudagraphs] Recording function 6 of graph recording id 12
+  first call (incl. compile): 171.9 s
+  e2e 503.4 ms  (ae_total unavailable — graph)
+  wrote /home/yanggon/00_VLA/26_measurement_jetson_vla/results/evidence_E4_pi0_reduce-overhead_N4

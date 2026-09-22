@@ -21,5 +21,9 @@ So cropping the cache back to P after the expert's forward is **exactly** equiva
 each denoising step a private deep copy — not approximately, bitwise. The 15.04 MB clone buys
 isolation that a slice provides for free.
 
-Command: see `reports/E4_pi0_compile.md` §3.3; the script is inline in that section's
-reproduce block and uses `bench/run_e4.py:crop_instead_of_deepcopy`.
+Command: `python bench/check_equivalence.py --variant cropcache`
+Raw output: `raw/equivalence.stdout.log`
+
+**Scope:** eager only. The `cropcache` latency is measured under `reduce-overhead` with CUDA
+graphs, and no compiled configuration's output has been compared against eager — see
+`reports/E4_pi0_compile.md` §7 *Not measured*.

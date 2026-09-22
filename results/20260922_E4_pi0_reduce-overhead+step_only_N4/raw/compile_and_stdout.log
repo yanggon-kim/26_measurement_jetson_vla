@@ -1,0 +1,51 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+=== E4  mode=reduce-overhead  variant=step_only  N=[4, 10] ===
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0"}
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+
+--- N=4 ---
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] Graph break in user code at /home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py:919
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] Graph Break Reason: copy.deepcopy()
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] User code traceback:
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/run_e4.py", line 294, in <module>
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     "graph-broken at every region boundary. Labelled variant; "
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/run_e4.py", line 195, in main
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     "managers graph-break the compiled region — a labelled variant only.")
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     return self.denoise_step(
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]   File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V0921 17:16:58.221000 22160 torch/_dynamo/symbolic_convert.py:574] [0/0] [__graph_breaks] 
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:305: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+W0921 17:18:29.820000 22160 torch/_inductor/utils.py:1446] [1/0] Not enough SMs to use max_autotune_gemm mode
+  first call (incl. compile): 103.7 s
+  e2e 549.6 ms  (ae_total unavailable — graph)
+  wrote /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260922_E4_pi0_reduce-overhead+step_only_N4
+
+--- N=10 ---
+  first call (incl. compile): 0.7 s
+  e2e 647.7 ms  (ae_total unavailable — graph)
+  wrote /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260922_E4_pi0_reduce-overhead+step_only_N10

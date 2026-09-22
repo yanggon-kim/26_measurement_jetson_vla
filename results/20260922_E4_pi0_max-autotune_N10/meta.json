@@ -147,14 +147,39 @@
   },
   "command": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant whole --steps 4,10 --warmup 20 --timed 100",
   "throttled": false,
-  "throttled_evidence": "GPU clock pinned min==max; gate recorded above",
+  "throttled_evidence": "the MAXN/16-SM/locked-clock gate ran before the run (see `gate`), and the GPU clock is pinned min==max so it cannot drop. NOTE: no tegrastats temperature log was taken for E4, so thermal throttling was not directly observable; `throttled: false` rests on the locked clock alone.",
   "wall_clock_total_s": 60.668,
   "control_frequency_hz": 1.648,
   "max_memory_allocated_bytes": 8910819840,
   "max_memory_reserved_bytes": 9365880832,
-  "raw_files": [],
+  "raw_files": [
+    {
+      "path": "raw/compile_and_stdout.log",
+      "sha256": "dfa676145d88b1b0b263eac97b275c77ced9a721aca4ed25da5eaabc299b7ee6",
+      "bytes": 287286,
+      "kind": "stdout",
+      "secrets_scan": "clean",
+      "committed": true,
+      "produced_by": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant whole --steps 4,10 --warmup 20 --timed 100"
+    },
+    {
+      "path": "latency_samples.csv",
+      "sha256": "a2cfccab66f2cada37479f43be12134994ec21e4fb5ea267504ea45b716f15fa",
+      "bytes": 3092,
+      "kind": "ncu-csv",
+      "secrets_scan": "clean",
+      "committed": true,
+      "produced_by": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant whole --steps 4,10 --warmup 20 --timed 100"
+    }
+  ],
   "notes": [
     "ae_layer[j] instrumentation is OFF in E4 (it costs the step it lands on ~2.6 ms \u2014 T002 review finding).",
     "Under CUDA graphs the per-region CUDA events may be absorbed into the graph; where ae_total is missing or implausible the slope over N is the per-step number (protocol \u00a72)."
-  ]
+  ],
+  "graph_break_events": 4,
+  "graph_break_reasons": [
+    "copy.deepcopy()"
+  ],
+  "recompile_events": 0,
+  "emc_hz_note": "emc_hz reads 0 in these runs: `sudo -n cat /sys/kernel/debug/...` returned empty under the driver's environment. The EMC clock was 3,199,000,000 Hz in T001/T002 on the same unchanged device state."
 }

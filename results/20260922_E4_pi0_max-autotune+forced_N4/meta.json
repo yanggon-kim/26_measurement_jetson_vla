@@ -149,14 +149,48 @@
   },
   "command": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant forced --steps 4,10 --warmup 20 --timed 100",
   "throttled": false,
-  "throttled_evidence": "GPU clock pinned min==max; gate recorded above",
+  "throttled_evidence": "the MAXN/16-SM/locked-clock gate ran before the run (see `gate`), and the GPU clock is pinned min==max so it cannot drop. NOTE: no tegrastats temperature log was taken for E4, so thermal throttling was not directly observable; `throttled: false` rests on the locked clock alone.",
   "wall_clock_total_s": 44.714,
   "control_frequency_hz": 2.236,
   "max_memory_allocated_bytes": 8910819840,
   "max_memory_reserved_bytes": 9384755200,
-  "raw_files": [],
+  "raw_files": [
+    {
+      "path": "raw/compile_and_stdout.log",
+      "sha256": "f0efc46fdd17074a54e77029f7a0bee44ca290cea30f01bedf49f042e433ee47",
+      "bytes": 2466365,
+      "kind": "stdout",
+      "secrets_scan": "clean",
+      "committed": true,
+      "produced_by": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant forced --steps 4,10 --warmup 20 --timed 100"
+    },
+    {
+      "path": "latency_samples.csv",
+      "sha256": "bfea8d1678eb4495a671ae7b3ce0a42dffe0d7a908d70d6812798113dee20895",
+      "bytes": 3146,
+      "kind": "ncu-csv",
+      "secrets_scan": "clean",
+      "committed": true,
+      "produced_by": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant forced --steps 4,10 --warmup 20 --timed 100"
+    },
+    {
+      "path": "autotune_winners.csv",
+      "sha256": "2ee4330d8d881f43ad9e53126d76e7060bfd03cf6860557998de12a4ada8fb1c",
+      "bytes": 67893,
+      "kind": "ncu-csv",
+      "secrets_scan": "clean",
+      "committed": true,
+      "produced_by": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode max-autotune --variant forced --steps 4,10 --warmup 20 --timed 100"
+    }
+  ],
   "notes": [
     "ae_layer[j] instrumentation is OFF in E4 (it costs the step it lands on ~2.6 ms \u2014 T002 review finding).",
     "Under CUDA graphs the per-region CUDA events may be absorbed into the graph; where ae_total is missing or implausible the slope over N is the per-step number (protocol \u00a72)."
-  ]
+  ],
+  "graph_break_events": 4,
+  "graph_break_reasons": [
+    "copy.deepcopy()"
+  ],
+  "recompile_events": 0,
+  "emc_hz_note": "emc_hz reads 0 in these runs: `sudo -n cat /sys/kernel/debug/...` returned empty under the driver's environment. The EMC clock was 3,199,000,000 Hz in T001/T002 on the same unchanged device state."
 }

@@ -1,0 +1,29 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+=== E4  mode=reduce-overhead  variant=cropcache  N=[4, 10] ===
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0"}
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+  per-step KV clone replaced by DynamicCache.crop(P) (labelled variant)
+
+--- N=4 ---
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:305: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+W0921 17:34:15.110000 23933 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
+  first call (incl. compile): 179.5 s
+  e2e 468.7 ms  (ae_total unavailable — graph)
+  wrote /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260922_E4_pi0_reduce-overhead+cropcache_N4
+
+--- N=10 ---
+V0921 17:36:34.481000 23933 torch/_dynamo/guards.py:3612] [0/1] [__recompiles] Recompiling function inner in /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/external_utils.py:66
+V0921 17:36:34.481000 23933 torch/_dynamo/guards.py:3612] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V0921 17:36:34.481000 23933 torch/_dynamo/guards.py:3612] [0/1] [__recompiles]     - 0/0: fn.__self__.config.num_inference_steps == 4             (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+  first call (incl. compile): 324.4 s
+  e2e 531.0 ms  (ae_total unavailable — graph)
+  wrote /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260922_E4_pi0_reduce-overhead+cropcache_N10
