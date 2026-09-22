@@ -32,3 +32,5 @@ CSV is the deliverable); `reports/E7_pi0_power.md` with W per rail per phase and
 committed under `raw/` and listed in `meta.json.raw_files` (E5: `.nsys-rep`, `.ncu-rep`, `torch.profiler` trace if
 taken; E7: raw tegrastats logs; all: command stdout), no committed file over 50 MB, repository-size lines in
 `STATUS.md` (protocol §6f). Self-review (§11).
+
+status: claimed 2026-09-22
