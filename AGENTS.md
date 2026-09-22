@@ -40,7 +40,7 @@ If a push fails, keep working: commit locally, note it at the top of `STATUS.md`
 ## What you write, and what you never touch
 - Yours: `env/`, `bench/`, `results/`, `reports/`, `STATUS.md`, and **one appended status block at the end
   of a task file**.
-- Not yours: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `analysis/`, and the body of any task file.
+- Not yours: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `analysis/`, and the body of any task file, and `ONBOARDING.md` / `HANDOFF.md` (the research side's own state files, tracked since 2026-09-22).
   If an instruction is wrong, impossible or ambiguous, do not edit it: say so in `STATUS.md` under
   "Questions for the research side", choose the most conservative interpretation, and continue with
   whatever does not depend on the answer. **One narrow exception, under the owner's direct standing
