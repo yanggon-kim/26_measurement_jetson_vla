@@ -426,6 +426,58 @@ target at `cudaProfilerStop` unless `--capture-range-end=stop` is passed.
 Historical, for the record: T002 was blocked until the reboot, because it would have run at half the
   SMs and half the GPU clock, so it should wait for the reboot.
 
+## Proposed task Q1 — which models are action-head bottlenecked? (owner request, 2026-09-22)
+
+**Queued, not started.** Runs after π0's phase characterisation and prefix optimisation.
+
+**Why.** The study assumes the action expert is the memory-bound phase worth moving into
+memory. Measured on π0, that holds only before optimisation. The three phases start almost
+balanced — **33.9 / 32.9 / 32.3 %** eager fp32 — and optimisation *unbalances* them:
+
+| region | eager fp32 | optimised | speedup | share before | share after |
+|---|---:|---:|---:|---:|---:|
+| vision | 241.31 | 99.92 | 2.42× | 33.9 % | 27.0 % |
+| `vlm_prefix` | 234.06 | 192.78 | **1.21×** | 32.9 % | **52.2 %** |
+| `ae_total` | 230.12 | 69.72 | **3.30×** | 32.3 % | **18.9 %** |
+
+Each factor is surgical — it moves one region and leaves the others within ±2 %: TF32 is
+**2.32× on vision alone**; compiling `denoise_step` is **2.31× on the expert alone**, and
+CUDA graphs a further **1.40×**; compiling `pg.forward` is **1.22× on `vlm_prefix` alone**.
+CUDA graphs fail outright on both `embed_image` and `pg.forward` (static-buffer overwrite).
+
+arXiv:2604.24447 reports the expert at 59 % of π0 on an AGX Orin and builds two
+optimisations (DP-Cache, V-AEFusion) on that. Their configuration is **uncompiled** —
+inferred from their own tables and confirmed against ours phase by phase within 11 % — and
+they never re-measure the split after the compilation their own Table 3 applies. So the
+premise is a property of the baseline, not of deployed inference.
+
+**The question.** Is there a model for which the premise holds under an *identical*
+treatment — identically optimised, or identically un-optimised? The controlling ratio is
+`N × cost_per_step / (vision + prefix + N × cost_per_step)`, so the prediction is that
+dominance tracks the denoising-step count far more than architecture: Diffusion Policy
+(N = 100, no VLM) ≫ π0 / π0.5 / SmolVLA (N = 10) ≫ GR00T (N = 4) ≫ ACT (no diffusion).
+If that is what we find, the premise is a statement about iteration count rather than about
+VLAs, and the study should either target high-N diffusion policies or target the VLM prefix.
+
+**Method.** The identical two-part iteration π0 received, per model: the paper-configuration
+run (`bench/paper_repro.py`), per-phase SM utilisation (`bench/phase_utilisation.py`),
+analytic operational intensity against our measured ridge of 180.57 FLOP/B, then the same
+one-factor-at-a-time ladder (`bench/opt_ladder.py`). One row per model: action-head share
+eager, action-head share optimised, and the per-factor speedup per phase.
+
+**Blocked on T006's model registry.** `bench/` is π0-specific in six ways, and the three
+wrap points the ladder needs (`embed_image`, `pg.forward`, `denoise_step`) differ per model
+— `regions.py`'s `ae_layer[j]` records nothing at all for SmolVLA, whose layer body is
+inlined in `SmolVLMWithExpertModel.forward` (verified). Comparison targets for AGX Orin are
+saved from the authors' leaderboard in `scratch/T004/vla_leaderboard_20260922.json`:
+ACT 23.93, GR00T 256.22, SmolVLA 777.38, π0 920.58, OpenVLA 951.56, π0.5 2994.02,
+Diffusion Policy 4379.08 ms.
+
+**One thing to confirm:** the owner named GR00T **N1.5 / N1.6**. Isaac-GR00T is installed
+and verified at **N1.7** (`376ba890`, `env/setup_groot.sh`). Whether N1.5/N1.6 checkpoints
+and configs are obtainable at that commit is unchecked; if they are not, that is reported
+rather than substituted.
+
 ## Questions for the research side
 
 1. **DRAM traffic.** `docs/02_protocol.md` §3.3 and E6 assume ncu's `DRAM Throughput` /
