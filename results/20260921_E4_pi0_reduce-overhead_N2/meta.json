@@ -1,0 +1,158 @@
+{
+  "experiment": "E4",
+  "task": "T003",
+  "date_utc": "2026-09-22T00:04:37Z",
+  "model": "pi0 (LeRobot implementation)",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint_sha256": "31633cfa2131c058ac1a00fddec9f5731ca17842af46d802cc75fea0f725a386",
+  "weight_integrity": {
+    "checked": 400,
+    "matched": 400,
+    "checkpoint_file_sha256_source": "huggingface_hub cache",
+    "verdict": "real weights"
+  },
+  "precision": "bfloat16",
+  "compile_mode": "reduce-overhead",
+  "compile_variant": "whole",
+  "regions_instrumented": false,
+  "regions_note": "Region instrumentation is OFF: bench/regions.py uses Python context managers and dynamo cannot inline contextlib.__enter__, so every region boundary becomes a graph break and an instrumented compiled run measures a graph compilation never produced. ms/step comes from the slope over N (protocol \u00a72).",
+  "compile_info": {
+    "variant": "whole",
+    "mode": "reduce-overhead",
+    "compiled": "PI0Pytorch.sample_actions",
+    "compile_call_s": 1.763
+  },
+  "compile_first_call_s": 1.493,
+  "inductor_sm_gate_patched": null,
+  "deepcopy_hoisted": false,
+  "checkpoint_config_as_shipped": {
+    "compile_model": true,
+    "compile_mode": "max-autotune",
+    "gradient_checkpointing": true,
+    "num_inference_steps": 10,
+    "dtype": "bfloat16"
+  },
+  "num_denoise_steps": 2,
+  "action_horizon": 50,
+  "prefix_tokens": 816,
+  "suffix_tokens": 51,
+  "tokens_detail": {
+    "prefix_tokens_P": 816,
+    "prefix_tokens_valid": 533,
+    "suffix_tokens_S": 51,
+    "suffix_tokens_valid": 51,
+    "n_images": 3,
+    "image_shapes": [
+      [
+        1,
+        3,
+        224,
+        224
+      ],
+      [
+        1,
+        3,
+        224,
+        224
+      ],
+      [
+        1,
+        3,
+        224,
+        224
+      ]
+    ],
+    "image_masks": [
+      true,
+      true,
+      false
+    ],
+    "language_tokens": 48,
+    "language_tokens_valid": 21,
+    "state_dim_padded": 32,
+    "chunk_size": 50
+  },
+  "region_parameter_bytes": {
+    "vision_tower": 1649769408,
+    "multi_modal_projector": 9445376,
+    "vlm_language_model": 5017214976,
+    "action_expert": 623005696,
+    "action_in_proj": 135168,
+    "action_out_proj": 131200,
+    "total_model": 8892369984,
+    "total_params": 4028019472,
+    "state_proj": 135168,
+    "action_time_mlp_in": 8392704,
+    "action_time_mlp_out": 4198400
+  },
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "seed": "not set; latency is shape-determined and the observation is fixed",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_hz": 1300500000,
+  "gate": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0"
+  },
+  "jetson_clocks": "applied before the run; GPU locked min==max",
+  "emc_hz": 0,
+  "jetpack": "6.2.3+b81",
+  "l4t": "R36.5.0",
+  "cuda": "12.6",
+  "torch": "2.8.0",
+  "torchvision": "0.23.0",
+  "triton": "3.4.0",
+  "numpy": "1.26.4",
+  "transformers": "5.3.0",
+  "python": "3.10.12",
+  "venv": "/home/yanggon/venvs/pi0/bin/python",
+  "bench_commit": "6474fa9f2bb140db75ea00b0ea527872334566f7",
+  "bench_files_sha256": {
+    "analyze_e3.py": "3b491c033b47e2f27b992278862db29624241adb0de7f12c0500610d7baf9285",
+    "collect_platform.py": "8d0993d0142fd6190a49d838c5b33405c53835021e15364f9364228385952458",
+    "common.py": "26600ae14fbeea95dc1aa64824979005a30e92c94c7dde398aa3cb77cc5517d5",
+    "fetch_fixture.py": "544a9c9efb9959733f0844702cd5df172a751bb59772f4d4d980bd4f5edab7ba",
+    "finalize_raw.py": "f59d628a1a5ea220c0879da785f08251f93e6dff4c01ea6b3d3621b74fdfda45",
+    "gpu_clock_probe.py": "115200b2b26d3127e8bd583a65d480faad6338b477acaa003076c006cee4837a",
+    "hw_constants.py": "90dc6cb69469496494230ac28163c6ed23ee3683efa3446e3112298deaaa6576",
+    "make_meta_e0.py": "7e3581494c5913bf2ef6e17fd5e920e0f45f289ec2b8462571f7048f3fc4c6ce",
+    "measure_preprocess.py": "eb2e3ecfd23d68da9e4953181117da46e65bb7f43f68ece8a9c0fac34f92c686",
+    "ncu_columns.py": "d09d747491e214ea940a43b819232b82358717094f02e80396a575c767625051",
+    "ncu_toy.py": "5cf3a61be8b12482ecbd4bc0816a71b4ba6bb1f5aa06156168b2753f43f1b8d4",
+    "pi0_common.py": "a63ad5c47bd0d4634a4b87daef3056e3d705a7d012ea4e377d7b540a04eb97b0",
+    "probe_e3.py": "fd9f38f9a1a11dfbf6039b7f545f762da79740c0730e659c8b33311d8d971ee7",
+    "regen_floor.py": "addbe71c0bcf145cde552fbc479ccb9e902c77c9f383da2a8e3f493ad11f8632",
+    "regions.py": "76231880f704a458c3c4459956fe719c8853db6cb3a90d52ce7fcf381b59d6b0",
+    "run_e3.py": "0b503651c847f1ca8607f622f4ec7064a2a0ed98fe9559571a1cf6288c45c5ad",
+    "run_e4.py": "a04c4aba1063c9fae86c94bf3975a8d19001ff382b4b0a3db5209411c0604a6e",
+    "verify_stack.py": "c6ad5d8ec9a8dc5169045579a76a1af747347f3797455e1ea5bc2bdb5426c793"
+  },
+  "fixture": {
+    "dataset": "HuggingFaceVLA/libero",
+    "episode_index": 0,
+    "frame_index": 0,
+    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate"
+  },
+  "command": "TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py --mode reduce-overhead --variant whole --steps 1,2,4,6,8,10 --warmup 20 --timed 100",
+  "throttled": false,
+  "throttled_evidence": "GPU clock pinned min==max; gate recorded above",
+  "wall_clock_total_s": 46.511,
+  "control_frequency_hz": 2.15,
+  "max_memory_allocated_bytes": 8910819840,
+  "max_memory_reserved_bytes": 9353297920,
+  "raw_files": [],
+  "notes": [
+    "ae_layer[j] instrumentation is OFF in E4 (it costs the step it lands on ~2.6 ms \u2014 T002 review finding).",
+    "Under CUDA graphs the per-region CUDA events may be absorbed into the graph; where ae_total is missing or implausible the slope over N is the per-step number (protocol \u00a72)."
+  ]
+}

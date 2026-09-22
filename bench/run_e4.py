@@ -6,8 +6,13 @@ Variants (`--variant`):
   forced       `whole`, with Inductor's SM-count gate defeated **in this process only**, so
                Triton GEMM templates become available. Never edits the installed package.
   nodeepcopy   `whole`, with the per-step `copy.deepcopy(past_key_values)` at
-               modeling_pi0.py:919 hoisted out. T002 measured that line at 5.68 ms/step
-               (10.4 % of a step); it is also a plausible reason CUDA graphs fail to capture.
+               modeling_pi0.py:919 simply deleted. **This is expected to FAIL and is kept as
+               the negative control**: the expert's forward appends its S=51 suffix K/V to
+               the cache even though the caller passes use_cache=False, so on step 2 the
+               cache is 918 long against an 867 mask. The copy is load-bearing.
+  cropcache    the cheap equivalent: skip the 15 MB clone, let the expert append, then
+               `DynamicCache.crop(P)` back afterwards. Same semantics, no clone. This is the
+               variant that says what the deepcopy actually costs.
 
 Compile logs (`graph_breaks`, `recompiles`) go to the run's `raw/`. Timing uses the same
 regions and CUDA events as T002, except that under CUDA graphs the per-region events are
@@ -123,6 +128,43 @@ def no_per_step_deepcopy(policy):
         M.copy = saved
 
 
+@contextlib.contextmanager
+def crop_instead_of_deepcopy(policy):
+    """Replace the per-step 15 MB KV clone with a crop back to the prefix length.
+
+    `denoise_step` deep-copies the cache because the expert's forward appends its S suffix
+    K/V to it (verified: without the copy the cache reaches P+2S and the attention mask no
+    longer broadcasts). Cropping afterwards is semantically the same and is a slice, not a
+    15 MB clone.
+    """
+    import types
+    import lerobot.policies.pi0.modeling_pi0 as M
+
+    def _identity(x):
+        return x
+
+    shim = types.ModuleType("copy_shim")
+    shim.deepcopy = _identity
+    saved_copy, saved_step = M.copy, policy.model.denoise_step
+    m = policy.model
+
+    def denoise_step(self, *a, _orig=saved_step, **kw):
+        pkv = kw.get("past_key_values") or (a[2] if len(a) > 2 else None)
+        n_before = pkv.get_seq_length() if pkv is not None else None
+        out = _orig(*a, **kw)
+        if pkv is not None and n_before is not None:
+            pkv.crop(n_before)          # drop the suffix K/V the expert appended
+        return out
+
+    M.copy = shim
+    m.denoise_step = types.MethodType(denoise_step, m)
+    try:
+        yield
+    finally:
+        M.copy = saved_copy
+        m.denoise_step = saved_step
+
+
 def compile_policy(policy, mode: str, variant: str):
     """Returns (policy, info). Compilation happens before any timing."""
     info = {"variant": variant, "mode": mode}
@@ -142,7 +184,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", required=True, choices=MODES)
     ap.add_argument("--variant", default="whole",
-                    choices=["whole", "step_only", "forced", "nodeepcopy"])
+                    choices=["whole", "step_only", "forced", "nodeepcopy", "cropcache"])
     ap.add_argument("--steps", default="4,10")
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=100)
@@ -178,7 +220,10 @@ def main() -> int:
         print(f"  Inductor SM gate patched in-process: {forced_names}")
     if args.variant == "nodeepcopy":
         stack.enter_context(no_per_step_deepcopy(policy))
-        print("  per-step copy.deepcopy(past_key_values) hoisted out (labelled variant)")
+        print("  per-step copy.deepcopy removed — NEGATIVE CONTROL, expected to fail")
+    if args.variant == "cropcache":
+        stack.enter_context(crop_instead_of_deepcopy(policy))
+        print("  per-step KV clone replaced by DynamicCache.crop(P) (labelled variant)")
 
     with stack:
         policy, cinfo = compile_policy(policy, args.mode, args.variant)
@@ -252,6 +297,7 @@ def main() -> int:
                 "compile_first_call_s": round(first_call, 3),
                 "inductor_sm_gate_patched": forced_names,
                 "deepcopy_hoisted": args.variant == "nodeepcopy",
+                "kv_clone_replaced_by_crop": args.variant == "cropcache",
                 "checkpoint_config_as_shipped": shipped,
                 "num_denoise_steps": n, "action_horizon": cfg.chunk_size,
                 "prefix_tokens": tokens["prefix_tokens_P"],
