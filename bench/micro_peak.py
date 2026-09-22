@@ -30,7 +30,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pi0_common as P  # noqa: E402
-from common import REPO, sh_out, software_versions, summarize, write_json  # noqa: E402
+from common import (REPO, collect_raw, sh_out, software_versions,  # noqa: E402
+                    summarize, write_json)
 
 SPEC_GBPS = 204.8
 SPEC_BF16_TFLOPS = 42.0
@@ -79,8 +80,14 @@ def timed(fn, warmup: int = 20, n: int = 100):
     return [a.elapsed_time(b) for a, b in ev], d0, dev_sample()
 
 
+ALL_SAMPLES: list[dict] = []          # every timed call, dumped to raw/ (protocol §3.5)
+
+
 def row(kernel, dtype, shape, samples, d0, d1, *, nbytes=0, flops=0,
         correct="", rel_err="", note="") -> dict:
+    for i, v in enumerate(samples):
+        ALL_SAMPLES.append({"kernel": kernel, "dtype": dtype, "shape": shape,
+                            "iter": i, "ms": v})
     s = summarize(samples)
     sec = s["median_ms"] / 1e3
     return {"kernel": kernel, "dtype": dtype, "shape": shape,
@@ -317,6 +324,12 @@ def main() -> int:
     }
     write_json(out / "hw_constants.json", hw)
 
+    with (out / "raw" / "latency_samples.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["kernel", "dtype", "shape", "iter", "ms"])
+        w.writeheader()
+        w.writerows(ALL_SAMPLES)
+    print(f"  wrote {len(ALL_SAMPLES)} per-iteration samples to raw/latency_samples.csv")
+
     sw = software_versions()
     write_json(out / "meta.json", {
         "experiment": "E1", "task": "T005",
@@ -342,7 +355,7 @@ def main() -> int:
                               f"tj_C_after of latency_summary.csv.",
         "measured_peaks": hw["measured_peaks"],
         "efficiency_fractions": hw["efficiency_fractions"],
-        "raw_files": [],
+        "raw_files": collect_raw(out, "bench/micro_peak.py"),
         "notes": [
             "Fills the `measured` rows every floor.csv has left empty since T002.",
             "Bandwidth counts read+write for clone and read+read+write for axpy.",
@@ -355,18 +368,29 @@ def main() -> int:
             "bf16 peaks at n=2048 and falls off at n=8192. That is not throttling (the clock "
             "never moved and throughput rises with repetition); it is cuBLAS kernel "
             "selection at large n.",
-            "ANOMALY, unresolved and deliberately NOT used as the constant: the first two "
-            "bandwidth measurements taken in this session reached 183-190 GB/s on the axpy "
-            "kernel, and one of them alternated cleanly between ~189 and ~146 GB/s on "
-            "successive repeats of identical work on identical buffers. That mode could not "
-            "be reproduced afterwards in roughly 30 further attempts. Ruled out by direct "
-            "test: GPU clock (pinned at 1300.5 MHz throughout, sampled per row), EMC clock "
-            "(pinned 3199 MHz, FreqOverride=1), die temperature (148 GB/s at 37 C, colder "
-            "than the 39 C of the fast run), competing processes (none), accumulated value "
-            "drift in the accumulator, buffer reuse vs reallocation, caching-allocator pool "
-            "size and allocation ordering, and re-applying jetson_clocks immediately before "
-            "measuring. The peak reported here is the reproducible one. Worth re-checking "
-            "after the power-mode reboots, which clear whatever system state this was.",
+            "BIMODAL BANDWIDTH, unexplained, and the reason `peak_memory_bandwidth_GBps` is "
+            "defined as the best value observed rather than this run's: this device sits in "
+            "one of two memory-performance modes. A slow mode gives ~150-165 GB/s and a fast "
+            "mode ~180-190 GB/s, a ratio of about 1.21, and the shift applies UNIFORMLY to "
+            "every memory-bound kernel measured (axpy, out-of-place add, scalar multiply, "
+            "copy, allocating clone all move together). A mode persists across many "
+            "consecutive process launches -- both were observed holding for tens of runs -- "
+            "so it is system state, not per-process. Ruled out by direct test: GPU clock "
+            "(pinned 1300.5 MHz, sampled per row), EMC clock (pinned 3199 MHz with "
+            "FreqOverride=1, sampled before, during and after the timed loop), die "
+            "temperature (148 GB/s at 37 C, colder than a 189 GB/s run), competing processes, "
+            "accumulated value drift in the accumulator, buffer reuse vs reallocation, "
+            "caching-allocator pool size and allocation ordering, identical device pointers "
+            "across runs, and a 4-minute idle. Re-check after the power-mode reboots.",
+            "Consequence for every floor in this campaign: a bandwidth-derived floor carries "
+            "roughly +/-10 % depending on which mode the device was in. Any comparison "
+            "between a measured kernel and its floor must use a peak measured in the same "
+            "session. E2 was measured in the fast mode against the fast-mode peak, so the "
+            "two are self-consistent.",
+            "Independent corroboration that the fast mode is the true peak: measured against "
+            "the slow-mode peak of 161.75 GB/s, E2's gate_proj and up_proj came out at "
+            "103-104 % of 'peak', which is impossible. Against the fast-mode peak they fall "
+            "below 100 %.",
         ],
     })
     print(f"\nwrote {out}")

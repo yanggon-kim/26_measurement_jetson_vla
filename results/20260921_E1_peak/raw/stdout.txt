@@ -1,0 +1,51 @@
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0"}
+
+=== bandwidth ===
+  add_out_of_place   3.22 GB    17.092 ms    188.5 GB/s  ( 92.0 % of spec)
+  fill_            1.07 GB     6.446 ms    166.6 GB/s  ( 81.3 % of spec)
+  mul_scalar_out_of_place   2.15 GB    11.435 ms    187.8 GB/s  ( 91.7 % of spec)
+  axpy_inplace     3.22 GB    17.034 ms    189.1 GB/s  ( 92.3 % of spec)
+  copy_out_of_place   2.15 GB    12.476 ms    172.1 GB/s  ( 84.0 % of spec)
+  copy_fp32        2.15 GB    12.745 ms    168.5 GB/s  ( 82.3 % of spec)
+  mul_scalar_fp32   2.15 GB    11.455 ms    187.5 GB/s  ( 91.5 % of spec)
+  sum_reduction    1.07 GB    10.437 ms    102.9 GB/s  ( 50.2 % of spec)
+  clone_allocating   0.54 GB     3.283 ms    163.5 GB/s  ( 79.8 % of spec)
+  clone_allocating   2.15 GB    12.880 ms    166.7 GB/s  ( 81.4 % of spec)
+  clone_allocating   4.29 GB    25.431 ms    168.9 GB/s  ( 82.5 % of spec)
+
+=== compute ===
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+  bfloat16  1024x1024x1024         0.106 ms    20.27 TFLOP/s  rel=1.661e-03
+  float16   1024x1024x1024         0.114 ms    18.79 TFLOP/s  rel=2.541e-04
+  float32   1024x1024x1024         0.664 ms     3.23 TFLOP/s  rel=0.000e+00
+  tf32      1024x1024x1024         0.146 ms    14.71 TFLOP/s  rel=0.000e+00
+  int8      1024x1024x1024         0.222 ms     9.68 TFLOP/s  rel=0.000e+00
+  bfloat16  2048x2048x2048         0.511 ms    33.64 TFLOP/s  rel=1.656e-03
+  float16   2048x2048x2048         0.600 ms    28.65 TFLOP/s  rel=2.070e-04
+  float32   2048x2048x2048         5.067 ms     3.39 TFLOP/s  rel=0.000e+00
+  tf32      2048x2048x2048         1.242 ms    13.83 TFLOP/s  rel=0.000e+00
+  int8      2048x2048x2048         1.683 ms    10.21 TFLOP/s  rel=0.000e+00
+  bfloat16  4096x4096x4096         4.665 ms    29.46 TFLOP/s  rel=1.662e-03
+  float16   4096x4096x4096         5.015 ms    27.41 TFLOP/s  rel=2.078e-04
+  float32   4096x4096x4096        40.182 ms     3.42 TFLOP/s  rel=0.000e+00
+  tf32      4096x4096x4096         8.728 ms    15.75 TFLOP/s  rel=0.000e+00
+  int8      4096x4096x4096        13.231 ms    10.39 TFLOP/s  rel=0.000e+00
+  bfloat16  8192x8192x8192        41.535 ms    26.47 TFLOP/s  rel=1.656e-03
+  float16   8192x8192x8192        52.645 ms    20.89 TFLOP/s  rel=2.074e-04
+  float32   8192x8192x8192       316.201 ms     3.48 TFLOP/s  rel=0.000e+00
+  tf32      8192x8192x8192       122.756 ms     8.96 TFLOP/s  rel=0.000e+00
+  int8      8192x8192x8192       104.694 ms    10.50 TFLOP/s  rel=0.000e+00
+
+  measured peak bandwidth :   189.1 GB/s   (92.3 % of the 204.8 spec)  [axpy_inplace]
+  measured peak bf16      :   33.64 TFLOP/s (80.1 % of the 42.0 spec)  [2048x2048x2048]
+  measured ridge point    :   177.9 FLOP/B  (spec-derived ~205)
+  GPU clock during the run: [1300500000] Hz -> throttled=False
+  peak GPU die temperature: 56.375 C
+
+  the two [ASSUMPTION] fractions in docs/00_context.md, now measured:
+    eff_flops_frac  assumed 0.40  measured 0.801   (2.00x the assumption)
+    eff_bw_frac     assumed 0.70  measured 0.923   (1.32x the assumption)
+  wrote 2050 per-iteration samples to raw/latency_samples.csv
+
+wrote results/20260921_E1_peak

@@ -52,15 +52,28 @@ For every linear layer of the π0 expert, time `y = x @ W.T` with x of shape `[S
 | layer | K (in) | N (out) | weight bytes (bf16) |
 |---|---|---|---|
 | q_proj | 1024 | 2048 | 4.19 MB |
-| kv_proj (k and v) | 1024 | 512 | 1.05 MB |
+| k_proj | 1024 | 256 | 0.52 MB |
+| v_proj | 1024 | 256 | 0.52 MB |
 | o_proj | 2048 | 1024 | 4.19 MB |
 | mlp_gate, mlp_up | 1024 | 4096 | 8.39 MB each |
 | mlp_down | 4096 | 1024 | 8.39 MB |
 
+> **[CORRECTED ON DEVICE — T005, 2026-09-21]** This table previously carried a single row
+> `kv_proj (k and v) | 1024 | 512 | 1.05 MB`. The expert is **multi-query**
+> (`num_key_value_heads = 1`, `head_dim = 256`), so k and v are two *separate* `1024 -> 256`
+> projections, not one fused `1024 -> 512`. The combined weight bytes are unchanged, but it is
+> two kernel launches rather than one — and at S = 51, where E2 finds these layers are
+> launch- and weight-streaming-bound rather than FLOP-bound, the launch count is what matters.
+> Confirmed twice: from the checkpoint's own module shapes (`k_proj.weight [256, 1024]`, T002)
+> and from the Inductor autotune log, which shows `36 x mm(51x1024, 1024x256)` = 18 layers x 2
+> separate projections (T003).
+
 Also attention for S = 51 queries (8 heads × 256) against P + S = 867 keys with one KV head (SDPA), RMSNorm, RoPE,
 GeLU, softmax and an elementwise add at these sizes. For each: kernel time (CUDA events over 1,000 calls), the
 **time per call when calls are issued back to back from Python** (this exposes launch overhead), achieved GB/s
-(weight bytes ÷ time) and FLOP/s, and the **ratio to the bandwidth floor** (weight bytes ÷ 204.8 GB/s).
+(weight bytes ÷ time) and FLOP/s, and the **ratio to the bandwidth floor** (weight bytes ÷ the **measured** peak from E1, not the
+204.8 GB/s spec — protocol §8; see the bandwidth-variability note in
+`reports/E1_E2_microbench.md`).
 Questions to answer in the report: at which S does a layer stop being launch/latency-bound; what is the
 CPU-side cost of launching one small kernel on this machine (µs); how does CUDA-graph replay change it.
 

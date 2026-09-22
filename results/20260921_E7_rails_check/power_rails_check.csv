@@ -1,0 +1,21 @@
+load,rail,mean_mW,median_mW,min_mW,max_mW,n,above_idle_mW,description
+idle,VDDQ_VDD2_1V8AO,407.0,403.0,403,706,600,0.0,GPU idle; the baseline every other row is measured against
+idle,VDD_CPU_CV,1225.6,1196.0,1195,2391,600,0.0,GPU idle; the baseline every other row is measured against
+idle,VDD_GPU_SOC,4787.0,4783.0,4781,5580,600,0.0,GPU idle; the baseline every other row is measured against
+idle,VIN_SYS_5V0,4139.4,4133.0,4133,4536,600,0.0,GPU idle; the baseline every other row is measured against
+idle,SUM_OF_FOUR,10559.0,,,,,0.0,"arithmetic sum of the four rails — valid only if they are independent, which is what this run tests"
+clone_256mib,VDDQ_VDD2_1V8AO,5398.8,5435,403,5443,631,4991.8,clone() of a 256 MiB tensor in a loop — DRAM traffic through the copy engine
+clone_256mib,VDD_CPU_CV,2717.3,2788,1195,3186,631,1491.7,clone() of a 256 MiB tensor in a loop — DRAM traffic through the copy engine
+clone_256mib,VDD_GPU_SOC,23354.6,23496,4783,23496,631,18567.6,clone() of a 256 MiB tensor in a loop — DRAM traffic through the copy engine
+clone_256mib,VIN_SYS_5V0,11420.9,11427,4133,11528,631,7281.5,clone() of a 256 MiB tensor in a loop — DRAM traffic through the copy engine
+clone_256mib,SUM_OF_FOUR,42891.6,,,,,32332.6,"arithmetic sum of the four rails — valid only if they are independent, which is what this run tests"
+copy_kernel_256mib,VDDQ_VDD2_1V8AO,5628.9,5636.0,4629,5636,628,5221.9,z = 2*x over 256 MiB in a loop — the same DRAM traffic as a kernel
+copy_kernel_256mib,VDD_CPU_CV,2733.7,2788.0,1593,3186,628,1508.1,z = 2*x over 256 MiB in a loop — the same DRAM traffic as a kernel
+copy_kernel_256mib,VDD_GPU_SOC,26766.6,26682.0,21124,27080,628,21979.6,z = 2*x over 256 MiB in a loop — the same DRAM traffic as a kernel
+copy_kernel_256mib,VIN_SYS_5V0,11982.0,12014.0,10500,12014,628,7842.6,z = 2*x over 256 MiB in a loop — the same DRAM traffic as a kernel
+copy_kernel_256mib,SUM_OF_FOUR,47111.2,,,,,36552.2,"arithmetic sum of the four rails — valid only if they are independent, which is what this run tests"
+gemm_8192_bf16,VDDQ_VDD2_1V8AO,5889.3,5928,3824,6029,975,5482.3,8192^2 bf16 GEMM in a loop — almost pure tensor-core compute
+gemm_8192_bf16,VDD_CPU_CV,2325.3,2784,1591,3182,975,1099.7,8192^2 bf16 GEMM in a loop — almost pure tensor-core compute
+gemm_8192_bf16,VDD_GPU_SOC,54686.0,56062,19936,56857,975,49899.0,8192^2 bf16 GEMM in a loop — almost pure tensor-core compute
+gemm_8192_bf16,VIN_SYS_5V0,12859.2,12923,9692,13024,975,8719.8,8192^2 bf16 GEMM in a loop — almost pure tensor-core compute
+gemm_8192_bf16,SUM_OF_FOUR,75759.8,,,,,65200.8,"arithmetic sum of the four rails — valid only if they are independent, which is what this run tests"

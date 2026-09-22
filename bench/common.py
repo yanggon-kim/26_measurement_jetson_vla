@@ -76,6 +76,53 @@ def raw_file_entry(path: Path, base: Path, kind: str, produced_by: str,
     }
 
 
+_SECRET_RE = re.compile(
+    rb"(hf_[A-Za-z0-9]{30,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}"
+    rb"|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+    rb"|(?i:authorization|bearer|api[-_]?key|password|passwd|secret|token)\s*[:=]\s*\S{8,})")
+
+
+def scan_for_secrets(path: Path, limit: int = 64 << 20) -> str:
+    """Protocol §3.5: every raw file is scanned before it is committed.
+
+    Profiler reports and captured stdout can contain the process environment. Returns
+    "clean", "MATCH: ..." or a reason the scan could not run.
+    """
+    try:
+        if path.stat().st_size > limit:
+            return f"skipped (>{limit >> 20} MB)"
+        blob = path.read_bytes()
+    except OSError as e:
+        return f"unreadable: {e}"
+    m = _SECRET_RE.search(blob)
+    if m:
+        return f"MATCH: {m.group(0)[:24]!r}... REVIEW BEFORE COMMITTING"
+    return "clean"
+
+
+def collect_raw(outdir: Path, produced_by: str, kind_of=None,
+                dirs=("raw", "ncu", "nsys")) -> list[dict]:
+    """Every file under `<outdir>/raw/`, hashed, sized and scanned, as meta.json wants it.
+
+    Written because `"raw_files": []` was hard-coded and shipped three times (found in the
+    T002 review, reintroduced verbatim in run_e4.py, found again in the T003 review). Scripts
+    call this instead of writing the list by hand, so the failure cannot recur silently.
+    """
+    base = Path(outdir)
+    out = []
+    for d in dirs:
+        root = base / d
+        if not root.exists():
+            continue
+        for f in sorted(root.rglob("*")):
+            if not f.is_file():
+                continue
+            kind = kind_of(f) if kind_of else f.suffix.lstrip(".") or "file"
+            out.append(raw_file_entry(f, base, kind, produced_by,
+                                      secrets_scan=scan_for_secrets(f)))
+    return out
+
+
 # --------------------------------------------------------------------------- device state
 
 
