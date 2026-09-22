@@ -14,20 +14,35 @@ attribute a gain to the wrong cause. Two concrete cases:
 
 This runs ONE ladder in which each rung differs from the one above it by exactly one
 factor, and reports every region, so the attribution is read off the table instead of
-argued:
+argued.
 
-  0  eager, matmul_precision=highest                    baseline
-  1  eager, matmul_precision=high                       + TF32
-  2  compile denoise_step, no CUDA graphs               + compilation, expert only
-  3  compile denoise_step, reduce-overhead              + CUDA graphs, expert only
-  4  compile sample_actions, no CUDA graphs             + compilation, whole model
-  5  compile sample_actions, reduce-overhead            + CUDA graphs, whole model
-  6  compile sample_actions, max-autotune                + Triton autotuning
+**Why the compiled rungs can still be split per region.** A region boundary *inside* a
+compiled callable forces a graph break, which is why a compiled `sample_actions` cannot be
+instrumented at all. But `bench/regions.py` wraps three specific callables from the
+outside — `paligemma_with_expert.embed_image` (`vision`), `paligemma_with_expert.forward`
+(`vlm_prefix`, prefill branch) and `PI0Pytorch.denoise_step` (`ae_step[i]`). Compiling
+those same callables and instrumenting afterwards puts every region boundary *outside* a
+compiled graph, so the split survives. That is the trick T003's `step_only` used for the
+expert; rungs 4-7 extend it to vision and the VLM prefix, which no run has done before —
+T003 could only report their fixed cost falling 485.1 -> 433.6 ms (1.12x) as one number.
 
-Rungs 0-3 carry NVTX/CUDA-event regions, so `vision`, `vlm_prefix` and `ae_total` are
-separated. Rungs 4-5 cannot: a region boundary inside a compiled `sample_actions` forces a
-graph break, so those rungs report end-to-end only and say so. That asymmetry is the reason
-`step_only` exists at all.
+    0  eager, matmul_precision=highest              baseline
+    1  eager, matmul_precision=high                 + TF32
+    2  compile denoise_step, no CUDA graphs         + compilation   (action expert)
+    3  compile denoise_step, reduce-overhead        + CUDA graphs   (action expert)
+    4  ... also compile embed_image, no graphs      + compilation   (vision)
+    5  ... also embed_image, reduce-overhead        + CUDA graphs   (vision)
+    6  ... also compile pg.forward, no graphs       + compilation   (VLM prefix)
+    7  ... also pg.forward, reduce-overhead         + CUDA graphs   (VLM prefix)
+    8  compile sample_actions, reduce-overhead      LeRobot's own path, e2e only
+    9  compile sample_actions, max-autotune         + autotuning,    e2e only
+
+Rungs 0-7 are CUMULATIVE on one policy: rung k+1 adds one more compiled callable to the
+same model, so each marginal speedup is attributable to that callable alone, and all of
+them keep their regions. Rung 7 is therefore a fully compiled model WITH a per-region
+split, which `tasks/T004` says does not exist yet. Rungs 8-9 need a fresh policy — they
+compile the outer `sample_actions`, which subsumes the other three — and report
+end-to-end only; compare them with rung 7's e2e, never with its per-region numbers.
 
     python bench/opt_ladder.py --outdir results/<date>_E4c_pi0_opt_ladder --steps 4,10
 """
@@ -48,30 +63,46 @@ import regions as R  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E402
                     software_versions, summarize, write_json)
 
-# (key, label, precision, compile_target, compile_mode, regions_possible)
+# (key, label, precision, [(attr_owner, attr_name, mode, clone_out)], fresh, regions_ok)
+#
+# clone_out exists for ONE measured reason. `embed_image` is called once per camera —
+# three times per inference — and a reduce-overhead CUDA graph reuses a single static
+# output buffer, so camera 1's embedding is overwritten by camera 2 before the caller has
+# consumed it:
+#     RuntimeError: accessing tensor output of CUDAGraphs that has been overwritten by a
+#     subsequent run
+# Cloning the graph's output makes it measurable. The clone is ~1 MB per camera and is
+# counted in the rung's own time, so the number is honest about what it cost; the rung is
+# labelled so nobody reads it as a free win.
+# attr_owner: "model" = policy.model, "pg" = policy.model.paligemma_with_expert
+NOGRAPH = "max-autotune-no-cudagraphs"
+GRAPHS = "reduce-overhead"
 RUNGS = [
-    ("eager_fp32",      "eager (matmul_precision=highest)",       "highest", None,             None,              True),
-    ("eager_tf32",      "+ TF32 (matmul_precision=high)",        "high",    None,             None,              True),
-    ("step_compile",    "+ compile denoise_step (no CUDA graphs)","high",    "denoise_step",   "max-autotune-no-cudagraphs", True),
-    ("step_graphs",     "+ CUDA graphs on denoise_step",         "high",    "denoise_step",   "reduce-overhead", True),
-    ("whole_compile",   "+ compile sample_actions (no graphs)",   "high",    "sample_actions", "max-autotune-no-cudagraphs", False),
-    ("whole_graphs",    "+ CUDA graphs on sample_actions",       "high",    "sample_actions", "reduce-overhead", False),
-    ("whole_autotune",  "+ Triton autotuning (max-autotune)",     "high",    "sample_actions", "max-autotune",    False),
+    ("eager_fp32",   "eager (matmul_precision=highest)",          "highest", [], False, True),
+    ("eager_tf32",   "+ TF32 (matmul_precision=high)",            "high",    [], False, True),
+    ("ae_compile",   "+ compile denoise_step (no CUDA graphs)",   "high",
+     [("model", "denoise_step", NOGRAPH, False)], True, True),
+    ("ae_graphs",    "+ CUDA graphs on denoise_step",             "high",
+     [("model", "denoise_step", GRAPHS, False)], True, True),
+    ("vis_compile",  "+ compile embed_image (no CUDA graphs)",    "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", NOGRAPH, False)], True, True),
+    ("vis_graphs",   "+ CUDA graphs on embed_image (output cloned)", "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True)], True, True),
+    ("vlm_compile",  "+ compile pg.forward (no CUDA graphs)",     "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
+      ("pg", "forward", NOGRAPH, False)], True, True),
+    ("vlm_graphs",   "+ CUDA graphs on pg.forward",               "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
+      ("pg", "forward", GRAPHS, False)], True, True),
+    ("whole_graphs", "compile sample_actions (LeRobot's path)",   "high",
+     [("model", "sample_actions", GRAPHS, False)], True, False),
+    ("whole_autotune", "+ Triton autotuning (max-autotune)",      "high",
+     [("model", "sample_actions", "max-autotune", False)], True, False),
 ]
 
 
-def time_e2e(policy, batch, warmup: int, timed: int) -> tuple[dict, list[float]]:
-    fn = lambda: policy.predict_action_chunk(batch)      # noqa: E731
-    for _ in range(warmup):
-        fn()
-    torch.cuda.synchronize()
-    s = []
-    for _ in range(timed):
-        t0 = time.perf_counter()
-        fn()
-        torch.cuda.synchronize()
-        s.append((time.perf_counter() - t0) * 1e3)
-    return summarize(s), s
+def owner_of(policy, which: str):
+    return policy.model if which == "model" else policy.model.paligemma_with_expert
 
 
 def main() -> int:
@@ -93,14 +124,11 @@ def main() -> int:
     verified = None
 
     for N in steps:
-        for key, label, prec, target, mode, regions_ok in want:
+        for key, label, prec, targets, fresh, regions_ok in want:
             print(f"\n=== N={N}  {key}: {label}", flush=True)
-            # A fresh policy per rung. torch.compile is not reversible and a compiled
-            # callable left on the module would contaminate every rung below it.
+            # Every rung that compiles anything loads a fresh policy: torch.compile is not
+            # reversible, so a rung cannot be un-done to build the next one on top.
             policy, cfg, shipped = P.load_policy(num_inference_steps=N)
-            # Verify the weights once. assert_real_weights re-reads the checkpoint and
-            # compares 400 tensors; the guard is against from_pretrained silently
-            # returning random weights, which cannot change between rungs of one process.
             if verified is None:
                 verified = P.assert_real_weights(policy)
                 print("weights:", json.dumps(verified), flush=True)
@@ -109,46 +137,91 @@ def main() -> int:
             batch, _, _ = P.build_batch(policy, fx)
             torch.set_float32_matmul_precision(prec)
 
-            compile_s = None
-            if target:
-                m = policy.model
-                t0 = time.time()
-                setattr(m, target, torch.compile(getattr(m, target), mode=mode))
-                compile_s = round(time.time() - t0, 3)
+            compiled_desc, compile_s, fails = [], 0.0, []
+            for which, attr, mode, clone_out in targets:
+                ownr = owner_of(policy, which)
+                try:
+                    t0 = time.time()
+                    c = torch.compile(getattr(ownr, attr), mode=mode)
+                    if clone_out:
+                        def _cloned(*a, _c=c, **k):
+                            r = _c(*a, **k)
+                            return r.clone() if torch.is_tensor(r) else r
+                        setattr(ownr, attr, _cloned)
+                    else:
+                        setattr(ownr, attr, c)
+                    compile_s += time.time() - t0
+                    compiled_desc.append(f"{which}.{attr}@{mode}"
+                                         + ("+clone" if clone_out else ""))
+                except Exception as e:                            # noqa: BLE001
+                    fails.append(f"{which}.{attr}@{mode}: {type(e).__name__}: {str(e)[:160]}")
+            compile_s = round(compile_s, 3) if targets else ""
 
+            # instrument AFTER compiling, so every region boundary is OUTSIDE a compiled
+            # callable and the per-region split survives (the step_only trick, generalised)
             rec = undo = None
             if regions_ok:
                 rec = R.Recorder(enable_layers=False, layers_in_step=0)
                 undo = R.instrument(policy, rec)
 
-            for _ in range(args.warmup):
-                policy.predict_action_chunk(batch)
-            torch.cuda.synchronize()
-            if rec is not None:
-                rec.reset()
-                rec.start()
-            st, s = time_e2e(policy, batch, 0, args.timed)
-            if rec is not None:
-                rec.stop()
-            reg = rec.results_ms() if rec is not None else {}
+            err = None
+            try:
+                for _ in range(args.warmup):
+                    policy.predict_action_chunk(batch)
+                torch.cuda.synchronize()
+                # Reset the recorder EVERY iteration and take the median across them, as
+                # bench/run_e3.py:90-102 does. results_ms() sums repeats of a name, so
+                # starting it once and reading the total gives the sum over the whole timed
+                # loop: a first version reported vision 499.9 / vlm_prefix 1171.8 /
+                # ae_total 1707.0 ms against an end-to-end of 409.5 ms over 5 iterations.
+                per_iter, s_ = [], []
+                for _ in range(args.timed):
+                    if rec is not None:
+                        rec.reset()
+                        rec.start()
+                    t0 = time.perf_counter()
+                    policy.predict_action_chunk(batch)
+                    torch.cuda.synchronize()
+                    s_.append((time.perf_counter() - t0) * 1e3)
+                    if rec is not None:
+                        rec.stop()
+                        per_iter.append(rec.results_ms())
+                st = summarize(s_)
+                reg = {}
+                if per_iter:
+                    for k in {k for d in per_iter for k in d}:
+                        vals = [d[k] for d in per_iter if k in d]
+                        reg[k] = summarize(vals)["median_ms"]
+            except Exception as e:                                # noqa: BLE001
+                err = f"{type(e).__name__}: {str(e)[:200]}"
+                st, s_, reg = {"median_ms": float("nan"), "p5_ms": float("nan"),
+                               "p95_ms": float("nan"), "n": 0}, [], {}
+                print(f"  NOT MEASURED: {err}", flush=True)
             if undo:
                 undo()
 
             row = {"N": N, "rung": key, "label": label, "matmul_precision": prec,
-                   "compile_target": target or "", "compile_mode": mode or "",
-                   "regions": "on" if regions_ok else "off (graph break)",
-                   "compile_call_s": compile_s if compile_s is not None else "",
-                   "e2e_median_ms": round(st["median_ms"], 4),
-                   "e2e_p5_ms": round(st["p5_ms"], 4), "e2e_p95_ms": round(st["p95_ms"], 4),
-                   "n": st["n"]}
+                   "compiled": ";".join(compiled_desc), "regions": "on" if regions_ok
+                   else "off (compiled sample_actions cannot be instrumented)",
+                   "compile_call_s": compile_s,
+                   "e2e_median_ms": "" if err else round(st["median_ms"], 4),
+                   "e2e_p5_ms": "" if err else round(st["p5_ms"], 4),
+                   "e2e_p95_ms": "" if err else round(st["p95_ms"], 4),
+                   "n": st["n"], "error": err or ""}
             for k in ("vision", "vlm_prefix", "ae_total"):
                 row[k + "_ms"] = round(reg[k], 4) if k in reg else ""
             rows.append(row)
-            samples += [{"N": N, "rung": key, "iter": i, "ms": v} for i, v in enumerate(s)]
-            print(f"  e2e {st['median_ms']:8.2f} ms   vision {row['vision_ms'] or '—':>10} "
-                  f"vlm_prefix {row['vlm_prefix_ms'] or '—':>10} "
-                  f"ae_total {row['ae_total_ms'] or '—':>10}"
-                  + (f"   (compile {compile_s} s)" if compile_s else ""), flush=True)
+            samples += [{"N": N, "rung": key, "iter": i, "ms": v} for i, v in enumerate(s_)]
+            if not err:
+                print(f"  e2e {st['median_ms']:8.2f} ms   vision {row['vision_ms'] or '—':>10} "
+                      f"vlm_prefix {row['vlm_prefix_ms'] or '—':>10} "
+                      f"ae_total {row['ae_total_ms'] or '—':>10}"
+                      + (f"   (compile {compile_s} s)" if targets else ""), flush=True)
+            for f_ in fails:
+                notes.append(f"N={N} {key}: {f_}")
+                print(f"  compile failed: {f_}", flush=True)
+            if err:
+                notes.append(f"N={N} {key}: {err}")
             if not regions_ok:
                 notes.append(f"N={N} {key}: regions off — a region boundary inside a "
                              f"compiled sample_actions forces a graph break, so only "
@@ -170,7 +243,10 @@ def main() -> int:
             for k in ("e2e_median", "vision", "vlm_prefix", "ae_total"):
                 col = k + "_ms"
                 a, b = prev.get(col), cur.get(col)
-                e[k + "_speedup"] = round(a / b, 4) if a and b else ""
+                try:
+                    e[k + "_speedup"] = round(float(a) / float(b), 4) if a and b else ""
+                except (TypeError, ValueError, ZeroDivisionError):
+                    e[k + "_speedup"] = ""
             eff.append(e)
     if eff:
         with (out / "opt_ladder_marginal.csv").open("w", newline="") as f:
