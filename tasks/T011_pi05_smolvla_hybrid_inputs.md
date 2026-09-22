@@ -1,8 +1,11 @@
 # T011 — π0.5 and SmolVLA: inputs for the hybrid GPU + PIM model (E11)  · priority P2 · depends on: T006 (step 1), T010 · run right after T006 (task order table in `docs/01_measurement_plan.md`)
 
-Everything T010 did for π0, for **π0.5** (openpi PyTorch, checkpoint `pi05_libero`, S = 50, 18 expert layers,
-hidden 1024, default N = 10) and **SmolVLA** (lerobot at the pinned commit, the checkpoint used in T006, S = 50,
-16 expert layers — self-attention and cross-attention layers, hidden 720, default N = 10). One model completely
+Everything T010 did for π0, for **π0.5** (the implementation and checkpoint T006 step 1 used — LeRobot's port
+by default, S = 50, 18 expert layers, hidden 1024, default N = 10; π0.5 uses AdaRMS, so the `PiGemmaRMSNorm`
+conditioned branch and gated residuals T010 found unused for π0 are expected to be live here — record the branch)
+and **SmolVLA** (lerobot at the pinned commit, the checkpoint used in T006, S = 50, 16 expert layers —
+self-attention and cross-attention layers, hidden 720, default N = 10). Fix the two-stream concurrency harness
+first (protocol §13.7 two-stream rule: one Python thread, two streams); T010's two-stream rows are not reusable. One model completely
 before the other; π0.5 first. Reuse T010's `bench/` scripts (`host_segments.py`, `xfer_latency.py`,
 `bw_hog.py`, `phase_loops.py`; add `--model`), the environments, fixtures and best compiled modes of T006.
 Methods and schema: `docs/02_protocol.md` §13; content: `docs/01_measurement_plan.md` E11.

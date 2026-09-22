@@ -20,8 +20,13 @@
   **last** item of the last MAXN session try `sudo nvpmodel -m 3`; if it asks for a reboot, decline and record
   that; if it switches, re-apply `jetson_clocks`, measure, then return with `sudo nvpmodel -m 0` (if *that* asks
   for a reboot, decline, write it at the top of `STATUS.md` and stop — the human restores MAXN). `MODE_30W` and
-  `MODE_15W` are measured only in a session the human has started in that mode after a reboot, announced by a
-  task; never request them yourself. Write "next: resume E7 at mode <id>" in `STATUS.md` before any switch.
+  `MODE_15W` are measured only in a session the human has started in that mode after a reboot; never request
+  them yourself. **Updated 2026-09-22:** the owner committed directly to the two reboots (your `STATUS.md`
+  standing item), so for π0 the capped half of E7 is **required**, not optional: MAXN first (T004), then the
+  human reboots into `MODE_30W`, then `MODE_15W`, and you re-run only the E7 power points and the short E3
+  latency check listed in T004 step 4b in each. Write "next: resume E7 at mode <id>" in `STATUS.md` before any
+  switch, and re-run the §1 gate (mode, SM count, `jetson_clocks`, `cur_freq`) in the new mode — record the
+  mode's SM count and clocks per run; a capped-mode number is never presented as an Orin number without its mode.
 - Save `sudo jetson_clocks --show`, `cat /etc/nv_tegra_release`, `dpkg -l | grep -E 'nvidia-jetpack|cuda-toolkit|tensorrt|cudnn'`,
   `nvcc --version`, `python -c "import torch;print(torch.__version__, torch.version.cuda)"`, kernel version, and the EMC
   (memory) clock: `sudo cat /sys/kernel/debug/bpmp/debug/clk/emc/rate` (expect 3,199 MHz = LPDDR5-6400).
@@ -63,11 +68,12 @@ record the substitution in `meta.json.notes`.
 ### 3.1 Nsight Systems (`nsys`) — timeline
 ```
 nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi -f true \
-     -o results/<run>/raw/<name> python bench/<script>.py ...
+     -o scratch/<run>/<name> python bench/<script>.py ...
 ```
 with `torch.cuda.profiler.start()/stop()` around **1–3 steady-state inferences** (after the §2 warm-up, which
-stays outside the window) — never a whole benchmark loop: the `.nsys-rep` is committed (§3.5) and must stay
-small (§6). With nsys 2024.5.4 on this device (T001) `--capture-range=cudaProfilerApi` defaults to
+stays outside the window) — never a whole benchmark loop: the binary stays in `scratch/` (it is **not**
+committed on this device, §3.5 exception) but its CSV exports are, and the `cuda_gpu_trace` export of a long
+window is large (§6). With nsys 2024.5.4 on this device (T001) `--capture-range=cudaProfilerApi` defaults to
 `--capture-range-end=stop-shutdown`: the target is killed (exit 143) at `cudaProfilerStop` and everything the script
 would print or write afterwards is lost — add **`--capture-range-end=stop`** whenever the script must run to
 completion. Known flag problems: overwrite is
@@ -75,7 +81,7 @@ completion. Known flag problems: overwrite is
 versions reject it as ambiguous — drop it if so. Then export and commit the CSVs:
 ```
 nsys stats -r cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_api_sum,nvtx_sum,nvtx_kern_sum,nvtx_gpu_proj_trace,cuda_kern_exec_sum \
-     -f csv -o results/<run>/nsys results/<run>/raw/<name>.nsys-rep
+     -f csv -o results/<run>/nsys scratch/<run>/<name>.nsys-rep
 ```
 and the full kernel trace for one inference (`-r cuda_gpu_trace`). `nvtx_sum` covers CPU ranges only; the
 kernels-per-region attribution comes from `nvtx_kern_sum` / `nvtx_gpu_proj_trace`. Report names differ between
@@ -185,14 +191,21 @@ grid and block size):
   (`--query-metrics` lists none; an explicit `--metrics dram__…` returns `n/a`; placeholder columns read 0). Never
   quote them. **[Orin] `Memory Throughput` is the L2 throughput** (it equals `lts__throughput…` on the raw page), not
   DRAM utilisation: write it as "Memory (L2) Throughput" in every table and never read it as off-chip bandwidth use;
-- **[Orin] off-chip bytes (substitute for the DRAM counters; answer to question 1 of 2026-09-21).** Keep, per
-  kernel, the L2 sysmem-miss sector counters of the raw page — `lts__t_sectors_*_sysmem_*_lookup_miss.sum`, read and
-  write operations separately, and the all-operations total — and report `offchip_read_bytes = read-miss sectors ×
-  32 B`, labelled ***measured (L2 sysmem-miss sectors)***. It is accepted for E5 / E5b / E6 under these conditions:
+- **[Orin] off-chip bytes (substitute for the DRAM counters; answer to question 1 of 2026-09-21, corrected
+  2026-09-22 after T005).** Two *different* counters of the raw page, both kept per kernel:
+  `offchip_read_bytes  = lts__t_sectors_aperture_sysmem_op_read_lookup_miss.sum × 32 B` and
+  `offchip_write_bytes = lts__t_sectors_aperture_sysmem_op_write.sum × 32 B` (the **total** write-sector
+  counter, *not* `…op_write_lookup_miss`, which is identically 0 on this device because the L2 is
+  write-back / write-allocate and records every write sector as a lookup hit); `offchip_bytes` = their sum,
+  labelled ***measured (L2 sysmem sectors)***. Validated in T005 on four kernels with analytically known traffic:
+  reads 1.000–1.009, writes 1.001–1.008 (`results/20260922_E2_ae_kernels/ncu/sysmem_miss_validation.csv`). Also
+  keep the all-operations miss total for reference. Accepted for E5 / E5b / E6 under these conditions:
   (1) the **analytic** bytes (from tensor shapes) are always reported next to it and stay the primary x-axis input of
-  the roofline; (2) it is a **read-traffic** estimator until E1 validates the write path (T005 step "substitute
-  validation"); (3) achieved GB/s = these bytes ÷ the kernel's **nsys** duration of the same configuration, never
-  ÷ ncu `Duration`; (4) the 32 B sector size and the validation ratio are cited from the run that established them;
+  the roofline; (2) a kernel whose write bytes come out 0 with a non-empty output is a parsing error, not a result;
+  (3) achieved GB/s = these bytes ÷ the kernel's **nsys** duration of the same configuration, never
+  ÷ ncu `Duration`; (4) the 32 B sector size and the validation ratios are cited from the run that established them;
+  (5) ncu's kernel replay restores device state between passes, so L2 residency across launches cannot be seen
+  under ncu (T005 case (d)); do not read full misses on a small working set as "the L2 does not retain";
 - **per-pipe utilisation** (raw page): `sm__inst_executed_pipe_<p>.avg.pct_of_peak_sustained_active` for
   `<p>` ∈ {`lsu`, `fma`, `alu`, `xu`, `adu`, `cbu`, `fp16`} and `...pct_of_peak_sustained_elapsed` for
   {`lsu`, `fma`, `alu`, `xu`}. **[Orin]** the `fp16` pipe column does not exist — half-precision tensor work appears
@@ -242,7 +255,17 @@ written *in addition to* the raw file, never instead of it. The research side re
 device agent never thought to summarise.
 
 - **Raw, committed under `results/<run>/raw/`** (tracked; raw and derived stay in the same result directory):
-  - `.nsys-rep`, and the `.sqlite` that nsys derives from it (rule in §6e);
+  - ~~`.nsys-rep`, and the `.sqlite` that nsys derives from it (rule in §6e)~~ — **exception since 2026-09-22
+    (T010): the nsys binary report and its `.sqlite` are NOT committed on this device.** nsys snapshots
+    system-wide process metadata into the report, including the environment of processes it did not launch,
+    and on this machine that includes a session token of the agent's own harness; capturing under `env -i`
+    does not remove it (verified). Rule: keep both binaries in `scratch/<run>/`, list them in
+    `meta.json.raw_files` with `committed: false`, the scan verdict (pattern class and byte offset only —
+    never the matched bytes) and the regenerating command; commit instead the **full** set of `nsys stats`
+    CSV exports of §3.1 (`cuda_gpu_trace`, `cuda_gpu_kern_sum`, `cuda_api_sum`, `nvtx_sum`,
+    `nvtx_gpu_proj_trace`, and `cuda_gpu_mem_time_sum` / `osrt_sum` when taken) under `results/<run>/nsys/`,
+    compressed above 1 MB (§6b), each scanned clean and listed in `raw_files`. The trace CSV is the raw
+    record the research side re-analyses. `.gitignore` enforces this (`results/**/*.nsys-rep`, `*.sqlite`);
   - `.ncu-rep` of every ncu run, including failed or partial ones that still carry information;
   - the **full** SASS and PTX dumps from `cuobjdump`, `-res-usage` output, and the extracted / JIT-compiled
     `.cubin` files of the kernels analysed (copy them from the Inductor / Triton cache into `raw/cubin/`; the
@@ -271,9 +294,13 @@ device agent never thought to summarise.
   `env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN -u GITHUB_TOKEN -u GH_TOKEN HF_HUB_OFFLINE=1 nsys profile ...`.
   (3) Before compressing, scan each raw file:
   `strings -n 8 <file> | grep -nE 'hf_[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY'`
-  and also grep for the literal content of any token file you use (e.g. `~/.cache/huggingface/token`). A hit
+  and also grep for the literal content of any token file you use (e.g. `~/.cache/huggingface/token`), and for
+  every token or session variable in the agent's own environment (`env | grep -iE 'token|secret|key'`). A hit
   means the file is **not committed**: delete it, fix the environment, capture again, and note it in
-  `STATUS.md`. Record `secrets_scan: "clean"` per file in `meta.json.raw_files`.
+  `STATUS.md`. Record `secrets_scan: "clean"` per file in `meta.json.raw_files`; a failed scan is recorded as
+  the pattern class and byte offset only — **the matched bytes never go into `meta.json` or any committed
+  file** (this happened once, T010, and was caught before the push). Binary profiler reports that embed the
+  system-wide environment (nsys, see above) stay uncommitted permanently; their derived exports are committed.
 - A temporary, untracked `scratch/` directory (ignored) is where uncompressed profiler output, caches and
   over-size captures live before they are compressed into `results/<run>/raw/`. Keep the uncompressed originals
   in `scratch/<run>/` until the research side says the result is accepted.
@@ -363,9 +390,10 @@ c. **If a compressed file is still over 50 MB:** first shorten the capture (fewe
    the unsplit file. More than 8 parts (≈ 360 MB) for one capture means the capture is badly designed: go back
    to (a) and, if it is truly irreducible, ask under "Questions for the research side" before committing it.
 d. **No Git LFS** unless a task says so.
-e. **The nsys `.sqlite`** is derivable from the `.nsys-rep` (`nsys export --type sqlite` / first `nsys stats`
-   call): commit it only if it is under 50 MB compressed; otherwise record the regenerating command in
-   `meta.json.raw_files` (`committed: false`) and keep it in `scratch/`.
+e. **The nsys `.sqlite` and `.nsys-rep` are not committed on this device** (§3.5 exception, 2026-09-22: they
+   embed a session token). Keep both in `scratch/<run>/`, record the regenerating command in
+   `meta.json.raw_files` (`committed: false`), and commit the full CSV exports instead. The 50 MB rule then
+   applies to the compressed `cuda_gpu_trace` CSV: shorten the capture window before splitting it.
 f. **Report sizes after every task** in `STATUS.md` under "Repository size": the output of `du -sh results/`,
    `du -sh .git`, `git count-objects -vH`, and the five largest committed files
    (`git ls-files -z | xargs -0 du -b | sort -nr | head -5`). **If the repository (`size-pack`) approaches
@@ -383,7 +411,7 @@ Here the write partition of `README.md` decides instead:
 | `venv/` | an untracked virtual environment (one per model) outside git or under the ignored `.venv/`; how to rebuild it, with exact versions, goes in `env/` |
 | `models/` (source checkouts, weights) | untracked checkout paths outside the repository; repo URL, commit, checkpoint name and sha256 go in `meta.json` |
 | `scripts/` | `bench/` |
-| `profiles/` (`.nsys-rep`, `.ncu-rep`) and `traces/` (Chrome JSON) | `results/<run>/raw/` — **committed**, compressed per §6; path + sha256 + bytes in `meta.json.raw_files` |
+| `profiles/` (`.nsys-rep`, `.ncu-rep`) and `traces/` (Chrome JSON) | `results/<run>/raw/` — **committed**, compressed per §6; path + sha256 + bytes in `meta.json.raw_files`. Exception: `.nsys-rep` / `.sqlite` stay in `scratch/` (§3.5); their CSV exports go to `results/<run>/nsys/` |
 | temporary files, caches (Inductor, Triton), uncompressed originals | `scratch/<run>/` — ignored, never committed |
 | `analysis/` data (CSV, JSON, inventories) | `results/<run>/` |
 | `analysis/` prose (reports, root-cause write-ups) | `reports/` |
@@ -424,8 +452,13 @@ floor_ms         = max(floor_mem_ms, floor_compute_ms);  bound = whichever term 
 - FLOPs = 2 × (tokens) × (parameters in linear layers touched) + attention FLOPs, from the real shapes (S, P);
 - two rows per region: `peak_source = spec` (204.8 GB/s, 42 TFLOP/s) and `peak_source = measured` (E1).
 Cross-check for π0: 623 MB of expert weights (+ KV ≈ 629 MB) ÷ 204.8 GB/s = 3.15 ms per step; 38.7 GFLOPs ÷
-42 TFLOP/s = 0.92 ms; so the step is memory-bound with a 3.15 ms floor. Every report then states
-`gap_ratio = measured ÷ floor` per region and decomposes the gap (§10). Reading: < 1.5× near-optimal, 1.5–3×
+42 TFLOP/s = 0.92 ms; so the step is memory-bound with a 3.15 ms floor. **Measured on the loaded model (T002,
+T005):** 638.0 MB (623.01 MB weights + 15.04 MB KV) → 3.115 ms at spec, **3.403 ms at the measured
+187.47 GB/s**; 38.29 GFLOP → 0.91 / 1.13 ms. Since T005, `gap_ratio` is reported against **both** rows, and the
+headline uses the measured-peak row; because bandwidth varies run to run by up to 1.19× with clocks constant
+(`reports/E1_E2_microbench.md`), a measured-vs-floor ratio should use a peak taken in the same session where one
+exists (`bench/micro_peak.py` is cheap: run it at the start of a profiling session and cite that value). Every
+report then states `gap_ratio = measured ÷ floor` per region and decomposes the gap (§10). Reading: < 1.5× near-optimal, 1.5–3×
 moderate, 3–10× substantial software overhead, > 10× a structural problem (launch-bound, idle GPU, too little
 parallelism).
 
@@ -475,6 +508,12 @@ kernels (E5b); (9) roofline points (E6); (10) root-cause chain (§10); (11) self
 | `sudo ncu`: command not found | sudo's `secure_path`; use `sudo $(which ncu)` |
 | script output missing after an nsys run, exit code 143 | nsys killed the target at `cudaProfilerStop`; add `--capture-range-end=stop` (§3.1) |
 | tegrastats log has two sessions in it | `--logfile` appends; delete the file first (§4) |
+| tegrastats keeps running after the harness exits; logs of tens of thousands of lines; background load grows between runs | `Popen(["sudo","tegrastats",…]).terminate()` signals the sudo wrapper, not the root process. Stop it with `sudo tegrastats --stop` or kill the child by pid (`bench/common.py:stop_tegrastats()`, T010); check `pgrep tegrastats` is empty before every timed run |
+| every call measured under `torch.profiler` is ~30 % slower, including calls after the profiler detached | CUPTI attach cost on this device (needs root too). Count kernels and time them in two separate passes; never take a latency from a profiled process (T010) |
+| a compiled model reports 5+ graph breaks, per-region times under `torch.compile` look like eager | `bench/regions.py` context managers (`contextlib.__enter__`) are not inlined by dynamo: every region boundary becomes a graph break. Compile with regions off and take ms/step from the slope (§2); per-region under compilation comes from nsys NVTX ranges or from the `step_only` variant (T003 §4.1) |
+| bandwidth peak differs by up to 1.19× between processes with clocks and temperature constant | unexplained (T005); re-measure the peak in the same session and quote the spread with any floor ratio (§9) |
+| `clone()` of a contiguous tensor produces no kernel for ncu | it dispatches to `cudaMemcpyAsync` (copy engine); use an elementwise kernel with the same traffic (T005) |
+| ncu shows full L2 misses on a working set that fits the 4 MB L2, identical counters on two back-to-back launches | ncu replays each kernel and restores device state between passes; L2 retention is invisible under ncu (§3.3 (5)) |
 | memory rail missing from tegrastats | expected on this board; sample the four rails from sysfs (§4) |
 | `torch.cuda.is_available()` false after a `pip install` in a model environment | pip replaced the Jetson CUDA wheel with PyPI's CPU-only `torch…+cpu` (it prefers a manylinux wheel over the index's `linux_aarch64` one). Install the three CUDA wheels by full URL with `--no-deps` (`env/setup.sh`), install model repositories with `--no-deps`, and **re-check `torch.__version__`, `torch.version.cuda` and `is_available()` after every install step** |
 | Inductor logs "Not enough SMs to use max_autotune_gemm mode" | Inductor's `is_big_gpu` check (`torch/_inductor/utils.py`) compares `multi_processor_count` with a fixed minimum (`min_sms = 68` for CUDA devices; confirmed in the installed torch 2.8.0 by T001 at MAXN). The Orin has 16, so it fires **in every power mode**: `max-autotune` then runs without Triton GEMM templates (ATen / cuBLAS GEMM, other autotuning and CUDA graphs still apply). It is a property of the stack: report it; see T003 for the labelled override variant |
@@ -624,6 +663,10 @@ Throughput = completed inferences ÷ wall time of a back-to-back loop ≥ 60 s. 
 activities share the GPU: **two processes**, or **one process with two CUDA streams** (`torch.cuda.Stream`; try a
 high-priority stream for the short work and record whether the priority argument is accepted). Report the
 latency distribution (median, p95, max) of the short activity alone and under concurrency, not only the mean.
+**Two-stream rule (added 2026-09-22 after T010):** both activities are issued from **one** Python thread onto
+two streams (interleave the launches, or drive the long activity as CUDA-graph replays), never from a second
+Python thread — T010's two-stream numbers (1.79–1.91×) are confounded by GIL contention and by the short
+activity sleeping through its 2 ms pauses, and are not used. The two-process result is the primary one.
 
 ### 13.8 `model_inputs.csv` — the machine-readable hand-off (every E11 result directory has one)
 Long format, one row per (quantity, key, variant, statistic), UTF-8, comma-separated, header exactly:

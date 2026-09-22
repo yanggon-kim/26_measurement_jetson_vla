@@ -111,7 +111,7 @@ model's default N (π0, SmolVLA: 10; GR00T: 4):
    protocol §3.3), SM and memory (= L2, protocol §3.3) throughput, off-chip bytes from the L2 sysmem-miss sectors,
    the memory-bound / compute-bound / balanced split of kernel time. Never unfiltered; one step, not N steps.
    Outputs: `ncu/*_details.csv`, `ncu/*_raw.csv` (full exports), `ncu/columns.txt`, `ncu/kernels.csv`,
-   `ncu/region_utilisation.csv`, and the raw `.nsys-rep` / `.ncu-rep` under `raw/` (protocol §3.5, §6).
+   `ncu/region_utilisation.csv`, the raw `.ncu-rep` under `raw/` and the full nsys CSV exports under `nsys/` (protocol §3.5, §6; the nsys binaries are not committed on this device — §3.5 exception).
 Questions to answer: **of the time one denoising step takes, how much is kernels executing and how much is the
 GPU waiting for the CPU? While kernels execute, how occupied are the SMs, which pipes are busy, and what do the
 warps stall on?** The region-weighted SM occupancy of the action-expert phase is the number to set against the

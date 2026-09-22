@@ -1,6 +1,7 @@
 # T007 — π0 instruction-level analysis of the action-expert kernels (E5b)  · priority P1 · depends on: T004 (step 2), T005 (E2 script)
 
-Model: π0 (openpi PyTorch), S = 51, eager and the best compiled mode of T003. Follow
+Model: π0 — LeRobot's π0 as in T002–T005 (`lerobot @ f0d2b37beb`, `lerobot/pi0_libero_finetuned_v044`), S = 51, eager and
+`reduce-overhead` (T003's best stock mode). Off-chip bytes per protocol §3.3's two-counter rule (2026-09-22). Follow
 `docs/03_instruction_level_analysis.md` end to end; it is self-contained.
 1. Targets (§1): the GEMM / GEMV kernels behind q, kv, o, gate/up, down at S = 51, the attention kernel if it is
    in the top-5 of `ae_step`, anything else > 10 % of `ae_step` kernel time → `sass/targets.csv`.

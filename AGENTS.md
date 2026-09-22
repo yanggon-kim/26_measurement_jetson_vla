@@ -43,7 +43,12 @@ If a push fails, keep working: commit locally, note it at the top of `STATUS.md`
 - Not yours: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/`, `analysis/`, and the body of any task file.
   If an instruction is wrong, impossible or ambiguous, do not edit it: say so in `STATUS.md` under
   "Questions for the research side", choose the most conservative interpretation, and continue with
-  whatever does not depend on the answer.
+  whatever does not depend on the answer. **One narrow exception, under the owner's direct standing
+  instruction (2026-09-21):** you may correct a *factual* statement in `docs/00_context.md` or
+  `docs/01_measurement_plan.md` that your own measurement has shown to be wrong (a number, a shape, a
+  ~~struck~~ assumption), marked in place with the task and date, and disclosed in the report, the task's status
+  block and the commit message — as T002–T005 did. Rules, schemas, acceptance criteria and task bodies stay
+  the research side's; propose changes to those in `STATUS.md`.
 
 ## Workflow for every task
 1. `git pull --rebase`. Pick the first open task **in the task-order table at the top of
@@ -73,11 +78,13 @@ If a push fails, keep working: commit locally, note it at the top of `STATUS.md`
   without its power mode is not a result.
 - **Commit the raw data. We want as much raw data as possible.** Prefer committing a raw file over summarising
   it; summaries are *in addition to* raw data, never instead of it. Every run's raw output goes into
-  `results/<run>/raw/` and is committed: `.nsys-rep` (and its `.sqlite` when small enough), `.ncu-rep`, full
-  SASS / PTX dumps and the analysed `.cubin` files, raw tegrastats logs, `torch.profiler` traces, command
-  stdout / stderr, per-iteration latency samples, and the full ncu CSV exports. Each is listed in `meta.json`
-  with path, sha256 and bytes (and, if compressed, the tool, level and the hash + size of the original).
-  Protocol §3.5 has the list, §5 the schema.
+  `results/<run>/raw/` and is committed: `.ncu-rep`, full SASS / PTX dumps and the analysed `.cubin` files, raw
+  tegrastats logs, `torch.profiler` traces, command stdout / stderr, per-iteration latency samples, the full ncu
+  CSV exports and the full nsys CSV exports. **One exception (2026-09-22): the nsys binary `.nsys-rep` and its
+  `.sqlite` are never committed on this device** — they embed the system-wide process environment, including a
+  session token; they stay in `scratch/` and are listed with `committed: false` (protocol §3.5). Each committed
+  file is listed in `meta.json` with path, sha256 and bytes (and, if compressed, the tool, level and the hash +
+  size of the original). Protocol §3.5 has the list, §5 the schema.
 - **Size is managed, not forbidden** (protocol §6, binding): GitHub rejects any file over 100 MB and the whole
   push with it. Design captures small (1–3 inferences for nsys, one filtered range for ncu), compress with
   `zstd -19`, keep every committed file under 50 MB (shorten the capture first; split with `split -b 45M` +

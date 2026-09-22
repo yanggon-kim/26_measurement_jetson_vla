@@ -94,6 +94,34 @@ measures them; its `model_inputs.csv` (protocol §13.8) is what the research sid
 | `cpu_util` | the assumption that the CPU is free to drive the memory-side command stream | not modelled |
 | `p_mean_W` (`<phase>/<rail>`) | GPU / module power charged to the host segments and to the prefix in the energy model | 20 W |
 
+## What E11 (T010) and E1/E2 (T005) measured for the table above, 2026-09-22
+
+Consolidated hand-off: `results/20260922_E11_pi0_inputs/model_inputs.csv` (1,589 rows, checker exit 0);
+report `reports/E11_pi0_hybrid_inputs.md`; peaks `results/20260922_E1_peak/hw_constants.json`.
+
+| quantity | assumed above | measured (π0, MAXN, bf16) |
+|---|---|---|
+| kernels per host segment | 1 (attention 2) | 9–10 for the norms / RoPE, 2 for GeGLU / residual, 7 for attention — ~35 launches per layer eager |
+| `t_launch_per_kernel` | 20 µs | ~29 µs single-kernel op, ~62 µs `F.linear`, shape-independent while launch-bound |
+| `achieved_tflops` / `achieved_bw_GBps` fractions | 0.4 / 0.7 | 0.806 / 0.915 of spec (33.85 TFLOP/s, 187.47 GB/s; ridge 180.6 FLOP/B); bandwidth varies 1.19× run to run |
+| `t_host_layer` (six segments) | 0.16 ms | **1.502 ms eager**, 0.177 ms as one CUDA graph per layer, 0.085 ms as one compiled sequence; per-segment compilation is slower than eager for 5 of 9 segments |
+| `t_step_extra` | 0.08 ms | 2.115 ms eager (`suffix_embed` 1.43, `final_norm_out_proj` 0.59, `euler_update` 0.10) |
+| `xfer_latency_fit` | a = 0, 143 GB/s | pinned: **a = 40 µs, 36 GB/s** either direction; pageable 59–74 µs, 8–14 GB/s; zero-copy via `cudaMallocManaged` works |
+| `t_sync` | 0 | 10.6 µs idle sync, 59 µs kernel round trip, **109 µs stream handoff**; the CPU blocks, not spins |
+| `kv_bytes_total`, `kv_copied_bytes_per_step`, `t_kv_materialise` | 15–16 MB, 0, 0 | 15,040,512 B (533 of 816 tokens valid); **the whole cache is deep-copied every step, 5.5–5.7 ms**; materialise 0.48–0.58 ms |
+| `t_vision`, `t_vlm_prefix`, `prefix_latency_fit` | 110 + 258 ms, P fixed | 241.6 + 234.4 ms eager, constant to 0.15 % over 1–3 images × 3 prompts because the input format pads to 816 always; no P slope exists |
+| `gpu_idle_frac_ae_total` | unknown | **84 %** eager at N = 4 and N = 10 (vision / prefix: 1–2 %); 969 kernels per step, 17 % GEMMs |
+| `prefix_slowdown` under memory pressure | 1.0 | 2.22× under a GPU bandwidth hog at any duty cycle, of which the spin control explains 1.75× — bandwidth-attributable ≈ 1.27×; CPU hog 1.06× |
+| `host_layer_slowdown` | 1.0 | 1.001–1.003× as two processes (holds); two-stream rows confounded, not used |
+| `cpu_util` | not modelled | 99.8 % of one core during the expert phase, 69.8 % prefix, 56.5 % full |
+| expert projection GEMMs vs their memory floor | — | 126 projections, 622.85 MB: 1.33× floor as one CUDA graph (MLP projections at 87–90 % of measured peak), 2.61× from Python |
+
+Reading for the study: the expert's weight streaming is already near its floor; what a PIM mapping removes
+from the GPU is the *dispatch* — 969 launches and 84 % idle per step — and what it must pay for is the host
+segments (0.18 ms/layer as graphs, not 0.16 ms as one launch), the transfers (40 µs fixed each) and the
+synchronisation (109 µs per stream handoff). The all-GPU baseline it competes with is 16.30 ms/step stock
+compiled, 10.37 ms/step with the crop-not-clone fix — not 90 or 136.
+
 ## What E3 (T002) changed, 2026-09-21
 
 **The action expert does not dominate π0's latency on this Orin.** At the paper's N = 4 it is

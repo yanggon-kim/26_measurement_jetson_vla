@@ -4,6 +4,55 @@
 answers appear here, newest first, and every answer that changes how you work is also written into the protocol,
 the plan or a task (named in the last column). Where this file and the protocol differ, the protocol wins.*
 
+## 2026-09-22 — after T002 / T003 / T005 / T010 (device commits `c1c7fe7..e6a0af7`)
+
+**T002 (E3), T003 (E4), T005 (E1/E2) are accepted; T010 (E11) is accepted on content and waits only for its
+`status: done` line.** Verified on the research server: 55 `meta.json` read, all at MAXN with `bench_commit`,
+20 / 100 iterations where §2 applies, `raw_files` hashes re-computed for every file of the E11, E4-cropcache and
+E0 directories and a sample of the rest (one mismatch, below); the `model_inputs.csv` checker exits 0 on all nine
+E11 files; `results/` is 39 MB, the largest committed file 6.6 MB, nothing over 50 MB; the write partition was
+respected except the disclosed `docs/` corrections (accepted — see AGENTS.md, which now states the exception
+the owner granted you). The independent-review corrections you made to your own drafts (the +3.13 → +0.83 ms
+step-0 artefact, the missed `deepcopy`, the empty `raw_files`, the 0.10 ms "kernel" that was dispatch, the
+50–66 % → 84 % idle envelope) are exactly what protocol §11 is for; keep reporting them.
+
+**The numbers change the research.** The ladder is now measured — floor 3.115 (spec) / 3.403 (measured peak),
+eager 52.56–52.94, compiled 16.30, crop-not-clone 10.37 ms per step — and the split contradicts the working
+hypothesis (expert 31 % at N = 4, not 59 %). Both go to the research side as they stand; nothing here asks you
+to re-measure to a different answer.
+
+| # | your question / finding | answer | made binding in |
+|---|---|---|---|
+| 1 | Off-chip traffic: reads validate via `…op_read_lookup_miss.sum`, writes only via `…op_write.sum`; §3.3 as written would report zero write bytes | **Accepted; §3.3 corrected to the two-counter definition** with your validation ratios cited. `GBps_from_misses` / `pct_of_measured_peak` stay blank until an nsys duration of the same kernel exists (T004 step 3 supplies it). Case (d) under ncu replay is recorded in §3.3 (5) and §12. | protocol §3.3, §12; T004 |
+| 2 | Memory rail: tracks traffic (+5.0 W on a copy load), rails do not double-count, only the absolute scaling of `VDDQ_VDD2_1V8AO` is open | **Unchanged: no schematic on this side either.** Report it as `VDDQ_VDD2_1V8AO (regulator input)`, absolute and above idle, tagged `[ASSUMPTION]`; sum the four rails as module power (your T005 check is the evidence). No calibration step. | protocol §4 (as before); T004 step 4 |
+| 3 | Power-mode plan | **Superseded by the owner's direct commitment** in your `STATUS.md` standing item: `MODE_30W` and `MODE_15W` are **required** for π0's E7, one human reboot each, after MAXN is complete. Protocol §1 and T004 step 4b say exactly what to run in each capped session (E7 loops + one E3-style latency run). You still never confirm a reboot prompt and never use `--force`. | protocol §1; T004 step 4b |
+| 4 | **nsys reports embed a session token**; four `nsys_toy.{nsys-rep,sqlite}` files pushed in T001 (commit `410a535`) contain it; `.gitignore` now excludes `results/**/*.nsys-rep` and `*.sqlite` | **Right call, and thank you for saying so plainly.** The exception is now the rule: protocol §3.5 / §6e, AGENTS.md, T004 — binaries stay in `scratch/`, listed `committed: false`; the full CSV exports are the committed raw record. The token rotation and any history rewrite are the **human's** decisions (the research side never rewrites pushed history either); until told otherwise treat the pushed copies as compromised-and-rotated, not as something to fix in git. `scan_for_secrets()` writing the matched bytes into `meta.json` — fixed by you — is now forbidden explicitly in §3.5. | protocol §3.5, §6e, §3.1, §7; AGENTS.md; T004 |
+| 5 | Bandwidth peak varies 1.19× between processes with clocks and temperature constant | **Accepted as an open anomaly.** Rule: quote both floor rows, headline against the measured peak, and re-measure the peak at the start of every profiling session (`bench/micro_peak.py`) so a ratio uses a same-session peak. Re-check after the capped-mode reboots as you proposed. If T004's nsys timelines show the *same* kernel at two speeds in one process, that is worth one paragraph; do not chase it further inside T004. | protocol §9, §12; T004 |
+| 6 | `docs/00_context.md` / `01_measurement_plan.md` corrected on device under the owner's instruction | **Accepted; the edits were checked line by line against the reports.** AGENTS.md now states the exception: factual corrections to those two files, marked and disclosed, are yours; rules, schemas and task bodies are not. | AGENTS.md |
+
+**Small things to close, none blocking (do them at the start of the next session, one commit):**
+1. `tasks/T010_pi0_hybrid_inputs.md` has no `status: done` line although the report, the consolidated file and the
+   checker are all in; append it with the deviations (E11d ran 5 warm-up / 30 timed per point, below §2's 20 / 100 —
+   state it there and in the report, or re-run the 18 points at 20 / 100 if it costs under an hour; the two-stream
+   concurrency harness runs the prefix loop from a second Python thread — recorded, T011 fixes it).
+2. `results/20260922_E4_pi0_reduce-overhead+cropcache_N10/meta.json` lists `equivalence.md` at 1,228 B / a stale sha256;
+   the file is 1,407 B (edited after hashing). `bench/refresh_raw_files.py` on that directory.
+3. `reports/E4_pi0_compile.md` §9 "Independent pass — recorded below once complete" is still empty although the
+   review's three catches are described in `STATUS.md`; paste them there so the report is self-contained.
+4. `results/20260921_E3_pi0_eager_probe/` and `results/evidence_E4_pi0_reduce-overhead_N4/` have `raw_files: []`;
+   list what is there (the probe's CSVs, the evidence log) or say why nothing is raw.
+5. `results/20260922_E5_pi0_eager_N{4,10}/` were pushed without `meta.json` / `summary.md` (T004 in progress) —
+   fine as work in progress; they are complete when T004 step 1 is.
+6. `STATUS.md` still carries the answered 2026-09-21 questions and the resolved "Blocked" / "Carried into the MAXN
+   re-run" sections; prune when convenient.
+
+**What the research side takes from E11 (for your information; no action):** `T_host_layer` is modelled as one
+CUDA graph per layer (0.177 ms) with the compiled-sequence 0.085 ms as the lower bound; launches are priced at
+~29 µs (single kernel) / ~62 µs (`F.linear`), 35 per layer eager; transfers at 40 µs + bytes / 36 GB/s; stream
+handoff 109 µs; the prefix is a constant 816 tokens for this checkpoint; the two-process sharing result (1.001×)
+is the one used for `host_layer_slowdown`, the two-stream one is not used. T011/T012 will carry the same segment
+list and the corrected concurrency harness.
+
 ## 2026-09-21 — after T001 / E0 (`results/20260921_E0_platform/`, device commits `d650099..77c0ab9`)
 
 **T001 is accepted in full**, and `results/20260921_E0_platform_maxn/` is the authoritative E0 (this file was first
