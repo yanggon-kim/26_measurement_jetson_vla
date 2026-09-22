@@ -79,6 +79,43 @@ def t010() -> int:
                ("kv_bytes_per_layer", f"{meta['kv_bytes_per_layer']:,}"),
                ("deepcopy ms", f"{meta['deepcopy_ms_per_step']:.2f}")]
 
+    # E11d — the sweep's spreads and the one fit that exists
+    for mode in ("eager", "reduce-overhead"):
+        D = REPO / "results" / f"{DATE}_E11d_pi0_{mode}_prefixsweep"
+        if not (D / "prefix_sweep.csv").exists():
+            continue
+        by_region: dict[str, list[float]] = {}
+        for r in rows(D / "prefix_sweep.csv"):
+            by_region.setdefault(r["region"], []).append(float(r["median_ms"]))
+        for reg, vs in by_region.items():
+            checks.append((f"E11d {mode} {reg} min", f"{min(vs):.2f}"))
+            checks.append((f"E11d {mode} {reg} max", f"{max(vs):.2f}"))
+
+    # E11e — the slowdown at each load, and the background rate it was driven at
+    for mode in ("eager", "reduce-overhead"):
+        E = REPO / "results" / f"{DATE}_E11e_pi0_{mode}_mempressure"
+        if not (E / "mempressure.csv").exists():
+            continue
+        for r in rows(E / "mempressure.csv"):
+            if r["slowdown"] not in ("", "1.0"):
+                checks.append((f"E11e {mode} {r['load_label']} slowdown",
+                               f"{float(r['slowdown']):.2f}"))
+            if r["bg_GBps_during"]:
+                checks.append((f"E11e {mode} {r['load_label']} bg GB/s",
+                               f"{float(r['bg_GBps_during']):.1f}"))
+
+    # E11f — the corrected idle fraction, never the raw one
+    F = REPO / "results" / f"{DATE}_E11f_pi0_pipelining"
+    if (F / "gpu_idle.csv").exists():
+        for r in rows(F / "gpu_idle.csv"):
+            if r.get("gpu_idle_frac_corrected"):
+                checks.append((f"E11f idle frac {r['mode']} N={r['N']}",
+                               f"{100*float(r['gpu_idle_frac_corrected']):.1f}"))
+    if (F / "throughput.csv").exists():
+        for r in rows(F / "throughput.csv"):
+            checks.append((f"E11f {r['mode']} {r['phase']} inf/s",
+                           f"{float(r['throughput_inf_per_s']):.2f}"))
+
     bad = [(lab, v) for lab, v in checks if v not in text]
     for lab, v in checks:
         print(f"  {'ok  ' if v in text else 'MISS'} {lab:36s} {v}")

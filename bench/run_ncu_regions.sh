@@ -38,11 +38,12 @@ for R in "${REGIONS[@]}"; do
   # §3.2 form (A) captures the WHOLE range. The only reasons to cap with -c are the
   # 60-minute wall-clock rule and §6's 50 MB per committed file: `--set full` costs about
   # 5 MB of .ncu-rep per kernel here (measured: one vision kernel -> 5,232,382 B), which
-  # zstd -19 shrinks ~84x, so ~800 kernels is the point where the compressed report reaches
-  # 50 MB. A capped region reports its kernel-time coverage in the report.
+  # zstd -19 shrinks ~84x, so a few hundred kernels is where the compressed report approaches
+  # 50 MB (T001 measured 7,072,411 B for one --set full kernel, 92,396 B after zstd -19,
+  # a 76.5x ratio). A capped region reports its kernel-time coverage in the report.
   case "$TAG" in
     ae_layer0) CAP="" ;;                       # ~54 kernels, capture all of them
-    *)         CAP="-c ${NCU_COUNT:-400}" ;;   # bounded; coverage reported
+    *)         CAP="-c ${NCU_COUNT:-300}" ;;   # bounded; coverage reported
   esac
   # §3.3's DRAM substitute. `--set full` collects lts__t_sectors_aperture_sysmem_op_write
   # and the undifferentiated ..._lookup_miss, but NOT the read-miss counter the substitute
