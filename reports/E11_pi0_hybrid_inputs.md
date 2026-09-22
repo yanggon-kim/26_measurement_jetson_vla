@@ -396,17 +396,60 @@ the same story again from the power side.
 
 ### Throughput (60 s back-to-back loops)
 
-| loop | eager ms | eager inf/s | compiled ms | compiled inf/s | what actually ran compiled |
+The right-hand column is headed **"compile + TF32"**, not "compiled", and the distinction is
+not pedantic — see the correction below.
+
+| loop | eager ms | eager inf/s | compile + TF32 ms | inf/s | what actually ran compiled |
 |---|---:|---:|---:|---:|---|
-| prefix only | 478.65 | 2.090 | 340.39 | 2.938 | `eager_subpath` |
-| action expert only | 221.13 | 4.521 | 221.81 | 4.508 | `eager_subpath` |
+| prefix only | 478.65 | 2.090 | 340.39 | 2.938 | `eager_subpath` — **nothing** |
+| action expert only | 221.13 | 4.521 | 221.81 | 4.508 | `eager_subpath` — **nothing** |
 | full inference | 704.13 | 1.420 | 363.20 | 2.753 | `compiled` |
 
-The `effective_exec_style` column exists because the first version of this table was misleading:
-under `reduce-overhead` only the *full* loop runs the compiled graph. The prefix-only and
-AE-only loops drive sub-paths that `torch.compile` never wrapped, so their "compiled" numbers
-are eager numbers — which is exactly why the AE loop is identical in both columns (221.13 vs
-221.81 ms) while the full loop is 1.94× faster.
+Under `reduce-overhead` only the *full* loop runs a compiled graph. The prefix-only and AE-only
+loops drive sub-paths that `torch.compile` never wrapped, which is why the AE loop is identical
+in both columns (221.13 vs 221.81 ms).
+
+**Correction, 2026-09-22 — the prefix loop's 1.41× is not compilation.** An earlier version of
+this report read that column as a compile result. It is not. `modeling_pi0.py:591-595` enables
+TF32 for every fp32 matmul in the process —
+
+```python
+if config.compile_model:
+    torch.set_float32_matmul_precision("high")      # ← global, one line before the compile
+    self.sample_actions = torch.compile(self.sample_actions, mode=config.compile_mode)
+```
+
+— and `bench/pipelining.py:274` loads the policy with `compile_mode=`, which sets that flag. So
+every "compiled" row here also has TF32 on, including the two rows that were never compiled at
+all. Measured with an uncompiled policy and **only** the precision toggled
+(`results/20260922_E4b_pi0_tf32_confound/`):
+
+| loop | `matmul_precision=highest` | `=high` | TF32 alone |
+|---|---:|---:|---:|
+| prefix | 478.01 ms | 341.44 ms | **1.400×** |
+| action expert | 232.76 ms | 230.11 ms | 1.012× |
+| full inference | 716.25 ms | 575.72 ms | **1.244×** |
+
+1.400× against the 1.406× in the table above: **none** of the prefix loop's gain is
+compilation. The full loop's 1.94× decomposes as **1.244× TF32 × 1.56× compilation**. The
+action expert is untouched by TF32 (1.012×), as expected for bf16 work that is launch-bound.
+
+**What compilation does do, and where.** It is not visible in this table, because the AE loop
+here was never compiled. T003/E4's `step_only` variant compiles `denoise_step` itself, with
+TF32 off throughout (`bench/run_e4.py:210` loads with `compile_mode=None`), and gives the clean
+answer:
+
+| region | eager N=4 | compiled N=4 | | eager N=10 | compiled N=10 | |
+|---|---:|---:|---:|---:|---:|---:|
+| `vision` | 239.35 | 241.58 | 1.00× | 239.60 | 240.42 | 1.00× |
+| `vlm_prefix` | 233.08 | 234.64 | 1.00× | 232.93 | 234.59 | 0.99× |
+| **`ae_total`** | 215.53 | **68.88** | **3.13×** | 533.03 | **170.31** | **3.13×** |
+
+**Compilation speeds up the action expert and nothing else.** Vision and the VLM prefix are flat
+because they are already GPU-saturated — 39.4 W on the GPU rail against 10.8 W for the expert
+(E11e) — so there are no launch gaps to close. The expert is the only launch-bound region, and
+removing its launches is exactly what `reduce-overhead` does. `results/20260922_E4c_pi0_opt_ladder/`
+separates TF32, compilation, CUDA graphs and autotuning in a single ladder, one factor per rung.
 
 ### The GPU is idle for 75.6 % of the action-expert region
 
