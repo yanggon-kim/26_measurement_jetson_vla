@@ -55,7 +55,9 @@ def main() -> int:
 
     # --- 1. every part's own rows, with source_file repointed at a restated copy
     for part in PARTS:
-        d = next(iter(sorted((REPO / "results").glob(f"*_{part}"))), None)
+        # the NEWEST matching directory: a re-measured part lives beside the superseded
+        # one (§5 forbids overwriting a result directory), and the date prefix sorts.
+        d = (sorted((REPO / "results").glob(f"*_{part}")) or [None])[-1]
         if d is None or not (d / "model_inputs.csv").exists():
             missing.append(part)
             print(f"  MISSING {part}")
@@ -81,7 +83,7 @@ def main() -> int:
                                  "*_E4_pi0_reduce-overhead_N{n}", "compiled",
                                  "reduce-overhead")):
         for n_steps in (4, 10):
-            d = next(iter(sorted((REPO / "results").glob(pat.format(n=n_steps)))), None)
+            d = (sorted((REPO / "results").glob(pat.format(n=n_steps))) or [None])[-1]
             if d is None:
                 missing.append(f"{tag} N={n_steps}")
                 continue
