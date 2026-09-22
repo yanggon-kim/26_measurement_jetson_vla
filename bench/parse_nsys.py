@@ -38,9 +38,18 @@ def num(x):
 
 
 def load(nsys_dir: Path, tag: str, kind: str):
-    f = next(iter(sorted(glob.glob(str(nsys_dir / f"{tag}*{kind}*.csv")))), None)
-    if not f:
+    """Large exports are committed zstd-compressed (§6); read either form."""
+    import io
+    import subprocess as _sp
+    pat = str(nsys_dir / f"{tag}*{kind}*.csv")
+    hits = sorted(glob.glob(pat)) or sorted(glob.glob(pat + ".zst"))
+    if not hits:
         return None, None
+    f = hits[0]
+    if f.endswith(".zst"):
+        out = _sp.run(["zstd", "-dc", f], capture_output=True, timeout=600)
+        return list(csv.DictReader(
+            io.StringIO(out.stdout.decode("utf-8", "replace")))), Path(f).name
     return list(csv.DictReader(open(f))), Path(f).name
 
 
@@ -110,53 +119,85 @@ def main() -> int:
               "(compiled captures run with --no-regions)")
 
     krows, trows, grows = [], [], []
-    scopes = {k: (min(a for a, _ in v), max(b for _, b in v)) for k, v in regions.items()}
-    if kern:
-        scopes["whole_capture"] = (kern[0][0], max(b for _, b, _ in kern))
-    for region, (lo, hi) in sorted(scopes.items()):
-        inside = [(max(a, lo), min(b, hi), nm) for a, b, nm in kern if b > lo and a < hi]
-        if not inside:
-            continue
-        wall = (hi - lo) / 1e6
+
+    def union_and_gaps(ivs, lo, hi):
+        inside = [(max(a, lo), min(b, hi), nm) for a, b, nm in ivs if b > lo and a < hi]
         busy = union_ms([(a, b) for a, b, _ in inside])
-        idle = wall - busy
-        per_step = len(inside) / (args.steps * args.inferences) if region.startswith("ae") \
-            else len(inside) / args.inferences
-        trows.append({"region": region, "wall_ms": round(wall, 4),
-                      "kernel_union_ms": round(busy, 4), "gpu_idle_ms": round(idle, 4),
-                      "gpu_idle_frac": round(idle / wall, 4) if wall else "",
-                      "n_kernels": len(inside),
-                      "kernels_per_unit": round(per_step, 2),
-                      "unit": "denoising step" if region.startswith("ae") else "inference"})
-        by = collections.Counter()
-        tot = collections.Counter()
-        for a, b, nm in inside:
-            by[nm] += 1
-            tot[nm] += (b - a) / 1e6
-        s_tot = sum(tot.values()) or 1.0
-        for nm, n in by.most_common(20):
-            krows.append({"region": region, "kernel": nm[:120], "launches": n,
-                          "launches_per_unit": round(n / max(1, args.inferences), 2),
-                          "total_ms": round(tot[nm], 5),
-                          "share_of_region_kernel_time": round(tot[nm] / s_tot, 5)})
         seq = sorted((a, b) for a, b, _ in inside)
         gaps = [(seq[i + 1][0] - seq[i][1]) / 1e3 for i in range(len(seq) - 1)
                 if seq[i + 1][0] > seq[i][1]]
-        if gaps:
-            gaps.sort()
-            buckets = [(0, 1), (1, 2), (2, 5), (5, 10), (10, 20), (20, 50), (50, 100),
-                       (100, 1e9)]
-            for lo_us, hi_us in buckets:
-                c = sum(1 for g in gaps if lo_us <= g < hi_us)
+        return inside, busy, gaps
+
+    # A region occurs once per inference (vlm_prefix), several times per inference (vision:
+    # one per camera; ae_step: one per denoising step). Taking min(start)..max(end) across ALL
+    # instances would span the whole capture and count other regions' kernels as this one's —
+    # vision came out at 1072 ms that way, against its real 241 ms. So the instances are
+    # grouped into `inferences` consecutive chunks and each chunk is measured on its own.
+    for region, spans in sorted(regions.items()):
+        spans = sorted(spans)
+        per_inf = max(1, len(spans) // max(1, args.inferences))
+        chunks = [spans[i:i + per_inf] for i in range(0, len(spans), per_inf)]
+        walls, busies, allgaps, nk = [], [], [], 0
+        for ch in chunks:
+            lo, hi = ch[0][0], ch[-1][1]
+            inside, busy, gaps = union_and_gaps(kern, lo, hi)
+            walls.append((hi - lo) / 1e6)
+            busies.append(busy)
+            allgaps += gaps
+            nk += len(inside)
+        wall = sum(walls) / len(walls)
+        busy = sum(busies) / len(busies)
+        idle = wall - busy
+        unit = "denoising step" if region.startswith("ae_step") else "inference"
+        div = args.steps if region.startswith("ae_step") else 1
+        trows.append({"region": region, "instances": len(spans),
+                      "instances_per_inference": per_inf,
+                      "wall_ms": round(wall, 4), "kernel_union_ms": round(busy, 4),
+                      "gpu_idle_ms": round(idle, 4),
+                      "gpu_idle_frac": round(idle / wall, 4) if wall else "",
+                      "n_kernels": round(nk / len(chunks), 1),
+                      "kernels_per_unit": round(nk / len(chunks) / div, 2), "unit": unit,
+                      "note": "per inference, averaged over the captured inferences"})
+        if allgaps:
+            allgaps.sort()
+            for lo_us, hi_us in [(0, 1), (1, 2), (2, 5), (5, 10), (10, 20), (20, 50),
+                                 (50, 100), (100, 1e9)]:
+                c = sum(1 for g in allgaps if lo_us <= g < hi_us)
                 if c:
                     grows.append({"region": region,
                                   "gap_bucket_us": f"{lo_us}-{'inf' if hi_us > 1e8 else hi_us}",
                                   "count": c,
-                                  "total_us": round(sum(g for g in gaps
+                                  "total_us": round(sum(g for g in allgaps
                                                         if lo_us <= g < hi_us), 2)})
-            trows[-1]["gap_total_ms"] = round(sum(gaps) / 1e3, 4)
-            trows[-1]["gap_median_us"] = round(gaps[len(gaps) // 2], 3)
-            trows[-1]["n_gaps"] = len(gaps)
+            trows[-1]["gap_total_ms"] = round(sum(allgaps) / 1e3 / len(chunks), 4)
+            trows[-1]["gap_median_us"] = round(allgaps[len(allgaps) // 2], 3)
+            trows[-1]["n_gaps"] = len(allgaps)
+        by, tot = collections.Counter(), collections.Counter()
+        for ch in chunks:
+            inside, _, _ = union_and_gaps(kern, ch[0][0], ch[-1][1])
+            for a, b, nm in inside:
+                by[nm] += 1
+                tot[nm] += (b - a) / 1e6
+        s_tot = sum(tot.values()) or 1.0
+        for nm, n in by.most_common(20):
+            krows.append({"region": region, "kernel": nm[:120], "launches": n,
+                          "launches_per_unit": round(n / len(chunks) / div, 2),
+                          "total_ms": round(tot[nm] / len(chunks), 5),
+                          "share_of_region_kernel_time": round(tot[nm] / s_tot, 5)})
+
+    if kern:
+        lo, hi = kern[0][0], max(b for _, b, _ in kern)
+        inside, busy, gaps = union_and_gaps(kern, lo, hi)
+        wall = (hi - lo) / 1e6
+        trows.append({"region": "whole_capture", "instances": 1,
+                      "instances_per_inference": 1, "wall_ms": round(wall, 4),
+                      "kernel_union_ms": round(busy, 4),
+                      "gpu_idle_ms": round(wall - busy, 4),
+                      "gpu_idle_frac": round((wall - busy) / wall, 4) if wall else "",
+                      "n_kernels": len(inside),
+                      "kernels_per_unit": round(len(inside) / max(1, args.inferences), 2),
+                      "unit": "inference",
+                      "note": f"the whole capture window, {args.inferences} inferences"})
 
     for name, rows_ in (("kernels_per_region.csv", krows), ("timeline_summary.csv", trows),
                         ("gaps.csv", grows)):
@@ -182,7 +223,7 @@ def main() -> int:
     for t in trows:
         print(f"  {t['region']:14s} wall {t['wall_ms']:9.3f} ms  busy "
               f"{t['kernel_union_ms']:9.3f}  idle {t['gpu_idle_ms']:8.3f} "
-              f"({100*(t['gpu_idle_frac'] or 0):5.1f} %)  {t['n_kernels']:5d} kernels")
+              f"({100*(t['gpu_idle_frac'] or 0):5.1f} %)  {t['n_kernels']:7.1f} kernels")
     print(f"wrote {d}/kernels_per_region.csv, timeline_summary.csv, gaps.csv")
     return 0
 

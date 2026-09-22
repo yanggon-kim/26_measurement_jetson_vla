@@ -35,17 +35,35 @@ from common import REPO, collect_raw, sh_out, software_versions, summarize, writ
 from host_segments import LayerCapture, ModelInputs, build_segments, intermediates  # noqa: E402
 
 
-def gpu_idle_from_nsys(nsys_dir: Path, tag: str) -> dict | None:
+def _open_csv(path_glob: str):
+    """Open an nsys export, transparently handling the zstd-compressed form.
+
+    Large exports are committed compressed (protocol §6), so a plain `*.csv` glob misses them —
+    which silently turned every gpu_idle row into "no data" once the traces were compressed.
+    """
+    import glob as _glob
+    import io
+    import subprocess as _sp
+    hits = sorted(_glob.glob(path_glob)) or sorted(_glob.glob(path_glob + ".zst"))
+    if not hits:
+        return None, None
+    f = hits[0]
+    if f.endswith(".zst"):
+        out = _sp.run(["zstd", "-dc", f], capture_output=True, timeout=600)
+        return io.StringIO(out.stdout.decode("utf-8", "replace")), f
+    return open(f, newline=""), f
+
+
+def gpu_idle_from_nsys(nsys_dir: Path, tag: str, n_inferences: int = 2) -> dict | None:
     """region time - union of kernel intervals, from the nsys exports.
 
     `cuda_gpu_trace` gives every kernel's start and duration; `nvtx_gpu_proj_trace` gives the
     NVTX ranges projected onto the GPU timeline. The union is taken so overlapping kernels are
     not double-counted.
     """
-    import glob
-    trace = next(iter(glob.glob(str(nsys_dir / f"{tag}*cuda_gpu_trace.csv"))), None)
-    proj = next(iter(glob.glob(str(nsys_dir / f"{tag}*nvtx_gpu_proj_trace.csv"))), None)
-    if not trace or not proj:
+    trace, _tn = _open_csv(str(nsys_dir / f"{tag}*cuda_gpu_trace.csv"))
+    proj, _pn = _open_csv(str(nsys_dir / f"{tag}*nvtx_gpu_proj_trace.csv"))
+    if trace is None or proj is None:
         return None
 
     def num(x):
@@ -55,7 +73,7 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str) -> dict | None:
             return None
 
     kern = []
-    for r in csv.DictReader(open(trace)):
+    for r in csv.DictReader(trace):
         st = num(r.get("Start (ns)") or r.get("Start"))
         du = num(r.get("Duration (ns)") or r.get("Duration"))
         name = r.get("Name") or ""
@@ -63,7 +81,7 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str) -> dict | None:
             continue
         kern.append((st, st + du))
     spans = []
-    for r in csv.DictReader(open(proj)):
+    for r in csv.DictReader(proj):
         # nsys prefixes projected NVTX ranges with their domain, e.g. ":ae_step[0]"
         nm = (r.get("Name") or r.get("Range") or "").lstrip(":").strip()
         if not nm.startswith("ae_step") or nm.startswith("ae_step_"):
@@ -77,25 +95,40 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str) -> dict | None:
         spans.append((st, st + du))
     if not kern or not spans:
         return None
-    lo, hi = min(s for s, _ in spans), max(e for _, e in spans)
-    region_ns = hi - lo
-    inside = sorted((max(a, lo), min(b, hi)) for a, b in kern if b > lo and a < hi)
-    busy, cur_s, cur_e = 0.0, None, None
-    for a, b in inside:
-        if cur_s is None:
-            cur_s, cur_e = a, b
-        elif a <= cur_e:
-            cur_e = max(cur_e, b)
-        else:
+    # The ae_step spans cover EVERY captured inference. Taking min(start)..max(end) across all
+    # of them spans the gap between inferences too — i.e. the next inference's vision and VLM
+    # prefix, which are GPU-saturated — and dilutes the idle fraction badly (50-66 % instead of
+    # the real 84 %). Group the spans into one chunk per inference and measure each on its own.
+    spans.sort()
+    per_inf = max(1, len(spans) // max(1, n_inferences))
+    chunks = [spans[i:i + per_inf] for i in range(0, len(spans), per_inf)]
+    walls, busies, nks = [], [], []
+    for ch in chunks:
+        lo, hi = ch[0][0], ch[-1][1]
+        inside = sorted((max(a, lo), min(b, hi)) for a, b in kern if b > lo and a < hi)
+        busy, cur_s, cur_e = 0.0, None, None
+        for a, b in inside:
+            if cur_s is None:
+                cur_s, cur_e = a, b
+            elif a <= cur_e:
+                cur_e = max(cur_e, b)
+            else:
+                busy += cur_e - cur_s
+                cur_s, cur_e = a, b
+        if cur_s is not None:
             busy += cur_e - cur_s
-            cur_s, cur_e = a, b
-    if cur_s is not None:
-        busy += cur_e - cur_s
-    idle = region_ns - busy
-    return {"ae_total_ms": region_ns / 1e6, "kernel_busy_ms": busy / 1e6,
+        walls.append(hi - lo)
+        busies.append(busy)
+        nks.append(len(inside))
+    wall = sum(walls) / len(walls)
+    busy = sum(busies) / len(busies)
+    idle = wall - busy
+    return {"ae_total_ms": wall / 1e6, "kernel_busy_ms": busy / 1e6,
             "gpu_idle_ms": idle / 1e6,
-            "gpu_idle_frac": idle / region_ns if region_ns else 0.0,
-            "n_kernels_in_region": len(inside), "n_ae_step_spans": len(spans)}
+            "gpu_idle_frac": idle / wall if wall else 0.0,
+            "n_kernels_in_region": round(sum(nks) / len(nks), 1),
+            "n_ae_step_spans": len(spans), "n_inferences": len(chunks),
+            "per_inference": True}
 
 
 def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float):

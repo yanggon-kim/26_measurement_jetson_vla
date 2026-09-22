@@ -336,24 +336,42 @@ The §13.3 spin-wait check matters here: the CPU **blocks** rather than spins wh
 | action-expert-only | 4.293 | 4.353 |
 | full inference | 1.402 | 2.759 |
 
-### The GPU is idle for most of the action-expert region
+### The GPU is idle for 84 % of the action-expert region
 
-From the eager nsys captures, region wall time minus the **union** of kernel intervals:
+Region wall time minus the **union** of kernel intervals, **per inference** (the ae_step spans
+of one denoising loop, not the envelope across the whole capture):
 
 | N | `ae_total` ms | kernel busy ms | **GPU idle** | **idle share** | kernels |
 |---|---|---|---|---|---|
-| 4 | 1174.9 | 580.9 | 593.9 ms | **50.6 %** | 10,377 |
-| 10 | 2198.2 | 743.6 | 1454.6 ms | **66.2 %** | 22,005 |
+| 4 | 343.8 | 54.1 | 289.7 ms | **84.3 %** | 3,873 |
+| 10 | 855.4 | 135.4 | 720.0 ms | **84.2 %** | 9,687 |
 
-`docs/00_context.md` lists `gpu_idle_ae_total` as **unknown**. It is half to two thirds of the
-region. More denoising steps make it *worse*, not better: at N = 10 the kernel work grows by
-28 % while the region grows by 87 %, because each additional step adds launches faster than it
-adds GPU work.
+And the same capture, for the two regions the hybrid design leaves on the GPU:
 
-For the pipelined design this is the most encouraging number in the task — there is already
-more GPU time free during denoising than the next frame's prefix needs (476 ms of prefix
-against 594–1455 ms of idle). It is also a warning: that idle time exists because the GPU is
-waiting on the CPU, and a hybrid design that hands the CPU *more* to do will consume it.
+| region | wall ms | kernel busy ms | idle share |
+|---|---|---|---|
+| `vision` | 242.9 | 240.1 | **1.1 %** |
+| `vlm_prefix` | 236.2 | 232.4 | **1.6 %** |
+
+**This is the sharpest result in T010.** Vision and the VLM prefix keep the GPU busy essentially
+all the time — 1–2 % idle — while the action expert leaves it idle **84 %** of the region,
+identically at N = 4 and N = 10. `docs/00_context.md` lists `gpu_idle_ae_total` as *unknown*.
+
+It is the same fact T005 found from the other side (969 kernels per step, ~62 µs of CPU dispatch
+each, GEMMs at 1.33× the memory floor) seen on the timeline: during denoising the GPU spends
+five sixths of its time waiting for the CPU to hand it the next kernel.
+
+For the pipelined design that is encouraging — there is far more free GPU time during denoising
+(290–720 ms per inference) than the next frame's prefix needs (476 ms at N = 10, and the prefix
+is *not* idle-limited). It is also the warning that goes with it: the idle exists because the
+CPU cannot keep up, and E11e measured the action-expert phase already consuming 99.8 % of a
+core. A hybrid design that gives the CPU more to do spends this budget before it uses it.
+
+**An earlier version of this section reported 50.6 % and 66.2 %.** Those came from taking
+`min(start)…max(end)` across *all* `ae_step` spans in the capture, which spans the gap between
+the two captured inferences — including the next inference's vision and VLM prefix, which are
+GPU-saturated and dilute the idle fraction. The same bug made `vision` appear to be a 1,072 ms
+region containing 8,154 kernels. Both parsers now group spans per inference.
 
 ### Sharing the GPU
 
