@@ -62,8 +62,11 @@ def main() -> int:
     rec = undo = None
     if not args.no_regions:
         need_layers = args.region.startswith("ae_layer")
-        rec = R.Recorder(enable_layers=need_layers,
-                         layers_in_step=18 if need_layers else 0)
+        # `layers_in_step` is the STEP INDEX whose layers get ranges, not a layer count
+        # (regions.py:138 compares it with rec.step_idx). Passing 18 asked for the layers of
+        # step 18, which does not exist at N=4, so no ae_layer range was ever emitted and ncu
+        # reported "No kernels were profiled".
+        rec = R.Recorder(enable_layers=need_layers, layers_in_step=0)
         undo = R.instrument(policy, rec)
 
     for _ in range(args.warmup):
