@@ -96,9 +96,54 @@ RUNGS = [
       ("pg", "forward", GRAPHS, False)], True, True),
     ("whole_graphs", "compile sample_actions (LeRobot's path)",   "high",
      [("model", "sample_actions", GRAPHS, False)], True, False),
+    # WARNING, measured 2026-09-22: this rung OOM-kills the process on this device.
+    # max-autotune over the whole sample_actions graph reached 31.7 GB resident /
+    # 115 GB virtual against 61 GB of physical memory and the kernel killed it
+    # (dmesg: "Out of memory: Killed process ... total-vm:115607700kB").
+    # Excluded from --rungs by default; run it alone to reproduce the failure. T003
+    # already established autotuning buys nothing on this model (1-4 % between stock
+    # modes) at 5x the compile time, so the ladder loses no information without it.
     ("whole_autotune", "+ Triton autotuning (max-autotune)",      "high",
      [("model", "sample_actions", "max-autotune", False)], True, False),
 ]
+
+
+def write_tables(out: Path, rows: list[dict], steps: list[int]) -> None:
+    """Write the CSVs after EVERY rung, not once at the end.
+
+    The first full run was OOM-killed on its last rung (max-autotune on sample_actions
+    reached 31.7 GB resident on a 61 GB machine). Because the tables were written only
+    after the loop, all nine completed rungs were lost with it — three hours of
+    measurement, recoverable only as text in a log. Partial results are now on disk from
+    the first rung onward.
+    """
+    if not rows:
+        return
+    keys = list(rows[0].keys())
+    with (out / "opt_ladder.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=keys)
+        w.writeheader()
+        w.writerows([{k: r.get(k, "") for k in keys} for r in rows])
+
+    eff = []
+    for N in steps:
+        rs = [r for r in rows if r["N"] == N]
+        for prev, cur in zip(rs, rs[1:]):
+            e = {"N": N, "step": f"{prev['rung']} -> {cur['rung']}", "adds": cur["label"]}
+            for k in ("e2e_median", "vision", "vlm_prefix", "ae_total"):
+                col = k + "_ms"
+                a, b = prev.get(col), cur.get(col)
+                try:
+                    e[k + "_speedup"] = round(float(a) / float(b), 4) if a and b else ""
+                except (TypeError, ValueError, ZeroDivisionError):
+                    e[k + "_speedup"] = ""
+            eff.append(e)
+    if eff:
+        with (out / "opt_ladder_marginal.csv").open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(eff[0].keys()))
+            w.writeheader()
+            w.writerows(eff)
+
 
 
 def owner_of(policy, which: str):
@@ -111,7 +156,9 @@ def main() -> int:
     ap.add_argument("--steps", default="4,10")
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=100)
-    ap.add_argument("--rungs", default=",".join(r[0] for r in RUNGS))
+    ap.add_argument("--rungs",
+                    default=",".join(r[0] for r in RUNGS if r[0] != "whole_autotune"),
+                    help="default excludes whole_autotune, which OOM-kills this device")
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
@@ -226,33 +273,9 @@ def main() -> int:
                 notes.append(f"N={N} {key}: regions off — a region boundary inside a "
                              f"compiled sample_actions forces a graph break, so only "
                              f"end-to-end is measurable for this rung.")
+            write_tables(out, rows, steps)     # survive a kill on any later rung
             del policy
             torch.cuda.empty_cache()
-
-    with (out / "opt_ladder.csv").open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-        w.writeheader()
-        w.writerows(rows)
-
-    # marginal effect of each rung, per N, per region
-    eff = []
-    for N in steps:
-        rs = [r for r in rows if r["N"] == N]
-        for prev, cur in zip(rs, rs[1:]):
-            e = {"N": N, "step": f"{prev['rung']} -> {cur['rung']}", "adds": cur["label"]}
-            for k in ("e2e_median", "vision", "vlm_prefix", "ae_total"):
-                col = k + "_ms"
-                a, b = prev.get(col), cur.get(col)
-                try:
-                    e[k + "_speedup"] = round(float(a) / float(b), 4) if a and b else ""
-                except (TypeError, ValueError, ZeroDivisionError):
-                    e[k + "_speedup"] = ""
-            eff.append(e)
-    if eff:
-        with (out / "opt_ladder_marginal.csv").open("w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=list(eff[0].keys()))
-            w.writeheader()
-            w.writerows(eff)
 
     sp = out / "raw" / "latency_samples.csv"
     with sp.open("w", newline="") as f:
