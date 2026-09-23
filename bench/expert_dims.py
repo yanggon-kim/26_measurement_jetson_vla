@@ -56,8 +56,20 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", default=None)
     ap.add_argument("--models", default="pi0,pi05,smolvla")
+    ap.add_argument("--suffix-json",
+                    default="results/20260922_E4f_expert_dims/suffix_tokens.json",
+                    help="output of bench/measure_S.py; S is MEASURED, never taken from "
+                         "chunk_size — pi0's is 51 for a chunk_size of 50 because a state "
+                         "token is prepended, and that +1 cannot be assumed to hold")
     args = ap.parse_args()
-    out = {"_ridge_FLOP_per_byte": RIDGE,
+    measured = {}
+    sj = Path(args.suffix_json)
+    if sj.exists():
+        for k, v in json.loads(sj.read_text()).items():
+            if isinstance(v, dict) and "suffix_tokens_S" in v:
+                measured[k] = v["suffix_tokens_S"]
+        print(f"measured S from {sj}: {measured}\n")
+    out = {"_ridge_FLOP_per_byte": RIDGE, "_measured_S": measured,
            "_note": "I ~= S for a weight-stationary bf16 GEMM with S << K,N, so the suffix "
                     "length is the arithmetic intensity to first order. S below the ridge "
                     "means memory-bound by construction.",
@@ -78,16 +90,32 @@ def main() -> int:
                 continue
             layers.add(int(m.group(1)))
             shapes.setdefault(m.group(2), v["shape"])
-        S = cfg["S"]
+        S = measured.get(name, cfg["S"])
         rows = []
         for proj, shp in sorted(shapes.items()):
             if len(shp) != 2:
                 continue
             N, K = shp                       # torch Linear stores [out, in]
-            rows.append({"projection": proj, "K_in": K, "N_out": N,
-                         "gemm": f"{S or 'S'}x{K}x{N}",
-                         "flops_per_call": (2 * S * K * N) if S else None,
-                         "weight_bytes_bf16": 2 * K * N})
+            M = S
+            rows.append({
+                "projection": proj,
+                # the three operands, written out. A is the activations the expert carries
+                # for its S suffix tokens; B is the weight; C is the result.
+                "A_activations": f"[{M or 'S'} x {K}]",
+                "B_weights": f"[{K} x {N}]",
+                "C_out": f"[{M or 'S'} x {N}]",
+                "M": M, "K_in": K, "N_out": N,
+                "gemm_MxKxN": f"{M or 'S'}x{K}x{N}",
+                # how far from square the activation matrix is: 1 row per suffix token
+                # against K columns of features. pi0: 51 x 4096 for down_proj, i.e. 80x
+                # wider than tall.
+                "A_aspect_K_over_M": round(K / M, 1) if M else None,
+                "flops_per_call": (2 * M * K * N) if M else None,
+                "weight_bytes_bf16": 2 * K * N,
+                # bytes moved if the weight is read once and A, C stay resident
+                "arith_intensity": round((2 * M * K * N) /
+                                         (2 * K * N + 2 * M * K + 2 * M * N), 1)
+                if M else None})
         n_layers = len(layers)
         per_layer_bytes = sum(r["weight_bytes_bf16"] for r in rows)
         out["models"][name] = {
@@ -103,9 +131,13 @@ def main() -> int:
         }
         print(f"\n=== {name}: {n_layers} expert layers x {len(rows)} projections "
               f"= {n_layers*len(rows)} GEMMs, S={S}")
+        print(f"    {'projection':20s} {'A (activations)':>16s} x {'B (weights)':>14s} "
+              f"-> {'C':>14s} {'K/M':>7s} {'I':>7s}")
         for r in rows:
-            print(f"    {r['projection']:28s} {r['gemm']:>18s}  "
-                  f"weights {r['weight_bytes_bf16']/2**20:7.2f} MiB")
+            print(f"    {r['projection']:20s} {r['A_activations']:>16s} x "
+                  f"{r['B_weights']:>14s} -> {r['C_out']:>14s} "
+                  f"{str(r['A_aspect_K_over_M'] or '-'):>7s} "
+                  f"{str(r['arith_intensity'] or '-'):>7s}")
     if args.json:
         write_json(Path(args.json), out)
         print(f"\nwrote {args.json}")
