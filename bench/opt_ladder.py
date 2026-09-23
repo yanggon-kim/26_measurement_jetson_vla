@@ -59,6 +59,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E402
@@ -238,8 +239,18 @@ MIN_AVAIL_GIB = 20.0     # the policy is 8.28 GiB; compile and activations need 
 
 
 
-def owner_of(policy, which: str):
-    return policy.model if which == "model" else policy.model.paligemma_with_expert
+def owner_of(policy, which: str, spec=None):
+    """`model` = policy.model; `pg` = the container holding embed_image and forward.
+
+    The container is paligemma_with_expert for pi0/pi0.5 and vlm_with_expert for SmolVLA
+    (bench/model_registry.py), so it cannot be hardcoded.
+    """
+    m = policy.model
+    if which == "model":
+        return m
+    if spec is not None:
+        return getattr(m, spec.container)
+    return m.paligemma_with_expert
 
 
 def finish(out: Path, args, gate, rows, notes, steps, samples=None, verified=None,
@@ -300,6 +311,9 @@ def finish(out: Path, args, gate, rows, notes, steps, samples=None, verified=Non
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0",
+                    help="model key from bench/model_registry.py; supplies the N field "
+                         "name, checkpoint and the container holding the wrap points")
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--steps", default="4,10")
     ap.add_argument("--warmup", type=int, default=20)
@@ -322,6 +336,8 @@ def main() -> int:
     want = [r for r in RUNGS if r[0] in args.rungs.split(",")]
     steps = [int(x) for x in args.steps.split(",") if x]
 
+    spec = MR.get(args.model)
+    steps = steps or [spec.n_default]
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
     rows, notes, samples = [], [], []
@@ -340,7 +356,8 @@ def main() -> int:
                 if f.exists():
                     print(f"=== N={N} {key}: already done, skipping", flush=True)
                     continue
-                cmd = [sys.executable, __file__, "--outdir", str(out), "--single-rung", key,
+                cmd = [sys.executable, __file__, "--model", args.model,
+                       "--outdir", str(out), "--single-rung", key,
                        "--single-N", str(N), "--warmup", str(args.warmup),
                        "--timed", str(args.timed)]
                 print(f"\n=== N={N} {key}: spawning", flush=True)
@@ -387,13 +404,16 @@ def main() -> int:
                     f"pressure produces a number that looks fine and is not comparable.")
             # Every rung that compiles anything loads a fresh policy: torch.compile is not
             # reversible, so a rung cannot be un-done to build the next one on top.
-            policy, cfg, shipped = P.load_policy(num_inference_steps=N)
+            policy, cfg, shipped = MR.load_policy(spec, n=N)
             if verified is None:
-                verified = P.assert_real_weights(policy)
+                verified = (P.assert_real_weights(policy) if args.model == "pi0" else
+                            {"verdict": "not verified: assert_real_weights diffs against "
+                                        "pi0's own safetensors and is pi0-specific"})
                 print("weights:", json.dumps(verified), flush=True)
             real = verified
             fx = P.load_fixture()
-            batch, _, _ = P.build_batch(policy, fx)
+            batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                        revision=spec.revision)
             torch.set_float32_matmul_precision(prec)
             prep_note = prep(policy) if prep else ""
             if prep_note:
@@ -401,7 +421,7 @@ def main() -> int:
 
             compiled_desc, compile_s, fails = [], 0.0, []
             for which, attr, mode, clone_out in targets:
-                ownr = owner_of(policy, which)
+                ownr = owner_of(policy, which, spec)
                 try:
                     t0 = time.time()
                     c = torch.compile(getattr(ownr, attr), mode=mode)
