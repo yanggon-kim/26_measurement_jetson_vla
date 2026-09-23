@@ -63,24 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 08:17:41** · elapsed **13.71 h** of 26 (53 %) · 40.4 GiB free · 1.13 GiB swap
+**Updated 08:37:42** · elapsed **14.05 h** of 26 (54 %) · 50.9 GiB free · 1.14 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_fix5.log` · self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
-- `queue_fix5.log` · Total number of DiT parameters:  1091722240
-- `queue_fix5.log` · Total number of SelfAttentionTransformer parameters:  201433088
-- `queue_fix4.log` · row + traceback written for vlm_graphs
-- `queue_fix4.log` · EXIT=1
-- `queue_fix4.log` · FIX4_DONE 2026-09-23T08:01:13-07:00
+- `queue_n1d6.log` · AssertionError: Qwen3 must use flash_attention_2 but got None
+- `queue_n1d6.log` · EXIT=1 9s
+- `queue_n1d6.log` · N1D6_DONE 2026-09-23T08:24:48-07:00
+- `queue_fix5.log` · Linear  input=torch.float32  weight=torch.bfloat16  weight_shape=(1024, 1024)
+- `queue_fix5.log` · EXIT=0 246s
+- `queue_fix5.log` · FIX5_DONE 2026-09-23T08:23:07-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 08:18** (56 configurations)
+**Re-derived from every result CSV on disk at 08:38** (56 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
