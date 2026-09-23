@@ -63,11 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 23:57:13** · elapsed **5.37 h** of 26 (21 %) · 39.8 GiB free · 0.71 GiB swap
+**Updated 00:17:14** · elapsed **5.70 h** of 26 (22 %) · 31.7 GiB free · 0.71 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 155459 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_eager eager 10 ae_layer[0] ae_step[0] vl` | 8 min | 0.0 GiB |
+| 155459 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_eager eager 10 ae_layer[0] ae_step[0] vl` | 28 min | 0.0 GiB |
 
 Latest log lines:
 
@@ -82,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 23:57** (36 configurations)
+**Re-derived from every result CSV on disk at 00:17** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
