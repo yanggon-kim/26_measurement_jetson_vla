@@ -63,22 +63,27 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 06:37:35** · elapsed **12.04 h** of 26 (46 %) · 49.8 GiB free · 1.13 GiB swap
+**Updated 06:57:36** · elapsed **12.38 h** of 26 (48 %) · 35.4 GiB free · 1.13 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 209774 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 2 min | 0.4 GiB |
+| 209817 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 2 min | 15.4 GiB |
 
 Latest log lines:
 
-- `queue_groot.log` · embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
-- `queue_groot.log` · /home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `ou
-- `queue_groot.log` · self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
-- `queue_pi05_b3.log` · PI05_B3_START 2026-09-23T06:27:06-07:00
+- `queue_pi05_b3_fix.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
+- `queue_pi05_b3_fix.log` · === N=10  bf16_norms: B3: + bf16 layernorms
+- `queue_pi05_b3_fix.log` · memory before: 50.4 GiB available, 1.13 GiB swap in use
+- `queue_pi05_b3.log` · wrote results/20260922_E4c_pi0_opt_ladder (22 rungs)
+- `queue_pi05_b3.log` · EXIT=0 248s
+- `queue_pi05_b3.log` · PI05_B3_DONE 2026-09-23T06:51:12-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 06:38** (54 configurations)
+**Re-derived from every result CSV on disk at 06:58** (54 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -111,7 +116,7 @@ Latest log lines:
 | pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
 | pi0 | 10 | vlm_graphs | 99.29 | 197.17 | 170.88 | 473.91 | 36.1 % |
 | pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
-| pi0 | 10 | bf16_base | 104.32 | 238.19 | 176.19 | 526.12 | 33.5 % |
+| pi0 | 10 | bf16_base | — | — | — | nan | — |
 | pi0 | 10 | bf16_vision | 88.53 | 234.06 | 172.53 | 501.98 | 34.4 % |
 | pi0 | 10 | bf16_norms | 103.15 | 235.02 | 174.59 | 518.99 | 33.6 % |
 | pi0 | 10 | bf16_both | 56.74 | 192.86 | 168.68 | 424.46 | 39.7 % |
