@@ -292,13 +292,19 @@ def prep_bf16_norms(policy):
     #
     # So B3 also casts the fp32 conditioning path that feeds those norms: everything on
     # policy.model that is NOT inside paligemma_with_expert.
+    # ...but only the modules that FEED that Linear, which is the time embedding. Casting
+    # every non-expert child was too broad: the probe's second run named action_in_proj
+    # (Linear 32 -> 1024) as the next mismatch, because its input is the noise tensor
+    # created outside the model and fp32 by construction. action_in_proj's own fp32 output
+    # is fine - bf16_base measured 591.95 ms with it fp32, so something downstream already
+    # casts the suffix embeddings to the expert's dtype. time_mlp_in/out are the only
+    # modules whose output reaches input_layernorm.dense.
     cond = []
     if type(policy).__name__ == "PI05Policy":
-        for name, mod in policy.model.named_children():
-            if name == "paligemma_with_expert":
-                continue
-            fp32 = [q for q in mod.parameters() if q.dtype == torch.float32]
-            if fp32:
+        for name in ("time_mlp_in", "time_mlp_out"):
+            mod = getattr(policy.model, name, None)
+            if mod is not None and any(q.dtype == torch.float32
+                                       for q in mod.parameters()):
                 mod.to(torch.bfloat16)
                 cond.append(name)
     note = base_note + f"{n} layernorm modules -> bf16"

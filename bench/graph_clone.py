@@ -45,7 +45,16 @@ def clone_graph_outputs(r):
     if isinstance(r, list):
         return [clone_graph_outputs(x) for x in r]
     if isinstance(r, dict):
-        return {k: clone_graph_outputs(v) for k, v in r.items()}
+        # HF's ModelOutput (BaseModelOutputWithPast and friends) SUBCLASSES OrderedDict.
+        # Rebuilding it as a plain dict silently destroys the class, and the caller then
+        # dies on attribute access: GR00T's vlm_graphs failed with "'dict' object has no
+        # attribute 'last_hidden_state'" AFTER this clone was supposed to have fixed it.
+        # Clone in place for any subclass so the type survives.
+        if type(r) is dict:
+            return {k: clone_graph_outputs(v) for k, v in r.items()}
+        for k in list(r.keys()):
+            r[k] = clone_graph_outputs(r[k])
+        return r
     # HF cache objects (DynamicCache and friends) are neither tensor nor container, and
     # pg.forward returns one: `prefix_output.past_key_values` (modeling_pi0.py:475). Its
     # key/value tensors ARE graph outputs, so passing the object through untouched leaves
