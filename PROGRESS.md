@@ -63,15 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 15:18:05** · elapsed **20.72 h** of 26 (80 %) · 50.4 GiB free · 1.12 GiB swap
+**Updated 15:38:06** · elapsed **21.05 h** of 26 (81 %) · 47.9 GiB free · 1.12 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_repair.log` · Terminated
-- `queue_c1_repair.log` · ########## REPAIR smolvla best vision
-- `queue_c1_repair.log` · ########## 14:41 ncu smolvla_best_vision (cap 40)
+- `queue_c1_repair.log` · ==PROF== Report: /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260923_E4g_c1_smolvla_best/ncu/smolv
+- `queue_c1_repair.log` · ########## REPAIR smolvla best vlm_prefix
+- `queue_c1_repair.log` · ########## 15:18 ncu smolvla_best_vlm_prefix (cap 40)
 - `queue_c1_groot.log` · rep 19M -> zst 848K
 - `queue_c1_groot.log` · csv rows=1822
 - `queue_c1_groot.log` · C1_GROOT_DONE 2026-09-23T14:41:25-07:00
@@ -80,7 +80,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 15:19** (58 configurations)
+**Re-derived from every result CSV on disk at 15:39** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
