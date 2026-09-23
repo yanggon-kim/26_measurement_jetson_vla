@@ -52,6 +52,7 @@ import argparse
 import csv
 import json
 import subprocess
+import traceback
 import sys
 import time
 from pathlib import Path
@@ -116,6 +117,70 @@ def clone_graph_outputs(r):
                     setattr(lay, attr, getattr(lay, attr).clone())
     return r
 
+
+
+def prep_smolvlm_static_posids(policy):
+    """Remove the one op that makes SmolVLA's vision tower impossible to CUDA-graph.
+
+    `SmolVLMVisionEmbeddings.forward` (transformers/models/smolvlm/modeling_smolvlm.py:137)
+    ends with
+
+        position_ids[patch_attention_mask.view(B, -1)] = pos_ids[patch_attention_mask.view(B, -1)]
+
+    a boolean-mask index_put. Its output shape depends on the mask's *values*, so it needs a
+    device-to-host sync; dynamo graph-breaks there and the resulting subgraph cannot be
+    stream-captured. That is the whole reason SmolVLA lost four rungs with
+    "operation failed due to a previous error during capture" (traceback committed at
+    results/20260922_E4c_smolvla_opt_ladder/raw/traceback_vis_graphs_N10.txt).
+
+    In LeRobot's SmolVLA the mask is all-true BY CONSTRUCTION, not by luck:
+    smolvlm_with_expert.py:180 passes `patch_attention_mask=None` unconditionally, and
+    modeling_smolvlm.py:355-357 then builds it as `torch.ones(...)`. With an all-true mask
+    the statement is exactly `position_ids = pos_ids`. This replacement is therefore
+    numerically identical, not an approximation — but it is still declared as its own ladder
+    rung rather than applied silently, so its cost is measured separately from the graphs it
+    enables. Both facts are asserted here, so the rung fails loudly if either stops holding.
+    """
+    import transformers.models.smolvlm.modeling_smolvlm as M
+    import inspect
+    if type(policy).__name__ != "SmolVLAPolicy":
+        raise SystemExit(f"prep_smolvlm_static_posids is SmolVLA-specific; got "
+                         f"{type(policy).__name__}")
+    from lerobot.policies.smolvla import smolvlm_with_expert as SWE
+    src = inspect.getsource(SWE.SmolVLMWithExpertModel.embed_image)
+    if "patch_attention_mask = None" not in src:
+        raise SystemExit("embed_image no longer passes patch_attention_mask=None; the "
+                         "all-true-mask premise of this rung must be re-checked")
+    if "torch.ones" not in inspect.getsource(M.SmolVLMVisionTransformer.forward):
+        raise SystemExit("SmolVLMVisionTransformer no longer builds an all-ones mask")
+
+    def forward(self, pixel_values, patch_attention_mask):
+        batch_size, _, max_im_h, max_im_w = pixel_values.shape
+        patch_embeds = self.patch_embedding(pixel_values)
+        embeddings = patch_embeds.flatten(2).transpose(1, 2)
+        boundaries = torch.arange(1 / self.num_patches_per_side, 1.0,
+                                  1 / self.num_patches_per_side, device=pixel_values.device)
+        max_patches_h = patch_attention_mask.size(1)
+        max_patches_w = patch_attention_mask.size(2)
+        # all-true mask => nb_patches == max_patches, so no reduction over the mask is
+        # needed and the counts are static.
+        step_h = 1.0 / max_patches_h
+        step_w = 1.0 / max_patches_w
+        h = torch.arange(max_patches_h, device=pixel_values.device,
+                         dtype=torch.float32) * step_h
+        w = torch.arange(max_patches_w, device=pixel_values.device,
+                         dtype=torch.float32) * step_w
+        h = torch.clamp(h, max=(1.0 - 1e-6)).to(pixel_values.dtype)
+        w = torch.clamp(w, max=(1.0 - 1e-6)).to(pixel_values.dtype)
+        bh = torch.bucketize(h, boundaries, right=True)
+        bw = torch.bucketize(w, boundaries, right=True)
+        pos_ids = (bh[:, None] * self.num_patches_per_side + bw[None, :]).reshape(1, -1)
+        position_ids = pos_ids.expand(batch_size, -1)
+        return embeddings + self.position_embedding(position_ids)
+
+    M.SmolVLMVisionEmbeddings.forward = forward
+    return ("SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the "
+            "identical static position ids (mask is all-true by construction)")
 
 
 def prep_bf16_vision(policy):
@@ -189,6 +254,9 @@ RUNGS = [
      [("model", "denoise_step", GRAPHS, False)], True, True, None),
     ("vis_compile",  "+ compile embed_image (no CUDA graphs)",    "high",
      [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", NOGRAPH, False)], True, True, None),
+    ("vis_static_pos", "+ static vision position ids (SmolVLA only; no new graph)", "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", NOGRAPH, False)],
+     True, True, prep_smolvlm_static_posids),
     ("vis_graphs",   "+ CUDA graphs on embed_image (output cloned)", "high",
      [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True)], True, True, None),
     ("vlm_compile",  "+ compile pg.forward (no CUDA graphs)",     "high",
@@ -396,6 +464,25 @@ def main() -> int:
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
     want = [r for r in RUNGS if r[0] in args.rungs.split(",")]
+
+    # SmolVLA cannot stream-capture its vision tower until the data-dependent boolean
+    # index in SmolVLMVisionEmbeddings is gone (see prep_smolvlm_static_posids). Every
+    # rung at or after vis_static_pos therefore carries that prep for this model, and only
+    # for this model; the rung itself measures what the prep alone costs, so the graph
+    # rungs after it still isolate one factor each. For every other model the rung is
+    # dropped rather than run, because the prep refuses a non-SmolVLA policy by design.
+    _NEEDS_STATIC_POSIDS = {"vis_static_pos", "vis_graphs", "vlm_compile", "vlm_graphs",
+                            "whole_graphs", "whole_autotune"}
+    if args.model == "smolvla":
+        def _with_posids(prep):
+            if prep is None:
+                return prep_smolvlm_static_posids
+            return lambda pol: "; ".join(
+                x for x in (prep_smolvlm_static_posids(pol), prep(pol)) if x)
+        want = [(r[:6] + (_with_posids(r[6]),)) if r[0] in _NEEDS_STATIC_POSIDS else r
+                for r in want]
+    else:
+        want = [r for r in want if r[0] != "vis_static_pos"]
     steps = [int(x) for x in args.steps.split(",") if x]
 
     spec = MR.get(args.model)
@@ -442,7 +529,9 @@ def main() -> int:
             r_ = json.loads(f.read_text())
             r_.setdefault("provenance", "own process, this run")
             rows.append(r_)
-        rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
+        order = [r[0] for r in RUNGS]
+        rows.sort(key=lambda r: (int(r["N"]),
+                                 order.index(r["rung"]) if r["rung"] in order else 999))
         write_tables(out, rows, steps)
         print(f"\nmerged {len(rows)} rung(s) into {out}/opt_ladder.csv")
         return finish(out, args, gate, rows, notes, steps)
@@ -537,6 +626,10 @@ def main() -> int:
                         reg[k] = summarize(vals)["median_ms"]
             except Exception as e:                                # noqa: BLE001
                 err = f"{type(e).__name__}: {str(e)[:200]}"
+                tb_path = out / "raw" / f"traceback_{key}_N{N}.txt"
+                tb_path.parent.mkdir(parents=True, exist_ok=True)
+                tb_path.write_text(traceback.format_exc())
+                print(f"  traceback -> {tb_path}", flush=True)
                 st, s_, reg = {"median_ms": float("nan"), "p5_ms": float("nan"),
                                "p95_ms": float("nan"), "n": 0}, [], {}
                 print(f"  NOT MEASURED: {err}", flush=True)
