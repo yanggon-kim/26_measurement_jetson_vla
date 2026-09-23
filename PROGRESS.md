@@ -63,23 +63,26 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 22:37:09** · elapsed **4.04 h** of 26 (16 %) · 49.8 GiB free · 0.72 GiB swap
+**Updated 22:57:10** · elapsed **4.37 h** of 26 (17 %) · 48.6 GiB free · 0.72 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 147573 | `bench/paper_repro.py --model smolvla --outdir results/20260922_E4d_smolvla_paper_config_N1` | 2 min | 2.8 GiB |
+| 153093 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 1 min | 0.0 GiB |
+| 153105 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 1 min | 0.4 GiB |
+| 153145 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --si` | 1 min | 2.8 GiB |
 
 Latest log lines:
 
-- `smolvla_paper_tf32.log` · fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.came
-- `smolvla_paper_tf32.log` · tokens: {"error": "AttributeError: 'SmolVLAPolicy' object has no attribute '_preprocess_images'", "_note": "pe
-- `smolvla_paper_tf32.log` · power: 60 s sustained loop
+- `smolvla_nvg.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
+- `smolvla_nvg.log` · _C._set_float32_matmul_precision(precision)
+- `smolvla_nvg.log` · W0922 22:57:03.352000 153145 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
+- `run_queue5.log` · QUEUE4_DONE 2026-09-22T22:51:09-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 22:37** (29 configurations)
+**Re-derived from every result CSV on disk at 22:57** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -108,10 +111,17 @@ Latest log lines:
 | pi0 | 10 | vis_graphs | 100.04 | 234.95 | 174.45 | 515.99 | 33.8 % |
 | pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
 | pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
+| smolvla | 10 | eager_fp32 | 33.30 | 65.77 | 620.56 | 727.46 | 85.3 % |
+| smolvla | 10 | eager_tf32 | 33.16 | 64.75 | 612.92 | 718.64 | 85.3 % |
+| smolvla | 10 | ae_compile | 33.27 | 64.18 | 161.93 | 267.42 | 60.6 % |
+| smolvla | 10 | ae_graphs | 33.25 | 65.71 | 43.82 | 150.32 | 29.2 % |
+| smolvla | 10 | vis_compile | 35.15 | 65.92 | 43.65 | 152.70 | 28.6 % |
 | pi05 | 10 | paper config (eager+TF32) | 103.61 | 550.51 | 626.90 | 1287.32 | 48.7 % |
 | pi05 | 10 | paper config (eager+TF32) | 239.39 | 2166.69 | 617.87 | 3030.99 | 20.4 % |
 | pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
+| smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
+| smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
 <!-- SLOW:END -->
 
 ## Live status
