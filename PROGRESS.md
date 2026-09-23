@@ -63,18 +63,20 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 05:17:31** · elapsed **10.71 h** of 26 (41 %) · 51.0 GiB free · 1.11 GiB swap
+**Updated 05:27:31** · elapsed **10.88 h** of 26 (42 %) · 48.2 GiB free · 1.10 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 190345 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 9 min | 0.0 GiB |
+| 190348 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 9 min | 0.4 GiB |
+| 192968 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --si` | 5 min | 3.4 GiB |
 
 Latest log lines:
 
-- `smolvla_visgraphs_diag.log` · NOT MEASURED: AcceleratorError: CUDA error: operation failed due to a previous error during capture
-- `smolvla_visgraphs_diag.log` · Search for `cudaErrorStreamCaptureInvalidated' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART_
-- `smolvla_visgraphs_diag.log` · wrote results/20260922_E4c_smolvla_opt_ladder/raw/rows/vis_graphs_N10.json
-- `groot_probe.log` · REAL_R1_PRO_SHARPA             (--embodiment-tag REAL_R1_PRO_SHARPA)
-- `groot_probe.log` · REAL_R1_PRO_SHARPA_HUMAN       (--embodi
-- `groot_probe.log` · EXIT=1 173s
+- `smolvla_partb2.log` · _C._set_float32_matmul_precision(precision)
+- `smolvla_partb2.log` · prep: SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids (m
+- `smolvla_partb2.log` · W0923 05:26:13.925000 192968 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
+- `queue_partb_finish.log` · PARTB_FINISH_START 2026-09-23T05:25:04-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
@@ -120,6 +122,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 05:18)*
 <!-- SLOW:END -->
 
 ## Live status
@@ -154,17 +158,42 @@ Latest log lines:
 | π0 | N=4 fully compiled | 99.92 | 192.78 | 69.72 | 369.52 | **18.9 %** |
 | *(their π0 on AGX Orin)* | *N=10 eager* | *110.47* | *257.76* | *543.14* | *920.58* | *59 %* |
 
+## WHAT A WATCHDOG WAKE MEANS (owner, 2026-09-23 05:30 — binding)
+
+A watchdog wake is **not** a liveness check. It is the same audit as the owner typing
+"check the progress", and it has three parts, in order:
+
+1. **Audit what already ran, for correctness** — not "did it finish" but "is the number
+   right". Re-read the rows and look for silent failures: an empty `e2e_median_ms`, a rung
+   skipped, two instances sharing the GPU, a row written by code older than the row claims.
+2. **Check what is running now** is the right next thing, and that there is exactly one.
+3. **Re-derive the upcoming order** from the priority below and state it.
+
+The owner's words: *"whenever i asked you for 'check the progress', you confessed the wrong
+past execution with wrong current order of running things."* Every check-in so far has
+surfaced a defect that had been sitting since the previous check-in. Reporting liveness is
+what lets that happen. **The audit is the point.**
+
 ## PRIORITY ORDER (owner, 2026-09-23 — supersedes everything below)
 
-1. **Fix Part B and finish it for π0, π0.5, SmolVLA.** 9 of 39 rungs failed. One root
-   cause behind 7 of them: CUDA-graph output aliasing, fixed by `clone_graph_outputs`
-   (walks tuples/lists/dicts, not just a bare tensor). The other 2 are the π0-specific
-   bf16 preps on π0.5.
-2. **Part A and B for the GR00T family** — N1.7 (license now accepted, Cosmos-Reason2-2B
-   accessible), N1.6, N1.5.
+**Part A and B for ALL models, error-free, before ANY Part C work.**
+
+1. **Fix Part B and finish it for π0, π0.5, SmolVLA.**
+   - ✅ CUDA-graph output aliasing (7 rungs) — `clone_graph_outputs`, now walks HF cache
+     objects too.
+   - ✅ SmolVLA's 4 remaining rungs — root cause was **not** the clone: SmolVLM's
+     `VisionEmbeddings.forward:137` does a boolean-mask `index_put`, a data-dependent
+     shape, so no stream capture can survive it. Fixed by `vis_static_pos`, an explicit
+     rung (the mask is all-true by construction, so it is provably identity).
+   - ✅ π0.5's 2 bf16 rungs — root cause was **not** a missing π0.5 port: π0's checkpoint
+     is `dtype: bfloat16` and π0.5's is `dtype: float32`, so `params_to_keep_float32` is a
+     real fp32 island in one and inert in the other. New `bf16_base` rung; B2/B3 now
+     apply it first on an fp32 checkpoint, and raise `NotApplicable` (a recorded result,
+     not a failure) where a model has no island to remove.
+2. **Part A and B for the GR00T family** — N1.7 running, then N1.6, N1.5.
 3. **Part C for all models** — C1 ncu per phase, C2 bottleneck→fix mapping, C3 dimensions.
-   C1 was started out of order overnight and is now stopped; π0 eager's four regions are
-   already captured and keep.
+   C1 was started out of order overnight and is stopped; π0 eager's four regions keep.
+   **Not resumed until 1 and 2 are complete and clean.**
 
 ## Overnight plan (superseded — kept for the record)
 
@@ -199,6 +228,13 @@ GR00T versions once their descriptor and input builder exist.
 
 ## Log
 
+- **05:30 (09-23)** owner: a watchdog wake means the full audit, not a status glance.
+  Recorded above as binding. Audit run at 05:35 found a real provenance defect: π0.5's
+  `bf16_vision` row was written 21:14, **before** commit `8654dcc` (21:45) added the
+  pi0-only guard, so it was produced by code the tree no longer holds. It is re-measured.
+- **05:20 (09-23)** SmolVLA's four dead rungs measured. They change a conclusion: CUDA
+  graphs on the prefix are a **2× win** for SmolVLA (15.54 → 7.93 ms) and a **net loss**
+  for π0 and π0.5. SmolVLA end-to-end 727.46 → 92.30 ms, **7.88×**.
 - **18:35** file created. π0 N=10 ladder at 3/9, Part A armed behind it.
 - **23:05** owner added C1 (ncu per-phase), C2 (bottleneck->fix mapping), C3 (expert GEMM
   dimensions) after Part A/B for all models. C3 started immediately: it is CPU-only.
