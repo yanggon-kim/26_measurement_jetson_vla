@@ -64,7 +64,55 @@ import regions as R  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E402
                     software_versions, summarize, write_json)
 
-# (key, label, precision, [(attr_owner, attr_name, mode, clone_out)], fresh, regions_ok)
+# --------------------------------------------------------------------------- Part B preps
+#
+# modeling_pi0.py:410-417 keeps these in fp32:
+#   params_to_keep_float32 = ["vision_tower", "multi_modal_projector",
+#                             "input_layernorm", "post_attention_layernorm", "model.norm"]
+# with the stated reason "so we never toggle (toggle causes optimizer 'same dtype' error)".
+# That is a TRAINING constraint; there is no optimizer at inference. The encoder's linear
+# weights are stored BF16 in model.safetensors and upcast at load, so bf16 restores the
+# stored precision rather than discarding any. Both preps change numerics and must be
+# validated on LIBERO before their speedups are believed.
+
+
+def prep_bf16_vision(policy):
+    """B2 — vision tower + projector to bf16, and stop embed_image casting up to fp32."""
+    import types
+    pg = policy.model.paligemma_with_expert
+    pg.paligemma.model.vision_tower.to(torch.bfloat16)
+    mmp = getattr(pg.paligemma.model, "multi_modal_projector", None)
+    if mmp is not None:
+        mmp.to(torch.bfloat16)
+
+    # embed_image casts the image to fp32 and the features back; with a bf16 tower that
+    # cast would force the tower to run fp32 anyway. Replace it with the same body minus
+    # the cast (modeling_pi0.py:442-450).
+    def embed_image(self, image):
+        out_dtype = image.dtype
+        if image.dtype != torch.bfloat16:
+            image = image.to(torch.bfloat16)
+        feats = self.paligemma.model.get_image_features(image)
+        feats = feats.pooler_output * self.paligemma.config.text_config.hidden_size ** 0.5
+        return feats.to(out_dtype) if feats.dtype != out_dtype else feats
+
+    pg.embed_image = types.MethodType(embed_image, pg)
+    return "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed"
+
+
+def prep_bf16_norms(policy):
+    """B3 — every layernorm to bf16. Reaches vlm_prefix and the expert, not just vision."""
+    n = 0
+    for name, mod in policy.model.named_modules():
+        if any(k in name for k in ("input_layernorm", "post_attention_layernorm")) or \
+                name.endswith("model.norm"):
+            mod.to(torch.bfloat16)
+            n += 1
+    return f"{n} layernorm modules -> bf16"
+
+
+
+# (key, label, precision, [(owner, attr, mode, clone_out)], fresh, regions_ok, prep)
 #
 # clone_out exists for ONE measured reason. `embed_image` is called once per camera —
 # three times per inference — and a reduce-overhead CUDA graph reuses a single static
@@ -79,24 +127,24 @@ from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E40
 NOGRAPH = "max-autotune-no-cudagraphs"
 GRAPHS = "reduce-overhead"
 RUNGS = [
-    ("eager_fp32",   "eager (matmul_precision=highest)",          "highest", [], False, True),
-    ("eager_tf32",   "+ TF32 (matmul_precision=high)",            "high",    [], False, True),
+    ("eager_fp32",   "eager (matmul_precision=highest)",          "highest", [], False, True, None),
+    ("eager_tf32",   "+ TF32 (matmul_precision=high)",            "high",    [], False, True, None),
     ("ae_compile",   "+ compile denoise_step (no CUDA graphs)",   "high",
-     [("model", "denoise_step", NOGRAPH, False)], True, True),
+     [("model", "denoise_step", NOGRAPH, False)], True, True, None),
     ("ae_graphs",    "+ CUDA graphs on denoise_step",             "high",
-     [("model", "denoise_step", GRAPHS, False)], True, True),
+     [("model", "denoise_step", GRAPHS, False)], True, True, None),
     ("vis_compile",  "+ compile embed_image (no CUDA graphs)",    "high",
-     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", NOGRAPH, False)], True, True),
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", NOGRAPH, False)], True, True, None),
     ("vis_graphs",   "+ CUDA graphs on embed_image (output cloned)", "high",
-     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True)], True, True),
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True)], True, True, None),
     ("vlm_compile",  "+ compile pg.forward (no CUDA graphs)",     "high",
      [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
-      ("pg", "forward", NOGRAPH, False)], True, True),
+      ("pg", "forward", NOGRAPH, False)], True, True, None),
     ("vlm_graphs",   "+ CUDA graphs on pg.forward",               "high",
      [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
-      ("pg", "forward", GRAPHS, False)], True, True),
+      ("pg", "forward", GRAPHS, False)], True, True, None),
     ("whole_graphs", "compile sample_actions (LeRobot's path)",   "high",
-     [("model", "sample_actions", GRAPHS, False)], True, False),
+     [("model", "sample_actions", GRAPHS, False)], True, False, None),
     # CORRECTION 2026-09-22: this rung was first blamed for an OOM kill. It was not the
     # cause. A second run, with whole_autotune excluded, was OOM-killed at the SAME rung
     # index (9) on a different rung, with a near-identical signature — 31.2 vs 31.7 GB
@@ -108,7 +156,20 @@ RUNGS = [
     # set only because T003 showed autotuning buys nothing here (1-4 % between stock
     # modes) at 5x the compile time.
     ("whole_autotune", "+ Triton autotuning (max-autotune)",      "high",
-     [("model", "sample_actions", "max-autotune", False)], True, False),
+     [("model", "sample_actions", "max-autotune", False)], True, False, None),
+
+    # ---- Part B: the two phases pi0's optimisation left behind --------------------
+    # Each is measured on top of the expert already being compiled+graphed, because that
+    # is the state the question is asked from: with the action head at 18.9 % of the
+    # frame, what moves vision and vlm_prefix?
+    ("bf16_vision",  "B2: + bf16 vision tower",                   "high",
+     [("model", "denoise_step", GRAPHS, False)], True, True, prep_bf16_vision),
+    ("bf16_norms",   "B3: + bf16 layernorms",                     "high",
+     [("model", "denoise_step", GRAPHS, False)], True, True, prep_bf16_norms),
+    ("bf16_both",    "B2+B3 with everything compiled",            "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
+      ("pg", "forward", NOGRAPH, False)], True, True,
+     lambda pol: prep_bf16_vision(pol) + "; " + prep_bf16_norms(pol)),
 ]
 
 
@@ -314,7 +375,7 @@ def main() -> int:
             raise SystemExit(f"unknown rung {args.single_rung!r}")
 
     for N in steps:
-        for key, label, prec, targets, fresh, regions_ok in want:
+        for key, label, prec, targets, fresh, regions_ok, prep in want:
             print(f"\n=== N={N}  {key}: {label}", flush=True)
             m0 = mem_state()
             print(f"  memory before: {m0['mem_available_GiB']:.1f} GiB available, "
@@ -334,6 +395,9 @@ def main() -> int:
             fx = P.load_fixture()
             batch, _, _ = P.build_batch(policy, fx)
             torch.set_float32_matmul_precision(prec)
+            prep_note = prep(policy) if prep else ""
+            if prep_note:
+                print(f"  prep: {prep_note}", flush=True)
 
             compiled_desc, compile_s, fails = [], 0.0, []
             for which, attr, mode, clone_out in targets:
@@ -401,7 +465,7 @@ def main() -> int:
             row = {"N": N, "rung": key, "label": label, "matmul_precision": prec,
                    "compiled": ";".join(compiled_desc), "regions": "on" if regions_ok
                    else "off (compiled sample_actions cannot be instrumented)",
-                   "compile_call_s": compile_s,
+                   "prep": prep_note, "compile_call_s": compile_s,
                    "e2e_median_ms": "" if err else round(st["median_ms"], 4),
                    "e2e_p5_ms": "" if err else round(st["p5_ms"], 4),
                    "e2e_p95_ms": "" if err else round(st["p95_ms"], 4),
