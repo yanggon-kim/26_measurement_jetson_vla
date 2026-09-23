@@ -11,6 +11,7 @@
 #   bash bench/run_ncu_regions.sh <outdir> <mode> <steps> [regions...]
 set -uo pipefail
 OUT="${1:?usage: run_ncu_regions.sh <outdir> <mode> <steps> [regions...]}"; shift
+MODEL="${MODEL:-pi0}"
 MODE="${1:?mode}"; shift
 STEPS="${1:?steps}"; shift
 REGIONS=("$@")
@@ -62,7 +63,7 @@ for R in "${REGIONS[@]}"; do
       env HOME="$HOME" HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}" \
           TORCHINDUCTOR_CACHE_DIR="$PWD/scratch/T004/inductor" \
           TRITON_CACHE_DIR="$PWD/scratch/T004/inductor/triton" \
-      "$PY" bench/ncu_target.py --region "$R" --mode "$MODE" --num-steps "$STEPS" $EXTRA \
+      "$PY" bench/ncu_target.py --model "$MODEL" --region "$R" --mode "$MODE" --num-steps "$STEPS" $EXTRA \
       > "$OUT/raw/ncu_${TAG}_stdout.log" 2>&1
   RC=$?; ELAPSED=$(( $(date +%s) - START ))
   FREQ_AFTER=$(cat /sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq)

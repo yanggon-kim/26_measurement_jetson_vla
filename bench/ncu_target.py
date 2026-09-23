@@ -33,13 +33,15 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="pi0", choices=("pi0",))
+    ap.add_argument("--model", default="pi0",
+                    help="model key from bench/model_registry.py")
     ap.add_argument("--mode", default="eager",
                     help="eager, or a torch.compile mode such as reduce-overhead")
     ap.add_argument("--num-steps", type=int, default=4)
@@ -54,10 +56,12 @@ def main() -> int:
 
     gate = P.gate()
     cm = None if args.mode == "eager" else args.mode
-    policy, _, _ = P.load_policy(num_inference_steps=args.num_steps, compile_mode=cm)
+    spec = MR.get(args.model)
+    policy, _, _ = MR.load_policy(spec, n=args.num_steps, compile_mode=cm)
     P.assert_real_weights(policy)
     fx = P.load_fixture()
-    batch, _, _ = P.build_batch(policy, fx)
+    batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
 
     rec = undo = None
     if not args.no_regions:
@@ -67,7 +71,7 @@ def main() -> int:
         # step 18, which does not exist at N=4, so no ae_layer range was ever emitted and ncu
         # reported "No kernels were profiled".
         rec = R.Recorder(enable_layers=need_layers, layers_in_step=0)
-        undo = R.instrument(policy, rec)
+        undo = R.instrument(policy, rec, spec.container)
 
     for _ in range(args.warmup):
         policy.predict_action_chunk(batch)
