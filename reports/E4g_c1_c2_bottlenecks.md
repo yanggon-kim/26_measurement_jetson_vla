@@ -9,8 +9,11 @@ Per-kernel numbers are averaged **weighted by kernel duration**; an unweighted m
 | model | mode | phase | SM % | Mem % | Occ % | LongSB (cyc/issue, share) | top stall | verdict |
 |---|---|---|---:|---:|---:|---:|---|---|
 | groot_n15 | eager | `vision` | 49.4 | 71.0 | 48.8 | 18.87 (67 %) | long_scoreboard (67 %) | mixed |
+| groot_n15 | best | `vision` | 49.5 | 71.5 | 48.8 | 18.87 (67 %) | long_scoreboard (67 %) | mixed |
 | groot_n15 | eager | `vlm_prefix` | 37.1 | 51.8 | 63.1 | 45.74 (74 %) | long_scoreboard (74 %) | latency bound (long_scoreboard) |
+| groot_n15 | best | `vlm_prefix` | 50.2 | 83.5 | 21.9 | 4.73 (34 %) | long_scoreboard (34 %) | memory bound |
 | groot_n15 | eager | `ae_total` | 54.2 | 71.7 | 30.6 | 16.33 (62 %) | long_scoreboard (62 %) | mixed |
+| groot_n15 | best | `ae_total` | 64.0 | 76.0 | 22.7 | 2.11 (20 %) | wait (24 %) | mixed |
 | groot_n16 | eager | `vision` | 31.1 | 49.4 | 73.3 | 24.95 (70 %) | long_scoreboard (70 %) | latency bound (long_scoreboard) |
 | groot_n16 | best | `vision` | 31.4 | 50.0 | 73.4 | 25.04 (70 %) | long_scoreboard (70 %) | latency bound (long_scoreboard) |
 | groot_n16 | eager | `vlm_prefix` | 27.4 | 42.7 | 50.0 | 31.01 (65 %) | long_scoreboard (65 %) | latency bound (long_scoreboard) |
@@ -19,6 +22,8 @@ Per-kernel numbers are averaged **weighted by kernel duration**; an unweighted m
 | groot_n16 | best | `ae_total` | 27.3 | 53.8 | 30.4 | 25.38 (74 %) | long_scoreboard (74 %) | latency bound (long_scoreboard) |
 | groot_n17 | eager | `vision` | 47.3 | 69.5 | 48.8 | 15.57 (64 %) | long_scoreboard (64 %) | mixed |
 | groot_n17 | best | `vision` | 44.3 | 66.2 | 46.9 | 14.48 (61 %) | long_scoreboard (61 %) | mixed |
+| groot_n17 | eager | `vlm_prefix` | 25.8 | 40.6 | 51.5 | 32.76 (64 %) | long_scoreboard (64 %) | latency bound (long_scoreboard) |
+| groot_n17 | best | `vlm_prefix` | 50.6 | 67.6 | 22.1 | 6.30 (40 %) | long_scoreboard (40 %) | mixed |
 | groot_n17 | eager | `ae_total` | 52.4 | 70.4 | 21.9 | 5.65 (42 %) | long_scoreboard (42 %) | mixed |
 | groot_n17 | best | `ae_total` | 52.4 | 75.0 | 20.3 | 3.93 (35 %) | long_scoreboard (35 %) | mixed |
 | pi0 | eager | `vision` | 65.3 | 58.3 | 35.6 | 3.38 (43 %) | long_scoreboard (43 %) | mixed |
@@ -34,8 +39,11 @@ Per-kernel numbers are averaged **weighted by kernel duration**; an unweighted m
 | pi05 | eager | `ae_step_0` | 4.9 | 12.2 | 16.7 | 6.90 (22 %) | imc_miss (32 %) | latency bound (imc_miss) |
 | pi05 | best | `ae_step_0` | 12.7 | 60.3 | 22.8 | 14.84 (55 %) | long_scoreboard (55 %) | mixed |
 | smolvla | eager | `vision` | 46.7 | 72.7 | 53.5 | 9.74 (42 %) | long_scoreboard (42 %) | mixed |
+| smolvla | best | `vision` | 56.2 | 77.8 | 40.2 | 3.42 (28 %) | long_scoreboard (28 %) | mixed |
 | smolvla | eager | `vlm_prefix` | 13.6 | 20.0 | 41.8 | 23.42 (49 %) | long_scoreboard (49 %) | latency bound (long_scoreboard) |
+| smolvla | best | `vlm_prefix` | 39.0 | 49.1 | 34.9 | 8.02 (51 %) | long_scoreboard (51 %) | latency bound (long_scoreboard) |
 | smolvla | eager | `ae_step_0` | 15.6 | 18.8 | 17.6 | 5.93 (24 %) | imc_miss (33 %) | latency bound (imc_miss) |
+| smolvla | best | `ae_step_0` | 32.4 | 35.5 | 32.8 | 5.84 (35 %) | long_scoreboard (35 %) | latency bound (long_scoreboard) |
 
 ## C2 — eager → best, phase by phase
 
@@ -45,10 +53,14 @@ What is compared here are the ncu counters, which are intensive quantities descr
 
 | model | phase | eager verdict | best verdict | ΔSM % | ΔMem % | ΔLongSB | what the counters say moved |
 |---|---|---|---|---:|---:|---:|---|
+| groot_n15 | `vision` | mixed | mixed | +0.1 | +0.5 | -0.00 | no clear change in the counters |
+| groot_n15 | `vlm_prefix` | latency bound (long_scoreboard) | memory bound | +13.1 | +31.7 | -41.01 | less memory-latency stall; higher SM utilisation |
+| groot_n15 | `ae_total` | mixed | mixed | +9.8 | +4.4 | -14.22 | less memory-latency stall; higher SM utilisation |
 | groot_n16 | `vision` | latency bound (long_scoreboard) | latency bound (long_scoreboard) | +0.3 | +0.6 | +0.09 | no clear change in the counters |
 | groot_n16 | `vlm_prefix` | latency bound (long_scoreboard) | mixed | +26.9 | +32.1 | -25.69 | less memory-latency stall; higher SM utilisation |
 | groot_n16 | `ae_total` | latency bound (long_scoreboard) | latency bound (long_scoreboard) | -9.4 | +28.9 | +14.75 | MORE memory-latency stall |
 | groot_n17 | `vision` | mixed | mixed | -3.0 | -3.2 | -1.09 | less memory-latency stall |
+| groot_n17 | `vlm_prefix` | latency bound (long_scoreboard) | mixed | +24.8 | +27.0 | -26.46 | less memory-latency stall; higher SM utilisation |
 | groot_n17 | `ae_total` | mixed | mixed | -0.0 | +4.6 | -1.72 | less memory-latency stall |
 | pi0 | `vision` | mixed | latency bound (long_scoreboard) | -21.7 | +0.8 | -1.45 | less memory-latency stall |
 | pi0 | `vlm_prefix` | latency bound (long_scoreboard) | latency bound (mio_throttle) | +11.2 | +6.5 | -31.70 | less memory-latency stall; higher SM utilisation |
@@ -56,6 +68,9 @@ What is compared here are the ncu counters, which are intensive quantities descr
 | pi05 | `vision` | mixed | latency bound (long_scoreboard) | -21.5 | +1.0 | -1.31 | less memory-latency stall |
 | pi05 | `vlm_prefix` | mixed | latency bound (long_scoreboard) | -17.9 | +2.6 | -14.86 | less memory-latency stall |
 | pi05 | `ae_step_0` | latency bound (imc_miss) | mixed | +7.8 | +48.0 | +7.94 | MORE memory-latency stall; higher SM utilisation |
+| smolvla | `vision` | mixed | mixed | +9.6 | +5.1 | -6.33 | less memory-latency stall; higher SM utilisation |
+| smolvla | `vlm_prefix` | latency bound (long_scoreboard) | latency bound (long_scoreboard) | +25.5 | +29.1 | -15.40 | less memory-latency stall; higher SM utilisation |
+| smolvla | `ae_step_0` | latency bound (imc_miss) | latency bound (long_scoreboard) | +16.8 | +16.8 | -0.09 | higher SM utilisation |
 
 ## C3 — the action expert's operand dimensions
 
@@ -66,9 +81,9 @@ Read from each checkpoint's own tensor shapes (every GR00T checkpoint is sharded
 | pi0 | 18 | 7 | 126 | 51 | 51 | MEMORY-bound by construction (S < ridge) |
 | pi05 | 18 | 9 | 162 | 50 | 50 | MEMORY-bound by construction (S < ridge) |
 | smolvla | 16 | 7 | 112 | 50 | 50 | MEMORY-bound by construction (S < ridge) |
-| groot_n17 | 32 | 7 | 224 | — | — | S pending (queue_c3_groot_s.sh) |
-| groot_n16 | 32 | 7 | 224 | — | — | S pending (queue_c3_groot_s.sh) |
-| groot_n15 | 16 | 7 | 112 | — | — | S pending (queue_c3_groot_s.sh) |
+| groot_n17 | 32 | 7 | 224 | 41 | 41 | MEMORY-bound by construction (S < ridge) |
+| groot_n16 | 32 | 7 | 224 | 51 | 51 | MEMORY-bound by construction (S < ridge) |
+| groot_n15 | 16 | 7 | 112 | 49 | 49 | MEMORY-bound by construction (S < ridge) |
 
 The skinniest GEMM in each expert — the long-shallow shape the owner predicted:
 
@@ -77,8 +92,11 @@ The skinniest GEMM in each expert — the long-shallow shape the owner predicted
 | pi0 | `mlp.down_proj` | [51 x 4096] | [4096 x 1024] | 80.3 | 48.0 |
 | pi05 | `mlp.down_proj` | [50 x 4096] | [4096 x 1024] | 81.9 | 47.1 |
 | smolvla | `mlp.down_proj` | [50 x 2048] | [2048 x 720] | 41.0 | 45.7 |
+| groot_n17 | `ff.net.2` | [41 x 6144] | [6144 x 1536] | 149.9 | 39.7 |
+| groot_n16 | `ff.net.2` | [51 x 6144] | [6144 x 1536] | 120.5 | 49.0 |
+| groot_n15 | `ff.net.2` | [49 x 6144] | [6144 x 1536] | 125.4 | 47.1 |
 
 **The analytic verdict and the measured one disagree, and that is the point.** I ≈ S puts every expert GEMM far below the measured ridge, so analytically they are all memory-bound by construction. C1's counters say π0's expert is *issue*-limited when eager (`imc_miss` 35 %, Long Scoreboard third at 16 %, memory throughput 21.6 %) and only becomes memory-latency-bound once compiled (56.5 %, Long Scoreboard dominant). Arithmetic intensity bounds what a phase *could* achieve; it does not say what limits it now.
 
-Captures summarised: **28**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
+Captures summarised: **36**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
 
