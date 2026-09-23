@@ -63,27 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 07:17:38** · elapsed **12.71 h** of 26 (49 %) · 44.8 GiB free · 1.14 GiB swap
+**Updated 07:37:39** · elapsed **13.04 h** of 26 (50 %) · 50.9 GiB free · 1.13 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 212708 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 4 min | 0.4 GiB |
-| 212748 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --single-run` | 4 min | 15.9 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_groot2.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `queue_groot2.log` · === N=10  vlm_compile_nvg: compile pg.forward, no embed_image graph
-- `queue_groot2.log` · memory before: 50.4 GiB available, 1.14 GiB swap in use
-- `queue_pi05_b3_fix.log` · wrote results/20260922_E4c_pi05_opt_ladder (13 rungs)
-- `queue_pi05_b3_fix.log` · EXIT=0 515s
-- `queue_pi05_b3_fix.log` · PI05_B3FIX_DONE 2026-09-23T07:04:34-07:00
+- `queue_fix3.log` · row + traceback written for vlm_graphs
+- `queue_fix3.log` · EXIT=1
+- `queue_fix3.log` · FIX3_DONE 2026-09-23T07:29:06-07:00
+- `queue_groot2.log` · wrote results/20260922_E4c_pi05_opt_ladder (14 rungs)
+- `queue_groot2.log` · EXIT=0 299s
+- `queue_groot2.log` · GROOT2_DONE 2026-09-23T07:23:30-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 07:18** (55 configurations)
+**Re-derived from every result CSV on disk at 07:38** (56 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -96,6 +93,7 @@ Latest log lines:
 | pi05 | 10 | vlm_compile | 99.82 | 516.60 | 240.75 | 863.47 | 27.9 % |
 | pi05 | 10 | vlm_graphs | 99.08 | 515.35 | 249.03 | 871.07 | 28.6 % |
 | pi05 | 10 | whole_graphs | — | — | — | 860.09 | — |
+| pi05 | 10 | vlm_compile_nvg | 108.00 | 489.74 | 259.36 | 868.48 | 29.9 % |
 | pi05 | 10 | bf16_base | 104.19 | 290.55 | 190.52 | 591.95 | 32.2 % |
 | pi05 | 10 | bf16_vision | 89.88 | 290.37 | 189.46 | 576.81 | 32.8 % |
 | pi0 | 4 | eager_fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
