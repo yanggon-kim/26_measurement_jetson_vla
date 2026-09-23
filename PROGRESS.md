@@ -63,20 +63,26 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 23:45:13** · elapsed **5.17 h** of 26 (20 %) · 47.5 GiB free · 0.72 GiB swap
+**Updated 23:57:13** · elapsed **5.37 h** of 26 (21 %) · 39.8 GiB free · 0.71 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 155459 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_eager eager 10 ae_layer[0] ae_step[0] vl` | 8 min | 0.0 GiB |
 
 Latest log lines:
 
-- `measure_S.log` · ########## 23:44 /home/yanggon/venvs/pi0/bin/python bench/measure_S.py --models pi05,smolvla --json results/20
-- `overnight.log` · OVERNIGHT_START 2026-09-22T23:44:52-07:00
+- `ncu_pi0_eager.log` · exit=0  434s  devfreq 1300500000 -> 1300500000
+- `ncu_pi0_eager.log` · ncu SM Frequency: 1.27583e+09 hz vs devfreq 1300500000 Hz
+- `ncu_pi0_eager.log` · ########## ae_step[0]  (mode=eager, tag=ae_step0, nvtx-include=ae_step_0/)
+- `measure_S.log` · smolvla   {"prefix_tokens_P": 177, "suffix_tokens_S": 50, "suffix_hidden": 720, "chunk_size": 50}
+- `measure_S.log` · wrote results/20260922_E4f_expert_dims/suffix_tokens.json
+- `measure_S.log` · EXIT=0 262s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 23:37** (36 configurations)
+**Re-derived from every result CSV on disk at 23:57** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -116,8 +122,6 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: pushed at 23:37)*
 <!-- SLOW:END -->
 
 ## Live status
