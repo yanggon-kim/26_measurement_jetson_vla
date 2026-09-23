@@ -63,15 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 11:17:51** · elapsed **16.71 h** of 26 (64 %) · 43.9 GiB free · 1.13 GiB swap
+**Updated 11:33:52** · elapsed **16.98 h** of 26 (65 %) · 19.2 GiB free · 1.13 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_lerobot.log` · rep 67M -> zst 2.1M
-- `queue_c1_lerobot.log` · csv rows=1855
-- `queue_c1_lerobot.log` · ########## 11:08 ncu pi0_best_vision (cap 40)
+- `queue_c1_lerobot.log` · csv rows=1830
+- `queue_c1_lerobot.log` · ########## pi0 eager ae_step_0 already done (verified)
+- `queue_c1_lerobot.log` · ########## 11:31 ncu pi0_best_vision (cap 40)
 - `queue_c1_repair.log` · C1_REPAIR_START 2026-09-23T11:06:43-07:00
 <!-- FAST:END -->
 
@@ -140,6 +140,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 11:19)*
 <!-- SLOW:END -->
 
 ## Live status
@@ -242,8 +244,56 @@ GR00T versions once their descriptor and input builder exist.
 5. **Write results incrementally**; a kill must cost one rung, not the run.
 6. **Commit `bench/` before the run that uses it**, so `bench_commit` names the code that ran.
 
+## PART A + B: COMPLETE FOR ALL SIX MODELS (2026-09-23 10:15)
+
+π0, π0.5, SmolVLA, GR00T N1.7 / N1.6 / N1.5 — every rung either measured, or recorded as
+`not applicable` with a reason, or `failed` with the error kept. Report:
+`reports/E4d_phase_balance.md`, generated from the row JSONs so it cannot drift.
+
+**Correction issued 11:20.** The cross-model table circulated earlier gave π0 as
+"54.9 % → 18.9 %". That pairs the **N=10** eager share with the **N=4** optimised share:
+π0's directory holds both ladders and the report generator keyed rows by rung alone, so
+N=4 rows silently overwrote N=10 ones. At its configured N=10, π0 falls to **39.7 %**, not
+19 %. It is not the outlier it appeared to be; it sits with the GR00T family.
+
+## PART C — in progress
+
+- **C3 done, all six models.** GR00T's action head is a DiT: **32 transformer blocks in
+  N1.7 and N1.6, 16 in N1.5**, all width 1536. That is the mechanism behind the
+  action-head ranking — at identical N=4 in one family, N1.5's head is 38.6 % of the eager
+  frame against N1.6's 61.5 %, and only the head differs.
+- **C1 running**, 36 captures, one profiler at a time (`bench/run_ncu_c1*.sh`, four ncu
+  sections plus the 14 stall metrics requested by name). ~900 KB per capture compressed,
+  against the 89–203 MB the overnight `--set full -c 300` attempt produced.
+- **C2 computed from C1** by `bench/analyze_c1.py`, which also writes
+  `reports/E4g_c1_c2_bottlenecks.md`.
+
+### First C1 result, π0 eager — it inverts the premise
+
+| phase | SM % | Mem % | Occ % | L2 hit | verdict | dominant stall |
+|---|---:|---:|---:|---:|---|---|
+| vision | 65.3 | 58.3 | 35.6 | 90.4 | mixed | `long_scoreboard` 43 % |
+| **vlm_prefix** | 40.4 | 48.6 | 70.7 | **56.0** | **latency bound** | **`long_scoreboard` 74 %** |
+| ae_step_0 | 22.7 | 21.6 | 18.5 | 68.6 | latency bound | `imc_miss` 35 % |
+
+The phase actually waiting on memory is the **VLM prefix**, not the action expert. The
+expert's Long Scoreboard is 16 % and third, behind constant-cache misses and
+instruction-fetch starvation — what an S=51 skinny GEMM looks like when it is issue-limited
+rather than bandwidth-limited. Our SM 22.7 % matches arXiv:2604.24447's reported 22.3 %,
+which is an independent check on the capture.
+
+**Provisional on one model.** Held as provisional until the remaining captures agree or
+disagree.
+
 ## Log
 
+- **11:20 (09-23)** π0 N-mixing correction above; the N=4 ladder is now kept explicitly as
+  a within-model control on N rather than folded into the main table.
+- **11:15 (09-23)** C1 captures were recompiling everything as root:
+  `TORCHINDUCTOR_CACHE_DIR` defaults to `/tmp/torchinductor_root` under sudo while the
+  user cache already held 672 entries from Part A/B. Fixed; would have cost ~6 h.
+- **10:50 (09-23)** the four ncu sections do NOT carry the stall breakdown — caught at
+  capture 2 of 36. All 14 `smsp__average_warps_issue_stalled_*` are now requested by name.
 - **06:05 (09-23)** audit found every `results/` directory of this study **uncommitted** —
   the repository is the only channel to the research side, so they did not exist for them.
   Now committed. **One blocker recorded, not forgotten:**
