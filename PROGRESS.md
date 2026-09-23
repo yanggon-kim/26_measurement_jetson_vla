@@ -63,22 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 06:27:35** · elapsed **11.88 h** of 26 (46 %) · 49.0 GiB free · 1.13 GiB swap
+**Updated 06:37:35** · elapsed **12.04 h** of 26 (46 %) · 49.8 GiB free · 1.13 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
+- `queue_groot.log` · embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+- `queue_groot.log` · /home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `ou
+- `queue_groot.log` · self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
 - `queue_pi05_b3.log` · PI05_B3_START 2026-09-23T06:27:06-07:00
-- `queue_groot.log` · compiled action_head.get_action@reduce-overhead in 1.2 s
-- `queue_groot.log` · observation shapes: {"video": {"exterior_image_1_left": [1, 2, 256, 256, 3], "wrist_image_left": [1, 2, 256, 2
-- `queue_groot.log` · data_processing (CPU): 37.94 ms
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 06:18** (51 configurations)
+**Re-derived from every result CSV on disk at 06:38** (54 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -89,8 +89,10 @@ Latest log lines:
 | pi05 | 10 | vis_compile | 102.38 | 556.54 | 244.73 | 909.88 | 26.9 % |
 | pi05 | 10 | vis_graphs | 100.25 | 548.77 | 245.23 | 900.66 | 27.2 % |
 | pi05 | 10 | vlm_compile | 99.82 | 516.60 | 240.75 | 863.47 | 27.9 % |
+| pi05 | 10 | vlm_graphs | 99.08 | 515.35 | 249.03 | 871.07 | 28.6 % |
 | pi05 | 10 | whole_graphs | — | — | — | 860.09 | — |
-| pi05 | 10 | bf16_vision | 88.05 | 558.22 | 244.43 | 897.61 | 27.2 % |
+| pi05 | 10 | bf16_base | 104.19 | 290.55 | 190.52 | 591.95 | 32.2 % |
+| pi05 | 10 | bf16_vision | 89.88 | 290.37 | 189.46 | 576.81 | 32.8 % |
 | pi0 | 4 | eager_fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
 | pi0 | 4 | eager_tf32 | 104.18 | 234.06 | 230.75 | 575.28 | 40.1 % |
 | pi0 | 4 | ae_compile | 103.26 | 234.25 | 99.94 | 444.35 | 22.5 % |
@@ -124,6 +126,7 @@ Latest log lines:
 | smolvla | 10 | vlm_graphs | 31.26 | 7.93 | 44.86 | 92.30 | 48.6 % |
 | smolvla | 10 | whole_graphs | — | — | — | 80.97 | — |
 | smolvla | 10 | vlm_compile_nvg | 33.07 | 15.32 | 44.36 | 100.22 | 44.3 % |
+| smolvla | 10 | bf16_base | — | — | — | nan | — |
 | smolvla | 10 | bf16_vision | — | — | — | nan | — |
 | smolvla | 10 | bf16_norms | — | — | — | nan | — |
 | smolvla | 10 | bf16_both | — | — | — | nan | — |
@@ -133,8 +136,6 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: pushed at 06:18)*
 <!-- SLOW:END -->
 
 ## Live status
