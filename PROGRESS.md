@@ -63,22 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 09:37:46** · elapsed **15.05 h** of 26 (58 %) · 50.5 GiB free · 1.13 GiB swap
+**Updated 09:57:47** · elapsed **15.38 h** of 26 (59 %) · 50.9 GiB free · 1.13 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_viscompile.log` · n1.5 stage clear 2026-09-23T09:36:53-07:00
-- `queue_viscompile.log` · ########## 09:36 n1.7 vis_compile
-- `queue_viscompile.log` · gate: {"gpu_cur_freq_hz": "1300500000", "gpu_min_freq_hz": "1300500000", "gpu_max_freq_hz": "1300500000", "cpu
-- `queue_n1d5b.log` · N1D5B_START 2026-09-23T09:36:22-07:00
+- `queue_n1d5b.log` · GR00T_N1_5 OK
+- `queue_n1d5b.log` · EXIT=0
+- `queue_n1d5b.log` · N1D5B_DONE 2026-09-23T09:51:56-07:00
+- `queue_viscompile.log` · wrote results/20260923_E4d_groot_n16_ladder
+- `queue_viscompile.log` · EXIT=0
+- `queue_viscompile.log` · VISC_DONE 2026-09-23T09:40:47-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 09:38** (58 configurations)
+**Re-derived from every result CSV on disk at 09:58** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
