@@ -63,15 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 11:57:54** · elapsed **17.38 h** of 26 (67 %) · 39.5 GiB free · 1.12 GiB swap
+**Updated 12:03:54** · elapsed **17.48 h** of 26 (67 %) · 25.5 GiB free · 1.12 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_lerobot.log` · rep 34M -> zst 1.2M
-- `queue_c1_lerobot.log` · csv rows=1832
-- `queue_c1_lerobot.log` · ########## 11:56 ncu pi05_eager_vision (cap 40)
+- `queue_c1_lerobot.log` · ==PROF== Disconnected from process 247886
+- `queue_c1_lerobot.log` · ==ERROR== The application returned an error code (1).
+- `queue_c1_lerobot.log` · ########## 12:01 ncu pi05_eager_vlm_prefix (cap 40)
 - `queue_c1_repair.log` · C1_REPAIR_START 2026-09-23T11:06:43-07:00
 <!-- FAST:END -->
 
@@ -140,6 +140,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 11:59)*
 <!-- SLOW:END -->
 
 ## Live status

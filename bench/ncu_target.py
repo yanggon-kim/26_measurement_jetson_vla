@@ -58,7 +58,15 @@ def main() -> int:
     cm = None if args.mode == "eager" else args.mode
     spec = MR.get(args.model)
     policy, _, _ = MR.load_policy(spec, n=args.num_steps, compile_mode=cm)
-    P.assert_real_weights(policy)
+    # assert_real_weights diffs sampled tensors against PI0's OWN safetensors, so it is
+    # pi0-specific: on pi0.5 it reported "0/357 tensors match" and aborted the capture,
+    # which is a false alarm about a real guard rather than a real failure. It exists
+    # because PI0Policy.from_pretrained once swallowed a load error and returned RANDOM
+    # weights while still producing plausible latencies (env/README.md §10), so it is kept
+    # for the model it can actually check and recorded as unverified elsewhere.
+    weights = (P.assert_real_weights(policy) if args.model == "pi0" else
+               {"verdict": "not verified: assert_real_weights diffs against pi0's own "
+                           "safetensors and is pi0-specific"})
     fx = P.load_fixture()
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
@@ -92,6 +100,7 @@ def main() -> int:
 
     print(json.dumps({
         "region_requested": args.region, "mode": args.mode, "num_steps": args.num_steps,
+        "weights": weights,
         "warmup": args.warmup, "instrumented": rec is not None,
         "gpu_cur_freq_hz": gate["gpu_cur_freq_hz"], "power_mode": gate["power_mode"],
         "sm_count": gate["sm_count"],
