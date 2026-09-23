@@ -83,7 +83,11 @@ if not n:
 PY
 echo
 echo "--- 3. QUEUE MARKERS"
-grep -hE "PARTB_FINISH_START|PARTB_FINISH_DONE|GROOT_QUEUE_START|GROOT_QUEUE_DONE|^####|EXIT=[^0]" \
-    scratch/T004/queue_partb_finish.log scratch/T004/queue_groot.log 2>/dev/null | tail -12
+# glob every queue log: naming two of them by hand meant the 07:22 audit printed markers
+# from a queue that had been superseded two queues earlier.
+ls -t scratch/T004/queue_*.log 2>/dev/null | head -3 | while read -r f; do
+  echo "  [$f]"
+  grep -hE "_START |_DONE |^####|EXIT=[^0]" "$f" 2>/dev/null | tail -6 | sed 's/^/    /'
+done
 echo
 echo "--- 4. ORDER: Part A+B all models error-free -> then Part C. Re-derive before acting."

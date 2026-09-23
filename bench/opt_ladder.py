@@ -60,7 +60,8 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import model_registry as MR  # noqa: E402
+import model_registry as MR
+from graph_clone import clone_graph_outputs  # noqa: E402
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E402
@@ -76,47 +77,6 @@ from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E40
 # weights are stored BF16 in model.safetensors and upcast at load, so bf16 restores the
 # stored precision rather than discarding any. Both preps change numerics and must be
 # validated on LIBERO before their speedups are believed.
-
-
-def clone_graph_outputs(r):
-    """Detach a CUDA-graph replay's outputs from its static buffers.
-
-    reduce-overhead reuses one set of output tensors per graph, so a callable invoked more
-    than once per inference has its earlier results overwritten before the caller reads
-    them. That is exactly what `embed_image` (once per camera) and `pg.forward` (once for
-    the prefix, then once per denoising step) do, and both raised
-
-        RuntimeError: accessing tensor output of CUDAGraphs that has been overwritten
-                      by a subsequent run
-
-    A flat `.clone()` covered only a bare tensor, so it fixed embed_image and left
-    pg.forward failing: pg.forward returns a tuple holding a list of embeddings and a
-    cache. This walks tuples, lists and dicts and clones every tensor it finds, leaving
-    anything else alone. The copies are inside the rung's own timing, so the number stays
-    honest about what the workaround costs.
-    """
-    if torch.is_tensor(r):
-        return r.clone()
-    if isinstance(r, tuple):
-        return tuple(clone_graph_outputs(x) for x in r)
-    if isinstance(r, list):
-        return [clone_graph_outputs(x) for x in r]
-    if isinstance(r, dict):
-        return {k: clone_graph_outputs(v) for k, v in r.items()}
-    # HF cache objects (DynamicCache and friends) are neither tensor nor container, and
-    # pg.forward returns one: `prefix_output.past_key_values` (modeling_pi0.py:475). Its
-    # key/value tensors ARE graph outputs, so passing the object through untouched leaves
-    # every later read aliasing the static buffers. Clone the lists in place.
-    for attr in ("key_cache", "value_cache", "keys", "values"):
-        if isinstance(getattr(r, attr, None), list):
-            setattr(r, attr, [clone_graph_outputs(x) for x in getattr(r, attr)])
-    if hasattr(r, "layers") and isinstance(getattr(r, "layers", None), list):
-        for lay in r.layers:
-            for attr in ("keys", "values"):
-                if torch.is_tensor(getattr(lay, attr, None)):
-                    setattr(lay, attr, getattr(lay, attr).clone())
-    return r
-
 
 
 def prep_smolvlm_static_posids(policy):

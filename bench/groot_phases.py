@@ -130,13 +130,33 @@ def main() -> int:
         setattr(obj, attr, wrapper)
         return lambda: setattr(obj, attr, orig)
 
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from graph_clone import clone_graph_outputs                   # noqa: E402
+
+    def compile_and_clone(obj, attr, mode):
+        """torch.compile, and clone the result when CUDA graphs are in play.
+
+        reduce-overhead reuses one static output buffer per callable, so a callable
+        invoked more than once per inference loses its earlier results. GR00T's
+        vlm_graphs died with exactly that ("accessing tensor output of CUDAGraphs that
+        has been overwritten by a subsequent run") -- the same defect that cost three
+        separate diagnoses on the LeRobot side.
+        """
+        c = torch.compile(getattr(obj, attr), mode=mode)
+        if "reduce-overhead" not in mode:
+            setattr(obj, attr, c)
+            return ""
+        def wrapper(*a, _c=c, **k):
+            return clone_graph_outputs(_c(*a, **k))
+        setattr(obj, attr, wrapper)
+        return "+clone"
+
     compiled_desc, compile_s = [], 0.0
     if args.head_mode:
         t0 = time.time()
-        model.action_head.get_action = torch.compile(model.action_head.get_action,
-                                                     mode=args.head_mode)
+        cl = compile_and_clone(model.action_head, "get_action", args.head_mode)
         compile_s += time.time() - t0
-        compiled_desc.append(f"action_head.get_action@{args.head_mode}")
+        compiled_desc.append(f"action_head.get_action@{args.head_mode}{cl}")
     if args.vision_mode:
         # Expected to fail on this checkpoint, and the reason is worth recording rather
         # than hiding: Qwen3-VL's vision encoder computes
@@ -145,22 +165,21 @@ def main() -> int:
         # graph-breaks at .item() and then passes a 0-dim FakeTensor, so the custom op
         # raises "Expected a value of type 'int' for argument 'max_seqlen_q'".
         t0 = time.time()
-        vis_mod = model.backbone.model.visual
-        vis_mod.forward = torch.compile(vis_mod.forward, mode=args.vision_mode)
+        cl = compile_and_clone(model.backbone.model.visual, "forward", args.vision_mode)
         compile_s += time.time() - t0
-        compiled_desc.append(f"backbone.model.visual.forward@{args.vision_mode}")
+        compiled_desc.append(f"backbone.model.visual.forward@{args.vision_mode}{cl}")
     if args.llm_mode:
         t0 = time.time()
-        lm = model.backbone.model.language_model
-        lm.forward = torch.compile(lm.forward, mode=args.llm_mode)
+        cl = compile_and_clone(model.backbone.model.language_model, "forward",
+                               args.llm_mode)
         compile_s += time.time() - t0
-        compiled_desc.append(f"backbone.model.language_model.forward@{args.llm_mode}")
+        compiled_desc.append(
+            f"backbone.model.language_model.forward@{args.llm_mode}{cl}")
     if args.backbone_mode:
         t0 = time.time()
-        model.backbone.forward = torch.compile(model.backbone.forward,
-                                               mode=args.backbone_mode)
+        cl = compile_and_clone(model.backbone, "forward", args.backbone_mode)
         compile_s += time.time() - t0
-        compiled_desc.append(f"backbone.forward@{args.backbone_mode}")
+        compiled_desc.append(f"backbone.forward@{args.backbone_mode}{cl}")
     if compiled_desc:
         print(f"compiled {', '.join(compiled_desc)} in {compile_s:.1f} s", flush=True)
 
