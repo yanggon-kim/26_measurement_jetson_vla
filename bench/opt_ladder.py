@@ -77,6 +77,35 @@ from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E40
 # validated on LIBERO before their speedups are believed.
 
 
+def clone_graph_outputs(r):
+    """Detach a CUDA-graph replay's outputs from its static buffers.
+
+    reduce-overhead reuses one set of output tensors per graph, so a callable invoked more
+    than once per inference has its earlier results overwritten before the caller reads
+    them. That is exactly what `embed_image` (once per camera) and `pg.forward` (once for
+    the prefix, then once per denoising step) do, and both raised
+
+        RuntimeError: accessing tensor output of CUDAGraphs that has been overwritten
+                      by a subsequent run
+
+    A flat `.clone()` covered only a bare tensor, so it fixed embed_image and left
+    pg.forward failing: pg.forward returns a tuple holding a list of embeddings and a
+    cache. This walks tuples, lists and dicts and clones every tensor it finds, leaving
+    anything else alone. The copies are inside the rung's own timing, so the number stays
+    honest about what the workaround costs.
+    """
+    if torch.is_tensor(r):
+        return r.clone()
+    if isinstance(r, tuple):
+        return tuple(clone_graph_outputs(x) for x in r)
+    if isinstance(r, list):
+        return [clone_graph_outputs(x) for x in r]
+    if isinstance(r, dict):
+        return {k: clone_graph_outputs(v) for k, v in r.items()}
+    return r
+
+
+
 def prep_bf16_vision(policy):
     """B2 — vision tower + projector to bf16, and stop embed_image casting up to fp32.
 
@@ -155,7 +184,7 @@ RUNGS = [
       ("pg", "forward", NOGRAPH, False)], True, True, None),
     ("vlm_graphs",   "+ CUDA graphs on pg.forward",               "high",
      [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
-      ("pg", "forward", GRAPHS, False)], True, True, None),
+      ("pg", "forward", GRAPHS, True)], True, True, None),
     ("whole_graphs", "compile sample_actions (LeRobot's path)",   "high",
      [("model", "sample_actions", GRAPHS, False)], True, False, None),
     # CORRECTION 2026-09-22: this rung was first blamed for an OOM kill. It was not the
@@ -448,8 +477,7 @@ def main() -> int:
                     c = torch.compile(getattr(ownr, attr), mode=mode)
                     if clone_out:
                         def _cloned(*a, _c=c, **k):
-                            r = _c(*a, **k)
-                            return r.clone() if torch.is_tensor(r) else r
+                            return clone_graph_outputs(_c(*a, **k))
                         setattr(ownr, attr, _cloned)
                     else:
                         setattr(ownr, attr, c)
