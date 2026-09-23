@@ -63,27 +63,27 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 06:57:36** · elapsed **12.38 h** of 26 (48 %) · 35.4 GiB free · 1.13 GiB swap
+**Updated 07:17:38** · elapsed **12.71 h** of 26 (49 %) · 44.8 GiB free · 1.14 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 209774 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 2 min | 0.4 GiB |
-| 209817 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 2 min | 15.4 GiB |
+| 212708 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 4 min | 0.4 GiB |
+| 212748 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --single-run` | 4 min | 15.9 GiB |
 
 Latest log lines:
 
-- `queue_pi05_b3_fix.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `queue_pi05_b3_fix.log` · === N=10  bf16_norms: B3: + bf16 layernorms
-- `queue_pi05_b3_fix.log` · memory before: 50.4 GiB available, 1.13 GiB swap in use
-- `queue_pi05_b3.log` · wrote results/20260922_E4c_pi0_opt_ladder (22 rungs)
-- `queue_pi05_b3.log` · EXIT=0 248s
-- `queue_pi05_b3.log` · PI05_B3_DONE 2026-09-23T06:51:12-07:00
+- `queue_groot2.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
+- `queue_groot2.log` · === N=10  vlm_compile_nvg: compile pg.forward, no embed_image graph
+- `queue_groot2.log` · memory before: 50.4 GiB available, 1.14 GiB swap in use
+- `queue_pi05_b3_fix.log` · wrote results/20260922_E4c_pi05_opt_ladder (13 rungs)
+- `queue_pi05_b3_fix.log` · EXIT=0 515s
+- `queue_pi05_b3_fix.log` · PI05_B3FIX_DONE 2026-09-23T07:04:34-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 06:58** (54 configurations)
+**Re-derived from every result CSV on disk at 07:18** (55 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -116,6 +116,7 @@ Latest log lines:
 | pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
 | pi0 | 10 | vlm_graphs | 99.29 | 197.17 | 170.88 | 473.91 | 36.1 % |
 | pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
+| pi0 | 10 | vlm_compile_nvg | 102.83 | 195.55 | 170.18 | 475.28 | 35.8 % |
 | pi0 | 10 | bf16_base | — | — | — | nan | — |
 | pi0 | 10 | bf16_vision | 88.53 | 234.06 | 172.53 | 501.98 | 34.4 % |
 | pi0 | 10 | bf16_norms | 103.15 | 235.02 | 174.59 | 518.99 | 33.6 % |
