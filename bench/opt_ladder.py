@@ -171,6 +171,15 @@ RUNGS = [
     ("whole_autotune", "+ Triton autotuning (max-autotune)",      "high",
      [("model", "sample_actions", "max-autotune", False)], True, False, None),
 
+    # An alternative to vlm_compile that omits the embed_image CUDA graph. The rungs are
+    # cumulative, so a model that cannot capture embed_image loses every rung after
+    # vis_graphs: SmolVLA lost four that way ("operation failed due to a previous error
+    # during capture"). This keeps the prefix-compilation measurement available for such a
+    # model, and is labelled so it is never compared against vlm_compile as if identical.
+    ("vlm_compile_nvg", "compile pg.forward, no embed_image graph", "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "forward", NOGRAPH, False)],
+     True, True, None),
+
     # ---- Part B: the two phases pi0's optimisation left behind --------------------
     # Each is measured on top of the expert already being compiled+graphed, because that
     # is the state the question is asked from: with the action head at 18.9 % of the
