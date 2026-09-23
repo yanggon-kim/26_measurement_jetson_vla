@@ -63,23 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 12:57:57** · elapsed **18.38 h** of 26 (71 %) · 38.3 GiB free · 1.13 GiB swap
+**Updated 13:17:58** · elapsed **18.72 h** of 26 (72 %) · 49.3 GiB free · 1.13 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_lerobot.log` · rep 12M -> zst 891K
-- `queue_c1_lerobot.log` · csv rows=1807
-- `queue_c1_lerobot.log` · ########## 12:53 ncu pi05_best_ae_step_0 (cap 40)
-- `queue_c1_groot.log` · C1_GROOT_START 2026-09-23T11:03:58-07:00
-- `queue_c1_groot.log` · C1_GROOT_START 2026-09-23T12:26:14-07:00
+- `queue_c1_repair.log` · ==ERROR== The application returned an error code (1).
+- `queue_c1_repair.log` · ########## REPAIR smolvla best ae_step_0
+- `queue_c1_repair.log` · ########## 13:17 ncu smolvla_best_ae_step_0 (cap 40)
+- `queue_c1_groot.log` · step()
+- `queue_c1_groot.log` · UnboundLocalError: local variable 'step' referenced before assignment
+- `queue_c1_groot.log` · C1_GROOT_DONE 2026-09-23T13:14:43-07:00  (aborted after smoke test)
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 12:59** (58 configurations)
+**Re-derived from every result CSV on disk at 13:19** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
