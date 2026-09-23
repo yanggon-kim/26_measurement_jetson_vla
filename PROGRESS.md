@@ -1,6 +1,6 @@
 # PROGRESS — phase-balance study, π0 → π0.5 → SmolVLA → GR00T N1.7/N1.6/N1.5
 
-**Started 2026-09-22 18:35 PDT · budget 16 h · ends ≈ 2026-09-23 10:35 PDT**
+**Started 2026-09-22 18:35 PDT · budget 26 h (owner, revised) · ends ≈ 2026-09-23 20:35 PDT**
 **⛔ DON'T STOP. A turn ends only when the next job is already running.**
 
 I keep this file current. Every item is `todo` / `running` / `done` / `blocked`, with the
@@ -15,21 +15,30 @@ optimised, or identically un-optimised? π0 says the answer depends entirely on 
 compile: **62.6 % of the frame un-optimised, 18.9 % optimised.** If that is true of every
 model, the PIM premise is a statement about compilation, not about VLAs.
 
-## Budget reality, stated up front
+## Scope and budget
 
-Six models × the full 9-rung ladder ≈ **26 h**. That does not fit in 16 h. So the work is
-**breadth-first**: every model gets the two points that answer the question *first*, and
-the per-factor attribution comes after, for whichever models remain interesting. If time
-runs out, the question is still answered for all six.
+The owner raised the budget to **26 h** and asked for it done properly, so **every model
+gets the full routine**: Part A (paper configuration, fp32 control, per-phase SM
+utilisation, operational intensity) and Part B (the full 9-rung attribution ladder). No
+reduced ladders.
 
-| | per model | why |
-|---|---|---|
-| **Phase 1 — the answer** | ~40 min | paper config (eager, un-optimised) + best-optimised. Gives the AE share at both ends. |
-| **Phase 2 — the attribution** | ~1 h | reduced 5-rung ladder: `eager_fp32`, `eager_tf32`, `ae_graphs`, `vlm_compile`, `whole_graphs` |
-| **Phase 3 — the detail** | ~2 h | full 9-rung ladder + SM utilisation. π0 only, unless time allows. |
+| model | Part A | Part B | new work | est. |
+|---|---|---|---|---:|
+| π0 | done / running | running + B2–B4 | — | 3.5 h |
+| model registry | — | — | the gate for everything below | 2 h |
+| π0.5 | full | full 9 rungs | wrap points differ | 3.5 h |
+| SmolVLA | full | full 9 rungs | `regions.py` needs a new hook — layer body is inlined | 4 h |
+| GR00T N1.7 | full | full 9 rungs | different codebase; DiT instrumentation | 4.5 h |
+| GR00T N1.6 | full | full 9 rungs | own checkout + env; reuses N1.7's instrumentation | 3.5 h |
+| GR00T N1.5 | full | full 9 rungs | own checkout + env | 3.5 h |
+| cross-model report | | | | 1 h |
+| | | | **total** | **≈ 25.5 h** |
 
-Cut order if the clock runs short: Phase 3 → Phase 2 for GR00T N1.5/N1.6 → Phase 2 entirely.
-**Phase 1 for all six models is the floor and is not cut.**
+**Ordering rule inside each model, kept for risk not for economy.** The two endpoint
+configurations — un-optimised and best-optimised — run *first*, before that model's full
+ladder. They are what answers the question, so if one model's instrumentation overruns,
+the next model still gets its answer rather than the overrun eating the queue. This is
+sequencing, not a reduction in scope.
 
 ---
 
@@ -45,12 +54,11 @@ Cut order if the clock runs short: Phase 3 → Phase 2 for GR00T N1.5/N1.6 → P
 | 5 | π0 Part B — B2 bf16 vision, B3 bf16 layernorms, B4 graphs on `pg.forward` | todo | B3 is the lever with a mechanism; B4 should be small at 816 FLOP/B |
 | 6 | π0 LIBERO quick check (B2/B3 change numerics) | todo | 100 episodes per variant, ~45 min each |
 | 7 | **model registry** — the gate for everything below | todo | per-model N field, the three wrap points, per-model instrumentation |
-| 8 | π0.5 — Phase 1 | todo | `lerobot/pi05_libero_base` |
-| 9 | SmolVLA — Phase 1 | todo | `lerobot/smolvla_base`; **`regions.py` records nothing** — layer body inlined |
-| 10 | GR00T N1.7 — Phase 1 | todo | installed, verified; `env/setup_groot.sh` |
-| 11 | GR00T N1.6 — Phase 1 | todo | branch `n1d6` @ `9b37aa1`, `nvidia/GR00T-N1.6-3B`; own env |
-| 12 | GR00T N1.5 — Phase 1 | todo | branch `n1d5` @ `4af2b62`, `nvidia/GR00T-N1.5-3B`; own env |
-| 13 | Phase 2 ladders, models 2–6 | todo | 5 rungs each |
+| 8 | π0.5 — Part A + full ladder | todo | `lerobot/pi05_libero_base` |
+| 9 | SmolVLA — Part A + full ladder | todo | `lerobot/smolvla_base`; **`regions.py` records nothing** — layer body inlined |
+| 10 | GR00T N1.7 — Part A + full ladder | todo | installed, verified; `env/setup_groot.sh` |
+| 11 | GR00T N1.6 — Part A + full ladder | todo | branch `n1d6` @ `9b37aa1`, `nvidia/GR00T-N1.6-3B`; own env |
+| 12 | GR00T N1.5 — Part A + full ladder | todo | branch `n1d5` @ `4af2b62`, `nvidia/GR00T-N1.5-3B`; own env |
 | 14 | `reports/E4d_phase_balance.md` — the cross-model table | todo | one row per model: AE share un-optimised vs optimised |
 
 ## Results so far
@@ -79,3 +87,5 @@ Cut order if the clock runs short: Phase 3 → Phase 2 for GR00T N1.5/N1.6 → P
 ## Log
 
 - **18:35** file created. π0 N=10 ladder at 3/9, Part A armed behind it.
+- **18:40** owner raised the budget to 26 h — full 9-rung ladder for every model, no
+  reduced ladders. Endpoint-configs-first kept inside each model as risk sequencing.
