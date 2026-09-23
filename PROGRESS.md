@@ -63,11 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 01:17:17** · elapsed **6.70 h** of 26 (26 %) · 44.4 GiB free · 0.70 GiB swap
+**Updated 01:37:18** · elapsed **7.04 h** of 26 (27 %) · 44.4 GiB free · 0.70 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 185700 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_reduce-overhead reduce-overhead 10 ae_la` | 16 min | 0.0 GiB |
+| 185700 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_reduce-overhead reduce-overhead 10 ae_la` | 36 min | 0.0 GiB |
 
 Latest log lines:
 
@@ -81,7 +81,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 01:17** (36 configurations)
+**Re-derived from every result CSV on disk at 01:37** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
