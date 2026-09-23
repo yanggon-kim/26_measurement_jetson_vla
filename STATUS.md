@@ -19,6 +19,83 @@ The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGE
 After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
 power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
 
+## 2026-09-23 — Part A + B complete for six models; Part C in progress
+
+`reports/E4d_phase_balance.md` (generated from the row JSONs) and
+`reports/E4g_c1_c2_bottlenecks.md` (generated from the ncu CSVs). Both regenerate from
+raw data, so neither can drift from the measurements.
+
+### Which models are action-head bottlenecked, identical treatment per model
+
+| model | N | AE eager | AE best | e2e eager (ms) | e2e best (ms) |
+|---|---:|---:|---:|---:|---:|
+| SmolVLA | 10 | 85.3 % | 48.6 % | 727.46 | 80.97 |
+| GR00T N1.6 | 4 | 61.5 % | 39.5 % | 327.22 | 186.12 |
+| GR00T N1.7 | 4 | 56.7 % | 33.1 % | 372.48 | 240.49 |
+| π0 | 10 | 54.9 % | 39.7 % | 1069.04 | 424.46 |
+| GR00T N1.5 | 4 | 38.6 % | 31.0 % | 255.22 | 200.85 |
+| π0.5 | 10 | 20.4 % | 38.2 % | 3028.56 | 489.15 |
+
+**The plan's prediction was wrong.** It predicted the share would track N, putting GR00T
+lowest at N = 4. N1.6 and N1.7 sit *above* π0 at N = 10. C3 gives the mechanism: N1.6 and
+N1.7 carry **32** DiT blocks, N1.5 **16**, all width 1536. Within one family at one N the
+share moves with the size of the head — architecture beats step count.
+
+**Correction to earlier numbers circulated for π0.** "54.9 % → 18.9 %" paired the N = 10
+eager share with the N = 4 optimised share; π0's directory holds both ladders and the
+generator keyed rows by rung alone. At N = 10 it is **39.7 %**. π0's N = 4 ladder is now
+reported separately as a within-model control on N (32.3 % → 18.7 %).
+
+### C1 — what each phase is bound by (π0 complete, five models to go)
+
+| phase | mode | SM % | Mem % | Occ % | LongSB | verdict |
+|---|---|---:|---:|---:|---:|---|
+| vision | eager | 65.3 | 58.3 | 35.6 | 3.38 | mixed |
+| vision | best | 43.6 | 59.1 | 22.7 | 1.93 | latency (`long_scoreboard`) |
+| vlm_prefix | eager | 40.4 | 48.6 | 70.7 | 34.44 | latency (`long_scoreboard`) |
+| vlm_prefix | best | 51.6 | 55.1 | 22.4 | 2.73 | latency (`mio_throttle`) |
+| ae_step_0 | eager | 22.7 | 21.6 | 18.5 | 3.59 | latency (`imc_miss`) |
+| ae_step_0 | best | 23.3 | 56.5 | 39.2 | 11.44 | latency (`long_scoreboard`) |
+
+**The PIM premise is conditional on optimisation, and this is the most consequential
+result so far.** "The action expert is the memory-bound phase" is **false for the eager
+baseline** — eager it is issue-limited (constant-cache misses 35 %, instruction-fetch
+starvation 18 %, Long Scoreboard only third at 16 %, memory throughput 21.6 %) — and
+**true for the compiled deployment**, where memory throughput reaches 56.5 % and Long
+Scoreboard triples to become dominant. A PIM argument built on eager numbers is arguing
+from launch overhead; the same argument on a compiled deployment is arguing from a real
+memory-latency bound.
+
+Our eager SM 22.7 % matches arXiv:2604.24447's reported 22.3 % for the Action Expert on
+AGX Orin, an independent check on the capture.
+
+The prefix moves the other way: compilation removes **92 %** of its memory-latency stall
+(34.44 → 2.73 cycles/issue) and the limit becomes `mio_throttle`. That is why CUDA graphs
+on π0's prefix were a net loss in Part B — the stall they would target is already gone.
+
+### Questions for the research side
+
+1. Does the conditional result change the PIM target? If the expert is only memory-bound
+   *after* compilation, a study quoting eager numbers is measuring launch overhead.
+2. Should the paper's Finding #4 be re-examined? It calls the VLM compute-bound from
+   operational intensity (840 FLOP/B analytic; ours 816), but our counters show the eager
+   prefix stalling **74 %** on Long Scoreboard at 40 % SM and 49 % memory throughput. High
+   arithmetic intensity does not help when latency-bound at low occupancy.
+3. π0.5 ships **fp32** (`config dtype: float32`) while π0 ships bf16. Casting π0.5 to
+   bf16 through LeRobot's own path gives **2.16×** on the VLM prefix where compilation
+   gave 1.04×. Is fp32 deployment the intended configuration upstream?
+
+### Raw data too large for git
+
+Four `.ncu-rep` from the superseded overnight C1 run (88–203 MB each; GitHub rejects
+> 100 MB) are published at
+`https://huggingface.co/datasets/yang-gon/vla-orin-ncu-raw` — **private** dataset,
+707.6 MB, byte counts matching the sha256 table in
+`results/20260922_E4g_pi0_ncu_eager/RAW_FILES.md`. Scanned clean beforehand: zero
+credential patterns and zero environment-variable-shaped strings, confirming `.ncu-rep`
+does not embed the process environment (unlike `.nsys-rep`, which does on this device and
+is never published).
+
 ## Headline after T010 (E11): the hybrid model's six [ASSUMPTION] terms, measured
 
 `reports/E11_pi0_hybrid_inputs.md` · nine result directories · 1,564 rows in
