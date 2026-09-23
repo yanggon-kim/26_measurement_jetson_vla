@@ -44,6 +44,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 from common import (REPO, collect_raw, compress_and_record, ina3221_rails,  # noqa: E402
@@ -62,6 +63,9 @@ THEIRS = {"e2e_ms": 920.58, "energy_J": 1866.0,
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0",
+                    help="model key from bench/model_registry.py. The N field differs "
+                         "three ways across the family, so the descriptor supplies it.")
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--warmup", type=int, default=20)
@@ -81,11 +85,22 @@ def main() -> int:
     # EAGER: compile_mode=None, so config.compile_model stays False and nothing is compiled.
     # Note that passing compile_mode= would ALSO flip TF32 on (modeling_pi0.py:591-595);
     # here TF32 is set explicitly above so the two factors stay separable.
-    policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=None)
-    real = P.assert_real_weights(policy)
+    spec = MR.get(args.model)
+    steps = args.steps if args.steps else spec.n_default
+    policy, cfg, shipped = MR.load_policy(spec, n=steps, compile_mode=None)
+    real = (P.assert_real_weights(policy) if args.model == "pi0"
+            else {"verdict": "not verified: assert_real_weights is pi0-specific "
+                              "(it diffs against pi0's own safetensors)"})
     fx = P.load_fixture()
-    batch, _, _ = P.build_batch(policy, fx)
-    tok = P.token_counts(policy, batch)
+    batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
+    try:
+        tok = P.token_counts(policy, batch)
+    except Exception as e:                                         # noqa: BLE001
+        # token_counts calls embed_suffix, whose signature differs: three arguments for
+        # pi0, two for pi0.5 and SmolVLA (modeling_pi05.py:684, modeling_smolvla.py:719).
+        tok = {"error": f"{type(e).__name__}: {str(e)[:200]}",
+               "_note": "per-model token_counts not yet written; P/S come from the run"}
     print("tokens:", json.dumps(tok), flush=True)
 
     rec = R.Recorder(enable_layers=False, layers_in_step=0)
@@ -194,10 +209,11 @@ def main() -> int:
     write_json(out / "meta.json", {
         "experiment": "E4d (paper configuration reproduction)", "task": "T004",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
-        "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+        "model": spec.name, "model_repo": spec.checkpoint,
+        "model_commit": spec.revision, "model_revision": spec.revision,
+        "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "matmul_precision": "high" if args.tf32 == "on" else "highest",
-        "compile_mode": None, "batch": 1, "num_denoise_steps": args.steps,
+        "compile_mode": None, "batch": 1, "num_denoise_steps": steps, "n_field": spec.n_field,
         "prefix_tokens": tok.get("prefix_tokens_P"), "suffix_tokens": tok.get("suffix_tokens_S"),
         "token_counts": tok, "n_warmup": args.warmup, "n_timed": args.timed,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
@@ -209,7 +225,7 @@ def main() -> int:
         "bench_files_sha256": sw.get("bench_files_sha256"),
         "weights_verified": real, "shipped_config": shipped,
         "command": f"python bench/paper_repro.py --outdir {args.outdir} "
-                   f"--steps {args.steps} --tf32 {args.tf32}",
+                   f"--model {args.model} --steps {steps} --tf32 {args.tf32}",
         "throttled": False,
         "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
         "energy": {"module_mean_W": round(p["mean_ms"] / 1000, 3), "wall_s": round(wall_s, 2),

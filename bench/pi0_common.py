@@ -144,7 +144,8 @@ def load_fixture(fixtures: Path | None = None) -> dict:
     return json.loads((fixtures / "observation.json").read_text())
 
 
-def build_batch(policy, fixture: dict, fixtures: Path | None = None, device: str = "cuda"):
+def build_batch(policy, fixture: dict, fixtures: Path | None = None, device: str = "cuda",
+                checkpoint: str | None = None, revision: str | None = None):
     """The observation the policy consumes, from the real fixture.
 
     Images go in **channels-first float32 in [0, 1]** — `PI0Policy._preprocess_images` does
@@ -165,9 +166,15 @@ def build_batch(policy, fixture: dict, fixtures: Path | None = None, device: str
     obs["observation.state"] = torch.tensor(fixture["state"], dtype=torch.float32)
     obs["task"] = fixture["task"]
 
+    # The processors are per-checkpoint: they carry that model's normalisation statistics
+    # and its tokenizer. Defaulting to pi0's and passing another model's policy would
+    # silently normalise with the wrong statistics.
+    ckpt = checkpoint or CHECKPOINT
+    rev = revision if checkpoint else REVISION
+    kw = {"pretrained_revision": rev} if rev else {}
     preprocess, postprocess = make_pre_post_processors(
-        policy.config, CHECKPOINT, pretrained_revision=REVISION,
-        preprocessor_overrides={"device_processor": {"device": device}},
+        policy.config, ckpt,
+        preprocessor_overrides={"device_processor": {"device": device}}, **kw,
     )
     batch = preprocess(obs)
     return batch, preprocess, postprocess
