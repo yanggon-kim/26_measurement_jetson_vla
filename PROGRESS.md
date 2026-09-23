@@ -63,21 +63,16 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 06:17:34** · elapsed **11.71 h** of 26 (45 %) · 39.2 GiB free · 1.39 GiB swap
+**Updated 06:27:35** · elapsed **11.88 h** of 26 (46 %) · 49.0 GiB free · 1.13 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 197653 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 18 min | 0.1 GiB |
-| 199501 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 4 min | 17.8 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_partb_finish.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `queue_partb_finish.log` · === N=10  bf16_both: B2+B3 with everything compiled
-- `queue_partb_finish.log` · memory before: 50.6 GiB available, 1.38 GiB swap in use
-- `smolvla_partb2.log` · settled: 50.7 GiB available, 1.10 GiB swap
-- `smolvla_partb2.log` · merged 14 rung(s) into results/20260922_E4c_smolvla_opt_ladder/opt_ladder.csv
-- `smolvla_partb2.log` · wrote results/20260922_E4c_smolvla_opt_ladder (14 rungs)
+- `queue_pi05_b3.log` · PI05_B3_START 2026-09-23T06:27:06-07:00
+- `queue_groot.log` · compiled action_head.get_action@reduce-overhead in 1.2 s
+- `queue_groot.log` · observation shapes: {"video": {"exterior_image_1_left": [1, 2, 256, 256, 3], "wrist_image_left": [1, 2, 256, 2
+- `queue_groot.log` · data_processing (CPU): 37.94 ms
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
@@ -138,6 +133,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 06:18)*
 <!-- SLOW:END -->
 
 ## Live status

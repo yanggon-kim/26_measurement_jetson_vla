@@ -1,0 +1,56 @@
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py", line 693, in main
+    policy.predict_action_chunk(batch)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi05/modeling_pi05.py", line 1241, in predict_action_chunk
+    actions = self.model.sample_actions(images, img_masks, tokens, masks, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi05/modeling_pi05.py", line 857, in sample_actions
+    v_t = denoise_step_partial_call(x_t)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi05/modeling_pi05.py", line 836, in denoise_step_partial_call
+    return self.denoise_step(
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 135, in denoise_step
+    return _orig(*a, **kw)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 803, in compile_wrapper
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi05/modeling_pi05.py", line 890, in denoise_step
+    past_key_values = copy.deepcopy(past_key_values)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/pi05/modeling_pi05.py", line 890, in torch_dynamo_resume_in_denoise_step_at_890
+    past_key_values = copy.deepcopy(past_key_values)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 1004, in _fn
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1044, in forward
+    return compiled_fn(full_args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 339, in runtime_wrapper
+    all_outs = call_func_at_runtime_with_args(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/utils.py", line 126, in call_func_at_runtime_with_args
+    out = normalize_as_list(f(args))
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 703, in inner_fn
+    outs = compiled_fn(args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 510, in wrapper
+    return compiled_fn(runtime_args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/output_code.py", line 584, in __call__
+    return self.current_callable(inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1693, in run
+    return compiled_fn(new_inputs)  # type: ignore[arg-type]
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 404, in deferred_cudagraphify
+    fn, out = cudagraphify(model, inputs, new_static_input_idxs, *args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 463, in cudagraphify
+    return manager.add_function(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2316, in add_function
+    return fn, fn(inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2012, in run
+    out = self._run(new_inputs, function_id)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2116, in _run
+    return self.run_eager(new_inputs, function_id)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2277, in run_eager
+    return node.run(new_inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 686, in run
+    out = self.wrapped_function.model(new_inputs)
+  File "/tmp/torchinductor_yanggon/zn/czn7elkjtcryp34zomxyf32drn4ynl6gjtoxeal5yyrgaapmwq2k.py", line 1511, in call
+    extern_kernels.mm(arg6_1, reinterpret_tensor(arg7_1, (1024, 3072), (1, 1024), 0), out=buf0)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_device.py", line 103, in __torch_function__
+    return func(*args, **kwargs)
+RuntimeError: expected mat1 and mat2 to have the same dtype, but got: float != c10::BFloat16

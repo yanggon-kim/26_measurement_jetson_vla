@@ -9,6 +9,7 @@ N,step,adds,e2e_median_speedup,vision_speedup,vlm_prefix_speedup,ae_total_speedu
 10,vlm_compile -> vlm_graphs,+ CUDA graphs on pg.forward,1.1234,0.9991,1.9594,1.0147
 10,vlm_graphs -> whole_graphs,compile sample_actions (LeRobot's path),1.1399,,,
 10,whole_graphs -> vlm_compile_nvg,"compile pg.forward, no embed_image graph",0.8079,,,
-10,vlm_compile_nvg -> bf16_vision,B2: + bf16 vision tower,nan,,,
+10,vlm_compile_nvg -> bf16_base,B0: fp32 checkpoint -> bf16 (LeRobot's own cast),nan,,,
+10,bf16_base -> bf16_vision,B2: + bf16 vision tower,nan,,,
 10,bf16_vision -> bf16_norms,B3: + bf16 layernorms,nan,,,
 10,bf16_norms -> bf16_both,B2+B3 with everything compiled,nan,,,

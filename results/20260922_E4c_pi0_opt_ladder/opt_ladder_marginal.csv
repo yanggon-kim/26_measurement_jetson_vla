@@ -5,5 +5,9 @@ N,step,adds,e2e_median_speedup,vision_speedup,vlm_prefix_speedup,ae_total_speedu
 10,ae_graphs -> vis_compile,+ compile embed_image (no CUDA graphs),1.0,1.0146,1.0008,0.9943
 10,vis_compile -> vis_graphs,+ CUDA graphs on embed_image (output cloned),1.0009,1.0183,0.9983,0.9926
 10,vis_graphs -> vlm_compile,+ compile pg.forward (no CUDA graphs),1.1049,1.0087,1.2189,1.0332
-10,vlm_compile -> vlm_graphs,+ CUDA graphs on pg.forward,,,,
-10,vlm_graphs -> whole_graphs,compile sample_actions (LeRobot's path),,,,
+10,vlm_compile -> vlm_graphs,+ CUDA graphs on pg.forward,0.9854,0.9989,0.9776,0.9881
+10,vlm_graphs -> whole_graphs,compile sample_actions (LeRobot's path),1.0217,,,
+10,whole_graphs -> bf16_base,B0: fp32 checkpoint -> bf16 (LeRobot's own cast),0.8817,,,
+10,bf16_base -> bf16_vision,B2: + bf16 vision tower,1.0481,1.1784,1.0176,1.0212
+10,bf16_vision -> bf16_norms,B3: + bf16 layernorms,0.9672,0.8583,0.9959,0.9882
+10,bf16_norms -> bf16_both,B2+B3 with everything compiled,1.2227,1.818,1.2186,1.035
