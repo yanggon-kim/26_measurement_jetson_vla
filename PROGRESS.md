@@ -63,22 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 21:37:06** · elapsed **3.04 h** of 26 (12 %) · 51.2 GiB free · 0.73 GiB swap
+**Updated 21:57:07** · elapsed **3.37 h** of 26 (13 %) · 51.2 GiB free · 0.73 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `run_queue.log` · QUEUE_DONE 2026-09-22T21:26:05-07:00
-- `smolvla_ladder.log` · merged 0 rung(s) into results/20260922_E4c_smolvla_opt_ladder/opt_ladder.csv
-- `smolvla_ladder.log` · wrote results/20260922_E4c_smolvla_opt_ladder (0 rungs)
-- `smolvla_ladder.log` · EXIT=0 98s
+- `run_queue3.log` · QUEUE3_DONE 2026-09-22T21:53:56-07:00
+- `pi05_ladder2.log` · rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
+- `pi05_ladder2.log` · ValueError: 'bf16_both' is not in list
+- `pi05_ladder2.log` · EXIT=1 2s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 21:37** (29 configurations)
+**Re-derived from every result CSV on disk at 21:57** (29 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
