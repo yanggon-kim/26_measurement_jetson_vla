@@ -281,7 +281,14 @@ def prep_bf16_norms(policy):
     # submodules, this is byte-identical to the previous mod.to(bfloat16).
     n, skipped = 0, 0
     for name, mod in policy.model.named_modules():
-        if any(k in name for k in ("input_layernorm", "post_attention_layernorm")) or \
+        # Match the LAST component of the name, not a substring of it. pi0.5's adaptive
+        # RMSNorm has a child module literally called
+        #     ...layers.0.input_layernorm.dense
+        # whose full name CONTAINS "input_layernorm", so a substring test cast the
+        # conditioning Linear as if it were a norm in its own right -- which is what kept
+        # producing "float != c10::BFloat16" even after the recurse=False change.
+        leaf = name.rsplit(".", 1)[-1]
+        if leaf in ("input_layernorm", "post_attention_layernorm") or \
                 name.endswith("model.norm"):
             own = list(mod.parameters(recurse=False))
             if not own:

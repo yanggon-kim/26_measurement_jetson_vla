@@ -5,10 +5,10 @@ cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 OUT=results/20260923_E4d_groot_n16_ladder
 ROOT=/home/yanggon/00_VLA/Isaac-GR00T-n1d6
 TAG=robocasa_panda_omron
-export TRITON_CACHE_DIR="$HOME/.cache/triton_groot"; mkdir -p "$TRITON_CACHE_DIR"
+export TRITON_CACHE_DIR="$HOME/.cache/triton_groot16"; mkdir -p "$TRITON_CACHE_DIR"
 
 echo "N1D6_START $(date -Is)"
-while ! grep -q FIX5_DONE scratch/T004/queue_fix5.log 2>/dev/null; do sleep 45; done
+:
 echo "fix5 clear $(date -Is)"
 
 g() {
@@ -17,9 +17,9 @@ g() {
   echo "########## $(date +%H:%M) n1.6 $rung $*"
   local t0=$SECONDS
   bash -c "export TRITON_CACHE_DIR=$TRITON_CACHE_DIR; \
-           source \$HOME/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1; \
+           source \$HOME/venvs/groot16/activate_orin_venv.sh >/dev/null 2>&1; \
            cd /home/yanggon/00_VLA/26_measurement_jetson_vla; \
-           exec \$HOME/venvs/groot/bin/python bench/groot_phases.py \
+           exec \$HOME/venvs/groot16/bin/python bench/groot_phases.py \
              --outdir $OUT --checkpoint nvidia/GR00T-N1.6-3B --version n16 \
              --gr00t-root $ROOT --embodiment-tag $TAG \
              --warmup 20 --timed 50 --rung $rung $*"

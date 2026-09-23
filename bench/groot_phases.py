@@ -70,6 +70,8 @@ def main() -> int:
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--checkpoint", default="nvidia/GR00T-N1.7-3B")
     ap.add_argument("--version", default="n17")
+    ap.add_argument("--compat-shims", action="store_true",
+                    help="re-export symbols the older GR00T remote code expects")
     ap.add_argument("--gr00t-root", default=None,
                     help="Isaac-GR00T checkout to import from, for N1.6 / N1.5")
     ap.add_argument("--embodiment-tag", default="oxe_droid_relative_eef_relative_joint",
@@ -100,6 +102,23 @@ def main() -> int:
         raise SystemExit(f"clocks not locked: {g}; run sudo jetson_clocks first")
     torch.set_float32_matmul_precision("high" if args.tf32 == "on" else "highest")
 
+    compat = []
+    if args.compat_shims:
+        # N1.6's Eagle backbone is remote code written against an older transformers, and
+        # this environment has 4.57.6 because N1.7's Qwen3-VL requires >= 4.57. The one
+        # symbol it misses moved rather than disappeared:
+        #     ImportError: cannot import name 'VideoInput' from 'transformers.image_utils'
+        # transformers.video_utils.VideoInput is the same object, so it is re-exported
+        # under the old name. This is an import-time alias for a type annotation; it does
+        # not change any computation, and it is recorded in meta.json as compat_shims so a
+        # reader knows the environment was adjusted.
+        import transformers.image_utils as IU
+        if not hasattr(IU, "VideoInput"):
+            from transformers.video_utils import VideoInput
+            IU.VideoInput = VideoInput
+            compat.append("transformers.image_utils.VideoInput := "
+                          "transformers.video_utils.VideoInput")
+
     if args.gr00t_root:
         # N1.6 and N1.5 live in worktrees pinned to the commits that still contain their
         # model modules (env/setup_groot_n1d5_n1d6.md). Putting the chosen checkout first
@@ -114,8 +133,20 @@ def main() -> int:
     # Gr00tPolicy is the supported inference path: it loads the model in bf16 on the
     # device AND the checkpoint's own processor, so the input pipeline measured here is
     # the shipped one rather than a reimplementation.
-    policy = Gr00tPolicy(embodiment_tag=args.embodiment_tag, model_path=ckpt_dir,
-                         device="cuda")
+    # N1.7's Gr00tPolicy resolves a string tag to the enum itself; N1.6's does not and
+    # dies on "'str' object has no attribute 'value'". Resolve it here so both versions
+    # take the same argument.
+    from gr00t.data.embodiment_tags import EmbodimentTag                  # noqa: E402
+    tag = args.embodiment_tag
+    if isinstance(tag, str):
+        if hasattr(EmbodimentTag, "resolve"):
+            tag = EmbodimentTag.resolve(tag)
+        else:
+            try:
+                tag = EmbodimentTag(tag)
+            except ValueError:
+                tag = EmbodimentTag[tag.upper()]
+    policy = Gr00tPolicy(embodiment_tag=tag, model_path=ckpt_dir, device="cuda")
     model = policy.model
     n = args.steps or int(getattr(model.action_head.config, "num_inference_timesteps", 4))
     model.action_head.num_inference_timesteps = n
@@ -337,6 +368,8 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),
         "embodiment_tag": args.embodiment_tag,
+        "gr00t_root": args.gr00t_root,
+        "compat_shims": compat,
         "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()}
                                for k, v in shapes.items()},
         "fixture_note": "keys and shapes are read from the checkpoint's own "

@@ -59,3 +59,40 @@ forwards `**extra_kwargs` to `from_config`. This is a load-time bug in the vendo
 checkout, not a change to what is measured: the branch's own asserts two lines above
 require flash attention and bf16, so forwarding the argument gives the configuration that
 code already insists on.
+
+## A second environment, `~/venvs/groot16` (2026-09-23) — this replaces the shim attempt
+
+The three versions pin different transformers, and it is a hard conflict:
+
+    Isaac-GR00T @ 376ba89 (N1.7)  transformers==4.57.3   # Qwen3-VL needs >= 4.57
+    Isaac-GR00T @ 9b37aa1 (N1.6)  transformers==4.51.3
+    Isaac-GR00T @ 4af2b62 (N1.5)  transformers==4.51.3
+
+Under 4.57.6 the Eagle remote code failed on symbols that MOVED or were REMOVED:
+
+    ImportError: cannot import name 'VideoInput' from 'transformers.image_utils'
+    ImportError: cannot import name 'BASE_IMAGE_PROCESSOR_FAST_DOCSTRING'
+                 from 'transformers.image_processing_utils_fast'
+
+The first was re-exportable (it moved to `transformers.video_utils`), so I shimmed it — and
+then hit the second, which is a removed constant. Shimming a chain of deleted internals is
+how a measurement ends up running something other than what it claims, so the shim was
+abandoned in favour of the environment the checkout actually asks for.
+
+`~/venvs/groot16` is a **copy** of `~/venvs/groot` with `transformers==4.51.3` installed
+over it. Copied rather than created fresh because torch here is the Jetson CUDA build; a
+new venv would resolve a PyPI torch with no aarch64 CUDA wheel. Verified:
+`transformers 4.51.3 | torch 2.10.0 | cuda True`, and both missing symbols present
+natively, no shim. It serves **both** N1.6 and N1.5.
+
+`--compat-shims` stays in `bench/groot_phases.py` but is NOT used for these runs; when it
+is used it records itself in `meta.json` under `compat_shims`.
+
+## One more version difference, handled in the harness
+
+N1.7's `Gr00tPolicy` resolves a string embodiment tag to the enum; N1.6's does not and
+dies with `'str' object has no attribute 'value'`. `groot_phases.py` now resolves the tag
+before constructing the policy, so both versions take the same argument.
+
+**N1.6 verified end to end** (eager, robocasa_panda_omron, 3 warmup / 3 timed):
+e2e 385.97 ms, vision 62.41, vlm_prefix 72.13, action head 242.93 (62.9 %), CPU 50.86.
