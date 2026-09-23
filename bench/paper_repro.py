@@ -104,7 +104,7 @@ def main() -> int:
     print("tokens:", json.dumps(tok), flush=True)
 
     rec = R.Recorder(enable_layers=False, layers_in_step=0)
-    undo = R.instrument(policy, rec)
+    undo = R.instrument(policy, rec, spec.container)
 
     teg = start_tegrastats(out / "raw" / "tegrastats_paper_config.log")
     for _ in range(args.warmup):

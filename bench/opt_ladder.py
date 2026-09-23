@@ -456,7 +456,7 @@ def main() -> int:
             rec = undo = None
             if regions_ok:
                 rec = R.Recorder(enable_layers=False, layers_in_step=0)
-                undo = R.instrument(policy, rec)
+                undo = R.instrument(policy, rec, spec.container)
 
             err = None
             try:

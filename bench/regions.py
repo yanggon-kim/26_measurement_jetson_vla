@@ -84,12 +84,21 @@ class Recorder:
         return [s.elapsed_time(e) for n, s, e in self.spans if n.startswith("ae_step[")]
 
 
-def instrument(policy, rec: Recorder):
-    """Monkeypatch the wrap points onto this policy instance. Returns an undo callable."""
-    import lerobot.policies.pi0.modeling_pi0 as M
+def instrument(policy, rec: Recorder, container: str = "paligemma_with_expert"):
+    """Monkeypatch the wrap points onto this policy instance. Returns an undo callable.
 
+    `container` names the attribute on policy.model holding embed_image and forward:
+    paligemma_with_expert for pi0 and pi0.5, vlm_with_expert for SmolVLA
+    (bench/model_registry.py). Hardcoding pi0's killed every SmolVLA rung with
+    "'VLAFlowMatching' object has no attribute 'paligemma_with_expert'".
+    """
     model = policy.model
-    pg = model.paligemma_with_expert
+    if not hasattr(model, container):
+        raise AttributeError(
+            f"{type(model).__name__} has no attribute {container!r}; pass the container "
+            f"from bench/model_registry.py (pi0/pi05: paligemma_with_expert, "
+            f"smolvla: vlm_with_expert)")
+    pg = getattr(model, container)
     undo = []
 
     # ---- vision: once per camera
