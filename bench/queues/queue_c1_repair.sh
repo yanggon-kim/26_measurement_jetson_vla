@@ -6,7 +6,7 @@ cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 export NCU_COUNT=40 NCU_WARMUP=8
 echo "C1_REPAIR_START $(date -Is)"
 while ! grep -q C1_GROOT_DONE scratch/T004/queue_c1_groot.log 2>/dev/null; do sleep 60; done
-sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
+sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "TreeLauncherSubreaper"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
 
 for MODEL in pi0 pi05 smolvla; do
   for MODE in eager best; do

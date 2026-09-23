@@ -8,7 +8,7 @@ export NCU_COUNT=40 NCU_WARMUP=8
 # the ncu it launched -- that tree is root-owned via sudo, so kill returns "Operation
 # not permitted" -- so an orphan can outlive its queue and silently share the GPU with
 # the next capture. Owner, 2026-09-23: never two profilers at once.
-sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; sleep 2; true' 2>/dev/null
+sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "TreeLauncherSubreaper"; pkill -f "bench/ncu_target.py"; sleep 2; true' 2>/dev/null
 echo "C1_LEROBOT_START $(date -Is)"
 for MODEL in pi0 pi05 smolvla; do
   for MODE in eager best; do
@@ -25,7 +25,7 @@ for MODEL in pi0 pi05 smolvla; do
       # a previous kill is root-owned and outlives its queue, and the runner
       # guard then correctly refuses to start -- but a refusal used to end the
       # whole queue, which is how smolvla/best/ae_step_0 was skipped.
-      sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
+      sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "TreeLauncherSubreaper"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
       bash bench/run_ncu_c1.sh "$MODEL" "$MODE" "$REGION" "$OUT"
     done
   done

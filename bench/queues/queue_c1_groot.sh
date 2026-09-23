@@ -8,7 +8,7 @@ while ! grep -q C1_LEROBOT_DONE scratch/T004/queue_c1_lerobot.log 2>/dev/null; d
 echo "lerobot C1 clear $(date -Is)"
 
 # Sweep orphans before starting: killing a queue does not kill its root-owned ncu.
-sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
+sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "TreeLauncherSubreaper"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
 
 # Smoke-test the --ncu-region path ONCE before spending 18 captures on it. It has never
 # run: groot_phases.py grew NVTX ranges + cudaProfilerStart/Stop for C1 and nothing has
@@ -41,7 +41,7 @@ for VER in n17 n16 n15; do
       # a previous kill is root-owned and outlives its queue, and the runner
       # guard then correctly refuses to start -- but a refusal used to end the
       # whole queue, which is how smolvla/best/ae_step_0 was skipped.
-      sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
+      sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "TreeLauncherSubreaper"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
       bash bench/run_ncu_c1_groot.sh "$VER" "$MODE" "$REGION" "$OUT"
     done
   done
