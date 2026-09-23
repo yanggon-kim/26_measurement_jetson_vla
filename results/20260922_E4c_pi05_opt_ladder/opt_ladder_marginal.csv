@@ -1,0 +1,12 @@
+N,step,adds,e2e_median_speedup,vision_speedup,vlm_prefix_speedup,ae_total_speedup
+10,eager_fp32 -> eager_tf32,+ TF32 (matmul_precision=high),2.4135,2.3223,4.0475,1.0103
+10,eager_tf32 -> ae_compile,+ compile denoise_step (no CUDA graphs),1.3671,0.9969,0.9718,2.3688
+10,ae_compile -> ae_graphs,+ CUDA graphs on denoise_step,1.0135,0.9918,1.0005,1.0511
+10,ae_graphs -> vis_compile,+ compile embed_image (no CUDA graphs),0.9954,1.0185,0.9874,1.0035
+10,vis_compile -> vis_graphs,+ CUDA graphs on embed_image (output cloned),1.0102,1.0213,1.0142,0.998
+10,vis_graphs -> vlm_compile,+ compile pg.forward (no CUDA graphs),1.0431,1.0043,1.0623,1.0186
+10,vlm_compile -> vlm_graphs,+ CUDA graphs on pg.forward,,,,
+10,vlm_graphs -> whole_graphs,compile sample_actions (LeRobot's path),,,,
+10,whole_graphs -> bf16_vision,B2: + bf16 vision tower,0.9582,,,
+10,bf16_vision -> bf16_norms,B3: + bf16 layernorms,,,,
+10,bf16_norms -> bf16_both,B2+B3 with everything compiled,,,,

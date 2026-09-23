@@ -1,0 +1,93 @@
+Traceback (most recent call last):
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 1276, in _record
+    static_outputs = model(inputs)
+  File "/tmp/torchinductor_yanggon/i6/ci6gzul5qur2varr7abdukt5gahnowr7lwd6cwrbmtdxpzcsoyer.py", line 95, in call
+    aten.index_put_(arg1_1, [reinterpret_tensor(arg0_1, (1, 1024), (1024, 1), 0)], arg2_1, False)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_ops.py", line 1254, in __call__
+    return self._op(*args, **kwargs)
+torch.AcceleratorError: CUDA error: operation not permitted when stream is capturing
+Search for `cudaErrorStreamCaptureUnsupported' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py", line 516, in main
+    policy.predict_action_chunk(batch)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 319, in predict_action_chunk
+    actions = self._get_action_chunk(batch, noise, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 291, in _get_action_chunk
+    actions = self.model.sample_actions(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 818, in sample_actions
+    prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 653, in embed_prefix
+    img_emb = self.vlm_with_expert.embed_image(img)
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 109, in embed_image
+    return _orig(image)
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py", line 495, in _cloned
+    return clone_graph_outputs(_c(*a, **k))
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 803, in compile_wrapper
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/smolvlm_with_expert.py", line 183, in embed_image
+    self.get_vlm_model()
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/transformers/utils/generic.py", line 917, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/transformers/utils/output_capturing.py", line 253, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 366, in forward
+    hidden_states = self.embeddings(pixel_values=pixel_values, patch_attention_mask=patch_attention_mask)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 137, in forward
+    position_ids[patch_attention_mask.view(batch_size, -1)] = pos_ids[patch_attention_mask.view(batch_size, -1)]
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 137, in torch_dynamo_resume_in_forward_at_137
+    position_ids[patch_attention_mask.view(batch_size, -1)] = pos_ids[patch_attention_mask.view(batch_size, -1)]
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 1004, in _fn
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1044, in forward
+    return compiled_fn(full_args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 339, in runtime_wrapper
+    all_outs = call_func_at_runtime_with_args(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/utils.py", line 126, in call_func_at_runtime_with_args
+    out = normalize_as_list(f(args))
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 510, in wrapper
+    return compiled_fn(runtime_args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/output_code.py", line 584, in __call__
+    return self.current_callable(inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1693, in run
+    return compiled_fn(new_inputs)  # type: ignore[arg-type]
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 388, in deferred_cudagraphify
+    return fn(inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/utils.py", line 2786, in run
+    out = model(new_inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2012, in run
+    out = self._run(new_inputs, function_id)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2182, in _run
+    return self.record_function(new_inputs, function_id)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2219, in record_function
+    node = CUDAGraphNode(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 1037, in __init__
+    self.recording_outputs: Optional[OutputType] = self._record(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 1264, in _record
+    with (
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/cuda/graphs.py", line 250, in __exit__
+    self.cuda_graph.capture_end()
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/cuda/graphs.py", line 128, in capture_end
+    super().capture_end()
+torch.AcceleratorError: CUDA error: operation failed due to a previous error during capture
+Search for `cudaErrorStreamCaptureInvalidated' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
