@@ -8,7 +8,19 @@ Per-kernel numbers are averaged **weighted by kernel duration**; an unweighted m
 
 | model | mode | phase | SM % | Mem % | Occ % | LongSB (cyc/issue, share) | top stall | verdict |
 |---|---|---|---:|---:|---:|---:|---|---|
-| groot_n17 | eager | `ae_total` | 46.0 | 31.2 | 77.0 | 7.17 (48 %) | long_scoreboard (48 %) | latency bound (long_scoreboard) |
+| groot_n15 | eager | `vision` | 49.4 | 71.0 | 48.8 | 18.87 (67 %) | long_scoreboard (67 %) | mixed |
+| groot_n15 | eager | `vlm_prefix` | 37.1 | 51.8 | 63.1 | 45.74 (74 %) | long_scoreboard (74 %) | latency bound (long_scoreboard) |
+| groot_n15 | eager | `ae_total` | 54.2 | 71.7 | 30.6 | 16.33 (62 %) | long_scoreboard (62 %) | mixed |
+| groot_n16 | eager | `vision` | 31.1 | 49.4 | 73.3 | 24.95 (70 %) | long_scoreboard (70 %) | latency bound (long_scoreboard) |
+| groot_n16 | best | `vision` | 31.4 | 50.0 | 73.4 | 25.04 (70 %) | long_scoreboard (70 %) | latency bound (long_scoreboard) |
+| groot_n16 | eager | `vlm_prefix` | 27.4 | 42.7 | 50.0 | 31.01 (65 %) | long_scoreboard (65 %) | latency bound (long_scoreboard) |
+| groot_n16 | best | `vlm_prefix` | 54.3 | 74.8 | 20.4 | 5.32 (44 %) | long_scoreboard (44 %) | mixed |
+| groot_n16 | eager | `ae_total` | 36.7 | 24.8 | 63.0 | 10.63 (46 %) | long_scoreboard (46 %) | latency bound (long_scoreboard) |
+| groot_n16 | best | `ae_total` | 27.3 | 53.8 | 30.4 | 25.38 (74 %) | long_scoreboard (74 %) | latency bound (long_scoreboard) |
+| groot_n17 | eager | `vision` | 47.3 | 69.5 | 48.8 | 15.57 (64 %) | long_scoreboard (64 %) | mixed |
+| groot_n17 | best | `vision` | 44.3 | 66.2 | 46.9 | 14.48 (61 %) | long_scoreboard (61 %) | mixed |
+| groot_n17 | eager | `ae_total` | 52.4 | 70.4 | 21.9 | 5.65 (42 %) | long_scoreboard (42 %) | mixed |
+| groot_n17 | best | `ae_total` | 52.4 | 75.0 | 20.3 | 3.93 (35 %) | long_scoreboard (35 %) | mixed |
 | pi0 | eager | `vision` | 65.3 | 58.3 | 35.6 | 3.38 (43 %) | long_scoreboard (43 %) | mixed |
 | pi0 | best | `vision` | 43.6 | 59.1 | 22.7 | 1.93 (29 %) | long_scoreboard (29 %) | latency bound (long_scoreboard) |
 | pi0 | eager | `vlm_prefix` | 40.4 | 48.6 | 70.7 | 34.44 (74 %) | long_scoreboard (74 %) | latency bound (long_scoreboard) |
@@ -33,6 +45,11 @@ What is compared here are the ncu counters, which are intensive quantities descr
 
 | model | phase | eager verdict | best verdict | ΔSM % | ΔMem % | ΔLongSB | what the counters say moved |
 |---|---|---|---|---:|---:|---:|---|
+| groot_n16 | `vision` | latency bound (long_scoreboard) | latency bound (long_scoreboard) | +0.3 | +0.6 | +0.09 | no clear change in the counters |
+| groot_n16 | `vlm_prefix` | latency bound (long_scoreboard) | mixed | +26.9 | +32.1 | -25.69 | less memory-latency stall; higher SM utilisation |
+| groot_n16 | `ae_total` | latency bound (long_scoreboard) | latency bound (long_scoreboard) | -9.4 | +28.9 | +14.75 | MORE memory-latency stall |
+| groot_n17 | `vision` | mixed | mixed | -3.0 | -3.2 | -1.09 | less memory-latency stall |
+| groot_n17 | `ae_total` | mixed | mixed | -0.0 | +4.6 | -1.72 | less memory-latency stall |
 | pi0 | `vision` | mixed | latency bound (long_scoreboard) | -21.7 | +0.8 | -1.45 | less memory-latency stall |
 | pi0 | `vlm_prefix` | latency bound (long_scoreboard) | latency bound (mio_throttle) | +11.2 | +6.5 | -31.70 | less memory-latency stall; higher SM utilisation |
 | pi0 | `ae_step_0` | latency bound (imc_miss) | latency bound (long_scoreboard) | +0.6 | +34.8 | +7.85 | MORE memory-latency stall |
@@ -63,5 +80,5 @@ The skinniest GEMM in each expert — the long-shallow shape the owner predicted
 
 **The analytic verdict and the measured one disagree, and that is the point.** I ≈ S puts every expert GEMM far below the measured ridge, so analytically they are all memory-bound by construction. C1's counters say π0's expert is *issue*-limited when eager (`imc_miss` 35 %, Long Scoreboard third at 16 %, memory throughput 21.6 %) and only becomes memory-latency-bound once compiled (56.5 %, Long Scoreboard dominant). Arithmetic intensity bounds what a phase *could* achieve; it does not say what limits it now.
 
-Captures summarised: **16**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
+Captures summarised: **28**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
 
