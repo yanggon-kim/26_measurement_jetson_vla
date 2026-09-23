@@ -18,9 +18,16 @@ headers, `password=`, and for environment-variable-shaped strings (`^[A-Z_]{4,}=
 environment — unlike `.nsys-rep`, verified on this device to carry system-wide process
 metadata and therefore never published.
 
-**Intended home:** `https://huggingface.co/datasets/yang-gon/vla-orin-ncu-raw`
-(private dataset repo, README uploaded). The binary upload itself is pending — see
-STATUS.md.
+**Published 2026-09-23 11:55:**
+`https://huggingface.co/datasets/yang-gon/vla-orin-ncu-raw`, a **private** dataset repo
+(707.6 MB). Uploaded byte counts match the sha256 table above exactly. Private because
+this is measurement data for an unpublished study; making it public is one call to
+`HfApi().update_repo_settings(..., private=False)`.
+
+The upload happened only after the secret scan above came back clean on all four files.
+Nothing about `.ncu-rep` is assumed safe by analogy: `.nsys-rep` on this device WAS
+verified to embed system-wide process metadata including a session token, and those are
+never published.
 
 **Superseded for analysis.** These came from `--set full -c 300`. The 2026-09-23 C1
 captures request four sections plus the 14 `smsp__average_warps_issue_stalled_*` metrics
