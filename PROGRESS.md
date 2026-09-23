@@ -63,22 +63,27 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 21:57:07** · elapsed **3.37 h** of 26 (13 %) · 51.2 GiB free · 0.73 GiB swap
+**Updated 22:17:08** · elapsed **3.70 h** of 26 (14 %) · 49.5 GiB free · 0.72 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 143283 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 3 min | 0.4 GiB |
+| 144213 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --si` | 0 min | 1.7 GiB |
 
 Latest log lines:
 
-- `run_queue3.log` · QUEUE3_DONE 2026-09-22T21:53:56-07:00
-- `pi05_ladder2.log` · rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
-- `pi05_ladder2.log` · ValueError: 'bf16_both' is not in list
-- `pi05_ladder2.log` · EXIT=1 2s
+- `smolvla_ladder.log` · === N=10  vlm_graphs: + CUDA graphs on pg.forward
+- `smolvla_ladder.log` · memory before: 50.7 GiB available, 0.72 GiB swap in use
+- `smolvla_ladder.log` · `torch_dtype` is deprecated! Use `dtype` instead!
+- `smolvla_paper_fp32.log` · raise AttributeError(
+- `smolvla_paper_fp32.log` · AttributeError: 'VLAFlowMatching' object has no attribute 'paligemma_with_expert'
+- `smolvla_paper_fp32.log` · EXIT=1 20s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 21:57** (29 configurations)
+**Re-derived from every result CSV on disk at 22:17** (29 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
