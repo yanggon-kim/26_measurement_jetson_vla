@@ -20,10 +20,23 @@ for name, pat in (("pi0",    "results/20260922_E4c_pi0_opt_ladder/raw/rows/*.jso
     for f in fs:
         r = json.load(open(f))
         tag = f"{r['rung']}"
-        if r.get("e2e_median_ms") not in ("", None):
-            ok.append(tag)
-        elif r.get("status") == "not applicable" or r.get("not_applicable_reason"):
+        v = r.get("e2e_median_ms")
+        # NaN is NOT a measurement. The first version of this audit tested
+        # `v not in ("", None)`, and a not-applicable rung writes float('nan'), so it
+        # reported SmolVLA as 14 measured / 0 n/a when the truth was 11 / 3. An audit
+        # that miscounts is worse than no audit.
+        # ...and a number stored as a STRING is still a number: pi0's N=4 rows were
+        # written by an older path that stringified it, so a strict isinstance check
+        # called 8 good rungs failed. Coerce, then reject NaN and non-positive.
+        try:
+            fv = float(v)
+            measured = fv == fv and fv > 0
+        except (TypeError, ValueError):
+            measured = False
+        if r.get("status") == "not applicable" or r.get("not_applicable_reason"):
             na.append(tag)
+        elif measured:
+            ok.append(tag)
         else:
             bad.append(tag)
     print(f"  {name:10s} measured={len(ok):2d}  n/a={len(na)}  FAILED={len(bad)}"
