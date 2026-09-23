@@ -24,11 +24,20 @@ EXPECTED = {
     "smolvla": LEROBOT + ["vis_static_pos"],
     "groot_n17": ["eager_fp32", "eager_tf32", "ae_compile", "ae_graphs", "vis_compile",
                   "vlm_compile", "vlm_graphs"],
+    # N1.6 measured a full ladder at 09:35 and this audit never mentioned it, because the
+    # model list below was written before N1.6 existed. An audit only sees what it is told
+    # to look for.
+    "groot_n16": ["eager_fp32", "eager_tf32", "ae_compile", "ae_graphs", "vis_compile",
+                  "vlm_compile", "vlm_graphs"],
+    "groot_n15": ["eager_fp32", "eager_tf32", "ae_compile", "ae_graphs", "vis_compile",
+                  "vlm_compile", "vlm_graphs"],
 }
 for name, pat in (("pi0",    "results/20260922_E4c_pi0_opt_ladder/raw/rows/*.json"),
                   ("pi05",   "results/20260922_E4c_pi05_opt_ladder/raw/rows/*.json"),
                   ("smolvla","results/20260922_E4c_smolvla_opt_ladder/raw/rows/*.json"),
-                  ("groot_n17","results/20260923_E4d_groot_n17_ladder/raw/rows/*.json")):
+                  ("groot_n17","results/20260923_E4d_groot_n17_ladder/raw/rows/*.json"),
+                  ("groot_n16","results/20260923_E4d_groot_n16_ladder/raw/rows/*.json"),
+                  ("groot_n15","results/20260923_E4d_groot_n15_ladder/raw/rows/*.json")):
     fs = sorted(glob.glob(pat))
     ok, na, bad = [], [], []
     for f in fs:

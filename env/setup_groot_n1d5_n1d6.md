@@ -96,3 +96,41 @@ before constructing the policy, so both versions take the same argument.
 
 **N1.6 verified end to end** (eager, robocasa_panda_omron, 3 warmup / 3 timed):
 e2e 385.97 ms, vision 62.41, vlm_prefix 72.13, action head 242.93 (62.9 %), CPU 50.86.
+
+## N1.5 unblocked (2026-09-23 10:20)
+
+`pytorch3d` built from source in **627 s** once `activate_orin_venv.sh` was sourced first
+(its `setup.py` imports torch, which needs the Jetson `LD_LIBRARY_PATH`). Built at
+`TORCH_CUDA_ARCH_LIST=8.7`, `FORCE_CUDA=1`, commit `75ebeeae`.
+
+Further packages into `~/venvs/groot16` (all `--no-deps`):
+
+    setuptools==84.0.0   # inductor needs it to compile; NEITHER groot venv had it, and
+                         # its absence is what failed N1.6's vis_compile rung
+    timm==1.0.30         # Eagle's RADIOConfig imports it
+    decord               # STUB, see below
+
+### The `decord` stub, and why it raises
+
+transformers' `check_imports()` statically scans the remote modeling file and refuses to
+load the Eagle processor unless `decord` is importable. decord has **no aarch64 wheel**
+(nor does the `eva-decord` fork). In
+`gr00t/model/backbone/eagle2_hg_model/processing_eagle2_5_vl.py` decord appears in exactly
+one place — `_read_video_decord(video_path)`, which opens a video FILE, with its
+`import decord` inside the function body (line 191). This benchmark passes numpy image
+arrays built from the checkpoint's own modality config and never a video path, so that
+function is unreachable here.
+
+"Unreachable" is a claim, so the stub **raises on every attribute access**. If any code
+path does reach decord the run fails loudly and this note is proven wrong, rather than a
+number being quietly produced by a different video backend.
+
+### One more silent-failure class, fixed
+
+`_vision_module` looked under `backbone.model`; N1.5's EagleBackbone calls the container
+`backbone.eagle_model` (eagle_backbone.py:59). The hook simply never fired and N1.5's first
+run reported **vision 0.00 ms** with no error at all. The resolver now searches both
+containers, and a vision module that cannot be found is a hard failure rather than a zero.
+
+**N1.5 verified** (eager, oxe_droid, 3/3): e2e 259.99 ms — vision 50.45, prefix 100.22,
+action head 99.23 (38.2 %), CPU 48.79.

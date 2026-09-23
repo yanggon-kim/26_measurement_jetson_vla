@@ -70,6 +70,10 @@ def main() -> int:
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--checkpoint", default="nvidia/GR00T-N1.7-3B")
     ap.add_argument("--version", default="n17")
+    ap.add_argument("--api", choices=("new", "old"), default="new",
+                    help="'old' is N1.5's Gr00tPolicy signature and flat obs keys")
+    ap.add_argument("--data-config", default="oxe_droid",
+                    help="N1.5 only: key into gr00t.experiment.data_config.DATA_CONFIG_MAP")
     ap.add_argument("--compat-shims", action="store_true",
                     help="re-export symbols the older GR00T remote code expects")
     ap.add_argument("--gr00t-root", default=None,
@@ -124,7 +128,8 @@ def main() -> int:
         # model modules (env/setup_groot_n1d5_n1d6.md). Putting the chosen checkout first
         # on sys.path is what selects the version; the measurement code is identical.
         sys.path.insert(0, args.gr00t_root)
-    from gr00t.policy.gr00t_policy import Gr00tPolicy                # noqa: E402
+    if args.api == "new":
+        from gr00t.policy.gr00t_policy import Gr00tPolicy            # noqa: E402
     from huggingface_hub import snapshot_download                     # noqa: E402
 
     ckpt_dir = (args.checkpoint if Path(args.checkpoint).is_dir()
@@ -136,17 +141,20 @@ def main() -> int:
     # N1.7's Gr00tPolicy resolves a string tag to the enum itself; N1.6's does not and
     # dies on "'str' object has no attribute 'value'". Resolve it here so both versions
     # take the same argument.
-    from gr00t.data.embodiment_tags import EmbodimentTag                  # noqa: E402
-    tag = args.embodiment_tag
-    if isinstance(tag, str):
-        if hasattr(EmbodimentTag, "resolve"):
-            tag = EmbodimentTag.resolve(tag)
-        else:
-            try:
-                tag = EmbodimentTag(tag)
-            except ValueError:
-                tag = EmbodimentTag[tag.upper()]
-    policy = Gr00tPolicy(embodiment_tag=tag, model_path=ckpt_dir, device="cuda")
+    if args.api == "old":
+        policy = _load_n15(args, ckpt_dir)
+    else:
+        from gr00t.data.embodiment_tags import EmbodimentTag              # noqa: E402
+        tag = args.embodiment_tag
+        if isinstance(tag, str):
+            if hasattr(EmbodimentTag, "resolve"):
+                tag = EmbodimentTag.resolve(tag)
+            else:
+                try:
+                    tag = EmbodimentTag(tag)
+                except ValueError:
+                    tag = EmbodimentTag[tag.upper()]
+        policy = Gr00tPolicy(embodiment_tag=tag, model_path=ckpt_dir, device="cuda")
     model = policy.model
     n = args.steps or int(getattr(model.action_head.config, "num_inference_timesteps", 4))
     model.action_head.num_inference_timesteps = n
@@ -236,24 +244,33 @@ def main() -> int:
     if vis is not None:
         undo.append(timed(vis, "forward", "vision"))
     else:
-        print("WARNING: backbone.model.visual not found; vision stays inside the backbone",
-              flush=True)
+        raise SystemExit(
+            "the backbone's vision module was not found under any known attribute "
+            "(model/eagle_model x visual/vision_model). Refusing to run: the vision region "
+            "would silently report 0.00 ms and the three-way split would be wrong.")
 
-    obs, shapes = build_observation(policy, ckpt_dir)
+    if args.api == "old":
+        obs, shapes = _build_obs_n15(policy, ckpt_dir)
+    else:
+        obs, shapes = build_observation(policy, ckpt_dir)
     print(f"observation shapes: {json.dumps(shapes, default=str)}", flush=True)
 
     # The CPU input pipeline is a real phase of GR00T inference and NVIDIA's own
     # benchmark_inference.py reports it as one, so it is timed here rather than hidden
     # by building the inputs once. The GPU phase split below then times the model alone.
-    build_inputs(policy, obs)
+    prep = (lambda: policy.apply_transforms(
+        {k: (v if isinstance(v, list) else __import__("numpy").expand_dims(v, 0))
+         for k, v in obs.items()})) if args.api == "old" \
+        else (lambda: build_inputs(policy, obs))
+    prep()
     dp = []
     for _ in range(min(args.timed, 20)):
         t0 = time.perf_counter()
-        build_inputs(policy, obs)
+        prep()
         dp.append((time.perf_counter() - t0) * 1e3)
     print(f"data_processing (CPU): {statistics.median(dp):.2f} ms", flush=True)
 
-    inputs = build_inputs(policy, obs)
+    inputs = prep()
 
     # A rung that fails must leave a ROW saying so. GR00T's vlm_compile and vlm_graphs
     # died with no row at all, and the watchdog audit then reported the model as
@@ -288,6 +305,12 @@ def main() -> int:
         """
         if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
             torch.compiler.cudagraph_mark_step_begin()
+        if args.api == "old":
+            # N1.5's own policy runs the model under inference_mode + autocast
+            # (policy.py:189-191); timing it any other way would not be its inference.
+            with torch.inference_mode(), torch.autocast(device_type="cuda",
+                                                        dtype=torch.bfloat16):
+                return model.get_action(inputs)
         with torch.no_grad():
             return model.get_action(inputs)
 
@@ -395,6 +418,81 @@ def main() -> int:
     return 0
 
 
+def _load_n15(args, ckpt_dir):
+    """N1.5 uses the older Gr00tPolicy API, so it gets its own constructor.
+
+    N1.6/N1.7: Gr00tPolicy(embodiment_tag, model_path, device=...) and the checkpoint
+    carries its own processor.
+    N1.5: Gr00tPolicy(model_path, embodiment_tag, modality_config, modality_transform,
+    denoising_steps, device) -- the caller supplies the data config, which lives in
+    gr00t.experiment.data_config.DATA_CONFIG_MAP.
+
+    The phase split is the same measurement in both: policy.apply_transforms is the CPU
+    input pipeline and policy.model.get_action is the GPU path, which is exactly the
+    decomposition N1.5's own Gr00tPolicy.get_action uses (policy.py:180-182).
+    """
+    from gr00t.experiment.data_config import DATA_CONFIG_MAP                  # noqa: E402
+    from gr00t.model.policy import Gr00tPolicy                                # noqa: E402
+
+    if args.data_config not in DATA_CONFIG_MAP:
+        raise SystemExit(f"data config {args.data_config!r} not in DATA_CONFIG_MAP; "
+                         f"it has {sorted(DATA_CONFIG_MAP)}")
+    dc = DATA_CONFIG_MAP[args.data_config]
+    policy = Gr00tPolicy(
+        model_path=ckpt_dir,
+        embodiment_tag=args.embodiment_tag,
+        modality_config=dc.modality_config(),
+        modality_transform=dc.transform(),
+        device="cuda",
+    )
+    return policy
+
+
+def _build_obs_n15(policy, ckpt_dir, image_hw=(256, 256), text="pick up the object"):
+    """N1.5's observation keys are flat: video.<k>, state.<k>, annotation.<k>."""
+    import numpy as np
+
+    mc = policy.get_modality_config()
+    obs = {}
+    shapes = {"video": {}, "state": {}}
+    vcfg = mc["video"]
+    h, w = image_hw
+    for k in vcfg.modality_keys:
+        name = k if k.startswith("video.") else f"video.{k}"
+        a = np.random.randint(0, 255, (len(vcfg.delta_indices), h, w, 3), dtype=np.uint8)
+        obs[name] = a
+        shapes["video"][name] = a.shape
+    scfg = mc["state"]
+    dims = _state_dims_n15(ckpt_dir, policy, scfg.modality_keys)
+    for k in scfg.modality_keys:
+        name = k if k.startswith("state.") else f"state.{k}"
+        a = np.random.randn(len(scfg.delta_indices), dims[k.split(".")[-1]]).astype(
+            np.float32)
+        obs[name] = a
+        shapes["state"][name] = a.shape
+    for k in mc.get("language", mc.get("annotation")).modality_keys:
+        name = k if k.startswith("annotation.") else f"annotation.{k}"
+        obs[name] = [text]
+    return obs, shapes
+
+
+def _state_dims_n15(ckpt_dir, policy, state_keys):
+    """Widths from the checkpoint's experiment_cfg/metadata.json (N1.5's layout)."""
+    import json
+    meta = json.loads((Path(ckpt_dir) / "experiment_cfg" / "metadata.json").read_text())
+    tag = getattr(policy.embodiment_tag, "value", policy.embodiment_tag)
+    if tag not in meta:
+        raise SystemExit(f"metadata.json has no embodiment {tag!r}; it has {sorted(meta)}")
+    st = meta[tag]["statistics"]["state"]
+    out = {}
+    for k in state_keys:
+        leaf = k.split(".")[-1]
+        if leaf not in st:
+            raise SystemExit(f"state key {leaf!r} missing from metadata statistics")
+        out[leaf] = len(st[leaf]["min"])
+    return out
+
+
 def _vision_module(model):
     """The backbone's image encoder, whatever this GR00T version calls it.
 
@@ -403,17 +501,37 @@ def _vision_module(model):
     counterpart of the LeRobot family's embed_image, so the three-way phase split is the
     same measurement across versions.
     """
-    bm = getattr(model.backbone, "model", None)
-    for attr in ("visual", "vision_model"):
-        m = getattr(bm, attr, None)
-        if m is not None:
-            return m
+    for container in _backbone_containers(model):
+        for attr in ("visual", "vision_model"):
+            m = getattr(container, attr, None)
+            if m is not None:
+                return m
     return None
 
 
+def _backbone_containers(model):
+    """Where the two halves hang, across GR00T versions.
+
+    N1.7 (Qwen3Backbone) and N1.6 (EagleBackbone) both use `backbone.model`; N1.5's
+    EagleBackbone calls it `backbone.eagle_model` (eagle_backbone.py:59). Getting this
+    wrong is silent -- the vision hook simply never fires and the region reports 0.00 ms,
+    which is exactly what N1.5's first run did.
+    """
+    out = []
+    for attr in ("model", "eagle_model"):
+        c = getattr(model.backbone, attr, None)
+        if c is not None:
+            out.append(c)
+    return out
+
+
 def _language_module(model):
-    """The backbone's LLM. Same name in both versions, but resolved in one place."""
-    return getattr(getattr(model.backbone, "model", None), "language_model", None)
+    """The backbone's LLM. Same attribute name everywhere, different container."""
+    for container in _backbone_containers(model):
+        m = getattr(container, "language_model", None)
+        if m is not None:
+            return m
+    return None
 
 
 def build_observation(policy, ckpt_dir, image_hw=(256, 256),
