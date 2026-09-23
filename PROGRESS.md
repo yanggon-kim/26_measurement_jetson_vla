@@ -63,18 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 20:17:01** · elapsed **1.70 h** of 26 (7 %) · 37.8 GiB free · 0.69 GiB swap
+**Updated 20:37:02** · elapsed **2.03 h** of 26 (8 %) · 36.9 GiB free · 0.93 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 8 min | 0.4 GiB |
-| 131252 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 8 min | 20.8 GiB |
+| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 28 min | 0.2 GiB |
+| 133397 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 5 min | 21.1 GiB |
+
+Latest log lines:
+
+- `pi05_ladder.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
+- `pi05_ladder.log` · _C._set_float32_matmul_precision(precision)
+- `pi05_ladder.log` · W0922 20:35:56.698000 133397 torch/_inductor/utils.py:1446] [0/0_1] Not enough SMs to use max_autotune_gemm mo
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 20:17** (20 configurations)
+**Re-derived from every result CSV on disk at 20:37** (20 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
