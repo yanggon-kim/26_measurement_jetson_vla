@@ -63,9 +63,13 @@ def main() -> int:
         # counters. A capture that quietly measures the wrong configuration is worse than
         # one that fails, so the limit is raised and the outcome is recorded below.
         import torch._dynamo as _dyn
+        # 16, not 64. At 8 dynamo BAILED to eager and the capture silently measured the
+        # wrong configuration. At 64 it went the other way: SmolVLA's sample_actions
+        # recompiled for 27 minutes after profiling had already finished, blocking the
+        # queue. 16 clears the bail threshold while bounding the thrash.
         for attr in ("recompile_limit", "cache_size_limit"):
             if hasattr(_dyn.config, attr):
-                setattr(_dyn.config, attr, 64)
+                setattr(_dyn.config, attr, 16)
     spec = MR.get(args.model)
     policy, _, _ = MR.load_policy(spec, n=args.num_steps, compile_mode=cm)
     # assert_real_weights diffs sampled tensors against PI0's OWN safetensors, so it is
