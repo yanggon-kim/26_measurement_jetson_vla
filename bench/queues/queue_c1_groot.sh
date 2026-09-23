@@ -37,6 +37,11 @@ for VER in n17 n16 n15; do
            "$OUT/ncu/groot_${VER}_${MODE}_${REGION}_details.csv" >/dev/null 2>&1; then
         echo "########## $VER $MODE $REGION already done (verified)"; continue
       fi
+      # Sweep before EVERY capture, not just at queue start. An ncu orphaned by
+      # a previous kill is root-owned and outlives its queue, and the runner
+      # guard then correctly refuses to start -- but a refusal used to end the
+      # whole queue, which is how smolvla/best/ae_step_0 was skipped.
+      sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
       bash bench/run_ncu_c1_groot.sh "$VER" "$MODE" "$REGION" "$OUT"
     done
   done

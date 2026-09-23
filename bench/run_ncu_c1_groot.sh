@@ -100,7 +100,7 @@ for d in Path('/proc').iterdir():
 sys.exit(1)
 GUARDPY
 then
-  echo "  REFUSING to start $MODEL/$MODE/$REGION — kill it first (sudo, it runs as root)"
+  echo "  REFUSING to start $VER/$MODE/$REGION — kill it first (sudo, it runs as root)"
   exit 3
 fi
 

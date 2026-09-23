@@ -276,6 +276,34 @@ def main() -> int:
 
     inputs = prep()
 
+    # step() is defined HERE, above every caller. It used to sit after the
+    # measurement block, and --ncu-region called it first:
+    #     UnboundLocalError: local variable 'step' referenced before assignment
+    # The GR00T C1 smoke test caught that before it cost 18 captures.
+
+    def step():
+        """One inference, with the CUDA-graph generation advanced first.
+
+        With TWO cudagraph-managed callables in the same frame (action_head.get_action and
+        language_model.forward) torch's cudagraph_trees keeps the previous run's outputs
+        alive across the boundary and refuses the next replay:
+          "accessing tensor output of CUDAGraphs that has been overwritten by a subsequent
+           run ... call torch.compiler.cudagraph_mark_step_begin() before"
+        Cloning the outputs was necessary but not sufficient; the generation counter has to
+        advance too. This is the documented API for exactly that, and it is a no-op when
+        nothing is graph-captured, so every rung runs the same code path.
+        """
+        if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+            torch.compiler.cudagraph_mark_step_begin()
+        if args.api == "old":
+            # N1.5's own policy runs the model under inference_mode + autocast
+            # (policy.py:189-191); timing it any other way would not be its inference.
+            with torch.inference_mode(), torch.autocast(device_type="cuda",
+                                                        dtype=torch.bfloat16):
+                return model.get_action(inputs)
+        with torch.no_grad():
+            return model.get_action(inputs)
+
     if args.ncu_region:
         # C1 needs ncu to see ONE instance of one phase. Same shape as
         # bench/ncu_target.py does for the LeRobot models: NVTX ranges on the three wrap
@@ -362,29 +390,6 @@ def main() -> int:
         (out / "raw" / f"traceback_{args.rung}.txt").write_text(traceback.format_exc())
         print(f"  NOT MEASURED: {type(exc).__name__}: {str(exc)[:160]}", flush=True)
         print(f"  row + traceback written for {args.rung}", flush=True)
-
-    def step():
-        """One inference, with the CUDA-graph generation advanced first.
-
-        With TWO cudagraph-managed callables in the same frame (action_head.get_action and
-        language_model.forward) torch's cudagraph_trees keeps the previous run's outputs
-        alive across the boundary and refuses the next replay:
-          "accessing tensor output of CUDAGraphs that has been overwritten by a subsequent
-           run ... call torch.compiler.cudagraph_mark_step_begin() before"
-        Cloning the outputs was necessary but not sufficient; the generation counter has to
-        advance too. This is the documented API for exactly that, and it is a no-op when
-        nothing is graph-captured, so every rung runs the same code path.
-        """
-        if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
-            torch.compiler.cudagraph_mark_step_begin()
-        if args.api == "old":
-            # N1.5's own policy runs the model under inference_mode + autocast
-            # (policy.py:189-191); timing it any other way would not be its inference.
-            with torch.inference_mode(), torch.autocast(device_type="cuda",
-                                                        dtype=torch.bfloat16):
-                return model.get_action(inputs)
-        with torch.no_grad():
-            return model.get_action(inputs)
 
     try:
         for _ in range(args.warmup):

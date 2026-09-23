@@ -64,6 +64,19 @@ def main() -> int:
     # because PI0Policy.from_pretrained once swallowed a load error and returned RANDOM
     # weights while still producing plausible latencies (env/README.md §10), so it is kept
     # for the model it can actually check and recorded as unverified elsewhere.
+    # SmolVLA cannot stream-capture its vision tower: SmolVLMVisionEmbeddings.forward
+    # ends in a boolean-mask index_put whose output shape depends on the mask's VALUES, so
+    # it needs a device-to-host sync and any CUDA-graph capture around it dies with
+    # "operation not permitted when stream is capturing". All three smolvla `best` C1
+    # captures failed that way. Part B solved it with the vis_static_pos rung: in LeRobot's
+    # SmolVLA the mask is all-true BY CONSTRUCTION (embed_image passes None;
+    # modeling_smolvlm builds torch.ones), so the statement is exactly
+    # position_ids = pos_ids. The same prep is applied here, and only when graphs are
+    # actually in play, so the eager captures are untouched.
+    if args.model == "smolvla" and cm and "reduce-overhead" in cm:
+        import opt_ladder as OL  # noqa: E402
+        print("prep:", OL.prep_smolvlm_static_posids(policy), flush=True)
+
     weights = (P.assert_real_weights(policy) if args.model == "pi0" else
                {"verdict": "not verified: assert_real_weights diffs against pi0's own "
                            "safetensors and is pi0-specific"})
