@@ -187,14 +187,20 @@ def main() -> int:
 
     # ---- C2: what the best configuration changed, per phase -------------------------
     c2 = []
-    print(f"\n{'model':14s}{'region':12s}{'us eager':>10s}{'us best':>10s}"
-          f"{'speedup':>9s}{'dSM%':>8s}{'dMem%':>8s}{'dLongSB':>9s}  what changed")
+    print(f"\n{'model':14s}{'region':12s}{'eager verdict':>28s} -> {'best verdict':<28s}"
+          f"{'dSM%':>7s}{'dMem%':>7s}{'dLongSB':>9s}")
     for model in models:
         for region in regions:
             e, b = caps.get((model, "eager", region)), caps.get((model, "best", region))
             if not (e and b):
                 continue
-            sp = e["total_us"] / b["total_us"] if b["total_us"] else float("nan")
+            # NO speedup from captured duration. -c 40 captures the FIRST 40 kernels of
+            # the range, and the kernel mix differs between eager and compiled, so the
+            # summed duration of those 40 is not comparable across modes. It produced
+            # "pi0 vlm_prefix 2549.7 -> 23444.0 us, 0.11x" while Part B measured that
+            # phase going 234 -> 195 ms. Phase wall times live in E4d; C2 reports what the
+            # COUNTERS say changed, which are intensive quantities and do compare.
+            sp = float("nan")
             d_sm = b["sm_pct"] - e["sm_pct"]
             d_mem = b["mem_pct"] - e["mem_pct"]
             d_lsb = b["long_scoreboard"] - e["long_scoreboard"]
@@ -213,14 +219,15 @@ def main() -> int:
                 bits.append(f"{abs(dk)} {'fewer' if dk < 0 else 'more'} kernels in the "
                             f"first {e['n_kernels']} captured")
             c2.append({"model": model, "region": region,
-                       "eager_us": e["total_us"], "best_us": b["total_us"],
-                       "speedup": round(sp, 3),
+                       "captured_kernel_us_eager_NOT_A_SPEEDUP": e["total_us"],
+                       "captured_kernel_us_best_NOT_A_SPEEDUP": b["total_us"],
                        "eager_verdict": e["verdict"], "best_verdict": b["verdict"],
                        "d_sm_pct": round(d_sm, 2), "d_mem_pct": round(d_mem, 2),
                        "d_long_scoreboard": round(d_lsb, 3),
                        "mechanism": "; ".join(bits) or "no clear change in the counters"})
-            print(f"{model:14s}{region:12s}{e['total_us']:10.1f}{b['total_us']:10.1f}"
-                  f"{sp:9.2f}{d_sm:8.1f}{d_mem:8.1f}{d_lsb:9.2f}  {c2[-1]['mechanism']}")
+            print(f"{model:14s}{region:12s}{e['verdict']:>28s} -> {b['verdict']:<28s}"
+                  f"{d_sm:7.1f}{d_mem:7.1f}{d_lsb:9.2f}")
+            print(f"{'':26s}{c2[-1]['mechanism']}")
     if c2:
         with (out / "c2_eager_vs_best.csv").open("w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=list(c2[0].keys()))
@@ -265,16 +272,28 @@ def main() -> int:
         M.append("")
         M.append("## C2 — eager → best, phase by phase")
         M.append("")
-        M.append("`us` is the summed duration of the captured kernels in that phase, so it "
-                 "compares like with like only within a row; end-to-end phase times are in "
-                 "`reports/E4d_phase_balance.md`.")
+        M.append("**`best` here is LeRobot's own compiled path** "
+                 "(`compile_model=True`, `reduce-overhead`), which compiles "
+                 "`sample_actions` as one unit — the ladder's `whole_graphs` rung. A "
+                 "consequence worth stating: per-phase wall times do not exist for that "
+                 "configuration, because a region boundary cannot be placed inside a "
+                 "single compiled graph. **So this table reports no speedup.** Phase "
+                 "wall times, and the speedups that go with them, are in "
+                 "`reports/E4d_phase_balance.md`, measured on the ladder rungs that keep "
+                 "their regions.")
         M.append("")
-        M.append("| model | phase | eager µs | best µs | ratio | eager verdict | "
-                 "best verdict | ΔSM % | ΔMem % | ΔLongSB | what moved |")
-        M.append("|---|---|---:|---:|---:|---|---|---:|---:|---:|---|")
+        M.append("What is compared here are the ncu counters, which are intensive "
+                 "quantities describing what the kernels in a phase are doing — those do "
+                 "compare across modes. Summed captured duration does not: `-c 40` takes "
+                 "the first 40 kernels of a range and the kernel mix differs between "
+                 "modes, which is how an earlier version of this table showed π0's "
+                 "`vlm_prefix` at \"0.11×\" while Part B measured 234 → 195 ms.")
+        M.append("")
+        M.append("| model | phase | eager verdict | best verdict | ΔSM % | ΔMem % | "
+                 "ΔLongSB | what the counters say moved |")
+        M.append("|---|---|---|---|---:|---:|---:|---|")
         for r in c2:
-            M.append(f"| {r['model']} | `{r['region']}` | {r['eager_us']:.0f} | "
-                     f"{r['best_us']:.0f} | {r['speedup']:.2f}× | {r['eager_verdict']} | "
+            M.append(f"| {r['model']} | `{r['region']}` | {r['eager_verdict']} | "
                      f"{r['best_verdict']} | {r['d_sm_pct']:+.1f} | {r['d_mem_pct']:+.1f} | "
                      f"{r['d_long_scoreboard']:+.2f} | {r['mechanism']} |")
         M.append("")
