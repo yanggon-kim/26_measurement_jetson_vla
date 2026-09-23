@@ -1,0 +1,229 @@
+{
+  "_ridge_FLOP_per_byte": 180.57,
+  "_note": "I ~= S for a weight-stationary bf16 GEMM with S << K,N, so the suffix length is the arithmetic intensity to first order. S below the ridge means memory-bound by construction.",
+  "models": {
+    "pi0": {
+      "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+      "suffix_tokens_S": 51,
+      "S_source": "T010 measured: 50 action tokens + 1 state token",
+      "expert_layers": 18,
+      "projections_per_layer": 7,
+      "projections_total": 126,
+      "expert_weight_bytes_bf16": 622854144,
+      "arithmetic_intensity_approx": 51,
+      "verdict": "MEMORY-bound by construction (S < ridge)",
+      "projections": [
+        {
+          "projection": "mlp.down_proj",
+          "K_in": 4096,
+          "N_out": 1024,
+          "gemm": "51x4096x1024",
+          "flops_per_call": 427819008,
+          "weight_bytes_bf16": 8388608
+        },
+        {
+          "projection": "mlp.gate_proj",
+          "K_in": 1024,
+          "N_out": 4096,
+          "gemm": "51x1024x4096",
+          "flops_per_call": 427819008,
+          "weight_bytes_bf16": 8388608
+        },
+        {
+          "projection": "mlp.up_proj",
+          "K_in": 1024,
+          "N_out": 4096,
+          "gemm": "51x1024x4096",
+          "flops_per_call": 427819008,
+          "weight_bytes_bf16": 8388608
+        },
+        {
+          "projection": "self_attn.k_proj",
+          "K_in": 1024,
+          "N_out": 256,
+          "gemm": "51x1024x256",
+          "flops_per_call": 26738688,
+          "weight_bytes_bf16": 524288
+        },
+        {
+          "projection": "self_attn.o_proj",
+          "K_in": 2048,
+          "N_out": 1024,
+          "gemm": "51x2048x1024",
+          "flops_per_call": 213909504,
+          "weight_bytes_bf16": 4194304
+        },
+        {
+          "projection": "self_attn.q_proj",
+          "K_in": 1024,
+          "N_out": 2048,
+          "gemm": "51x1024x2048",
+          "flops_per_call": 213909504,
+          "weight_bytes_bf16": 4194304
+        },
+        {
+          "projection": "self_attn.v_proj",
+          "K_in": 1024,
+          "N_out": 256,
+          "gemm": "51x1024x256",
+          "flops_per_call": 26738688,
+          "weight_bytes_bf16": 524288
+        }
+      ]
+    },
+    "pi05": {
+      "checkpoint": "lerobot/pi05_libero_base",
+      "suffix_tokens_S": null,
+      "S_source": "to be measured",
+      "expert_layers": 18,
+      "projections_per_layer": 9,
+      "projections_total": 162,
+      "expert_weight_bytes_bf16": 849346560,
+      "arithmetic_intensity_approx": null,
+      "verdict": null,
+      "projections": [
+        {
+          "projection": "input_layernorm.dense",
+          "K_in": 1024,
+          "N_out": 3072,
+          "gemm": "Sx1024x3072",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 6291456
+        },
+        {
+          "projection": "mlp.down_proj",
+          "K_in": 4096,
+          "N_out": 1024,
+          "gemm": "Sx4096x1024",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 8388608
+        },
+        {
+          "projection": "mlp.gate_proj",
+          "K_in": 1024,
+          "N_out": 4096,
+          "gemm": "Sx1024x4096",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 8388608
+        },
+        {
+          "projection": "mlp.up_proj",
+          "K_in": 1024,
+          "N_out": 4096,
+          "gemm": "Sx1024x4096",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 8388608
+        },
+        {
+          "projection": "post_attention_layernorm.dense",
+          "K_in": 1024,
+          "N_out": 3072,
+          "gemm": "Sx1024x3072",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 6291456
+        },
+        {
+          "projection": "self_attn.k_proj",
+          "K_in": 1024,
+          "N_out": 256,
+          "gemm": "Sx1024x256",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 524288
+        },
+        {
+          "projection": "self_attn.o_proj",
+          "K_in": 2048,
+          "N_out": 1024,
+          "gemm": "Sx2048x1024",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 4194304
+        },
+        {
+          "projection": "self_attn.q_proj",
+          "K_in": 1024,
+          "N_out": 2048,
+          "gemm": "Sx1024x2048",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 4194304
+        },
+        {
+          "projection": "self_attn.v_proj",
+          "K_in": 1024,
+          "N_out": 256,
+          "gemm": "Sx1024x256",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 524288
+        }
+      ]
+    },
+    "smolvla": {
+      "checkpoint": "lerobot/smolvla_base",
+      "suffix_tokens_S": null,
+      "S_source": "to be measured",
+      "expert_layers": 16,
+      "projections_per_layer": 7,
+      "projections_total": 112,
+      "expert_weight_bytes_bf16": 192348160,
+      "arithmetic_intensity_approx": null,
+      "verdict": null,
+      "projections": [
+        {
+          "projection": "mlp.down_proj",
+          "K_in": 2048,
+          "N_out": 720,
+          "gemm": "Sx2048x720",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 2949120
+        },
+        {
+          "projection": "mlp.gate_proj",
+          "K_in": 720,
+          "N_out": 2048,
+          "gemm": "Sx720x2048",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 2949120
+        },
+        {
+          "projection": "mlp.up_proj",
+          "K_in": 720,
+          "N_out": 2048,
+          "gemm": "Sx720x2048",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 2949120
+        },
+        {
+          "projection": "self_attn.k_proj",
+          "K_in": 320,
+          "N_out": 320,
+          "gemm": "Sx320x320",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 204800
+        },
+        {
+          "projection": "self_attn.o_proj",
+          "K_in": 960,
+          "N_out": 720,
+          "gemm": "Sx960x720",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 1382400
+        },
+        {
+          "projection": "self_attn.q_proj",
+          "K_in": 720,
+          "N_out": 960,
+          "gemm": "Sx720x960",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 1382400
+        },
+        {
+          "projection": "self_attn.v_proj",
+          "K_in": 320,
+          "N_out": 320,
+          "gemm": "Sx320x320",
+          "flops_per_call": null,
+          "weight_bytes_bf16": 204800
+        }
+      ]
+    }
+  }
+}
