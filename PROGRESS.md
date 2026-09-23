@@ -63,24 +63,27 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 07:37:39** · elapsed **13.04 h** of 26 (50 %) · 50.9 GiB free · 1.13 GiB swap
+**Updated 07:57:40** · elapsed **13.38 h** of 26 (51 %) · 23.8 GiB free · 1.37 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 214563 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 7 min | 0.1 GiB |
+| 215540 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 3 min | 31.8 GiB |
 
 Latest log lines:
 
-- `queue_fix3.log` · row + traceback written for vlm_graphs
-- `queue_fix3.log` · EXIT=1
-- `queue_fix3.log` · FIX3_DONE 2026-09-23T07:29:06-07:00
-- `queue_groot2.log` · wrote results/20260922_E4c_pi05_opt_ladder (14 rungs)
-- `queue_groot2.log` · EXIT=0 299s
-- `queue_groot2.log` · GROOT2_DONE 2026-09-23T07:23:30-07:00
+- `dl_groot.log` · -> /home/yanggon/.cache/huggingface/hub/models--nvidia--GR00T-N1.5-3B/snapshots/869830fc749c35f34771aa5209f923
+- `dl_groot.log` · EXIT=0
+- `dl_groot.log` · DL_DONE 2026-09-23T07:56:31-07:00
+- `queue_fix4.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
+- `queue_fix4.log` · === N=10  bf16_both: B2+B3 with everything compiled
+- `queue_fix4.log` · memory before: 48.6 GiB available, 1.38 GiB swap in use
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 07:38** (56 configurations)
+**Re-derived from every result CSV on disk at 07:58** (56 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
