@@ -63,22 +63,21 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 16:38:10** · elapsed **22.05 h** of 26 (85 %) · 43.6 GiB free · 1.45 GiB swap
+**Updated 16:52:11** · elapsed **22.29 h** of 26 (86 %) · 28.5 GiB free · 1.45 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 285875 | `bench/libero_eval.py \` | 5 min | 0.0 GiB |
-| 285878 | `bench/libero_eval.py \` | 5 min | 0.0 GiB |
-| 285885 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 10 --episodes ` | 5 min | 15.0 GiB |
+| 286294 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 3 --episodes 2` | 2 min | 0.0 GiB |
+| 286300 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 3 --episodes 2` | 2 min | 22.5 GiB |
 
 Latest log lines:
 
+- `libero_smoke.log` · Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+- `libero_smoke.log` · Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your softwar
+- `libero_smoke.log` · See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional informati
 - `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
-- `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
-- `queue_libero.log` · task 0 ep 0: fail    280 steps   running 0/1
-- `libero_smoke.log` · task 0 ep 0: fail    280 steps   running 0/1
-- `libero_smoke.log` · success 0/1 = 0.0%   policy 3.74 ms, sim 37.16 ms
-- `libero_smoke.log` · wrote /tmp/claude-1001/-home-yanggon-00-VLA/12fafcae-396b-4192-9a5c-e6f36be46f1c/scratchpad/libero_smoke3
+- `queue_libero.log` · task 3 ep 0: fail    280 steps   running 0/10
+- `queue_libero.log` · task 3 ep 1: fail    280 steps   running 0/11
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
@@ -146,6 +145,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 16:39)*
 <!-- SLOW:END -->
 
 ## Live status
@@ -179,6 +180,48 @@ Latest log lines:
 | π0 | N=4 eager fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
 | π0 | N=4 fully compiled | 99.92 | 192.78 | 69.72 | 369.52 | **18.9 %** |
 | *(their π0 on AGX Orin)* | *N=10 eager* | *110.47* | *257.76* | *543.14* | *920.58* | *59 %* |
+
+## REMAINING JOBS — four, in this order (owner, 2026-09-23 16:55)
+
+**1. Accuracy validation of the bf16 rungs — IN PROGRESS.**
+`bench/libero_eval.py`, LIBERO closed loop, π0 and π0.5, fp32 baseline then `bf16_both`.
+The fp32 baseline runs first and is the harness's own control: a wrong observation mapping
+and a broken policy both look like a low success rate. Three harness faults found so far,
+each of which would have produced a plausible but wrong accuracy number — a hand-built
+batch missing the tokenizer, `select_action` returning **normalised** actions (the
+postprocessor is what unnormalises), and an 8-wide state built as joint_pos+gripper when
+the checkpoint was trained on eef_pos+axis-angle+gripper. Until this reports, π0's and
+π0.5's `bf16_both` results are **speed numbers with no accuracy statement**.
+
+**2. Deep per-kernel bottleneck analysis of `vlm_prefix`** (owner, new job, after job 1).
+Models: **π0, GR00T N1.7, GR00T N1.6**, both **eager and best**. Six captures, all already
+on disk under `results/20260923_E4g_c1_<model>_<mode>/ncu/*_vlm_prefix_details.csv`.
+
+For each model and mode, answer:
+  * which *individual kernels* dominate the phase's time, by name and shape;
+  * what each of those kernels is bound by, from its own ncu counters — SM vs memory
+    throughput, achieved occupancy, L1/L2 hit rate, and the stall breakdown;
+  * what the **main** bottleneck of `vlm_prefix` is for that model, stated as one claim
+    with the counters that support it;
+  * **solution directions** that follow from the measured bottleneck, not from habit.
+
+Why this job exists: `vlm_prefix` is the phase the whole study turned on. It is the one
+compilation barely moved for π0 (534 → 516 ms, 1.04×) while precision moved it 2.16×, and
+it is the largest phase in π0's optimised frame at 45.4 %. C1 answered "what is the phase
+bound by" at phase granularity; this asks the same question per kernel, which is where a
+fix would actually be applied.
+
+Do not execute before job 1 reports. Analysis is CPU-only on existing CSVs, so it never
+contends with a measurement.
+
+**3. `bench/check_report_numbers.py` extended to E4d and E4g** — every headline figure in
+both reports re-derived from the CSVs, failing if a number appears in prose that is not in
+the data.
+
+**4. The deferred campaign** — T004's remainder (E5 nsys timeline, E6 roofline, E7 power),
+T006–T012. E7 is the largest untouched gap: the study has **no energy data at all**, and
+the PIM argument is ultimately about energy. Its capped power modes need two human reboots
+and are the owner's to schedule.
 
 ## WHAT A WATCHDOG WAKE MEANS (owner, 2026-09-23 05:30 — binding)
 
