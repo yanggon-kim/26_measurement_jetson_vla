@@ -7,7 +7,8 @@ N,step,adds,e2e_median_speedup,vision_speedup,vlm_prefix_speedup,ae_total_speedu
 10,vis_graphs -> vlm_compile,+ compile pg.forward (no CUDA graphs),1.0431,1.0043,1.0623,1.0186
 10,vlm_compile -> vlm_graphs,+ CUDA graphs on pg.forward,0.9913,1.0075,1.0024,0.9668
 10,vlm_graphs -> whole_graphs,compile sample_actions (LeRobot's path),1.0128,,,
-10,whole_graphs -> bf16_base,B0: fp32 checkpoint -> bf16 (LeRobot's own cast),1.453,,,
+10,whole_graphs -> vlm_compile_nvg,"compile pg.forward, no embed_image graph",0.9903,,,
+10,vlm_compile_nvg -> bf16_base,B0: fp32 checkpoint -> bf16 (LeRobot's own cast),1.4671,1.0367,1.6856,1.3613
 10,bf16_base -> bf16_vision,B2: + bf16 vision tower,1.0262,1.1591,1.0006,1.0056
-10,bf16_vision -> bf16_norms,B3: + bf16 layernorms,,,,
-10,bf16_norms -> bf16_both,B2+B3 with everything compiled,,,,
+10,bf16_vision -> bf16_norms,B3: + bf16 layernorms,0.9774,0.8707,0.9994,0.9988
+10,bf16_norms -> bf16_both,B2+B3 with everything compiled,1.2065,1.8209,1.2131,1.0162
