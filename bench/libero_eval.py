@@ -50,9 +50,18 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
-def build_obs(obs: dict, feats: dict, device: str) -> dict:
-    """LIBERO observation -> the batch the policy declares it wants."""
-    out: dict[str, torch.Tensor] = {}
+def build_obs(obs: dict, feats: dict, task: str) -> dict:
+    """LIBERO observation -> the RAW dict the checkpoint's preprocessor expects.
+
+    Deliberately NOT the final batch. The policy needs `observation.language.tokens` and
+    `observation.language.attention_mask`, which only the per-checkpoint preprocessor
+    produces -- building the batch by hand gave
+        KeyError: 'observation.language.tokens'
+    at modeling_pi0.py:1267. The same preprocessor also applies that checkpoint's own
+    normalisation statistics, so bypassing it would silently normalise with the wrong ones.
+    This mirrors bench/pi0_common.py:build_batch.
+    """
+    out: dict = {}
     ag = obs["agentview_image"][::-1]                 # LIBERO renders bottom-up
     wr = obs["robot0_eye_in_hand_image"][::-1]
     for key, spec in feats.items():
@@ -70,13 +79,14 @@ def build_obs(obs: dict, feats: dict, device: str) -> dict:
         if t.shape[-2:] != (h, w):
             t = torch.nn.functional.interpolate(t[None], size=(h, w), mode="bilinear",
                                                 align_corners=False)[0]
-        out[key] = t[None].to(device)
+        out[key] = t                                     # CHW in [0,1], unbatched
     st = np.concatenate([obs["robot0_joint_pos"],
                          obs["robot0_gripper_qpos"][:1]]).astype(np.float32)
     dim = feats["observation.state"].shape[0]
     if st.shape[0] < dim:
         st = np.pad(st, (0, dim - st.shape[0]))
-    out["observation.state"] = torch.from_numpy(st[:dim])[None].to(device)
+    out["observation.state"] = torch.from_numpy(st[:dim])
+    out["task"] = task
     return out
 
 
@@ -134,12 +144,23 @@ def main() -> int:
             prep_note = fn(policy)
         print("prep:", prep_note, flush=True)
 
+    # the checkpoint's own preprocessor: tokenizer + its normalisation statistics
+    from lerobot.policies.factory import make_pre_post_processors
+    kw = {"pretrained_revision": spec.revision} if spec.revision else {}
+    preprocess, _post = make_pre_post_processors(
+        policy.config, spec.checkpoint,
+        preprocessor_overrides={"device_processor": {"device": "cuda"}}, **kw)
+
     feats = cfg.input_features
     bench_dict = benchmark.get_benchmark_dict()
     suite = bench_dict[args.suite]()
     n_tasks = min(args.tasks, suite.n_tasks)
 
-    rows, t_policy, t_sim = [], [], []
+    # LeRobot's select_action keeps an internal queue: it runs the model once and then
+    # returns one queued action per call. Timing every call gave a median of 3.74 ms, which
+    # is the queue-hit cost, not inference -- pi0 at N=10 eager is ~1069 ms. So the calls
+    # that actually ran the model are recorded separately.
+    rows, t_policy, t_sim, t_infer = [], [], [], []
     successes = total = 0
     for ti in range(n_tasks):
         task = suite.get_task(ti)
@@ -157,13 +178,16 @@ def main() -> int:
             chunk: list[np.ndarray] = []
             while steps < args.max_steps and not done:
                 if not chunk:
-                    batch = build_obs(obs, feats, "cuda")
-                    batch["task"] = [task.language]
+                    raw = build_obs(obs, feats, task.language)
+                    batch = preprocess(raw)
                     t0 = time.perf_counter()
                     with torch.no_grad():
                         act = policy.select_action(batch)
                     torch.cuda.synchronize()
-                    t_policy.append((time.perf_counter() - t0) * 1e3)
+                    dt = (time.perf_counter() - t0) * 1e3
+                    t_policy.append(dt)
+                    if dt > 10.0:            # a real forward, not a queue hit
+                        t_infer.append(dt)
                     a = act.squeeze(0).float().cpu().numpy()
                     chunk = [a] if a.ndim == 1 else list(a)
                 t0 = time.perf_counter()
@@ -185,9 +209,13 @@ def main() -> int:
         "model": args.model, "prep": args.prep, "prep_note": prep_note,
         "suite": args.suite, "tasks": n_tasks, "episodes_per_task": args.episodes,
         "episodes_total": total, "successes": successes, "success_rate": round(sr, 4),
-        "policy_ms_median": round(med(t_policy), 2),
+        "policy_call_ms_median": round(med(t_policy), 2),
+        "policy_call_ms_note": "median over ALL select_action calls, most of which are "
+                               "queue hits rather than a forward pass",
+        "inference_ms_median": round(med(t_infer), 2),
+        "inference_calls": len(t_infer),
         "sim_ms_median": round(med(t_sim), 2),
-        "achieved_control_hz": round(1000.0 / (med(t_sim) + med(t_policy) / 50.0), 2)
+        "achieved_control_hz": round(1000.0 / (med(t_sim) + med(t_policy)), 2)
         if t_sim else None,
         "max_steps": args.max_steps, "seed": args.seed,
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
@@ -201,7 +229,8 @@ def main() -> int:
         w.writeheader()
         w.writerows(rows)
     print(f"\n  success {successes}/{total} = {100*sr:.1f}%   "
-          f"policy {summary['policy_ms_median']} ms, sim {summary['sim_ms_median']} ms")
+          f"inference {summary['inference_ms_median']} ms x{summary['inference_calls']}, "
+          f"sim {summary['sim_ms_median']} ms")
     print(f"  wrote {out}")
     return 0
 
