@@ -63,18 +63,18 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 05:57:33** · elapsed **11.38 h** of 26 (44 %) · 31.0 GiB free · 1.10 GiB swap
+**Updated 06:17:34** · elapsed **11.71 h** of 26 (45 %) · 39.2 GiB free · 1.39 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 196881 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 2 min | 0.4 GiB |
-| 196921 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --single-run` | 2 min | 24.4 GiB |
+| 197653 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 18 min | 0.1 GiB |
+| 199501 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 4 min | 17.8 GiB |
 
 Latest log lines:
 
 - `queue_partb_finish.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `queue_partb_finish.log` · === N=10  bf16_base: B0: fp32 checkpoint -> bf16 (LeRobot's own cast)
-- `queue_partb_finish.log` · memory before: 54.4 GiB available, 1.10 GiB swap in use
+- `queue_partb_finish.log` · === N=10  bf16_both: B2+B3 with everything compiled
+- `queue_partb_finish.log` · memory before: 50.6 GiB available, 1.38 GiB swap in use
 - `smolvla_partb2.log` · settled: 50.7 GiB available, 1.10 GiB swap
 - `smolvla_partb2.log` · merged 14 rung(s) into results/20260922_E4c_smolvla_opt_ladder/opt_ladder.csv
 - `smolvla_partb2.log` · wrote results/20260922_E4c_smolvla_opt_ladder (14 rungs)
@@ -83,7 +83,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 05:58** (45 configurations)
+**Re-derived from every result CSV on disk at 06:18** (51 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -103,6 +103,7 @@ Latest log lines:
 | pi0 | 4 | vis_compile | 101.55 | 234.54 | 70.58 | 413.63 | 17.1 % |
 | pi0 | 4 | vis_graphs | 100.20 | 234.60 | 71.43 | 413.74 | 17.3 % |
 | pi0 | 4 | vlm_compile | 99.92 | 192.78 | 69.72 | 369.52 | 18.9 % |
+| pi0 | 4 | vlm_graphs | 98.97 | 195.07 | 68.99 | 369.51 | 18.7 % |
 | pi0 | 4 | whole_graphs | — | — | — | 366.12 | — |
 | pi0 | 10 | eager_fp32 | 241.01 | 234.57 | 586.91 | 1069.04 | 54.9 % |
 | pi0 | 10 | eager_tf32 | 102.71 | 234.04 | 573.48 | 916.45 | 62.6 % |
@@ -111,7 +112,12 @@ Latest log lines:
 | pi0 | 10 | vis_compile | 101.88 | 234.55 | 173.17 | 516.44 | 33.5 % |
 | pi0 | 10 | vis_graphs | 100.04 | 234.95 | 174.45 | 515.99 | 33.8 % |
 | pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
+| pi0 | 10 | vlm_graphs | 99.29 | 197.17 | 170.88 | 473.91 | 36.1 % |
 | pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
+| pi0 | 10 | bf16_base | 104.32 | 238.19 | 176.19 | 526.12 | 33.5 % |
+| pi0 | 10 | bf16_vision | 88.53 | 234.06 | 172.53 | 501.98 | 34.4 % |
+| pi0 | 10 | bf16_norms | 103.15 | 235.02 | 174.59 | 518.99 | 33.6 % |
+| pi0 | 10 | bf16_both | 56.74 | 192.86 | 168.68 | 424.46 | 39.7 % |
 | smolvla | 10 | eager_fp32 | 33.30 | 65.77 | 620.56 | 727.46 | 85.3 % |
 | smolvla | 10 | eager_tf32 | 33.16 | 64.75 | 612.92 | 718.64 | 85.3 % |
 | smolvla | 10 | ae_compile | 33.27 | 64.18 | 161.93 | 267.42 | 60.6 % |
@@ -132,9 +138,6 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: push failed: To github.com:yanggon-kim/26_measurement_jetson_vla.git
- ! [rejected]        mai at 05:58)*
 <!-- SLOW:END -->
 
 ## Live status
