@@ -63,22 +63,29 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 15:58:08** · elapsed **21.39 h** of 26 (82 %) · 50.7 GiB free · 1.45 GiB swap
+**Updated 16:18:09** · elapsed **21.72 h** of 26 (84 %) · 19.0 GiB free · 1.44 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 284796 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 0.0 GiB |
+| 284800 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 0.0 GiB |
+| 284801 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 0.0 GiB |
+| 284805 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 31.8 GiB |
 
 Latest log lines:
 
+- `queue_c3_groot_s.log` · }
+- `queue_c3_groot_s.log` · EXIT=0
+- `queue_c3_groot_s.log` · C3S_DONE 2026-09-23T16:00:20-07:00
 - `queue_c1_repair.log` · rep 26M -> zst 943K
 - `queue_c1_repair.log` · csv rows=1847
 - `queue_c1_repair.log` · C1_REPAIR_DONE 2026-09-23T15:58:04-07:00
-- `queue_c3_groot_s.log` · C3S_START 2026-09-23T15:46:54-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 15:59** (58 configurations)
+**Re-derived from every result CSV on disk at 16:19** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
