@@ -63,25 +63,27 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 19:39:16** · elapsed **1.07 h** of 26 (4 %) · 32.2 GiB free · 0.67 GiB swap
+**Updated 20:13:30** · elapsed **1.64 h** of 26 (6 %) · 38.0 GiB free · 0.69 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 127832 | `bench/opt_ladder.py --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 --warmup 20 -` | 14 min | 0.0 GiB |
-| 127843 | `bench/opt_ladder.py --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 --warmup 20 -` | 14 min | 0.4 GiB |
-| 128579 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --outdir results/20260922_E4c_pi0_opt_ladder --single-rung bf16_both ` | 4 min | 18.9 GiB |
+| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 4 min | 0.4 GiB |
+| 131252 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 4 min | 20.8 GiB |
 
 Latest log lines:
 
-- `partB.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `partB.log` · === N=10  bf16_both: B2+B3 with everything compiled
-- `partB.log` · memory before: 50.7 GiB available, 0.67 GiB swap in use
+- `pi05_ladder.log` · weights: {"verdict": "not verified: assert_real_weights diffs against pi0's own safetensors and is pi0-specifi
+- `pi05_ladder.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
+- `pi05_ladder.log` · _C._set_float32_matmul_precision(precision)
+- `pi05_paper_fp32.log` · energy: module 35.95 W mean over 60.6 s, 20 inferences -> 108.86 J/inference (2177 J total). Theirs: 1866.0 J 
+- `pi05_paper_fp32.log` · wrote results/20260922_E4d_pi05_paper_config_N10_fp32
+- `pi05_paper_fp32.log` · EXIT=0 657s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 19:39** (18 configurations)
+**Re-derived from every result CSV on disk at 19:59** (19 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -101,6 +103,7 @@ Latest log lines:
 | pi0 | 10 | vis_graphs | 100.04 | 234.95 | 174.45 | 515.99 | 33.8 % |
 | pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
 | pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
+| pi05 | 10 | paper config (eager+TF32) | 103.61 | 550.51 | 626.90 | 1287.32 | 48.7 % |
 | pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 <!-- SLOW:END -->
