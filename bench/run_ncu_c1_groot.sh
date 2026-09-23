@@ -71,6 +71,36 @@ exec $(which ncu) \\
     --ncu-region $REGION $MODEARGS
 EOF
 
+# REFUSE to start while another profiler is live. Killing a queue does NOT kill the ncu it
+# launched: that tree runs as root via sudo, so `kill` from this user returns "Operation
+# not permitted" and the capture keeps going. Twice now a new capture has started while an
+# orphan was still profiling, and two profilers sharing one GPU corrupt both. Checked by
+# exact argv element, never a substring of the joined cmdline (that self-match has cost
+# this project three incidents).
+if $HOME/venvs/pi0/bin/python - <<'GUARDPY'
+import sys, os
+from pathlib import Path
+me = os.getpid()
+for d in Path('/proc').iterdir():
+    if not d.name.isdigit() or int(d.name) == me:
+        continue
+    try:
+        argv = [a for a in (d/'cmdline').read_bytes().split(b'\0') if a]
+    except OSError:
+        continue
+    if not argv:
+        continue
+    if argv[0].rsplit(b'/', 1)[-1] == b'ncu' or any(
+            a.endswith(b'ncu_target.py') or a.endswith(b'groot_phases.py') for a in argv[1:]):
+        print(f"  another profiler is live: {d.name} {b' '.join(argv[:3]).decode()[:90]}")
+        sys.exit(0)
+sys.exit(1)
+GUARDPY
+then
+  echo "  REFUSING to start $MODEL/$MODE/$REGION — kill it first (sudo, it runs as root)"
+  exit 3
+fi
+
 echo "########## $(date +%H:%M) ncu $TAG (cap $CAP)"
 t0=$SECONDS
 sudo -n /bin/sh "$RUNNER" > "$OUT/ncu/${TAG}.stdout" 2>&1
