@@ -63,27 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 07:57:40** · elapsed **13.38 h** of 26 (51 %) · 23.8 GiB free · 1.37 GiB swap
+**Updated 08:17:41** · elapsed **13.71 h** of 26 (53 %) · 40.4 GiB free · 1.13 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 214563 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 7 min | 0.1 GiB |
-| 215540 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 3 min | 31.8 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `dl_groot.log` · -> /home/yanggon/.cache/huggingface/hub/models--nvidia--GR00T-N1.5-3B/snapshots/869830fc749c35f34771aa5209f923
-- `dl_groot.log` · EXIT=0
-- `dl_groot.log` · DL_DONE 2026-09-23T07:56:31-07:00
-- `queue_fix4.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `queue_fix4.log` · === N=10  bf16_both: B2+B3 with everything compiled
-- `queue_fix4.log` · memory before: 48.6 GiB available, 1.38 GiB swap in use
+- `queue_fix5.log` · self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+- `queue_fix5.log` · Total number of DiT parameters:  1091722240
+- `queue_fix5.log` · Total number of SelfAttentionTransformer parameters:  201433088
+- `queue_fix4.log` · row + traceback written for vlm_graphs
+- `queue_fix4.log` · EXIT=1
+- `queue_fix4.log` · FIX4_DONE 2026-09-23T08:01:13-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 07:58** (56 configurations)
+**Re-derived from every result CSV on disk at 08:18** (56 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
