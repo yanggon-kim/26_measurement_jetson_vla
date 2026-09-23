@@ -239,6 +239,17 @@ GR00T versions once their descriptor and input builder exist.
 
 ## Log
 
+- **06:05 (09-23)** audit found every `results/` directory of this study **uncommitted** —
+  the repository is the only channel to the research side, so they did not exist for them.
+  Now committed. **One blocker recorded, not forgotten:**
+  `results/20260922_E4g_pi0_ncu_eager/ncu/` is 725 MB in four `.ncu-rep` files (89, 184,
+  201, 203 MB). Protocol §6 caps a committed file at 50 MB and GitHub hard-rejects >100 MB,
+  so they cannot be committed as they are. Fix when Part C restarts: shorter capture
+  (fewer kernel instances per range) + `zstd -19`.
+- **05:51 (09-23)** watchdog wake caught two silent defects: the Part B queue had waited on
+  **itself** for 26 minutes (the shell that created the script has the script body, and so
+  `opt_ladder.py`, in its own cmdline — the `pgrep -f` bug in a `/proc` disguise), and the
+  audit itself miscounted, calling NaN a measurement.
 - **05:30 (09-23)** owner: a watchdog wake means the full audit, not a status glance.
   Recorded above as binding. Audit run at 05:35 found a real provenance defect: π0.5's
   `bf16_vision` row was written 21:14, **before** commit `8654dcc` (21:45) added the
