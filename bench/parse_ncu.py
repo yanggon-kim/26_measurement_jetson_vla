@@ -119,6 +119,11 @@ def main() -> int:
     args = ap.parse_args()
     d = Path(args.rundir)
     ncu = d / "ncu"
+    # Per-region filenames. These were fixed, so parsing four regions into one directory
+    # left only the last: pi0's eager run wrote ae_layer0, ae_step0 and vlm_prefix and
+    # kept only vision. The .ncu-rep and the two page exports are per-region already, so
+    # nothing was lost — but the parsed views silently collapsed to one.
+    pre = f"{args.prefix or re.sub(r'[^A-Za-z0-9_]', '', args.region)}_"
     tag = args.prefix or re.sub(r"[^A-Za-z0-9]+", "_", args.region).strip("_")
 
     merged, names = {}, set()
@@ -137,7 +142,7 @@ def main() -> int:
         print("no ncu data found")
         return 1
 
-    (ncu / "columns.txt").write_text(
+    (ncu / f"{pre}columns.txt").write_text(
         f"# region: {args.region}\n# distinct Metric Name values in the exports\n"
         + "\n".join(sorted(names)) + "\n")
 
@@ -175,7 +180,7 @@ def main() -> int:
         parsed[kid] = {"kernel_name": row["kernel_name"], "metrics": row, "stalls": stalls}
 
     keys = sorted({k for r in krows for k in r})
-    with (ncu / "kernels.csv").open("w", newline="") as f:
+    with (ncu / f"{pre}kernels.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader()
         w.writerows([{k: r.get(k, "") for k in keys} for r in krows])
@@ -204,7 +209,7 @@ def main() -> int:
                       "metric": m,
                       "kernel_weighted": round(kw, 6) if kw != "" else "",
                       "region_weighted": round(rw, 6) if rw != "" else ""})
-    with (ncu / "region_utilisation.csv").open("w", newline="") as f:
+    with (ncu / f"{pre}region_utilisation.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["region", "n_kernels_captured", "kernel_time_ms",
                                           "kernel_time_coverage", "metric",
                                           "kernel_weighted", "region_weighted"])
@@ -212,7 +217,7 @@ def main() -> int:
         w.writerows(urows)
 
     sums = [r["stall_sum"] for r in krows if "stall_sum" in r]
-    write_json(ncu / "parsed.json", {
+    write_json(ncu / f"{pre}parsed.json", {
         "region": args.region, "n_kernels": len(krows),
         "kernel_time_ms": kernel_ms, "kernel_time_coverage": cov,
         "nsys_region_ms": args.nsys_region_ms,
