@@ -10,6 +10,22 @@ echo "lerobot C1 clear $(date -Is)"
 # Sweep orphans before starting: killing a queue does not kill its root-owned ncu.
 sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; pkill -f "bench/groot_phases.py"; sleep 2; true' 2>/dev/null
 
+# Smoke-test the --ncu-region path ONCE before spending 18 captures on it. It has never
+# run: groot_phases.py grew NVTX ranges + cudaProfilerStart/Stop for C1 and nothing has
+# exercised them. If it is broken, every GR00T capture fails and the repair pass fails the
+# same way. This runs alone (the LeRobot matrix is finished by here), without ncu, so it
+# costs ~2 minutes and never shares the GPU with a capture.
+echo "########## $(date +%H:%M) smoke test: --ncu-region on N1.7"
+if ! bash -c 'source $HOME/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1
+      cd /home/yanggon/00_VLA/26_measurement_jetson_vla
+      exec $HOME/venvs/groot/bin/python bench/groot_phases.py         --outdir /tmp/c1_groot_smoke --checkpoint nvidia/GR00T-N1.7-3B --version n17         --embodiment-tag oxe_droid_relative_eef_relative_joint         --warmup 4 --timed 1 --rung smoke --ncu-region vision --tf32 on'       > scratch/T004/c1_groot_smoke.log 2>&1; then
+  echo "SMOKE TEST FAILED — not starting 18 captures. Tail:"
+  tail -12 scratch/T004/c1_groot_smoke.log | sed 's/^/    /'
+  echo "C1_GROOT_DONE $(date -Is)  (aborted after smoke test)"
+  exit 1
+fi
+echo "  smoke test passed"
+
 for VER in n17 n16 n15; do
   for MODE in eager best; do
     for REGION in vision vlm_prefix ae_total; do
