@@ -158,11 +158,24 @@ def build_batch(policy, fixture: dict, fixtures: Path | None = None, device: str
     from lerobot.policies.factory import make_pre_post_processors
 
     fixtures = fixtures or (REPO / "bench" / "fixtures")
+    # The fixture stores its two camera views under pi0's key names. Other checkpoints
+    # declare their own: pi0.5 wants observation.images.{image,image2} and SmolVLA wants
+    # observation.images.{camera1,camera2,camera3}. Supplying pi0's names to SmolVLA made
+    # it raise "All image features are missing from the batch" — so map the fixture's
+    # views positionally onto whatever this policy declares, and let the policy synthesise
+    # any camera it declares but the fixture does not provide (that is what empty_cameras
+    # and the missing-key path exist for).
+    declared = list(getattr(policy.config, "image_features", {}) or {})
+    src_keys = list(fixture["images"])
     obs = {}
-    for key, spec in fixture["images"].items():
+    for i, (key, spec) in enumerate(fixture["images"].items()):
         im = Image.open(fixtures / spec["file"]).convert("RGB")
         arr = np.asarray(im, dtype=np.float32) / 255.0          # HWC in [0,1]
-        obs[key] = torch.from_numpy(arr).permute(2, 0, 1).contiguous()   # CHW
+        target = declared[i] if i < len(declared) else key
+        obs[target] = torch.from_numpy(arr).permute(2, 0, 1).contiguous()   # CHW
+    if declared and declared[:len(src_keys)] != src_keys:
+        print(f"  fixture images remapped {src_keys} -> {declared[:len(src_keys)]}",
+              flush=True)
     obs["observation.state"] = torch.tensor(fixture["state"], dtype=torch.float32)
     obs["task"] = fixture["task"]
 
