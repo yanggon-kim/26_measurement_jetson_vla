@@ -63,7 +63,7 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 14:58:04** · elapsed **20.38 h** of 26 (78 %) · 47.8 GiB free · 1.12 GiB swap
+**Updated 15:18:05** · elapsed **20.72 h** of 26 (80 %) · 50.4 GiB free · 1.12 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
@@ -80,7 +80,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 14:59** (58 configurations)
+**Re-derived from every result CSV on disk at 15:19** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
