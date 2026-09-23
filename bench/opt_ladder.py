@@ -124,6 +124,10 @@ def write_tables(out: Path, rows: list[dict], steps: list[int]) -> None:
     if not rows:
         return
     keys = list(rows[0].keys())
+    for r in rows:                      # rows from different mechanisms differ in columns
+        for k in r:
+            if k not in keys:
+                keys.append(k)
     with (out / "opt_ladder.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader()
@@ -295,7 +299,9 @@ def main() -> int:
                                  f"(137/-9 = OOM-killed by the kernel)")
                     print(f"  rung failed, exit {r.returncode}; continuing", flush=True)
         for f in sorted(d.glob("*.json")):
-            rows.append(json.loads(f.read_text()))
+            r_ = json.loads(f.read_text())
+            r_.setdefault("provenance", "own process, this run")
+            rows.append(r_)
         rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
         write_tables(out, rows, steps)
         print(f"\nmerged {len(rows)} rung(s) into {out}/opt_ladder.csv")
