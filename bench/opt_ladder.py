@@ -183,19 +183,86 @@ def prep_smolvlm_static_posids(policy):
             "identical static position ids (mask is all-true by construction)")
 
 
+class _SkipRung(Exception):
+    """Internal: leave the timed block without running it."""
+
+
+class NotApplicable(Exception):
+    """A rung that cannot exist for this model, as distinct from one that failed.
+
+    "SmolVLA has no fp32 layernorms to cast" is not an error and must not be reported as
+    one: the row records status="not applicable" with the reason, so the cross-model table
+    can say why a cell is empty instead of leaving a silent blank.
+    """
+
+
+def _dominant_dtype(policy):
+    """The dtype most of the model's parameters are in."""
+    from collections import Counter
+    c = Counter(p.dtype for p in policy.model.parameters())
+    return c.most_common(1)[0][0] if c else None
+
+
+def prep_bf16_base(policy):
+    """B0 - cast an fp32 checkpoint to bf16 through the model's OWN supported path.
+
+    Part B asks what removing LeRobot's fp32 islands buys. That question only means
+    something if the rest of the model is bf16, and the family splits on exactly that:
+
+        pi0     config dtype = bfloat16  -> params_to_keep_float32 IS the fp32 island
+        pi0.5   config dtype = float32   -> the keep-list is inert; nothing is bf16
+        SmolVLA VLM loaded torch_dtype="bfloat16" (smolvlm_with_expert.py:80), no keep-list
+
+    So pi0.5 needs this rung before B2/B3 can mean for it what they mean for pi0, and
+    running B3 on it without this is what produced "expected mat1 and mat2 to have the same
+    dtype, but got: float != c10::BFloat16" - the norms went bf16 while every Linear around
+    them stayed fp32. This calls the model's own to_bfloat16_for_selected_params, so the
+    dtype policy measured is LeRobot's, not one I invented.
+    """
+    if _dominant_dtype(policy) == torch.bfloat16:
+        raise NotApplicable("checkpoint already loads bf16 (config dtype=bfloat16), so "
+                            "there is no fp32 base to cast")
+    pg = getattr(policy.model, "paligemma_with_expert", None)
+    fn = getattr(pg, "to_bfloat16_for_selected_params", None) if pg else None
+    if fn is None:
+        raise NotApplicable(f"{type(policy).__name__} exposes no "
+                            f"to_bfloat16_for_selected_params to cast through")
+    fn("bfloat16")
+    return ("paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16'): fp32 "
+            "checkpoint cast to bf16 keeping LeRobot's own params_to_keep_float32")
+
+
 def prep_bf16_vision(policy):
     """B2 — vision tower + projector to bf16, and stop embed_image casting up to fp32.
 
-    pi0-specific. It replaces an embed_image whose body is pi0's (modeling_pi0.py:442-450).
-    Applied to pi0.5 it left the tower bf16 while something upstream still fed fp32:
-    "expected mat1 and mat2 to have the same dtype, but got: float != c10::BFloat16".
-    Rather than guess at another model's cast sites, refuse and say so.
+    pi0 and pi0.5 share this body verbatim - both cast the image up to fp32, call
+    get_image_features, scale pooler_output by sqrt(hidden_size) and cast back
+    (modeling_pi0.py:442-450, modeling_pi05.py:437-446) - so the same replacement is
+    correct for both, and the source is checked here rather than assumed.
+
+    SmolVLA has no fp32 vision island at all: it loads its VLM with torch_dtype="bfloat16"
+    (smolvlm_with_expert.py:80) and embed_image already casts the image to the vision
+    model's own dtype. For it this rung is not applicable, which is a result about LeRobot's
+    dtype policy, not a failure.
+
+    On an fp32 checkpoint the bf16 base is applied first (prep_bf16_base), because a bf16
+    tower feeding fp32 Linears is the dtype mismatch, not the optimisation.
     """
     import types
-    if type(policy).__name__ != "PI0Policy":
-        raise SystemExit(f"prep_bf16_vision is pi0-specific; {type(policy).__name__} needs "
-                         f"its own cast sites identified first")
+    import inspect
+    if type(policy).__name__ not in ("PI0Policy", "PI05Policy"):
+        raise NotApplicable(
+            f"{type(policy).__name__} has no fp32 vision island: LeRobot loads its vision "
+            f"tower in bf16 already, so there is nothing for B2 to remove")
+    base_note = ""
+    if _dominant_dtype(policy) != torch.bfloat16:
+        base_note = prep_bf16_base(policy) + "; "
     pg = policy.model.paligemma_with_expert
+    src = inspect.getsource(type(pg).embed_image)
+    for token in ("get_image_features", "pooler_output"):
+        if token not in src:
+            raise SystemExit(f"embed_image no longer contains {token!r}; the replacement "
+                             f"body in prep_bf16_vision must be re-derived from source")
     pg.paligemma.model.vision_tower.to(torch.bfloat16)
     mmp = getattr(pg.paligemma.model, "multi_modal_projector", None)
     if mmp is not None:
@@ -213,21 +280,32 @@ def prep_bf16_vision(policy):
         return feats.to(out_dtype) if feats.dtype != out_dtype else feats
 
     pg.embed_image = types.MethodType(embed_image, pg)
-    return "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed"
+    return base_note + ("vision_tower+multi_modal_projector->bf16, embed_image fp32 cast "
+                        "removed")
 
 
 def prep_bf16_norms(policy):
-    """B3 — every layernorm to bf16. Reaches vlm_prefix and the expert, not just vision."""
-    if type(policy).__name__ != "PI0Policy":
-        raise SystemExit(f"prep_bf16_norms is pi0-specific; {type(policy).__name__} needs "
-                         f"its own norm list identified first")
+    """B3 - every layernorm to bf16. Reaches vlm_prefix and the expert, not just vision.
+
+    The names come from LeRobot's own params_to_keep_float32 (modeling_pi0.py:412-418,
+    modeling_pi05.py:409-415), which is identical in both. SmolVLA has no such list, so
+    there is no fp32 norm to cast and the rung is not applicable. As in B2, an fp32
+    checkpoint gets the bf16 base first, or the norms end up bf16 among fp32 Linears.
+    """
+    if type(policy).__name__ not in ("PI0Policy", "PI05Policy"):
+        raise NotApplicable(
+            f"{type(policy).__name__} has no params_to_keep_float32: its norms are not "
+            f"held in fp32, so there is nothing for B3 to cast")
+    base_note = ""
+    if _dominant_dtype(policy) != torch.bfloat16:
+        base_note = prep_bf16_base(policy) + "; "
     n = 0
     for name, mod in policy.model.named_modules():
         if any(k in name for k in ("input_layernorm", "post_attention_layernorm")) or \
                 name.endswith("model.norm"):
             mod.to(torch.bfloat16)
             n += 1
-    return f"{n} layernorm modules -> bf16"
+    return base_note + f"{n} layernorm modules -> bf16"
 
 
 
@@ -293,6 +371,8 @@ RUNGS = [
     # Each is measured on top of the expert already being compiled+graphed, because that
     # is the state the question is asked from: with the action head at 18.9 % of the
     # frame, what moves vision and vlm_prefix?
+    ("bf16_base",    "B0: fp32 checkpoint -> bf16 (LeRobot's own cast)", "high",
+     [("model", "denoise_step", GRAPHS, False)], True, True, prep_bf16_base),
     ("bf16_vision",  "B2: + bf16 vision tower",                   "high",
      [("model", "denoise_step", GRAPHS, False)], True, True, prep_bf16_vision),
     ("bf16_norms",   "B3: + bf16 layernorms",                     "high",
@@ -566,7 +646,12 @@ def main() -> int:
             batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                         revision=spec.revision)
             torch.set_float32_matmul_precision(prec)
-            prep_note = prep(policy) if prep else ""
+            try:
+                prep_note = prep(policy) if prep else ""
+                na_reason = ""
+            except NotApplicable as e:
+                prep_note, na_reason = "", str(e)
+                print(f"  NOT APPLICABLE: {na_reason}", flush=True)
             if prep_note:
                 print(f"  prep: {prep_note}", flush=True)
 
@@ -597,7 +682,13 @@ def main() -> int:
                 undo = R.instrument(policy, rec, spec.container)
 
             err = None
+            if na_reason:
+                st, s_, reg = {"median_ms": float("nan"), "p5_ms": float("nan"),
+                               "p95_ms": float("nan"), "n": 0}, [], {}
+                per_iter = []
             try:
+                if na_reason:
+                    raise _SkipRung
                 for _ in range(args.warmup):
                     policy.predict_action_chunk(batch)
                 torch.cuda.synchronize()
@@ -624,6 +715,8 @@ def main() -> int:
                     for k in {k for d in per_iter for k in d}:
                         vals = [d[k] for d in per_iter if k in d]
                         reg[k] = summarize(vals)["median_ms"]
+            except _SkipRung:
+                pass
             except Exception as e:                                # noqa: BLE001
                 err = f"{type(e).__name__}: {str(e)[:200]}"
                 tb_path = out / "raw" / f"traceback_{key}_N{N}.txt"
@@ -637,6 +730,9 @@ def main() -> int:
                 undo()
 
             row = {"N": N, "rung": key, "label": label, "matmul_precision": prec,
+                   "status": "not applicable" if na_reason else
+                             ("failed" if err else "measured"),
+                   "not_applicable_reason": na_reason,
                    "compiled": ";".join(compiled_desc), "regions": "on" if regions_ok
                    else "off (compiled sample_actions cannot be instrumented)",
                    "prep": prep_note, "compile_call_s": compile_s,
