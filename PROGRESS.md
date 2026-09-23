@@ -63,27 +63,34 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 21:17:05** · elapsed **2.70 h** of 26 (10 %) · 19.4 GiB free · 0.92 GiB swap
+**Updated 21:37:06** · elapsed **3.04 h** of 26 (12 %) · 51.2 GiB free · 0.73 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 68 min | 0.2 GiB |
-| 136704 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 2 min | 31.8 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `pi05_ladder.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `pi05_ladder.log` · === N=10  bf16_norms: B3: + bf16 layernorms
-- `pi05_ladder.log` · memory before: 50.8 GiB available, 0.92 GiB swap in use
+- `run_queue.log` · QUEUE_DONE 2026-09-22T21:26:05-07:00
+- `smolvla_ladder.log` · merged 0 rung(s) into results/20260922_E4c_smolvla_opt_ladder/opt_ladder.csv
+- `smolvla_ladder.log` · wrote results/20260922_E4c_smolvla_opt_ladder (0 rungs)
+- `smolvla_ladder.log` · EXIT=0 98s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 21:17** (20 configurations)
+**Re-derived from every result CSV on disk at 21:37** (29 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
+| pi05 | 10 | eager_fp32 | 239.45 | 2162.47 | 617.74 | 3028.56 | 20.4 % |
+| pi05 | 10 | eager_tf32 | 103.11 | 534.28 | 611.42 | 1254.86 | 48.7 % |
+| pi05 | 10 | ae_compile | 103.43 | 549.79 | 258.12 | 917.88 | 28.1 % |
+| pi05 | 10 | ae_graphs | 104.28 | 549.50 | 245.58 | 905.68 | 27.1 % |
+| pi05 | 10 | vis_compile | 102.38 | 556.54 | 244.73 | 909.88 | 26.9 % |
+| pi05 | 10 | vis_graphs | 100.25 | 548.77 | 245.23 | 900.66 | 27.2 % |
+| pi05 | 10 | vlm_compile | 99.82 | 516.60 | 240.75 | 863.47 | 27.9 % |
+| pi05 | 10 | whole_graphs | — | — | — | 860.09 | — |
+| pi05 | 10 | bf16_vision | 88.05 | 558.22 | 244.43 | 897.61 | 27.2 % |
 | pi0 | 4 | eager_fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
 | pi0 | 4 | eager_tf32 | 104.18 | 234.06 | 230.75 | 575.28 | 40.1 % |
 | pi0 | 4 | ae_compile | 103.26 | 234.25 | 99.94 | 444.35 | 22.5 % |
