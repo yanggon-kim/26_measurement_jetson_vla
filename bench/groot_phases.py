@@ -75,8 +75,14 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=100)
     ap.add_argument("--tf32", choices=("on", "off"), default="on")
-    ap.add_argument("--compile", default=None,
-                    help="torch.compile mode for the action head, e.g. reduce-overhead")
+    ap.add_argument("--head-mode", default=None,
+                    help="torch.compile mode for action_head.get_action "
+                         "(max-autotune-no-cudagraphs = compile only, "
+                         "reduce-overhead = compile + CUDA graphs)")
+    ap.add_argument("--backbone-mode", default=None,
+                    help="torch.compile mode for backbone.forward")
+    ap.add_argument("--rung", default="eager",
+                    help="name for this configuration; one row file per rung")
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
@@ -119,14 +125,28 @@ def main() -> int:
         setattr(obj, attr, wrapper)
         return lambda: setattr(obj, attr, orig)
 
-    if args.compile:
+    compiled_desc, compile_s = [], 0.0
+    if args.head_mode:
         t0 = time.time()
         model.action_head.get_action = torch.compile(model.action_head.get_action,
-                                                     mode=args.compile)
-        print(f"compiled action_head.get_action @{args.compile} in {time.time()-t0:.1f} s",
-              flush=True)
+                                                     mode=args.head_mode)
+        compile_s += time.time() - t0
+        compiled_desc.append(f"action_head.get_action@{args.head_mode}")
+    if args.backbone_mode:
+        t0 = time.time()
+        model.backbone.forward = torch.compile(model.backbone.forward,
+                                               mode=args.backbone_mode)
+        compile_s += time.time() - t0
+        compiled_desc.append(f"backbone.forward@{args.backbone_mode}")
+    if compiled_desc:
+        print(f"compiled {', '.join(compiled_desc)} in {compile_s:.1f} s", flush=True)
 
-    undo = [timed(model, "backbone", "vlm_prefix"),
+    # NOT timed(model, "backbone", ...): that replaces the backbone MODULE with a plain
+    # function, and prepare_input calls self.backbone.prepare_input (gr00t_n1d7.py:570),
+    # which would raise AttributeError. Wrapping .forward leaves the module intact.
+    # Instrumenting AFTER compiling keeps both region boundaries outside the compiled
+    # callables, the same order opt_ladder.py uses for the LeRobot models.
+    undo = [timed(model.backbone, "forward", "vlm_prefix"),
             timed(model.action_head, "get_action", "ae_total")]
 
     obs, shapes = build_observation(policy, ckpt_dir)
@@ -175,6 +195,20 @@ def main() -> int:
                  "share_of_e2e": round(dps["median_ms"] / st["median_ms"], 4)})
     rows.append({"region": "e2e", **{kk: round(vv, 4) for kk, vv in st.items()},
                  "share_of_e2e": 1.0})
+    rowdir = out / "raw" / "rows"
+    rowdir.mkdir(parents=True, exist_ok=True)
+    (rowdir / f"{args.rung}.json").write_text(json.dumps({
+        "rung": args.rung, "N": n,
+        "compiled": ";".join(compiled_desc), "compile_s": round(compile_s, 3),
+        "e2e_median_ms": round(st["median_ms"], 4),
+        "e2e_p5_ms": round(st["p5_ms"], 4), "e2e_p95_ms": round(st["p95_ms"], 4),
+        "vlm_prefix_ms": round(summarize(per["vlm_prefix"])["median_ms"], 4),
+        "ae_total_ms": round(summarize(per["ae_total"])["median_ms"], 4),
+        "data_processing_cpu_ms": round(statistics.median(dp), 4),
+        "matmul_precision": "high" if args.tf32 == "on" else "highest",
+        "n": st["n"],
+    }, indent=1))
+
     with (out / "phase_split.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
@@ -188,7 +222,8 @@ def main() -> int:
         "experiment": "E4d (GR00T phase split)", "model": f"groot_{args.version}",
         "checkpoint": args.checkpoint, "precision": "bfloat16",
         "matmul_precision": "high" if args.tf32 == "on" else "highest",
-        "compile_mode": args.compile, "num_inference_timesteps": n,
+        "compile": ";".join(compiled_desc) or "eager",
+        "rung": args.rung, "num_inference_timesteps": n,
         "n_warmup": args.warmup, "n_timed": args.timed, "gate": g,
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),
