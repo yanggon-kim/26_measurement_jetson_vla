@@ -38,7 +38,13 @@ LOCK = REPO / "scratch" / ".progress.lock"
 START = datetime(2026, 9, 22, 18, 35).timestamp()
 BUDGET_H = 26.0
 WATCH = ("opt_ladder.py", "paper_repro.py", "phase_utilisation.py", "libero_eval.py",
-         "mempressure.py", "pipelining.py", "host_segments.py", "run_ncu_regions.sh")
+         "mempressure.py", "pipelining.py", "host_segments.py", "run_ncu_regions.sh",
+         # ncu runs the target under sudo, so neither the wrapper's name nor a python
+         # invocation appears the way the others do. Omitting these made the monitor
+         # report "nothing is running" during a live 434 s ncu capture — a false negative
+         # that would justify starting a duplicate queue.
+         "ncu_target.py", "expert_dims.py", "measure_S.py", "groot_phases.py",
+         "overnight.sh", "run_queue")
 
 
 def running() -> list[tuple[int, str, float, float]]:
@@ -61,7 +67,10 @@ def running() -> list[tuple[int, str, float, float]]:
         if not hit:
             continue
         # a shell that merely mentions the script is not the script
-        if not re.search(r"(python\S*|bash)\s+\S*" + re.escape(hit), cmd):
+        # `ncu ... python bench/ncu_target.py` has no python/bash immediately before the
+        # script, so accept a bare match for the ncu target as well.
+        if hit not in ("ncu_target.py",) and \
+                not re.search(r"(python\S*|bash)\s+\S*" + re.escape(hit), cmd):
             continue
         try:
             st = (d / "stat").read_text().rsplit(")", 1)[1].split()

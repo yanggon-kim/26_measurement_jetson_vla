@@ -36,7 +36,7 @@ for d in Path('/proc').iterdir():
     if not d.name.isdigit(): continue
     try: c=(d/'cmdline').read_bytes().replace(b'\0',b' ').decode('utf-8','replace')
     except OSError: continue
-    m=re.search(r'(?:python\S*|bash)\s+(\S*(?:opt_ladder|paper_repro|phase_utilisation|run_queue)\S*)', c)
+    m=re.search(r'(\S*(?:opt_ladder|paper_repro|phase_utilisation|run_queue|ncu_target|run_ncu_regions|overnight|expert_dims|measure_S|groot_phases)\S*)', c)
     if m: print('   ', d.name, m.group(1)[:60]); n+=1
 print('    (nothing)' if not n else '')
 PY
