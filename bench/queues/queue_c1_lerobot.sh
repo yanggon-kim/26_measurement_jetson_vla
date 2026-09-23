@@ -4,6 +4,11 @@
 set -u
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 export NCU_COUNT=40 NCU_WARMUP=8
+# Sweep orphaned profilers before starting anything. Killing a queue does NOT kill
+# the ncu it launched -- that tree is root-owned via sudo, so kill returns "Operation
+# not permitted" -- so an orphan can outlive its queue and silently share the GPU with
+# the next capture. Owner, 2026-09-23: never two profilers at once.
+sudo -n /bin/sh -c 'pkill -f "ncu --profile-from-start"; pkill -f "bench/ncu_target.py"; sleep 2; true' 2>/dev/null
 echo "C1_LEROBOT_START $(date -Is)"
 for MODEL in pi0 pi05 smolvla; do
   for MODE in eager best; do

@@ -91,6 +91,40 @@ if not n:
     print("  NOTHING RUNNING  <-- if the queues are not done, this is the defect")
 PY
 echo
+echo
+echo "--- 2b. PROFILER CONCURRENCY (owner, 2026-09-23: never two at once)"
+$HOME/venvs/pi0/bin/python - <<'PYEOF'
+import os
+from pathlib import Path
+me = os.getpid()
+live = []
+for d in Path('/proc').iterdir():
+    if not d.name.isdigit() or int(d.name) == me:
+        continue
+    try:
+        argv = [a for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+    except OSError:
+        continue
+    if not argv:
+        continue
+    # exact argv element only; substring-matching the joined cmdline self-matches
+    is_ncu = argv[0].rsplit(b'/', 1)[-1] == b'ncu'
+    is_target = any(a.endswith(b'ncu_target.py') or a.endswith(b'groot_phases.py')
+                    for a in argv[1:])
+    if is_ncu or is_target:
+        live.append((d.name, is_ncu,
+                     b' '.join(argv[:3]).decode('utf-8', 'replace')[:80]))
+n_ncu = sum(1 for _, is_ncu, _ in live if is_ncu)
+print(f"  profiler processes: {len(live)}  (ncu binaries: {n_ncu})")
+for pid, _, c in live:
+    print(f"    {pid}: {c}")
+if n_ncu > 1:
+    print("  *** TWO OR MORE PROFILERS LIVE - STOP ONE NOW "
+          "(they are root-owned; plain kill returns Operation not permitted) ***")
+elif n_ncu == 0 and live:
+    print("  (python targets without an ncu: a capture that has finished profiling)")
+PYEOF
+
 echo "--- 3. QUEUE MARKERS"
 # glob every queue log: naming two of them by hand meant the 07:22 audit printed markers
 # from a queue that had been superseded two queues earlier.
