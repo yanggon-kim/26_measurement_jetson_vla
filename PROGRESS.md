@@ -22,17 +22,35 @@ gets the full routine**: Part A (paper configuration, fp32 control, per-phase SM
 utilisation, operational intensity) and Part B (the full 9-rung attribution ladder). No
 reduced ladders.
 
-| model | Part A | Part B | new work | est. |
-|---|---|---|---|---:|
-| π0 | done / running | running + B2–B4 | — | 3.5 h |
-| model registry | — | — | the gate for everything below | 2 h |
-| π0.5 | full | full 9 rungs | wrap points differ | 3.5 h |
-| SmolVLA | full | full 9 rungs | `regions.py` needs a new hook — layer body is inlined | 4 h |
-| GR00T N1.7 | full | full 9 rungs | different codebase; DiT instrumentation | 4.5 h |
-| GR00T N1.6 | full | full 9 rungs | own checkout + env; reuses N1.7's instrumentation | 3.5 h |
-| GR00T N1.5 | full | full 9 rungs | own checkout + env | 3.5 h |
-| cross-model report | | | | 1 h |
-| | | | **total** | **≈ 25.5 h** |
+**One N per model — its own configured default**, which is the deployment setting and the
+one the authors' leaderboard numbers use. Verified from each config rather than assumed,
+and the field name differs three ways, which the registry must carry:
+
+| model | field | default N |
+|---|---|---:|
+| π0 | `num_inference_steps` | **10** |
+| π0.5 | `num_inference_steps` | **10** |
+| SmolVLA | **`num_steps`** | **10** |
+| GR00T N1.7 | **`num_inference_timesteps`** | **4** |
+
+π0's N=4 ladder is already done and is *kept as the control*, not as waste: it is a
+within-model test of the hypothesis that N drives the action-head share. Same model, same
+machine, only N changes — AE share **32.3 % at N=4 against 54.9 % at N=10**, both eager
+fp32. That is the cleanest evidence available that the share is a property of iteration
+count. It also explains the paper's stray claim that π0 "requires only 4 denoising steps":
+4 is GR00T's default, not π0's.
+
+| model | N | Part A | Part B | new work | est. |
+|---|---:|---|---|---|---:|
+| π0 | 10 (+4 control) | done / running | running + B2–B4 | — | 3.5 h |
+| model registry | — | — | — | the gate for everything below | 2 h |
+| π0.5 | 10 | full | full 9 rungs | wrap points differ | 3.5 h |
+| SmolVLA | 10 | full | full 9 rungs | `regions.py` needs a new hook — layer body is inlined | 4 h |
+| GR00T N1.7 | 4 | full | full 9 rungs | different codebase; DiT instrumentation | 4 h |
+| GR00T N1.6 | 4 | full | full 9 rungs | own checkout + env; reuses N1.7's instrumentation | 3 h |
+| GR00T N1.5 | 4 | full | full 9 rungs | own checkout + env | 3 h |
+| cross-model report | | | | | 1 h |
+| | | | | **total** | **≈ 24 h** |
 
 **Ordering rule inside each model, kept for risk not for economy.** The two endpoint
 configurations — un-optimised and best-optimised — run *first*, before that model's full
@@ -87,5 +105,7 @@ sequencing, not a reduction in scope.
 ## Log
 
 - **18:35** file created. π0 N=10 ladder at 3/9, Part A armed behind it.
+- **18:45** one N per model, its configured default: π0/π0.5/SmolVLA 10,
+  GR00T 4. Three different field names. π0's N=4 ladder kept as the within-model control.
 - **18:40** owner raised the budget to 26 h — full 9-rung ladder for every model, no
   reduced ladders. Endpoint-configs-first kept inside each model as risk sequencing.
