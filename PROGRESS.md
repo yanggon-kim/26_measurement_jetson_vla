@@ -63,22 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 13:38:00** · elapsed **19.05 h** of 26 (73 %) · 47.7 GiB free · 1.12 GiB swap
+**Updated 13:58:01** · elapsed **19.38 h** of 26 (75 %) · 39.9 GiB free · 1.12 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_lerobot.log` · csv rows=1845
-- `queue_c1_lerobot.log` · Terminated
-- `queue_c1_lerobot.log` · ########## 13:30 ncu smolvla_best_vlm_prefix (cap 40)
-- `queue_c3_groot_s.log` · C3S_START 2026-09-23T13:22:28-07:00
+- `queue_c1_groot.log` · csv rows=1831
+- `queue_c1_groot.log` · Terminated
+- `queue_c1_groot.log` · ########## 13:55 ncu groot_n17_best_vision (cap 40)
+- `c1_groot_smoke.log` · observation shapes: {"video": {"exterior_image_1_left": [1, 2, 256, 256, 3], "wrist_image_left": [1, 2, 256, 2
+- `c1_groot_smoke.log` · data_processing (CPU): 58.78 ms
+- `c1_groot_smoke.log` · profiled one inference with NVTX range 'vision'
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 13:39** (58 configurations)
+**Re-derived from every result CSV on disk at 13:59** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
