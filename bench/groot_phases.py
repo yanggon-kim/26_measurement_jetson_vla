@@ -70,6 +70,8 @@ def main() -> int:
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--checkpoint", default="nvidia/GR00T-N1.7-3B")
     ap.add_argument("--version", default="n17")
+    ap.add_argument("--gr00t-root", default=None,
+                    help="Isaac-GR00T checkout to import from, for N1.6 / N1.5")
     ap.add_argument("--embodiment-tag", default="oxe_droid_relative_eef_relative_joint",
                     help="must be one the checkpoint ships; it lists them on a bad value")
     ap.add_argument("--steps", type=int, default=None, help="default: the config's own")
@@ -98,6 +100,11 @@ def main() -> int:
         raise SystemExit(f"clocks not locked: {g}; run sudo jetson_clocks first")
     torch.set_float32_matmul_precision("high" if args.tf32 == "on" else "highest")
 
+    if args.gr00t_root:
+        # N1.6 and N1.5 live in worktrees pinned to the commits that still contain their
+        # model modules (env/setup_groot_n1d5_n1d6.md). Putting the chosen checkout first
+        # on sys.path is what selects the version; the measurement code is identical.
+        sys.path.insert(0, args.gr00t_root)
     from gr00t.policy.gr00t_policy import Gr00tPolicy                # noqa: E402
     from huggingface_hub import snapshot_download                     # noqa: E402
 
@@ -165,13 +172,12 @@ def main() -> int:
         # graph-breaks at .item() and then passes a 0-dim FakeTensor, so the custom op
         # raises "Expected a value of type 'int' for argument 'max_seqlen_q'".
         t0 = time.time()
-        cl = compile_and_clone(model.backbone.model.visual, "forward", args.vision_mode)
+        cl = compile_and_clone(_vision_module(model), "forward", args.vision_mode)
         compile_s += time.time() - t0
         compiled_desc.append(f"backbone.model.visual.forward@{args.vision_mode}{cl}")
     if args.llm_mode:
         t0 = time.time()
-        cl = compile_and_clone(model.backbone.model.language_model, "forward",
-                               args.llm_mode)
+        cl = compile_and_clone(_language_module(model), "forward", args.llm_mode)
         compile_s += time.time() - t0
         compiled_desc.append(
             f"backbone.model.language_model.forward@{args.llm_mode}{cl}")
@@ -195,7 +201,7 @@ def main() -> int:
     # embed_image) and .language_model (the prefix, analogous to pg.forward). Timing
     # .visual as a nested region turns GR00T's two-way split into the three-way split every
     # other model in this study gets, so vision is no longer "inside vlm_prefix" here.
-    vis = getattr(getattr(model.backbone, "model", None), "visual", None)
+    vis = _vision_module(model)
     if vis is not None:
         undo.append(timed(vis, "forward", "vision"))
     else:
@@ -237,10 +243,26 @@ def main() -> int:
         print(f"  NOT MEASURED: {type(exc).__name__}: {str(exc)[:160]}", flush=True)
         print(f"  row + traceback written for {args.rung}", flush=True)
 
+    def step():
+        """One inference, with the CUDA-graph generation advanced first.
+
+        With TWO cudagraph-managed callables in the same frame (action_head.get_action and
+        language_model.forward) torch's cudagraph_trees keeps the previous run's outputs
+        alive across the boundary and refuses the next replay:
+          "accessing tensor output of CUDAGraphs that has been overwritten by a subsequent
+           run ... call torch.compiler.cudagraph_mark_step_begin() before"
+        Cloning the outputs was necessary but not sufficient; the generation counter has to
+        advance too. This is the documented API for exactly that, and it is a no-op when
+        nothing is graph-captured, so every rung runs the same code path.
+        """
+        if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+            torch.compiler.cudagraph_mark_step_begin()
+        with torch.no_grad():
+            return model.get_action(inputs)
+
     try:
         for _ in range(args.warmup):
-            with torch.no_grad():
-                model.get_action(inputs)
+            step()
         torch.cuda.synchronize()
     except Exception as e:                                        # noqa: BLE001
         _fail_row(e)
@@ -251,8 +273,7 @@ def main() -> int:
         for k in spans:
             spans[k].clear()
         t0 = time.perf_counter()
-        with torch.no_grad():
-            model.get_action(inputs)
+        step()
         torch.cuda.synchronize()
         e2e.append((time.perf_counter() - t0) * 1e3)
         for k, evs in spans.items():
@@ -339,6 +360,27 @@ def main() -> int:
     }, indent=1))
     print(f"\nwrote {out}")
     return 0
+
+
+def _vision_module(model):
+    """The backbone's image encoder, whatever this GR00T version calls it.
+
+    N1.7's Qwen3-VL backbone names it `visual`; N1.6's Eagle backbone names it
+    `vision_model` (eagle_backbone.py:72). Both sit under backbone.model, and both are the
+    counterpart of the LeRobot family's embed_image, so the three-way phase split is the
+    same measurement across versions.
+    """
+    bm = getattr(model.backbone, "model", None)
+    for attr in ("visual", "vision_model"):
+        m = getattr(bm, attr, None)
+        if m is not None:
+            return m
+    return None
+
+
+def _language_module(model):
+    """The backbone's LLM. Same name in both versions, but resolved in one place."""
+    return getattr(getattr(model.backbone, "model", None), "language_model", None)
 
 
 def build_observation(policy, ckpt_dir, image_hw=(256, 256),
