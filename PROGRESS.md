@@ -63,26 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 22:57:10** · elapsed **4.37 h** of 26 (17 %) · 48.6 GiB free · 0.72 GiB swap
+**Updated 23:17:11** · elapsed **4.70 h** of 26 (18 %) · 51.1 GiB free · 0.72 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 153093 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 1 min | 0.0 GiB |
-| 153105 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 1 min | 0.4 GiB |
-| 153145 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --si` | 1 min | 2.8 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `smolvla_nvg.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
-- `smolvla_nvg.log` · _C._set_float32_matmul_precision(precision)
-- `smolvla_nvg.log` · W0922 22:57:03.352000 153145 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
-- `run_queue5.log` · QUEUE4_DONE 2026-09-22T22:51:09-07:00
+- `groot_probe.log` · File "/home/yanggon/venvs/groot/lib/python3.10/site-packages/torch/__init__.py", line 431, in <module>
+- `groot_probe.log` · from torch._C import *  # noqa: F403
+- `groot_probe.log` · ImportError: libcudss.so.0: cannot open shared object file: No such file or directory
+- `smolvla_nvg.log` · File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py", line 404, in <lambda>
+- `smolvla_nvg.log` · rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
+- `smolvla_nvg.log` · ValueError: 'ae_compile' is not in list
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 22:57** (36 configurations)
+**Re-derived from every result CSV on disk at 23:17** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
