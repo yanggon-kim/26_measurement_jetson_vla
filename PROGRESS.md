@@ -63,17 +63,17 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 00:17:14** · elapsed **5.70 h** of 26 (22 %) · 31.7 GiB free · 0.71 GiB swap
+**Updated 00:37:15** · elapsed **6.04 h** of 26 (23 %) · 33.2 GiB free · 0.70 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 155459 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_eager eager 10 ae_layer[0] ae_step[0] vl` | 28 min | 0.0 GiB |
+| 155459 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_eager eager 10 ae_layer[0] ae_step[0] vl` | 48 min | 0.0 GiB |
 
 Latest log lines:
 
-- `ncu_pi0_eager.log` · exit=0  434s  devfreq 1300500000 -> 1300500000
-- `ncu_pi0_eager.log` · ncu SM Frequency: 1.27583e+09 hz vs devfreq 1300500000 Hz
-- `ncu_pi0_eager.log` · ########## ae_step[0]  (mode=eager, tag=ae_step0, nvtx-include=ae_step_0/)
+- `ncu_pi0_eager.log` · exit=0  1266s  devfreq 1300500000 -> 1300500000
+- `ncu_pi0_eager.log` · ncu SM Frequency: 1.27687e+09 hz vs devfreq 1300500000 Hz
+- `ncu_pi0_eager.log` · ########## vlm_prefix  (mode=eager, tag=vlm_prefix, nvtx-include=vlm_prefix/)
 - `measure_S.log` · smolvla   {"prefix_tokens_P": 177, "suffix_tokens_S": 50, "suffix_hidden": 720, "chunk_size": 50}
 - `measure_S.log` · wrote results/20260922_E4f_expert_dims/suffix_tokens.json
 - `measure_S.log` · EXIT=0 262s
@@ -82,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 00:17** (36 configurations)
+**Re-derived from every result CSV on disk at 00:37** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
