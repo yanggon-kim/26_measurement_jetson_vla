@@ -63,21 +63,18 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 20:13:30** · elapsed **1.64 h** of 26 (6 %) · 38.0 GiB free · 0.69 GiB swap
+**Updated 20:15:30** · elapsed **1.68 h** of 26 (6 %) · 37.8 GiB free · 0.69 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 4 min | 0.4 GiB |
-| 131252 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 4 min | 20.8 GiB |
+| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 6 min | 0.4 GiB |
+| 131252 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 6 min | 20.8 GiB |
 
 Latest log lines:
 
 - `pi05_ladder.log` · weights: {"verdict": "not verified: assert_real_weights diffs against pi0's own safetensors and is pi0-specifi
 - `pi05_ladder.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
 - `pi05_ladder.log` · _C._set_float32_matmul_precision(precision)
-- `pi05_paper_fp32.log` · energy: module 35.95 W mean over 60.6 s, 20 inferences -> 108.86 J/inference (2177 J total). Theirs: 1866.0 J 
-- `pi05_paper_fp32.log` · wrote results/20260922_E4d_pi05_paper_config_N10_fp32
-- `pi05_paper_fp32.log` · EXIT=0 657s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
