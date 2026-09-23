@@ -313,7 +313,40 @@ def prep_bf16_norms(policy):
                 name.endswith("model.norm"):
             mod.to(torch.bfloat16)
             n += 1
-    return base_note + f"{n} layernorm modules -> bf16"
+
+    # pi0.5's "layernorm" is not only a norm. bench/pi05_dtype_probe.py, run on the real
+    # model, named the failing module exactly:
+    #
+    #   gemma_expert.model.layers.0.input_layernorm.dense
+    #   Linear  input=torch.float32  weight=torch.bfloat16  weight_shape=(3072, 1024)
+    #
+    # It is an ADAPTIVE RMSNorm: a Linear(1024 -> 3*1024) inside the norm that produces the
+    # scale/shift/gate from the flow-matching time embedding. Casting "the norms" casts that
+    # Linear too, and its input comes from time_mlp_in/out and action_in_proj, which are
+    # defined on PI05FlowMatching (modeling_pi05.py:577-581) -- OUTSIDE
+    # paligemma_with_expert, so LeRobot's own to_bfloat16_for_selected_params cannot reach
+    # them. That is a limit of where that method lives, not a decision about precision.
+    #
+    # (My stated guess before the probe was that the consumer was the expert's fused QKV.
+    # It was the norm's own Linear. The probe is why this is right rather than plausible.)
+    #
+    # So B3 also casts the fp32 conditioning path that feeds those norms: everything on
+    # policy.model that is NOT inside paligemma_with_expert.
+    cond = []
+    if type(policy).__name__ == "PI05Policy":
+        for name, mod in policy.model.named_children():
+            if name == "paligemma_with_expert":
+                continue
+            fp32 = [q for q in mod.parameters() if q.dtype == torch.float32]
+            if fp32:
+                mod.to(torch.bfloat16)
+                cond.append(name)
+    note = base_note + f"{n} layernorm modules -> bf16"
+    if cond:
+        note += (f"; conditioning path outside paligemma_with_expert -> bf16 "
+                 f"({', '.join(cond)}) — required because pi0.5's adaptive RMSNorm "
+                 f"contains a Linear those modules feed")
+    return note
 
 
 

@@ -11,6 +11,20 @@ echo
 echo "--- 1. PAST EXECUTION: every Part A/B row, with its status"
 $HOME/venvs/pi0/bin/python - <<'PY'
 import glob, json, os
+
+# A rung that leaves NO row is invisible to a per-file scan: GR00T's two backbone rungs
+# crashed without writing anything and this audit called the model "4 measured, 0 failed".
+# So the expected set is named here and anything absent is reported as MISSING.
+LEROBOT = ["eager_fp32", "eager_tf32", "ae_compile", "ae_graphs", "vis_compile",
+           "vis_graphs", "vlm_compile", "vlm_graphs", "whole_graphs", "vlm_compile_nvg",
+           "bf16_base", "bf16_vision", "bf16_norms", "bf16_both"]
+EXPECTED = {
+    "pi0": LEROBOT,
+    "pi05": LEROBOT,
+    "smolvla": LEROBOT + ["vis_static_pos"],
+    "groot_n17": ["eager_fp32", "eager_tf32", "ae_compile", "ae_graphs", "vis_compile",
+                  "vlm_compile", "vlm_graphs"],
+}
 for name, pat in (("pi0",    "results/20260922_E4c_pi0_opt_ladder/raw/rows/*.json"),
                   ("pi05",   "results/20260922_E4c_pi05_opt_ladder/raw/rows/*.json"),
                   ("smolvla","results/20260922_E4c_smolvla_opt_ladder/raw/rows/*.json"),
@@ -39,10 +53,15 @@ for name, pat in (("pi0",    "results/20260922_E4c_pi0_opt_ladder/raw/rows/*.jso
             ok.append(tag)
         else:
             bad.append(tag)
+    present = set(ok) | set(na) | set(bad)
+    missing = [r for r in EXPECTED.get(name, []) if r not in present]
     print(f"  {name:10s} measured={len(ok):2d}  n/a={len(na)}  FAILED={len(bad)}"
+          f"  MISSING={len(missing)}"
           + (f"  -> {sorted(set(bad))}" if bad else ""))
     if na:
         print(f"             n/a: {sorted(set(na))}")
+    if missing:
+        print(f"             MISSING (no row at all): {missing}")
 PY
 echo
 echo "--- 2. RUNNING NOW (from /proc; pgrep -f matches itself)"

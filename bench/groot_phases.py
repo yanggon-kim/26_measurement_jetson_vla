@@ -34,6 +34,7 @@ import json
 import statistics
 import sys
 import time
+import traceback
 from pathlib import Path
 
 import torch
@@ -80,7 +81,11 @@ def main() -> int:
                          "(max-autotune-no-cudagraphs = compile only, "
                          "reduce-overhead = compile + CUDA graphs)")
     ap.add_argument("--backbone-mode", default=None,
-                    help="torch.compile mode for backbone.forward")
+                    help="torch.compile mode for backbone.forward (whole VLM at once)")
+    ap.add_argument("--vision-mode", default=None,
+                    help="torch.compile mode for backbone.model.visual.forward")
+    ap.add_argument("--llm-mode", default=None,
+                    help="torch.compile mode for backbone.model.language_model.forward")
     ap.add_argument("--rung", default="eager",
                     help="name for this configuration; one row file per rung")
     args = ap.parse_args()
@@ -110,7 +115,7 @@ def main() -> int:
     print(f"N (num_inference_timesteps) = {n}", flush=True)
 
     # timing hooks around exactly the two phases, installed on the instance
-    spans: dict[str, list] = {"vlm_prefix": [], "ae_total": []}
+    spans: dict[str, list] = {"vision": [], "vlm_backbone": [], "ae_total": []}
 
     def timed(obj, attr, label):
         orig = getattr(obj, attr)
@@ -132,6 +137,24 @@ def main() -> int:
                                                      mode=args.head_mode)
         compile_s += time.time() - t0
         compiled_desc.append(f"action_head.get_action@{args.head_mode}")
+    if args.vision_mode:
+        # Expected to fail on this checkpoint, and the reason is worth recording rather
+        # than hiding: Qwen3-VL's vision encoder computes
+        #     max_seqlen_q = int(grid_thw[:, 1:].max().item())
+        # and hands it to flash_attn_varlen_func, whose schema declares SymInt. Dynamo
+        # graph-breaks at .item() and then passes a 0-dim FakeTensor, so the custom op
+        # raises "Expected a value of type 'int' for argument 'max_seqlen_q'".
+        t0 = time.time()
+        vis_mod = model.backbone.model.visual
+        vis_mod.forward = torch.compile(vis_mod.forward, mode=args.vision_mode)
+        compile_s += time.time() - t0
+        compiled_desc.append(f"backbone.model.visual.forward@{args.vision_mode}")
+    if args.llm_mode:
+        t0 = time.time()
+        lm = model.backbone.model.language_model
+        lm.forward = torch.compile(lm.forward, mode=args.llm_mode)
+        compile_s += time.time() - t0
+        compiled_desc.append(f"backbone.model.language_model.forward@{args.llm_mode}")
     if args.backbone_mode:
         t0 = time.time()
         model.backbone.forward = torch.compile(model.backbone.forward,
@@ -146,8 +169,19 @@ def main() -> int:
     # which would raise AttributeError. Wrapping .forward leaves the module intact.
     # Instrumenting AFTER compiling keeps both region boundaries outside the compiled
     # callables, the same order opt_ladder.py uses for the LeRobot models.
-    undo = [timed(model.backbone, "forward", "vlm_prefix"),
+    undo = [timed(model.backbone, "forward", "vlm_backbone"),
             timed(model.action_head, "get_action", "ae_total")]
+    # GR00T's backbone is Qwen3VLForConditionalGeneration, which has the SAME two parts the
+    # LeRobot models expose separately: .visual (the image encoder, analogous to
+    # embed_image) and .language_model (the prefix, analogous to pg.forward). Timing
+    # .visual as a nested region turns GR00T's two-way split into the three-way split every
+    # other model in this study gets, so vision is no longer "inside vlm_prefix" here.
+    vis = getattr(getattr(model.backbone, "model", None), "visual", None)
+    if vis is not None:
+        undo.append(timed(vis, "forward", "vision"))
+    else:
+        print("WARNING: backbone.model.visual not found; vision stays inside the backbone",
+              flush=True)
 
     obs, shapes = build_observation(policy, ckpt_dir)
     print(f"observation shapes: {json.dumps(shapes, default=str)}", flush=True)
@@ -164,10 +198,34 @@ def main() -> int:
     print(f"data_processing (CPU): {statistics.median(dp):.2f} ms", flush=True)
 
     inputs = build_inputs(policy, obs)
-    for _ in range(args.warmup):
-        with torch.no_grad():
-            model.get_action(inputs)
-    torch.cuda.synchronize()
+
+    # A rung that fails must leave a ROW saying so. GR00T's vlm_compile and vlm_graphs
+    # died with no row at all, and the watchdog audit then reported the model as
+    # "4 measured, 0 failed" — an audit cannot see a rung that left no trace.
+    def _fail_row(exc):
+        rowdir = out / "raw" / "rows"
+        rowdir.mkdir(parents=True, exist_ok=True)
+        (rowdir / f"{args.rung}.json").write_text(json.dumps({
+            "rung": args.rung, "N": n, "status": "failed",
+            "compiled": ";".join(compiled_desc), "compile_s": round(compile_s, 3),
+            "e2e_median_ms": "", "vision_ms": "", "vlm_backbone_ms": "",
+            "vlm_prefix_ms": "", "ae_total_ms": "",
+            "data_processing_cpu_ms": round(statistics.median(dp), 4),
+            "matmul_precision": "high" if args.tf32 == "on" else "highest",
+            "error": f"{type(exc).__name__}: {str(exc)[:300]}", "n": 0,
+        }, indent=1))
+        (out / "raw" / f"traceback_{args.rung}.txt").write_text(traceback.format_exc())
+        print(f"  NOT MEASURED: {type(exc).__name__}: {str(exc)[:160]}", flush=True)
+        print(f"  row + traceback written for {args.rung}", flush=True)
+
+    try:
+        for _ in range(args.warmup):
+            with torch.no_grad():
+                model.get_action(inputs)
+        torch.cuda.synchronize()
+    except Exception as e:                                        # noqa: BLE001
+        _fail_row(e)
+        return 1
 
     e2e, per = [], {k: [] for k in spans}
     for _ in range(args.timed):
@@ -185,7 +243,14 @@ def main() -> int:
 
     st = summarize(e2e)
     rows = []
-    for k in ("vlm_prefix", "ae_total"):
+    # vision is nested inside vlm_backbone, so the prefix is the difference. Reporting
+    # both the nested region and the derived one keeps the arithmetic checkable.
+    per["vlm_prefix_excl_vision"] = [b - v for b, v in
+                                     zip(per["vlm_backbone"], per["vision"])] \
+        if per.get("vision") and any(per["vision"]) else []
+    for k in ("vision", "vlm_backbone", "vlm_prefix_excl_vision", "ae_total"):
+        if not per.get(k):
+            continue
         s = summarize(per[k])
         rows.append({"region": k, **{kk: round(vv, 4) for kk, vv in s.items()},
                      "share_of_e2e": round(s["median_ms"] / st["median_ms"], 4)})
@@ -202,7 +267,11 @@ def main() -> int:
         "compiled": ";".join(compiled_desc), "compile_s": round(compile_s, 3),
         "e2e_median_ms": round(st["median_ms"], 4),
         "e2e_p5_ms": round(st["p5_ms"], 4), "e2e_p95_ms": round(st["p95_ms"], 4),
-        "vlm_prefix_ms": round(summarize(per["vlm_prefix"])["median_ms"], 4),
+        "vision_ms": round(summarize(per["vision"])["median_ms"], 4)
+                     if per.get("vision") and any(per["vision"]) else "",
+        "vlm_backbone_ms": round(summarize(per["vlm_backbone"])["median_ms"], 4),
+        "vlm_prefix_ms": round(summarize(per["vlm_prefix_excl_vision"])["median_ms"], 4)
+                         if per.get("vlm_prefix_excl_vision") else "",
         "ae_total_ms": round(summarize(per["ae_total"])["median_ms"], 4),
         "data_processing_cpu_ms": round(statistics.median(dp), 4),
         "matmul_precision": "high" if args.tf32 == "on" else "highest",
@@ -237,10 +306,15 @@ def main() -> int:
                                 "collator, timed separately; e2e below is the GPU path "
                                 "only (model.get_action on already-collated inputs), the "
                                 "same split NVIDIA's benchmark_inference.py reports",
-        "vision_note": "GR00T's backbone is a whole VLM called as one unit, so `vision` is "
-                       "INSIDE vlm_prefix here and is not separated. The LeRobot models "
-                       "split it because embed_image is a distinct method.",
-        "regions": {"vlm_prefix": "Gr00tN1d7.backbone (gr00t_n1d7.py:603)",
+        "vision_note": "SUPERSEDED 2026-09-23: vision IS separated now. GR00T's backbone "
+                       "is Qwen3VLForConditionalGeneration, whose .visual and "
+                       ".language_model are the same two parts the LeRobot models expose "
+                       "as embed_image and pg.forward, so vision is timed as a nested "
+                       "region and vlm_prefix is the backbone minus it. GR00T therefore "
+                       "gets the same three-way split as every other model in the study.",
+        "regions": {"vision": "backbone.model.visual (Qwen3-VL image encoder)",
+                    "vlm_backbone": "Gr00tN1d7.backbone (gr00t_n1d7.py:603), vision INSIDE",
+                    "vlm_prefix_excl_vision": "vlm_backbone minus vision, derived",
                     "ae_total": "action_head.get_action, containing the "
                                 "num_inference_timesteps loop (:366+)"},
     }, indent=1))
