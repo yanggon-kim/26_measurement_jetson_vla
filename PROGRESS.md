@@ -63,26 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 05:27:31** · elapsed **10.88 h** of 26 (42 %) · 48.2 GiB free · 1.10 GiB swap
+**Updated 05:37:32** · elapsed **11.04 h** of 26 (42 %) · 51.0 GiB free · 1.10 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 190345 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 9 min | 0.0 GiB |
-| 190348 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 9 min | 0.4 GiB |
-| 192968 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --si` | 5 min | 3.4 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `smolvla_partb2.log` · _C._set_float32_matmul_precision(precision)
-- `smolvla_partb2.log` · prep: SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids (m
-- `smolvla_partb2.log` · W0923 05:26:13.925000 192968 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
-- `queue_partb_finish.log` · PARTB_FINISH_START 2026-09-23T05:25:04-07:00
+- `smolvla_partb2.log` · settled: 50.7 GiB available, 1.10 GiB swap
+- `smolvla_partb2.log` · merged 14 rung(s) into results/20260922_E4c_smolvla_opt_ladder/opt_ladder.csv
+- `smolvla_partb2.log` · wrote results/20260922_E4c_smolvla_opt_ladder (14 rungs)
+- `queue_groot.log` · GROOT_QUEUE_START 2026-09-23T05:28:36-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 05:18** (36 configurations)
+**Re-derived from every result CSV on disk at 05:38** (45 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -116,14 +112,21 @@ Latest log lines:
 | smolvla | 10 | ae_compile | 33.27 | 64.18 | 161.93 | 267.42 | 60.6 % |
 | smolvla | 10 | ae_graphs | 33.25 | 65.71 | 43.82 | 150.32 | 29.2 % |
 | smolvla | 10 | vis_compile | 35.15 | 65.92 | 43.65 | 152.70 | 28.6 % |
+| smolvla | 10 | vis_static_pos | 32.48 | 67.50 | 43.92 | 153.63 | 28.6 % |
+| smolvla | 10 | vis_graphs | 31.33 | 73.63 | 44.91 | 160.86 | 27.9 % |
+| smolvla | 10 | vlm_compile | 31.23 | 15.54 | 45.52 | 103.69 | 43.9 % |
+| smolvla | 10 | vlm_graphs | 31.26 | 7.93 | 44.86 | 92.30 | 48.6 % |
+| smolvla | 10 | whole_graphs | — | — | — | 80.97 | — |
+| smolvla | 10 | vlm_compile_nvg | 33.07 | 15.32 | 44.36 | 100.22 | 44.3 % |
+| smolvla | 10 | bf16_vision | — | — | — | nan | — |
+| smolvla | 10 | bf16_norms | — | — | — | nan | — |
+| smolvla | 10 | bf16_both | — | — | — | nan | — |
 | pi05 | 10 | paper config (eager+TF32) | 103.61 | 550.51 | 626.90 | 1287.32 | 48.7 % |
 | pi05 | 10 | paper config (eager+TF32) | 239.39 | 2166.69 | 617.87 | 3030.99 | 20.4 % |
 | pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: pushed at 05:18)*
 <!-- SLOW:END -->
 
 ## Live status
