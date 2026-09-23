@@ -63,22 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 12:03:54** · elapsed **17.48 h** of 26 (67 %) · 25.5 GiB free · 1.12 GiB swap
+**Updated 12:17:55** · elapsed **17.72 h** of 26 (68 %) · 38.1 GiB free · 1.13 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_lerobot.log` · ==PROF== Disconnected from process 247886
-- `queue_c1_lerobot.log` · ==ERROR== The application returned an error code (1).
-- `queue_c1_lerobot.log` · ########## 12:01 ncu pi05_eager_vlm_prefix (cap 40)
-- `queue_c1_repair.log` · C1_REPAIR_START 2026-09-23T11:06:43-07:00
+- `queue_c3_groot_s.log` · C3S_START 2026-09-23T12:15:12-07:00
+- `queue_c1_lerobot.log` · rep 22M -> zst 900K
+- `queue_c1_lerobot.log` · csv rows=1825
+- `queue_c1_lerobot.log` · ########## 12:13 ncu pi05_eager_vlm_prefix (cap 40)
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 11:59** (58 configurations)
+**Re-derived from every result CSV on disk at 12:19** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -140,8 +140,6 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: pushed at 11:59)*
 <!-- SLOW:END -->
 
 ## Live status
