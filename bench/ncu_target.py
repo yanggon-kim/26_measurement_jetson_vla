@@ -71,7 +71,38 @@ def main() -> int:
             if hasattr(_dyn.config, attr):
                 setattr(_dyn.config, attr, 16)
     spec = MR.get(args.model)
-    policy, _, _ = MR.load_policy(spec, n=args.num_steps, compile_mode=cm)
+
+    # HOW `best` IS COMPILED, and why SmolVLA differs.
+    #
+    # Passing compile_mode to load_policy sets cfg.compile_model=True, which is LeRobot's
+    # own path: it compiles sample_actions as ONE unit. For pi0 and pi0.5 that works and is
+    # what their `best` captures measure. For SmolVLA it does not converge -- dynamo
+    # recompiles sample_actions until it either bails to eager (at limit 8) or thrashes for
+    # 20+ minutes without ever reaching a profiled kernel (at 16 and 64).
+    #
+    # So SmolVLA's `best` compiles the three callables the Part B ladder compiles instead
+    # -- model.denoise_step, pg.embed_image, pg.forward, all reduce-overhead with cloned
+    # outputs. That is the ladder's vlm_graphs rung, the configuration that actually
+    # produced SmolVLA's 9x in Part B. The difference is recorded in the capture's JSON
+    # under compile_style so no one compares the two as if identical.
+    ladder_style = args.model == "smolvla" and cm is not None
+    policy, _, _ = MR.load_policy(spec, n=args.num_steps,
+                                  compile_mode=None if ladder_style else cm)
+    if ladder_style:
+        import opt_ladder as _OL
+        for which, attr, clone in (("model", "denoise_step", False),
+                                   ("pg", "embed_image", True),
+                                   ("pg", "forward", True)):
+            ownr = _OL.owner_of(policy, which, spec)
+            c = torch.compile(getattr(ownr, attr), mode="reduce-overhead")
+            if clone:
+                def _cloned(*a, _c=c, **k):
+                    return _OL.clone_graph_outputs(_c(*a, **k))
+                setattr(ownr, attr, _cloned)
+            else:
+                setattr(ownr, attr, c)
+        print("compile_style: ladder targets (denoise_step, embed_image, pg.forward)",
+              flush=True)
     # assert_real_weights diffs sampled tensors against PI0's OWN safetensors, so it is
     # pi0-specific: on pi0.5 it reported "0/357 tensors match" and aborted the capture,
     # which is a false alarm about a real guard rather than a real failure. It exists
@@ -128,6 +159,10 @@ def main() -> int:
     print(json.dumps({
         "region_requested": args.region, "mode": args.mode, "num_steps": args.num_steps,
         "weights": weights,
+        "compile_style": ("ladder targets: denoise_step, embed_image, pg.forward "
+                          "@reduce-overhead" if ladder_style else
+                          ("LeRobot compile_model=True (sample_actions as one unit)"
+                           if cm else "eager")),
         # Positive evidence that compilation actually happened, so a fallback to eager
         # cannot pass as a "best" capture again.
         "dynamo": (lambda c: {"frames_compiled": int(sum(c.get("frames", {}).values())),
