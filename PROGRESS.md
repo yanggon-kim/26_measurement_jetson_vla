@@ -63,29 +63,28 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 16:18:09** · elapsed **21.72 h** of 26 (84 %) · 19.0 GiB free · 1.44 GiB swap
+**Updated 16:38:10** · elapsed **22.05 h** of 26 (85 %) · 43.6 GiB free · 1.45 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 284796 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 0.0 GiB |
-| 284800 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 0.0 GiB |
-| 284801 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 0.0 GiB |
-| 284805 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 1 --episodes 1` | 3 min | 31.8 GiB |
+| 285875 | `bench/libero_eval.py \` | 5 min | 0.0 GiB |
+| 285878 | `bench/libero_eval.py \` | 5 min | 0.0 GiB |
+| 285885 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 10 --episodes ` | 5 min | 15.0 GiB |
 
 Latest log lines:
 
-- `queue_c3_groot_s.log` · }
-- `queue_c3_groot_s.log` · EXIT=0
-- `queue_c3_groot_s.log` · C3S_DONE 2026-09-23T16:00:20-07:00
-- `queue_c1_repair.log` · rep 26M -> zst 943K
-- `queue_c1_repair.log` · csv rows=1847
-- `queue_c1_repair.log` · C1_REPAIR_DONE 2026-09-23T15:58:04-07:00
+- `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
+- `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
+- `queue_libero.log` · task 0 ep 0: fail    280 steps   running 0/1
+- `libero_smoke.log` · task 0 ep 0: fail    280 steps   running 0/1
+- `libero_smoke.log` · success 0/1 = 0.0%   policy 3.74 ms, sim 37.16 ms
+- `libero_smoke.log` · wrote /tmp/claude-1001/-home-yanggon-00-VLA/12fafcae-396b-4192-9a5c-e6f36be46f1c/scratchpad/libero_smoke3
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 16:19** (58 configurations)
+**Re-derived from every result CSV on disk at 16:39** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
