@@ -71,7 +71,7 @@ sequencing, not a reduction in scope.
 | 4 | π0 Part A — SM utilisation (A2) | queued | chained on ladder PID; needs sudo for GPU metrics |
 | 5 | π0 Part B — B2 bf16 vision, B3 bf16 layernorms, B4 graphs on `pg.forward` | todo | B3 is the lever with a mechanism; B4 should be small at 816 FLOP/B |
 | 6 | π0 LIBERO quick check (B2/B3 change numerics) | todo | 100 episodes per variant, ~45 min each |
-| 7 | **model registry** — the gate for everything below | todo | per-model N field, the three wrap points, per-model instrumentation |
+| 7 | **model registry** — the gate for everything below | **done (LeRobot)** | `bench/model_registry.py`. N field differs 3 ways; wrap points uniform once the container attr is known (`paligemma_with_expert` / `vlm_with_expert`). GR00T descriptor deliberately pending until its instrumentation exists. |
 | 8 | π0.5 — Part A + full ladder | todo | `lerobot/pi05_libero_base` |
 | 9 | SmolVLA — Part A + full ladder | todo | `lerobot/smolvla_base`; **`regions.py` records nothing** — layer body inlined |
 | 10 | GR00T N1.7 — Part A + full ladder | todo | installed, verified; `env/setup_groot.sh` |
@@ -105,6 +105,7 @@ sequencing, not a reduction in scope.
 ## Log
 
 - **18:35** file created. π0 N=10 ladder at 3/9, Part A armed behind it.
+- **19:05** model registry written and committed for the LeRobot family; GR00T pending.
 - **18:45** one N per model, its configured default: π0/π0.5/SmolVLA 10,
   GR00T 4. Three different field names. π0's N=4 ladder kept as the within-model control.
 - **18:40** owner raised the budget to 26 h — full 9-rung ladder for every model, no
