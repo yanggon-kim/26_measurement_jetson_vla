@@ -182,6 +182,34 @@ def write_block(mode: str, body: str) -> None:
             fcntl.flock(lk, fcntl.LOCK_UN)
 
 
+def publish() -> str:
+    """Commit and push PROGRESS.md so it is visible off this machine.
+
+    The monitors update the working file, but AGENTS.md makes the repository the only
+    channel: an owner looking at the remote sees whatever was last committed. Without this
+    the file updated every two minutes locally and looked frozen to everyone else.
+
+    Only PROGRESS.md is staged, so this cannot sweep up work in progress. Failures are
+    reported and never raise: a monitor must not be able to break a measurement run.
+    """
+    import subprocess
+    def sh(*a):
+        return subprocess.run(a, cwd=REPO, capture_output=True, text=True, timeout=600)
+    try:
+        if not sh("git", "diff", "--quiet", "--", "PROGRESS.md").returncode:
+            return "no change"
+        sh("git", "add", "PROGRESS.md")
+        c = sh("git", "commit", "-m",
+               f"PROGRESS: {datetime.now():%H:%M} tick (bench/progress_monitor.py --mode slow)")
+        if c.returncode:
+            return f"commit failed: {c.stderr.strip()[:80]}"
+        sh("git", "pull", "--rebase", "-q")
+        r = sh("git", "push")
+        return "pushed" if r.returncode == 0 else f"push failed: {r.stderr.strip()[:80]}"
+    except Exception as e:                                          # noqa: BLE001
+        return f"{type(e).__name__}: {str(e)[:80]}"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=("fast", "slow"), required=True)
@@ -195,6 +223,10 @@ def main() -> int:
             write_block(args.mode, fn())
         except Exception as e:                                      # noqa: BLE001
             write_block(args.mode, f"*(monitor error: {type(e).__name__}: {str(e)[:150]})*")
+        if args.mode == "slow":
+            st = publish()
+            write_block("slow", (fn() + f"\n\n*(published: {st} at "
+                                 f"{datetime.now():%H:%M})*"))
         if args.once:
             return 0
         time.sleep(iv)
