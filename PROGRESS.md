@@ -63,27 +63,23 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 22:17:08** · elapsed **3.70 h** of 26 (14 %) · 49.5 GiB free · 0.72 GiB swap
+**Updated 22:37:09** · elapsed **4.04 h** of 26 (16 %) · 49.8 GiB free · 0.72 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 143283 | `bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --st` | 3 min | 0.4 GiB |
-| 144213 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260922_E4c_smolvla_opt_ladder --si` | 0 min | 1.7 GiB |
+| 147573 | `bench/paper_repro.py --model smolvla --outdir results/20260922_E4d_smolvla_paper_config_N1` | 2 min | 2.8 GiB |
 
 Latest log lines:
 
-- `smolvla_ladder.log` · === N=10  vlm_graphs: + CUDA graphs on pg.forward
-- `smolvla_ladder.log` · memory before: 50.7 GiB available, 0.72 GiB swap in use
-- `smolvla_ladder.log` · `torch_dtype` is deprecated! Use `dtype` instead!
-- `smolvla_paper_fp32.log` · raise AttributeError(
-- `smolvla_paper_fp32.log` · AttributeError: 'VLAFlowMatching' object has no attribute 'paligemma_with_expert'
-- `smolvla_paper_fp32.log` · EXIT=1 20s
+- `smolvla_paper_tf32.log` · fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.came
+- `smolvla_paper_tf32.log` · tokens: {"error": "AttributeError: 'SmolVLAPolicy' object has no attribute '_preprocess_images'", "_note": "pe
+- `smolvla_paper_tf32.log` · power: 60 s sustained loop
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 22:17** (29 configurations)
+**Re-derived from every result CSV on disk at 22:37** (29 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
