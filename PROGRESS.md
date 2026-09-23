@@ -125,6 +125,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 04:38)*
 <!-- SLOW:END -->
 
 ## Live status
@@ -159,7 +161,19 @@ Latest log lines:
 | π0 | N=4 fully compiled | 99.92 | 192.78 | 69.72 | 369.52 | **18.9 %** |
 | *(their π0 on AGX Orin)* | *N=10 eager* | *110.47* | *257.76* | *543.14* | *920.58* | *59 %* |
 
-## Overnight plan (owner asleep from 23:45, 2026-09-22)
+## PRIORITY ORDER (owner, 2026-09-23 — supersedes everything below)
+
+1. **Fix Part B and finish it for π0, π0.5, SmolVLA.** 9 of 39 rungs failed. One root
+   cause behind 7 of them: CUDA-graph output aliasing, fixed by `clone_graph_outputs`
+   (walks tuples/lists/dicts, not just a bare tensor). The other 2 are the π0-specific
+   bf16 preps on π0.5.
+2. **Part A and B for the GR00T family** — N1.7 (license now accepted, Cosmos-Reason2-2B
+   accessible), N1.6, N1.5.
+3. **Part C for all models** — C1 ncu per phase, C2 bottleneck→fix mapping, C3 dimensions.
+   C1 was started out of order overnight and is now stopped; π0 eager's four regions are
+   already captured and keep.
+
+## Overnight plan (superseded — kept for the record)
 
 **Running unattended, never aborting on a failed step:**
 `scratch/T004/overnight.sh` → S measurement for π0.5/SmolVLA, then **C1**: ncu per phase
