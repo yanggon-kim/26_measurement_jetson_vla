@@ -63,7 +63,7 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 23:37:12** · elapsed **5.04 h** of 26 (19 %) · 51.2 GiB free · 0.72 GiB swap
+**Updated 23:41:12** · elapsed **5.10 h** of 26 (20 %) · 51.2 GiB free · 0.72 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
@@ -120,6 +120,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 23:37)*
 <!-- SLOW:END -->
 
 ## Live status
@@ -140,6 +142,9 @@ Latest log lines:
 | 11 | GR00T N1.6 — Part A + full ladder | todo | branch `n1d6` @ `9b37aa1`, `nvidia/GR00T-N1.6-3B`; own env |
 | 12 | GR00T N1.5 — Part A + full ladder | todo | branch `n1d5` @ `4af2b62`, `nvidia/GR00T-N1.5-3B`; own env |
 | 14 | `reports/E4d_phase_balance.md` — the cross-model table | todo | one row per model: AE share un-optimised vs optimised |
+| **C1** | **ncu per-phase, every model × {eager, best}** | todo | *what* each phase is bound by: SM vs memory (L2) throughput, achieved occupancy, per-pipe utilisation, warp-stall reasons (long scoreboard, math-pipe throttle, MIO/LG throttle, barrier), off-chip bytes from §3.3's two sysmem counters. 3 phases × 2 configs × 6 models = 36 captures. Compiled captures may see nothing inside CUDA-graph replays — if so, profile the no-graph variant and say so. |
+| **C2** | **bottleneck → fix mapping** | todo | derived from C1: for each model and phase, what the eager bottleneck *was*, which optimisation removed it, and the evidence. e.g. expert eager = launch-bound (low occupancy, large inter-kernel gaps) → CUDA graphs elide launches → 14.2× on SmolVLA. One row per (model, phase, bottleneck, fix, evidence). |
+| **C3** | **expert GEMM dimensions, every model** | todo | π0's expert is 126 projections on S = 51 tokens — extremely skinny (M = 51 against K, N = 1024–4096). Tabulate S, hidden, layers, heads/KV-heads, head_dim, MLP width and the resulting GEMM shapes per model, with arithmetic intensity per shape, so "skinny" is quantified rather than asserted. CPU-only: reads checkpoints and configs. |
 
 ## Results so far
 
@@ -167,6 +172,8 @@ Latest log lines:
 ## Log
 
 - **18:35** file created. π0 N=10 ladder at 3/9, Part A armed behind it.
+- **23:05** owner added C1 (ncu per-phase), C2 (bottleneck->fix mapping), C3 (expert GEMM
+  dimensions) after Part A/B for all models. C3 started immediately: it is CPU-only.
 - **19:05** model registry written and committed for the LeRobot family; GR00T pending.
 - **18:45** one N per model, its configured default: π0/π0.5/SmolVLA 10,
   GR00T 4. Three different field names. π0's N=4 ladder kept as the within-model control.
