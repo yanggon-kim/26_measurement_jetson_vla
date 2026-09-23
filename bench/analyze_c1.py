@@ -297,6 +297,56 @@ def main() -> int:
                      f"{r['best_verdict']} | {r['d_sm_pct']:+.1f} | {r['d_mem_pct']:+.1f} | "
                      f"{r['d_long_scoreboard']:+.2f} | {r['mechanism']} |")
         M.append("")
+        # ---- C3, read from the committed expert-dimension JSON ----------------------
+        dims_path = Path("results/20260922_E4f_expert_dims/expert_dims.json")
+        if dims_path.exists():
+            dims = json.loads(dims_path.read_text())
+            M.append("## C3 — the action expert's operand dimensions")
+            M.append("")
+            M.append("Read from each checkpoint's own tensor shapes (every GR00T "
+                     "checkpoint is sharded, so the reader follows the shard index; the "
+                     "first shard alone would miss most of the action head). `S` is the "
+                     "suffix length, **measured** on a real inference rather than taken "
+                     "from `chunk_size`/`action_horizon` — π0's `chunk_size` is 50 while "
+                     "its measured S is 51, because a state token is prepended.")
+            M.append("")
+            M.append("| model | expert layers | projections/layer | GEMMs | S | I ≈ S "
+                     "(FLOP/B) | vs measured ridge 180.57 |")
+            M.append("|---|---:|---:|---:|---:|---:|---|")
+            for m, v in dims.get("models", {}).items():
+                if "error" in v:
+                    continue
+                S = v.get("suffix_tokens_S")
+                M.append(f"| {m} | {v['expert_layers']} | {v['projections_per_layer']} | "
+                         f"{v['projections_total']} | {S if S else '—'} | "
+                         f"{v.get('arithmetic_intensity_approx') or '—'} | "
+                         f"{v.get('verdict') or 'S pending (queue_c3_groot_s.sh)'} |")
+            M.append("")
+            M.append("The skinniest GEMM in each expert — the long-shallow shape the "
+                     "owner predicted:")
+            M.append("")
+            M.append("| model | projection | A (activations) | B (weights) | K/M | I |")
+            M.append("|---|---|---|---|---:|---:|")
+            for m, v in dims.get("models", {}).items():
+                pr = v.get("projections") or []
+                pr = [r for r in pr if r.get("A_aspect_K_over_M") is not None]
+                if not pr:
+                    continue
+                r = max(pr, key=lambda x: x["A_aspect_K_over_M"])
+                M.append(f"| {m} | `{r['projection']}` | {r['A_activations']} | "
+                         f"{r['B_weights']} | {r['A_aspect_K_over_M']:.1f} | "
+                         f"{r['arith_intensity']} |")
+            M.append("")
+            M.append("**The analytic verdict and the measured one disagree, and that is "
+                     "the point.** I ≈ S puts every expert GEMM far below the measured "
+                     "ridge, so analytically they are all memory-bound by construction. "
+                     "C1's counters say π0's expert is *issue*-limited when eager "
+                     "(`imc_miss` 35 %, Long Scoreboard third at 16 %, memory throughput "
+                     "21.6 %) and only becomes memory-latency-bound once compiled "
+                     "(56.5 %, Long Scoreboard dominant). Arithmetic intensity bounds "
+                     "what a phase *could* achieve; it does not say what limits it now.")
+            M.append("")
+
         M.append(f"Captures summarised: **{len(caps)}**. A phase missing from a table has "
                  "no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without "
                  "all 14 stall metrics, so a partial capture is never silently averaged in.")

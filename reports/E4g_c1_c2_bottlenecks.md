@@ -14,6 +14,7 @@ Per-kernel numbers are averaged **weighted by kernel duration**; an unweighted m
 | pi0 | best | `vlm_prefix` | 51.6 | 55.1 | 22.4 | 2.73 (15 %) | mio_throttle (34 %) | latency bound (mio_throttle) |
 | pi0 | eager | `ae_step_0` | 22.7 | 21.6 | 18.5 | 3.59 (16 %) | imc_miss (35 %) | latency bound (imc_miss) |
 | pi0 | best | `ae_step_0` | 23.3 | 56.5 | 39.2 | 11.44 (39 %) | long_scoreboard (39 %) | latency bound (long_scoreboard) |
+| pi05 | eager | `vision` | 65.3 | 58.2 | 35.5 | 3.25 (42 %) | long_scoreboard (42 %) | mixed |
 
 ## C2 — eager → best, phase by phase
 
@@ -27,5 +28,28 @@ What is compared here are the ncu counters, which are intensive quantities descr
 | pi0 | `vlm_prefix` | latency bound (long_scoreboard) | latency bound (mio_throttle) | +11.2 | +6.5 | -31.70 | less memory-latency stall; higher SM utilisation |
 | pi0 | `ae_step_0` | latency bound (imc_miss) | latency bound (long_scoreboard) | +0.6 | +34.8 | +7.85 | MORE memory-latency stall |
 
-Captures summarised: **6**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
+## C3 — the action expert's operand dimensions
+
+Read from each checkpoint's own tensor shapes (every GR00T checkpoint is sharded, so the reader follows the shard index; the first shard alone would miss most of the action head). `S` is the suffix length, **measured** on a real inference rather than taken from `chunk_size`/`action_horizon` — π0's `chunk_size` is 50 while its measured S is 51, because a state token is prepended.
+
+| model | expert layers | projections/layer | GEMMs | S | I ≈ S (FLOP/B) | vs measured ridge 180.57 |
+|---|---:|---:|---:|---:|---:|---|
+| pi0 | 18 | 7 | 126 | 51 | 51 | MEMORY-bound by construction (S < ridge) |
+| pi05 | 18 | 9 | 162 | 50 | 50 | MEMORY-bound by construction (S < ridge) |
+| smolvla | 16 | 7 | 112 | 50 | 50 | MEMORY-bound by construction (S < ridge) |
+| groot_n17 | 32 | 7 | 224 | — | — | S pending (queue_c3_groot_s.sh) |
+| groot_n16 | 32 | 7 | 224 | — | — | S pending (queue_c3_groot_s.sh) |
+| groot_n15 | 16 | 7 | 112 | — | — | S pending (queue_c3_groot_s.sh) |
+
+The skinniest GEMM in each expert — the long-shallow shape the owner predicted:
+
+| model | projection | A (activations) | B (weights) | K/M | I |
+|---|---|---|---|---:|---:|
+| pi0 | `mlp.down_proj` | [51 x 4096] | [4096 x 1024] | 80.3 | 48.0 |
+| pi05 | `mlp.down_proj` | [50 x 4096] | [4096 x 1024] | 81.9 | 47.1 |
+| smolvla | `mlp.down_proj` | [50 x 2048] | [2048 x 720] | 41.0 | 45.7 |
+
+**The analytic verdict and the measured one disagree, and that is the point.** I ≈ S puts every expert GEMM far below the measured ridge, so analytically they are all memory-bound by construction. C1's counters say π0's expert is *issue*-limited when eager (`imc_miss` 35 %, Long Scoreboard third at 16 %, memory throughput 21.6 %) and only becomes memory-latency-bound once compiled (56.5 %, Long Scoreboard dominant). Arithmetic intensity bounds what a phase *could* achieve; it does not say what limits it now.
+
+Captures summarised: **7**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
 
