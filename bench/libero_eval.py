@@ -1,0 +1,210 @@
+"""Does the policy still WORK after the Part B numerics changes? Closed-loop LIBERO.
+
+Part B's best rungs for pi0 and pi0.5 are `bf16_both`, which casts the vision tower, the
+projector and the layernorms out of fp32. Those are speed results reported against an fp32
+baseline, and a latency number from a model that no longer acts correctly is worthless. The
+measurement plan required this check and it had not been run.
+
+## The fp32 baseline is the harness's own control
+
+A wrong observation mapping and a broken policy look identical from the outside: low
+success rate. So every comparison runs the **fp32 baseline first, in the same harness**. If
+fp32 scores near zero, the mapping is wrong and this script says the check could not be
+performed — it does not report that bf16 broke the policy. Only a working fp32 baseline
+makes the bf16 number meaningful.
+
+## The observation mapping, read from the checkpoint
+
+pi0_libero_finetuned_v044 declares:
+
+    observation.images.image          (3, 256, 256)   <- agentview_image
+    observation.images.image2         (3, 256, 256)   <- robot0_eye_in_hand_image
+    observation.images.empty_camera_0 (3, 224, 224)   <- zeros, the padded third slot
+    observation.state                 (8,)            <- 7 joint positions + 1 gripper
+    action                            (7,)
+
+The third camera slot is the padding T010 measured: this checkpoint always encodes three
+image slots, and one of them is empty by construction.
+
+## Resolution
+
+With E episodes per task this resolves a policy that is broken, not a few-percent
+difference in success rate. The report states the episode count and that limit.
+
+    MUJOCO_GL=egl ~/venvs/libero/bin/python bench/libero_eval.py \
+        --model pi0 --prep none --suite libero_spatial --tasks 10 --episodes 3 \
+        --outdir results/<date>_E8q_pi0_libero_fp32
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+
+def build_obs(obs: dict, feats: dict, device: str) -> dict:
+    """LIBERO observation -> the batch the policy declares it wants."""
+    out: dict[str, torch.Tensor] = {}
+    ag = obs["agentview_image"][::-1]                 # LIBERO renders bottom-up
+    wr = obs["robot0_eye_in_hand_image"][::-1]
+    for key, spec in feats.items():
+        if not key.startswith("observation.images."):
+            continue
+        c, h, w = spec.shape
+        if key.endswith("image"):
+            img = ag
+        elif key.endswith("image2"):
+            img = wr
+        else:
+            # the padded slot this checkpoint always encodes anyway (T010)
+            img = np.zeros((h, w, 3), dtype=np.uint8)
+        t = torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float() / 255.0
+        if t.shape[-2:] != (h, w):
+            t = torch.nn.functional.interpolate(t[None], size=(h, w), mode="bilinear",
+                                                align_corners=False)[0]
+        out[key] = t[None].to(device)
+    st = np.concatenate([obs["robot0_joint_pos"],
+                         obs["robot0_gripper_qpos"][:1]]).astype(np.float32)
+    dim = feats["observation.state"].shape[0]
+    if st.shape[0] < dim:
+        st = np.pad(st, (0, dim - st.shape[0]))
+    out["observation.state"] = torch.from_numpy(st[:dim])[None].to(device)
+    return out
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0")
+    ap.add_argument("--prep", default="none",
+                    help="none | bf16_base | bf16_vision | bf16_norms | bf16_both")
+    ap.add_argument("--suite", default="libero_spatial")
+    ap.add_argument("--tasks", type=int, default=10)
+    ap.add_argument("--episodes", type=int, default=3)
+    ap.add_argument("--max-steps", type=int, default=280)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--outdir", required=True)
+    args = ap.parse_args()
+
+    out = Path(args.outdir)
+    (out / "raw").mkdir(parents=True, exist_ok=True)
+
+    # LIBERO's get_task_init_states() calls torch.load on its own bundled .pruned_init
+    # files, which hold numpy arrays. torch >= 2.6 defaults weights_only=True and refuses
+    # them:  "Unsupported global: GLOBAL numpy.core.multiarray._reconstruct".
+    # These are LIBERO's own data files shipped with the benchmark, not downloaded
+    # checkpoints, so the numpy reconstructors are allow-listed rather than turning
+    # weights_only off globally.
+    import numpy as _np
+    try:
+        torch.serialization.add_safe_globals([
+            _np.core.multiarray._reconstruct, _np.ndarray, _np.dtype,
+            _np.dtypes.Float64DType, _np.dtypes.Int64DType, _np.dtypes.UInt8DType,
+        ])
+    except (AttributeError, Exception):  # noqa: B014 - older numpy has no np.dtypes
+        try:
+            torch.serialization.add_safe_globals(
+                [_np.core.multiarray._reconstruct, _np.ndarray, _np.dtype])
+        except Exception:                                           # noqa: BLE001
+            pass
+
+    import model_registry as MR
+    import opt_ladder as OL
+    from libero.libero import benchmark, get_libero_path
+    from libero.libero.envs import OffScreenRenderEnv
+
+    spec = MR.get(args.model)
+    policy, cfg, _ = MR.load_policy(spec, n=None, compile_mode=None)
+    torch.set_float32_matmul_precision("highest")
+
+    prep_note = ""
+    if args.prep != "none":
+        fn = {"bf16_base": OL.prep_bf16_base, "bf16_vision": OL.prep_bf16_vision,
+              "bf16_norms": OL.prep_bf16_norms}.get(args.prep)
+        if args.prep == "bf16_both":
+            prep_note = (OL.prep_bf16_vision(policy) + "; " + OL.prep_bf16_norms(policy))
+        else:
+            prep_note = fn(policy)
+        print("prep:", prep_note, flush=True)
+
+    feats = cfg.input_features
+    bench_dict = benchmark.get_benchmark_dict()
+    suite = bench_dict[args.suite]()
+    n_tasks = min(args.tasks, suite.n_tasks)
+
+    rows, t_policy, t_sim = [], [], []
+    successes = total = 0
+    for ti in range(n_tasks):
+        task = suite.get_task(ti)
+        env = OffScreenRenderEnv(bddl_file_name=str(
+            Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file),
+            camera_heights=256, camera_widths=256)
+        init_states = suite.get_task_init_states(ti)
+        for ep in range(args.episodes):
+            env.seed(args.seed + ep)
+            env.reset()
+            obs = env.set_init_state(init_states[ep % len(init_states)])
+            policy.reset()
+            done = False
+            steps = 0
+            chunk: list[np.ndarray] = []
+            while steps < args.max_steps and not done:
+                if not chunk:
+                    batch = build_obs(obs, feats, "cuda")
+                    batch["task"] = [task.language]
+                    t0 = time.perf_counter()
+                    with torch.no_grad():
+                        act = policy.select_action(batch)
+                    torch.cuda.synchronize()
+                    t_policy.append((time.perf_counter() - t0) * 1e3)
+                    a = act.squeeze(0).float().cpu().numpy()
+                    chunk = [a] if a.ndim == 1 else list(a)
+                t0 = time.perf_counter()
+                obs, _, done, _ = env.step(chunk.pop(0))
+                t_sim.append((time.perf_counter() - t0) * 1e3)
+                steps += 1
+            ok = bool(done)
+            successes += ok
+            total += 1
+            rows.append({"task": ti, "task_name": task.language, "episode": ep,
+                         "success": int(ok), "steps": steps})
+            print(f"  task {ti} ep {ep}: {'SUCCESS' if ok else 'fail':7s} "
+                  f"{steps:3d} steps   running {successes}/{total}", flush=True)
+        env.close()
+
+    sr = successes / total if total else float("nan")
+    med = lambda x: float(np.median(x)) if x else float("nan")
+    summary = {
+        "model": args.model, "prep": args.prep, "prep_note": prep_note,
+        "suite": args.suite, "tasks": n_tasks, "episodes_per_task": args.episodes,
+        "episodes_total": total, "successes": successes, "success_rate": round(sr, 4),
+        "policy_ms_median": round(med(t_policy), 2),
+        "sim_ms_median": round(med(t_sim), 2),
+        "achieved_control_hz": round(1000.0 / (med(t_sim) + med(t_policy) / 50.0), 2)
+        if t_sim else None,
+        "max_steps": args.max_steps, "seed": args.seed,
+        "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
+                            f"few-percent difference in success rate"),
+        "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "command": " ".join(sys.argv),
+    }
+    (out / "summary.json").write_text(json.dumps(summary, indent=1))
+    with (out / "episodes.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"\n  success {successes}/{total} = {100*sr:.1f}%   "
+          f"policy {summary['policy_ms_median']} ms, sim {summary['sim_ms_median']} ms")
+    print(f"  wrote {out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
