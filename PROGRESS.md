@@ -63,22 +63,23 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 12:17:55** · elapsed **17.72 h** of 26 (68 %) · 38.1 GiB free · 1.13 GiB swap
+**Updated 12:37:56** · elapsed **18.05 h** of 26 (69 %) · 21.7 GiB free · 1.13 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c3_groot_s.log` · C3S_START 2026-09-23T12:15:12-07:00
-- `queue_c1_lerobot.log` · rep 22M -> zst 900K
-- `queue_c1_lerobot.log` · csv rows=1825
-- `queue_c1_lerobot.log` · ########## 12:13 ncu pi05_eager_vlm_prefix (cap 40)
+- `queue_c1_lerobot.log` · rep 71M -> zst 2.4M
+- `queue_c1_lerobot.log` · csv rows=1847
+- `queue_c1_lerobot.log` · ########## 12:31 ncu pi05_best_vision (cap 40)
+- `queue_c1_groot.log` · C1_GROOT_START 2026-09-23T11:03:58-07:00
+- `queue_c1_groot.log` · C1_GROOT_START 2026-09-23T12:26:14-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 12:19** (58 configurations)
+**Re-derived from every result CSV on disk at 12:39** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
