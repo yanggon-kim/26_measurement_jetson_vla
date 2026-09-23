@@ -83,7 +83,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 19:59** (19 configurations)
+**Re-derived from every result CSV on disk at 20:15** (20 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -104,6 +104,7 @@ Latest log lines:
 | pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
 | pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
 | pi05 | 10 | paper config (eager+TF32) | 103.61 | 550.51 | 626.90 | 1287.32 | 48.7 % |
+| pi05 | 10 | paper config (eager+TF32) | 239.39 | 2166.69 | 617.87 | 3030.99 | 20.4 % |
 | pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 <!-- SLOW:END -->
