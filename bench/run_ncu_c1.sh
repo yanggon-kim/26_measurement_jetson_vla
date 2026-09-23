@@ -86,7 +86,11 @@ t0=$SECONDS
 # found nothing, and tried to DOWNLOAD a gated repo:
 #   "Cannot access gated repo ... google/paligemma-3b-pt-224 ... You must be authenticated"
 # Point it at the real cache and force offline, so it reads the weights already on disk and
-# never contacts the hub. Deliberately NOT passing HF_TOKEN: protocol §3.5 requires profiled
+# never contacts the hub. TORCHINDUCTOR_CACHE_DIR points at the USER's
+# inductor cache for the same reason: under sudo it would default to
+# /tmp/torchinductor_root and recompile every kernel from scratch inside
+# ncu, where compilation is far slower. Part A/B already compiled these
+# exact callables, so the artefacts are on disk. Deliberately NOT passing HF_TOKEN: protocol §3.5 requires profiled
 # commands to run without token variables, because ncu reports capture the environment.
 # `sudo -n env ...` is refused ("a password is required"): the NOPASSWD rule names
 # specific binaries, and env is not one of them. /bin/sh IS, so the environment is set
@@ -98,8 +102,9 @@ cat > "$RUNNER" <<EOF
 HOME=/home/yanggon
 HF_HOME=/home/yanggon/.cache/huggingface
 HF_HUB_OFFLINE=1
+TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon
 TRANSFORMERS_OFFLINE=1
-export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE
+export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 exec $(which ncu) \
   --profile-from-start off --nvtx --nvtx-include "${NVTX_R}/" \

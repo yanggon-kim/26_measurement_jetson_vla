@@ -49,13 +49,16 @@ RUNNER="$OUT/ncu/${TAG}.sh"
 # binaries, so the environment is set inside a root shell (/bin/sh IS in that list).
 # No HF_TOKEN is passed — protocol §3.5 forbids token variables in a profiled process, and
 # offline mode needs none because the weights are already on disk.
+# TORCHINDUCTOR_CACHE_DIR points at the user's cache so the compiled
+# artefacts from Part A/B are reused instead of rebuilt inside ncu.
 cat > "$RUNNER" <<EOF
 HOME=/home/yanggon
 HF_HOME=/home/yanggon/.cache/huggingface
 HF_HUB_OFFLINE=1
+TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon
 TRANSFORMERS_OFFLINE=1
 TRITON_CACHE_DIR=$TRC
-export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TRITON_CACHE_DIR
+export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR
 . $VENV/activate_orin_venv.sh >/dev/null 2>&1
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 exec $(which ncu) \\
