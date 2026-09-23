@@ -40,3 +40,22 @@ what the input pipeline does.
 
 Order therefore: **N1.6 first** (ready now), N1.5 after, with the build run only when no
 measurement is running.
+
+## One local fix to the N1.6 worktree (2026-09-23), disclosed
+
+`gr00t/model/modules/eagle_backbone.py` computes
+
+    if use_flash_attention:
+        extra_kwargs["attn_implementation"] = "flash_attention_2"
+
+and then, in the `nvidia/Eagle-Block2A-2B-v2` branch, calls
+`AutoModel.from_config(config, trust_remote_code=True)` **without passing
+`extra_kwargs`**. The Eagle remote code then asserts
+
+    AssertionError: Qwen3 must use flash_attention_2 but got None
+
+and N1.6 cannot be loaded at all — every rung failed in 8–9 s. The worktree copy now
+forwards `**extra_kwargs` to `from_config`. This is a load-time bug in the vendored
+checkout, not a change to what is measured: the branch's own asserts two lines above
+require flash attention and bf16, so forwarding the argument gives the configuration that
+code already insists on.

@@ -267,12 +267,29 @@ def prep_bf16_norms(policy):
     base_note = ""
     if _dominant_dtype(policy) != torch.bfloat16:
         base_note = prep_bf16_base(policy) + "; "
-    n = 0
+    # Cast the norm's OWN parameters, with recurse=False, never a submodule inside it.
+    #
+    # pi0.5's input_layernorm is an adaptive RMSNorm that CONTAINS a Linear ('dense',
+    # 1024 -> 3x1024) belonging to the flow-matching conditioning path. mod.to(bfloat16)
+    # swept that Linear up too, and three probe runs then walked the boundary one module
+    # at a time -- input_layernorm.dense, then action_in_proj, then time_mlp_in -- because
+    # each of those receives a tensor created OUTSIDE the model and fp32 by construction
+    # (the noise, the timestep). Chasing them was the wrong move: B3 means "the layernorms
+    # are no longer held in fp32", and an embedded projection is not a layernorm.
+    #
+    # For pi0, whose norms are plain GemmaRMSNorm with a single direct weight and no
+    # submodules, this is byte-identical to the previous mod.to(bfloat16).
+    n, skipped = 0, 0
     for name, mod in policy.model.named_modules():
         if any(k in name for k in ("input_layernorm", "post_attention_layernorm")) or \
                 name.endswith("model.norm"):
-            mod.to(torch.bfloat16)
+            own = list(mod.parameters(recurse=False))
+            if not own:
+                continue
+            for prm in own:
+                prm.data = prm.data.to(torch.bfloat16)
             n += 1
+            skipped += sum(1 for _ in mod.children())
 
     # pi0.5's "layernorm" is not only a norm. bench/pi05_dtype_probe.py, run on the real
     # model, named the failing module exactly:
@@ -300,18 +317,10 @@ def prep_bf16_norms(policy):
     # casts the suffix embeddings to the expert's dtype. time_mlp_in/out are the only
     # modules whose output reaches input_layernorm.dense.
     cond = []
-    if type(policy).__name__ == "PI05Policy":
-        for name in ("time_mlp_in", "time_mlp_out"):
-            mod = getattr(policy.model, name, None)
-            if mod is not None and any(q.dtype == torch.float32
-                                       for q in mod.parameters()):
-                mod.to(torch.bfloat16)
-                cond.append(name)
-    note = base_note + f"{n} layernorm modules -> bf16"
-    if cond:
-        note += (f"; conditioning path outside paligemma_with_expert -> bf16 "
-                 f"({', '.join(cond)}) — required because pi0.5's adaptive RMSNorm "
-                 f"contains a Linear those modules feed")
+    note = base_note + f"{n} layernorm modules -> bf16 (own parameters only)"
+    if skipped:
+        note += (f"; {skipped} submodule(s) inside those norms left in fp32 — pi0.5's "
+                 f"adaptive RMSNorm embeds a conditioning Linear that is not a norm")
     return note
 
 
