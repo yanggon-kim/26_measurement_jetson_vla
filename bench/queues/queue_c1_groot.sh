@@ -14,8 +14,12 @@ for VER in n17 n16 n15; do
   for MODE in eager best; do
     for REGION in vision vlm_prefix ae_total; do
       OUT=results/20260923_E4g_c1_groot_${VER}_${MODE}
-      if [ -f "$OUT/ncu/groot_${VER}_${MODE}_${REGION}.ncu-rep.zst" ]; then
-        echo "########## $VER $MODE $REGION already done"; continue
+      # "done" means USABLE, not merely present. An orphaned ncu from a killed
+      # queue once finished after its directory was moved aside and wrote a CSV
+      # with 0 stall metrics and 130 rows; a [ -f ] check called that done.
+      if $HOME/venvs/pi0/bin/python bench/c1_capture_ok.py \
+           "$OUT/ncu/groot_${VER}_${MODE}_${REGION}_details.csv" >/dev/null 2>&1; then
+        echo "########## $VER $MODE $REGION already done (verified)"; continue
       fi
       bash bench/run_ncu_c1_groot.sh "$VER" "$MODE" "$REGION" "$OUT"
     done

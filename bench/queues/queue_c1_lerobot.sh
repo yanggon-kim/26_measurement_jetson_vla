@@ -14,8 +14,12 @@ for MODEL in pi0 pi05 smolvla; do
   for MODE in eager best; do
     for REGION in vision vlm_prefix ae_step_0; do
       OUT=results/20260923_E4g_c1_${MODEL}_${MODE}
-      if [ -f "$OUT/ncu/${MODEL}_${MODE}_${REGION}.ncu-rep.zst" ]; then
-        echo "########## $MODEL $MODE $REGION already done"; continue
+      # "done" means USABLE, not merely present. An orphaned ncu from a killed
+      # queue once finished after its directory was moved aside and wrote a CSV
+      # with 0 stall metrics and 130 rows; a [ -f ] check called that done.
+      if $HOME/venvs/pi0/bin/python bench/c1_capture_ok.py \
+           "$OUT/ncu/${MODEL}_${MODE}_${REGION}_details.csv" >/dev/null 2>&1; then
+        echo "########## $MODEL $MODE $REGION already done (verified)"; continue
       fi
       bash bench/run_ncu_c1.sh "$MODEL" "$MODE" "$REGION" "$OUT"
     done
