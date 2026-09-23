@@ -330,7 +330,19 @@ def main() -> int:
         vis_m = _vision_module(model)
         if vis_m is not None:
             nvtx_wrap(vis_m, "forward", "vision")
-        nvtx_wrap(model.backbone, "forward", "vlm_prefix")
+        # vlm_prefix goes on the LANGUAGE MODEL, not on backbone.forward.
+        #
+        # backbone.forward CONTAINS vision, and ncu's -c 40 takes the FIRST 40 kernels of
+        # a range -- which inside the backbone are the vision kernels. The first captures
+        # taken this way had byte-identical leading kernels to the vision captures: they
+        # were measuring vision a second time under the prefix's name. The timing side
+        # derives vlm_prefix as backbone minus vision, and this is the ncu equivalent of
+        # that subtraction.
+        lm = _language_module(model)
+        if lm is None:
+            raise SystemExit("language model not found; refusing to put the vlm_prefix "
+                             "NVTX range on backbone.forward, which contains vision")
+        nvtx_wrap(lm, "forward", "vlm_prefix")
         nvtx_wrap(model.action_head, "get_action", "ae_total")
 
         for _ in range(max(2, args.warmup // 4)):
