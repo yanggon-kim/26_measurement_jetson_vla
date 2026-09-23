@@ -63,29 +63,29 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 04:37:28** · elapsed **10.04 h** of 26 (39 %) · 32.8 GiB free · 0.67 GiB swap
+**Updated 04:57:30** · elapsed **10.37 h** of 26 (40 %) · 37.3 GiB free · 1.12 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 187240 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.0 GiB |
-| 187252 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.0 GiB |
-| 187253 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.0 GiB |
-| 187257 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.4 GiB |
-| 187297 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --single-run` | 1 min | 11.5 GiB |
+| 187623 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 16 min | 0.0 GiB |
+| 187626 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 16 min | 0.0 GiB |
+| 188299 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 5 min | 0.4 GiB |
+| 188339 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 5 min | 20.9 GiB |
 
 Latest log lines:
 
-- `ncu_pi0_reduce-overhead.log` · ########## 01:01 bash bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_reduce-overhead reduce-overhead 10
-- `ncu_pi0_reduce-overhead.log` · ########## ae_layer[0]  (mode=reduce-overhead, tag=ae_layer0, nvtx-include=ae_layer_0/)
-- `ncu_parse_pi0.log` · 301 kernels, kernel time 63.3706 ms, stall sums median 19.698
-- `ncu_parse_pi0.log` · wrote results/20260922_E4g_pi0_ncu_eager/ncu/kernels.csv, region_utilisation.csv, parsed.json, columns.txt
-- `ncu_parse_pi0.log` · EXIT=0 1s
+- `fix_pi05.log` · weights: {"verdict": "not verified: assert_real_weights diffs against pi0's own safetensors and is pi0-specifi
+- `fix_pi05.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
+- `fix_pi05.log` · _C._set_float32_matmul_precision(precision)
+- `fix_pi0_N4.log` · rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
+- `fix_pi0_N4.log` · ValueError: 'ae_compile' is not in list
+- `fix_pi0_N4.log` · EXIT=1 306s
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 04:38** (36 configurations)
+**Re-derived from every result CSV on disk at 04:58** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -125,8 +125,6 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: pushed at 04:38)*
 <!-- SLOW:END -->
 
 ## Live status
