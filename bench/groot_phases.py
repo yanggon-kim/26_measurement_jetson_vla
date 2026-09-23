@@ -74,6 +74,10 @@ def main() -> int:
                     help="'old' is N1.5's Gr00tPolicy signature and flat obs keys")
     ap.add_argument("--data-config", default="oxe_droid",
                     help="N1.5 only: key into gr00t.experiment.data_config.DATA_CONFIG_MAP")
+    ap.add_argument("--ncu-region", default=None,
+                    help="C1: install NVTX ranges and profile ONE inference, then exit")
+    ap.add_argument("--measure-s", action="store_true",
+                    help="C3: read the action head's token count off a real inference")
     ap.add_argument("--compat-shims", action="store_true",
                     help="re-export symbols the older GR00T remote code expects")
     ap.add_argument("--gr00t-root", default=None,
@@ -271,6 +275,74 @@ def main() -> int:
     print(f"data_processing (CPU): {statistics.median(dp):.2f} ms", flush=True)
 
     inputs = prep()
+
+    if args.ncu_region:
+        # C1 needs ncu to see ONE instance of one phase. Same shape as
+        # bench/ncu_target.py does for the LeRobot models: NVTX ranges on the three wrap
+        # points, a short warm-up, then exactly one inference between
+        # cudaProfilerStart/Stop, so --profile-from-start off + --nvtx-include isolates
+        # the requested phase.
+        #
+        # Range names are bracket-free on purpose: ncu's --nvtx-include expression
+        # language gives [ and ] special meaning, and two 250 s runs profiled ZERO kernels
+        # before that was understood.
+        import torch.cuda.nvtx as nvtx
+
+        def nvtx_wrap(obj, attr, label):
+            orig = getattr(obj, attr)
+
+            def w(*a, **k):
+                nvtx.range_push(label)
+                try:
+                    return orig(*a, **k)
+                finally:
+                    nvtx.range_pop()
+            setattr(obj, attr, w)
+
+        vis_m = _vision_module(model)
+        if vis_m is not None:
+            nvtx_wrap(vis_m, "forward", "vision")
+        nvtx_wrap(model.backbone, "forward", "vlm_prefix")
+        nvtx_wrap(model.action_head, "get_action", "ae_total")
+
+        for _ in range(max(2, args.warmup // 4)):
+            step()
+        torch.cuda.synchronize()
+        torch.cuda.cudart().cudaProfilerStart()
+        step()
+        torch.cuda.synchronize()
+        torch.cuda.cudart().cudaProfilerStop()
+        print(f"profiled one inference with NVTX range {args.ncu_region!r}", flush=True)
+        return 0
+
+    if args.measure_s:
+        # C3 needs S, the number of tokens the action head's GEMMs actually run on. The
+        # config's action_horizon (N1.7 40, N1.6 50, N1.5 16) is a strong prior, not the
+        # answer: pi0's chunk_size is 50 and its measured S is 51, because a state token is
+        # prepended. So read it off the tensor the first DiT block is actually handed.
+        blocks = model.action_head.model.transformer_blocks
+        seen = {}
+
+        def grab(mod, inp):
+            if "S" not in seen and inp and torch.is_tensor(inp[0]):
+                seen["shape"] = tuple(inp[0].shape)
+                seen["S"] = int(inp[0].shape[-2]) if inp[0].dim() >= 2 else None
+
+        h = blocks[0].register_forward_pre_hook(lambda m, i: grab(m, i))
+        step()
+        h.remove()
+        cfg_ah = getattr(model.action_head.config, "action_horizon", None)
+        rec = {"model": f"groot_{args.version}", "embodiment_tag": args.embodiment_tag,
+               "suffix_tokens_S": seen.get("S"),
+               "block0_input_shape": list(seen.get("shape", ())),
+               "config_action_horizon": cfg_ah,
+               "n_transformer_blocks": len(blocks),
+               "source": "measured: forward pre-hook on action_head.model."
+                         "transformer_blocks[0] during one real inference"}
+        (out / "suffix_tokens.json").parent.mkdir(parents=True, exist_ok=True)
+        (out / "suffix_tokens.json").write_text(json.dumps(rec, indent=1))
+        print(json.dumps(rec, indent=1), flush=True)
+        return 0
 
     # A rung that fails must leave a ROW saying so. GR00T's vlm_compile and vlm_graphs
     # died with no row at all, and the watchdog audit then reported the model as

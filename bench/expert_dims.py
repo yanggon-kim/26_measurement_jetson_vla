@@ -38,18 +38,49 @@ MODELS = {
     "smolvla": {"repo": "lerobot/smolvla_base", "rev": None,
                 "expert_re": r"lm_expert\.layers\.(\d+)\.(\S+)\.weight",
                 "S": None, "S_src": "to be measured"},
+    # GR00T's action head is a DiT, not a Gemma-style expert, and the block COUNT is the
+    # architectural difference this study needs: N1.7 and N1.6 carry 32 transformer_blocks
+    # and N1.5 carries 16. That is the concrete reason N1.5's action head is 38.6 % of its
+    # eager frame while N1.6's is 61.5 % at the same N=4.
+    "groot_n17": {"repo": "nvidia/GR00T-N1.7-3B", "rev": None,
+                  "expert_re": r"action_head\.model\.transformer_blocks\.(\d+)\.(\S+)\.weight",
+                  "S": None, "S_src": "action horizon; not yet measured on device"},
+    "groot_n16": {"repo": "nvidia/GR00T-N1.6-3B", "rev": None,
+                  "expert_re": r"action_head\.model\.transformer_blocks\.(\d+)\.(\S+)\.weight",
+                  "S": None, "S_src": "action horizon; not yet measured on device"},
+    "groot_n15": {"repo": "nvidia/GR00T-N1.5-3B", "rev": None,
+                  "expert_re": r"action_head\.model\.transformer_blocks\.(\d+)\.(\S+)\.weight",
+                  "S": None, "S_src": "action horizon; not yet measured on device"},
 }
 
 
-def header(repo: str, rev: str | None) -> dict:
-    from huggingface_hub import hf_hub_download
-    kw = {"revision": rev} if rev else {}
-    p = Path(hf_hub_download(repo, "model.safetensors", **kw))
-    with p.open("rb") as f:
+def _one_header(path: Path) -> dict:
+    with path.open("rb") as f:
         n = struct.unpack("<Q", f.read(8))[0]
         h = json.loads(f.read(n))
     h.pop("__metadata__", None)
     return h
+
+
+def header(repo: str, rev: str | None) -> dict:
+    """Tensor shapes, from a single-file OR a sharded checkpoint.
+
+    The LeRobot models ship one model.safetensors; every GR00T checkpoint is sharded
+    (model-0000k-of-0000n.safetensors plus an index). Reading only the first shard would
+    silently miss most of the action head, so the index is followed and the shard headers
+    merged. Headers only -- no weights are loaded.
+    """
+    from huggingface_hub import hf_hub_download
+    kw = {"revision": rev} if rev else {}
+    try:
+        return _one_header(Path(hf_hub_download(repo, "model.safetensors", **kw)))
+    except Exception:                                               # noqa: BLE001
+        idx = Path(hf_hub_download(repo, "model.safetensors.index.json", **kw))
+        shards = sorted(set(json.loads(idx.read_text())["weight_map"].values()))
+        out = {}
+        for sh in shards:
+            out.update(_one_header(Path(hf_hub_download(repo, sh, **kw))))
+        return out
 
 
 def main() -> int:
