@@ -453,17 +453,34 @@ premise is a property of the baseline, not of deployed inference.
 
 **The question.** Is there a model for which the premise holds under an *identical*
 treatment — identically optimised, or identically un-optimised? The controlling ratio is
-`N × cost_per_step / (vision + prefix + N × cost_per_step)`, so the prediction is that
-dominance tracks the denoising-step count far more than architecture: Diffusion Policy
-(N = 100, no VLM) ≫ π0 / π0.5 / SmolVLA (N = 10) ≫ GR00T (N = 4) ≫ ACT (no diffusion).
-If that is what we find, the premise is a statement about iteration count rather than about
-VLAs, and the study should either target high-N diffusion policies or target the VLM prefix.
+`N × cost_per_step / (vision + prefix + N × cost_per_step)`, so the prediction, recorded in
+advance so it can be wrong, is that dominance tracks the denoising-step count far more than
+architecture.
 
-**Method.** The identical two-part iteration π0 received, per model: the paper-configuration
-run (`bench/paper_repro.py`), per-phase SM utilisation (`bench/phase_utilisation.py`),
-analytic operational intensity against our measured ridge of 180.57 FLOP/B, then the same
-one-factor-at-a-time ladder (`bench/opt_ladder.py`). One row per model: action-head share
-eager, action-head share optimised, and the per-factor speedup per phase.
+**Model set, fixed by the owner 2026-09-22.** Diffusion Policy, ACT and OpenVLA are out.
+Six models, all confirmed obtainable:
+
+| model | source | checkpoint | N | reachable |
+|---|---|---|---|---|
+| π0 | lerobot `f0d2b37` | `lerobot/pi0_libero_finetuned_v044` | 10 | **measured** |
+| π0.5 | lerobot `pi05` port | `lerobot/pi05_libero_base` | 10 | yes |
+| SmolVLA | lerobot | `lerobot/smolvla_base` | 10 (`num_steps`) | yes |
+| GR00T **N1.5** | Isaac-GR00T branch `n1d5` @ `4af2b62` | `nvidia/GR00T-N1.5-3B` | — | HTTP 200 |
+| GR00T **N1.6** | Isaac-GR00T branch `n1d6` @ `9b37aa1` | `nvidia/GR00T-N1.6-3B` | — | HTTP 200 |
+| GR00T **N1.7** | pinned `376ba890`, **installed** | `nvidia/GR00T-N1.7-3B` | 4 | verified |
+
+**The GR00T family is the controlled experiment here, and that is why it is worth all three
+versions.** N1.7 replaced N1.6's **Eagle** VLM backbone with **Cosmos-Reason2-2B**
+(Qwen3-VL) and "expands the state/action dimensions and increases the model action horizon"
+(`README.md:99,105`). So across N1.5 → N1.6 → N1.7 the action head stays in the same DiT
+family while the prefix changes substantially. If action-head share moves with the backbone
+swap and not with the expert, that settles whether dominance is architectural or is simply
+a ratio between two independently-sized halves.
+
+Practical cost: each GR00T version is a **separate branch with a separate model package**
+(`gr00t_n1d6` → `gr00t_n1d7`), so each needs its own checkout and environment. N1.7's is
+built and verified (`env/setup_groot.sh`); N1.5 and N1.6 are not, and their dependency sets
+may differ — N1.7 pins torch 2.10.0 from the jetson jp6-cu126 index.
 
 **Blocked on T006's model registry.** `bench/` is π0-specific in six ways, and the three
 wrap points the ladder needs (`embed_image`, `pg.forward`, `denoise_step`) differ per model
@@ -473,10 +490,9 @@ saved from the authors' leaderboard in `scratch/T004/vla_leaderboard_20260922.js
 ACT 23.93, GR00T 256.22, SmolVLA 777.38, π0 920.58, OpenVLA 951.56, π0.5 2994.02,
 Diffusion Policy 4379.08 ms.
 
-**One thing to confirm:** the owner named GR00T **N1.5 / N1.6**. Isaac-GR00T is installed
-and verified at **N1.7** (`376ba890`, `env/setup_groot.sh`). Whether N1.5/N1.6 checkpoints
-and configs are obtainable at that commit is unchecked; if they are not, that is reported
-rather than substituted.
+**Comparison targets** for AGX Orin from the authors' leaderboard, saved in
+`scratch/T004/vla_leaderboard_20260922.json`: GR00T 256.22, SmolVLA 777.38, π0 920.58,
+π0.5 2994.02 ms. (Their figure is for one GR00T version and does not say which.)
 
 ## Questions for the research side
 
