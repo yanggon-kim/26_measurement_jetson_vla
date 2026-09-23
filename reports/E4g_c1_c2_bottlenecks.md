@@ -8,6 +8,7 @@ Per-kernel numbers are averaged **weighted by kernel duration**; an unweighted m
 
 | model | mode | phase | SM % | Mem % | Occ % | LongSB (cyc/issue, share) | top stall | verdict |
 |---|---|---|---:|---:|---:|---:|---|---|
+| groot_n17 | eager | `ae_total` | 46.0 | 31.2 | 77.0 | 7.17 (48 %) | long_scoreboard (48 %) | latency bound (long_scoreboard) |
 | pi0 | eager | `vision` | 65.3 | 58.3 | 35.6 | 3.38 (43 %) | long_scoreboard (43 %) | mixed |
 | pi0 | best | `vision` | 43.6 | 59.1 | 22.7 | 1.93 (29 %) | long_scoreboard (29 %) | latency bound (long_scoreboard) |
 | pi0 | eager | `vlm_prefix` | 40.4 | 48.6 | 70.7 | 34.44 (74 %) | long_scoreboard (74 %) | latency bound (long_scoreboard) |
@@ -62,5 +63,5 @@ The skinniest GEMM in each expert — the long-shallow shape the owner predicted
 
 **The analytic verdict and the measured one disagree, and that is the point.** I ≈ S puts every expert GEMM far below the measured ridge, so analytically they are all memory-bound by construction. C1's counters say π0's expert is *issue*-limited when eager (`imc_miss` 35 %, Long Scoreboard third at 16 %, memory throughput 21.6 %) and only becomes memory-latency-bound once compiled (56.5 %, Long Scoreboard dominant). Arithmetic intensity bounds what a phase *could* achieve; it does not say what limits it now.
 
-Captures summarised: **15**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
+Captures summarised: **16**. A phase missing from a table has no usable capture yet — `bench/c1_capture_ok.py` rejects any CSV without all 14 stall metrics, so a partial capture is never silently averaged in.
 

@@ -56,6 +56,16 @@ def main() -> int:
 
     gate = P.gate()
     cm = None if args.mode == "eager" else args.mode
+    if cm:
+        # SmolVLA's `best` captures silently measured EAGER: dynamo hit
+        #   torch._dynamo hit config.recompile_limit (8)  function: 'sample_actions'
+        # and fell back, so the compiled and eager captures had byte-identical kernels and
+        # counters. A capture that quietly measures the wrong configuration is worse than
+        # one that fails, so the limit is raised and the outcome is recorded below.
+        import torch._dynamo as _dyn
+        for attr in ("recompile_limit", "cache_size_limit"):
+            if hasattr(_dyn.config, attr):
+                setattr(_dyn.config, attr, 64)
     spec = MR.get(args.model)
     policy, _, _ = MR.load_policy(spec, n=args.num_steps, compile_mode=cm)
     # assert_real_weights diffs sampled tensors against PI0's OWN safetensors, so it is
@@ -114,6 +124,12 @@ def main() -> int:
     print(json.dumps({
         "region_requested": args.region, "mode": args.mode, "num_steps": args.num_steps,
         "weights": weights,
+        # Positive evidence that compilation actually happened, so a fallback to eager
+        # cannot pass as a "best" capture again.
+        "dynamo": (lambda c: {"frames_compiled": int(sum(c.get("frames", {}).values())),
+                              "graph_breaks": int(sum(c.get("graph_break", {}).values())),
+                              "compiled": bool(c.get("frames"))})(
+            __import__("torch")._dynamo.utils.counters) if cm else {"compiled": False},
         "warmup": args.warmup, "instrumented": rec is not None,
         "gpu_cur_freq_hz": gate["gpu_cur_freq_hz"], "power_mode": gate["power_mode"],
         "sm_count": gate["sm_count"],
