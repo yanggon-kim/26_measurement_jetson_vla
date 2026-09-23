@@ -107,7 +107,12 @@ REGISTRY: dict[str, ModelSpec] = {
     "smolvla": ModelSpec(
         name="smolvla",
         checkpoint="lerobot/smolvla_base", revision=None,
-        policy_module="lerobot.policies.smolvla", policy_class="SmolVLAPolicy",
+        # SmolVLA's package __init__ re-exports nothing, unlike pi0's and pi0.5's, so the
+        # class has to be imported from the modeling module directly. Checked:
+        #   lerobot.policies.smolvla.SmolVLAPolicy            -> AttributeError
+        #   lerobot.policies.smolvla.modeling_smolvla.SmolVLAPolicy -> ok
+        policy_module="lerobot.policies.smolvla.modeling_smolvla",
+        policy_class="SmolVLAPolicy",
         n_field="num_steps", n_default=10,
         container="vlm_with_expert", per_layer_ok=False,
         notes="16 expert layers, 8 self-attention and 8 cross-attention, decided per index "

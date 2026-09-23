@@ -78,8 +78,17 @@ from common import (REPO, collect_raw, compress_and_record, sh_out,  # noqa: E40
 
 
 def prep_bf16_vision(policy):
-    """B2 — vision tower + projector to bf16, and stop embed_image casting up to fp32."""
+    """B2 — vision tower + projector to bf16, and stop embed_image casting up to fp32.
+
+    pi0-specific. It replaces an embed_image whose body is pi0's (modeling_pi0.py:442-450).
+    Applied to pi0.5 it left the tower bf16 while something upstream still fed fp32:
+    "expected mat1 and mat2 to have the same dtype, but got: float != c10::BFloat16".
+    Rather than guess at another model's cast sites, refuse and say so.
+    """
     import types
+    if type(policy).__name__ != "PI0Policy":
+        raise SystemExit(f"prep_bf16_vision is pi0-specific; {type(policy).__name__} needs "
+                         f"its own cast sites identified first")
     pg = policy.model.paligemma_with_expert
     pg.paligemma.model.vision_tower.to(torch.bfloat16)
     mmp = getattr(pg.paligemma.model, "multi_modal_projector", None)
@@ -103,6 +112,9 @@ def prep_bf16_vision(policy):
 
 def prep_bf16_norms(policy):
     """B3 — every layernorm to bf16. Reaches vlm_prefix and the expert, not just vision."""
+    if type(policy).__name__ != "PI0Policy":
+        raise SystemExit(f"prep_bf16_norms is pi0-specific; {type(policy).__name__} needs "
+                         f"its own norm list identified first")
     n = 0
     for name, mod in policy.model.named_modules():
         if any(k in name for k in ("input_layernorm", "post_attention_layernorm")) or \
