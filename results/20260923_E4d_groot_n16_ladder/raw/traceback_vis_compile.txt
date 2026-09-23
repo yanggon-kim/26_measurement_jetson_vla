@@ -1,0 +1,80 @@
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/groot_phases.py", line 296, in main
+    step()
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/groot_phases.py", line 292, in step
+    return model.get_action(inputs)
+  File "/home/yanggon/00_VLA/Isaac-GR00T-n1d6/gr00t/model/gr00t_n1d6/gr00t_n1d6.py", line 523, in get_action
+    backbone_outputs = self.backbone(backbone_inputs)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/groot_phases.py", line 164, in wrapper
+    r = orig(*a, **k)
+  File "/home/yanggon/00_VLA/Isaac-GR00T-n1d6/gr00t/model/modules/eagle_backbone.py", line 116, in forward
+    outputs = self.model(**vl_input, output_hidden_states=True)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/yanggon/.cache/huggingface/modules/transformers_modules/Eagle-Block2A-2B-v2/modeling_eagle3_vl.py", line 238, in forward
+    vit_embeds = self.extract_feature(pixel_values, image_flags)
+  File "/home/yanggon/.cache/huggingface/modules/transformers_modules/Eagle-Block2A-2B-v2/modeling_eagle3_vl.py", line 354, in extract_feature
+    vision_model_output = self.vision_model(
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/groot_phases.py", line 164, in wrapper
+    r = orig(*a, **k)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 967, in compile_wrapper
+    raise e.remove_dynamo_frames() from None  # see TORCHDYNAMO_VERBOSE=1
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1019, in _compile_fx_inner
+    raise InductorError(e, currentframe()).with_traceback(
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1003, in _compile_fx_inner
+    mb_compiled_graph = fx_codegen_and_compile(
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1766, in fx_codegen_and_compile
+    return scheme.codegen_and_compile(gm, example_inputs, inputs_to_check, graph_kwargs)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1537, in codegen_and_compile
+    compiled_module = graph.compile_to_module()
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/graph.py", line 2416, in compile_to_module
+    return self._compile_to_module()
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/graph.py", line 2422, in _compile_to_module
+    self.codegen_with_cpp_wrapper() if self.cpp_wrapper else self.codegen()
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/graph.py", line 2358, in codegen
+    self.scheduler.codegen()
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/scheduler.py", line 6019, in codegen
+    self._codegen_partitions()
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/scheduler.py", line 6161, in _codegen_partitions
+    self._codegen(partition)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/scheduler.py", line 6266, in _codegen
+    self.get_backend(device).codegen_node(node)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/codegen/cpp.py", line 5296, in codegen_node
+    cpp_kernel_proxy.codegen_nodes(nodes)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/codegen/cpp.py", line 4513, in codegen_nodes
+    self.codegen_functions(fn_list, var_sizes_list)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/codegen/cpp.py", line 4336, in codegen_functions
+    self.loop_nest = LoopNest.build(scalar_kernel)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/codegen/cpp.py", line 5712, in build
+    loop = LoopLevel(var, size)
+  File "<string>", line 13, in __init__
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/codegen/cpp.py", line 5633, in __post_init__
+    self.simd_nelements: int = picked_vec_isa.nelements() if picked_vec_isa else 0
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/cpu_vec_isa.py", line 144, in __bool__
+    return self.__bool__impl(config.cpp.vec_isa_ok)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/cpu_vec_isa.py", line 154, in __bool__impl
+    return self.check_build(VecISA._avx_code)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/cpu_vec_isa.py", line 112, in check_build
+    buid_options = CppTorchOptions(vec_isa=self, warning_all=False)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/cpp_builder.py", line 1593, in __init__
+    ) = get_cpp_torch_options(
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/cpp_builder.py", line 1492, in get_cpp_torch_options
+    ) = _get_torch_related_args(include_pytorch=include_pytorch, aot_mode=aot_mode)
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/_inductor/cpp_builder.py", line 1151, in _get_torch_related_args
+    from torch.utils.cpp_extension import include_paths, TORCH_LIB_PATH
+  File "/home/yanggon/venvs/groot16/lib/python3.10/site-packages/torch/utils/cpp_extension.py", line 10, in <module>
+    import setuptools
+torch._inductor.exc.InductorError: ModuleNotFoundError: No module named 'setuptools'
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+
