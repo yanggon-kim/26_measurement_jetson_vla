@@ -12,6 +12,12 @@
 #   WarpStateStats         stall reasons         -> Long Scoreboard = memory latency
 #   Occupancy              achieved vs theoretical
 #
+# The stall BREAKDOWN is requested explicitly. The four sections alone do not
+# carry it: ncu's CPIStall rule reported only "The optional metric
+# smsp__pcsamp_sample_count could not be found", so 'Long Scoreboard' -- the one
+# stall reason this study actually needs, because it is the signature of memory
+# latency -- would have been absent from all 36 captures. Caught at capture 2.
+#
 # Protocol §3.2 is still enforced: never unfiltered, one NVTX range per run, with -c.
 #
 # usage: run_ncu_c1.sh <model> <mode> <region> <outdir>
@@ -70,6 +76,7 @@ exec $(which ncu) \
   -c $CAP \
   --section SpeedOfLight --section MemoryWorkloadAnalysis \
   --section WarpStateStats --section Occupancy \
+  --metrics smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio \
   --export "$REP" --force-overwrite \
   $PY bench/ncu_target.py --model $MODEL --mode $TMODE --warmup ${NCU_WARMUP:-8} \
       --num-steps $N --region "$REGION"

@@ -11,6 +11,10 @@
 # has no per-step wrap point, so the range covers the whole loop and -c caps it at the
 # first N kernels. Stated here because the LeRobot side profiles one step, and the two
 # are therefore not the same slice of work.
+#
+# The stall breakdown is requested explicitly for the same reason as in
+# run_ncu_c1.sh: the four sections alone do not carry it, and 'Long
+# Scoreboard' is the stall reason this study needs.
 set -u
 VER="${1:?version}"; MODE="${2:?mode}"; REGION="${3:?region}"; OUT="${4:?outdir}"
 CAP="${NCU_COUNT:-40}"
@@ -59,6 +63,7 @@ exec $(which ncu) \\
   -c $CAP \\
   --section SpeedOfLight --section MemoryWorkloadAnalysis \\
   --section WarpStateStats --section Occupancy \\
+  --metrics smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio \\
   --export "$REP" --force-overwrite \\
   $VENV/bin/python bench/groot_phases.py \\
     --outdir $OUT --checkpoint $CKPT --version $VER --gr00t-root $ROOT \\
