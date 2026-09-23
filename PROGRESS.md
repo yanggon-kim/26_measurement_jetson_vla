@@ -60,6 +60,51 @@ sequencing, not a reduction in scope.
 
 ---
 
+## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
+
+<!-- FAST:BEGIN -->
+**Updated 19:39:16** · elapsed **1.07 h** of 26 (4 %) · 32.2 GiB free · 0.67 GiB swap
+
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 127832 | `bench/opt_ladder.py --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 --warmup 20 -` | 14 min | 0.0 GiB |
+| 127843 | `bench/opt_ladder.py --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 --warmup 20 -` | 14 min | 0.4 GiB |
+| 128579 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --outdir results/20260922_E4c_pi0_opt_ladder --single-rung bf16_both ` | 4 min | 18.9 GiB |
+
+Latest log lines:
+
+- `partB.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
+- `partB.log` · === N=10  bf16_both: B2+B3 with everything compiled
+- `partB.log` · memory before: 50.7 GiB available, 0.67 GiB swap in use
+<!-- FAST:END -->
+
+## Results — re-derived from every result CSV every 20 min (`--mode slow`)
+
+<!-- SLOW:BEGIN -->
+**Re-derived from every result CSV on disk at 19:39** (18 configurations)
+
+| model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
+|---|---:|---|---:|---:|---:|---:|---:|
+| pi0 | 4 | eager_fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
+| pi0 | 4 | eager_tf32 | 104.18 | 234.06 | 230.75 | 575.28 | 40.1 % |
+| pi0 | 4 | ae_compile | 103.26 | 234.25 | 99.94 | 444.35 | 22.5 % |
+| pi0 | 4 | ae_graphs | 103.70 | 234.49 | 71.37 | 416.85 | 17.1 % |
+| pi0 | 4 | vis_compile | 101.55 | 234.54 | 70.58 | 413.63 | 17.1 % |
+| pi0 | 4 | vis_graphs | 100.20 | 234.60 | 71.43 | 413.74 | 17.3 % |
+| pi0 | 4 | vlm_compile | 99.92 | 192.78 | 69.72 | 369.52 | 18.9 % |
+| pi0 | 4 | whole_graphs | — | — | — | 366.12 | — |
+| pi0 | 10 | eager_fp32 | 241.01 | 234.57 | 586.91 | 1069.04 | 54.9 % |
+| pi0 | 10 | eager_tf32 | 102.71 | 234.04 | 573.48 | 916.45 | 62.6 % |
+| pi0 | 10 | ae_compile | 103.58 | 234.35 | 241.28 | 585.80 | 41.2 % |
+| pi0 | 10 | ae_graphs | 103.36 | 234.74 | 172.18 | 516.42 | 33.3 % |
+| pi0 | 10 | vis_compile | 101.88 | 234.55 | 173.17 | 516.44 | 33.5 % |
+| pi0 | 10 | vis_graphs | 100.04 | 234.95 | 174.45 | 515.99 | 33.8 % |
+| pi0 | 10 | vlm_compile | 99.18 | 192.76 | 168.84 | 466.99 | 36.2 % |
+| pi0 | 10 | whole_graphs | — | — | — | 463.86 | — |
+| pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
+| pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
+<!-- SLOW:END -->
+
 ## Live status
 
 | # | item | state | evidence |
