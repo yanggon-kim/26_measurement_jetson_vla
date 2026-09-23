@@ -69,6 +69,8 @@ def main() -> int:
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--checkpoint", default="nvidia/GR00T-N1.7-3B")
     ap.add_argument("--version", default="n17")
+    ap.add_argument("--embodiment-tag", default="oxe_droid_relative_eef_relative_joint",
+                    help="must be one the checkpoint ships; it lists them on a bad value")
     ap.add_argument("--steps", type=int, default=None, help="default: the config's own")
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=100)
@@ -85,10 +87,18 @@ def main() -> int:
         raise SystemExit(f"clocks not locked: {g}; run sudo jetson_clocks first")
     torch.set_float32_matmul_precision("high" if args.tf32 == "on" else "highest")
 
-    from gr00t.model.gr00t_n1d7.gr00t_n1d7 import Gr00tN1d7          # noqa: E402
-    print(f"loading {args.checkpoint} ...", flush=True)
-    model = Gr00tN1d7.from_pretrained(args.checkpoint, torch_dtype=torch.bfloat16)
-    model = model.to("cuda").eval()
+    from gr00t.policy.gr00t_policy import Gr00tPolicy                # noqa: E402
+    from huggingface_hub import snapshot_download                     # noqa: E402
+
+    ckpt_dir = (args.checkpoint if Path(args.checkpoint).is_dir()
+                else snapshot_download(args.checkpoint))
+    print(f"loading {args.checkpoint} tag={args.embodiment_tag} ...", flush=True)
+    # Gr00tPolicy is the supported inference path: it loads the model in bf16 on the
+    # device AND the checkpoint's own processor, so the input pipeline measured here is
+    # the shipped one rather than a reimplementation.
+    policy = Gr00tPolicy(embodiment_tag=args.embodiment_tag, model_path=ckpt_dir,
+                         device="cuda")
+    model = policy.model
     n = args.steps or int(getattr(model.action_head.config, "num_inference_timesteps", 4))
     model.action_head.num_inference_timesteps = n
     print(f"N (num_inference_timesteps) = {n}", flush=True)
@@ -119,7 +129,21 @@ def main() -> int:
     undo = [timed(model, "backbone", "vlm_prefix"),
             timed(model.action_head, "get_action", "ae_total")]
 
-    inputs = build_inputs(model, n)
+    obs, shapes = build_observation(policy, ckpt_dir)
+    print(f"observation shapes: {json.dumps(shapes, default=str)}", flush=True)
+
+    # The CPU input pipeline is a real phase of GR00T inference and NVIDIA's own
+    # benchmark_inference.py reports it as one, so it is timed here rather than hidden
+    # by building the inputs once. The GPU phase split below then times the model alone.
+    build_inputs(policy, obs)
+    dp = []
+    for _ in range(min(args.timed, 20)):
+        t0 = time.perf_counter()
+        build_inputs(policy, obs)
+        dp.append((time.perf_counter() - t0) * 1e3)
+    print(f"data_processing (CPU): {statistics.median(dp):.2f} ms", flush=True)
+
+    inputs = build_inputs(policy, obs)
     for _ in range(args.warmup):
         with torch.no_grad():
             model.get_action(inputs)
@@ -145,6 +169,10 @@ def main() -> int:
         s = summarize(per[k])
         rows.append({"region": k, **{kk: round(vv, 4) for kk, vv in s.items()},
                      "share_of_e2e": round(s["median_ms"] / st["median_ms"], 4)})
+    dps = summarize(dp)
+    rows.append({"region": "data_processing_cpu",
+                 **{kk: round(vv, 4) for kk, vv in dps.items()},
+                 "share_of_e2e": round(dps["median_ms"] / st["median_ms"], 4)})
     rows.append({"region": "e2e", **{kk: round(vv, 4) for kk, vv in st.items()},
                  "share_of_e2e": 1.0})
     with (out / "phase_split.csv").open("w", newline="") as f:
@@ -164,6 +192,16 @@ def main() -> int:
         "n_warmup": args.warmup, "n_timed": args.timed, "gate": g,
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),
+        "embodiment_tag": args.embodiment_tag,
+        "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()}
+                               for k, v in shapes.items()},
+        "fixture_note": "keys and shapes are read from the checkpoint's own "
+                        "processor_config.json and statistics.json; pixel and state "
+                        "VALUES are random, which latency does not depend on",
+        "data_processing_note": "data_processing_cpu is the checkpoint's own processor + "
+                                "collator, timed separately; e2e below is the GPU path "
+                                "only (model.get_action on already-collated inputs), the "
+                                "same split NVIDIA's benchmark_inference.py reports",
         "vision_note": "GR00T's backbone is a whole VLM called as one unit, so `vision` is "
                        "INSIDE vlm_prefix here and is not separated. The LeRobot models "
                        "split it because embed_image is a distinct method.",
@@ -175,16 +213,103 @@ def main() -> int:
     return 0
 
 
-def build_inputs(model, n):
-    """A fixture observation in GR00T's own input format.
+def build_observation(policy, ckpt_dir, image_hw=(256, 256),
+                      text="pick up the object"):
+    """A fixture observation in the shape THIS checkpoint declares, not a guessed one.
 
-    Filled in once the checkpoint's expected modality keys are read from its own config —
-    guessing them would be the same mistake that made SmolVLA see no images at all.
+    Every key and every dimension is read from the checkpoint's own files:
+      * which camera views, and how many frames of each -> processor_config.json's
+        modality_configs[<tag>]["video"] (modality_keys, delta_indices)
+      * which state vectors, and how wide each one is -> the same file for the names and
+        statistics.json for the widths (len(statistics[<tag>]["state"][key]["min"]))
+    Guessing these is exactly the mistake that made SmolVLA run three inferences on zero
+    images without raising anything.
+
+    The pixel and state VALUES are random. Latency does not depend on them -- there is no
+    data-dependent control flow in the backbone or the flow-matching loop -- but the shapes,
+    dtypes and key names do, and those are the checkpoint's. This is stated in meta.json
+    rather than left for a reader to discover.
     """
-    raise SystemExit(
-        "build_inputs is not written yet: read the checkpoint's modality config and "
-        "construct its observation, rather than guessing key names. See "
-        "scratch/T012/groot_segments_from_code.md.")
+    import numpy as np
+
+    tag = policy.embodiment_tag.value
+    mc = policy.modality_configs
+    video_keys = mc["video"].modality_keys
+    n_frames = len(mc["video"].delta_indices)
+    state_keys = mc["state"].modality_keys
+    n_state_steps = len(mc["state"].delta_indices)
+
+    h, w = image_hw
+    video = {k: np.random.randint(0, 255, (1, n_frames, h, w, 3), dtype=np.uint8)
+             for k in video_keys}
+
+    dims = _state_dims(ckpt_dir, tag, state_keys)
+    state = {k: np.random.randn(1, n_state_steps, dims[k]).astype(np.float32)
+             for k in state_keys}
+
+    obs = {"video": video, "state": state,
+           "language": {policy.language_key: [text]}}
+    shapes = {"video": {k: v.shape for k, v in video.items()},
+              "state": {k: v.shape for k, v in state.items()}}
+    return obs, shapes
+
+
+def _state_dims(ckpt_dir, tag, state_keys):
+    """Width of each state vector, from the checkpoint's statistics."""
+    import json
+    stats = json.loads((Path(ckpt_dir) / "statistics.json").read_text())
+    if tag not in stats:
+        raise SystemExit(f"statistics.json has no entry for embodiment {tag!r}; "
+                         f"it has {sorted(stats)}")
+    out = {}
+    for k in state_keys:
+        if k not in stats[tag]["state"]:
+            raise SystemExit(f"state key {k!r} is in the modality config but not in "
+                             f"statistics.json for {tag!r}")
+        out[k] = len(stats[tag]["state"][k]["min"])
+    return out
+
+
+def build_inputs(policy, obs):
+    """Run the checkpoint's own processor + collator, exactly as inference does.
+
+    This mirrors prepare_model_inputs in NVIDIA's own
+    scripts/deployment/benchmark_inference.py: one VLAStepData per batch element through
+    policy.processor, then policy.collate_fn, then everything floating-point to bf16.
+
+    The result already contains input_ids / pixel_values, so Gr00tN1d7.prepare_input finds
+    no "vlm_content" key and skips the collator: model.get_action(inputs) is then the
+    GPU-only path, which is what the phase split must time. The CPU processing this
+    function does is timed separately and reported as its own phase, because it is real
+    inference cost that the LeRobot models' region timing also leaves out.
+    """
+    import torch as _t
+    from gr00t.data.types import MessageType, VLAStepData
+
+    bs = next(iter(obs["video"].values())).shape[0]
+    processed = []
+    for i in range(bs):
+        step = VLAStepData(
+            images={k: v[i] for k, v in obs["video"].items()},
+            states={k: v[i] for k, v in obs["state"].items()},
+            actions={},
+            text=obs["language"][policy.language_key][i],
+            embodiment=policy.embodiment_tag,
+        )
+        processed.append(policy.processor(
+            [{"type": MessageType.EPISODE_STEP.value, "content": step}]))
+    collated = policy.collate_fn(processed)["inputs"]
+
+    def to_bf16(x):
+        if isinstance(x, _t.Tensor) and _t.is_floating_point(x):
+            return x.to(dtype=_t.bfloat16)
+        if isinstance(x, dict) or hasattr(x, "items"):
+            return {k: to_bf16(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [to_bf16(v) for v in x]
+        return x
+
+    return to_bf16(collated)
 
 
 if __name__ == "__main__":
