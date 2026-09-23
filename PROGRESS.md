@@ -63,18 +63,17 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 16:52:11** · elapsed **22.29 h** of 26 (86 %) · 28.5 GiB free · 1.45 GiB swap
+**Updated 16:58:11** · elapsed **22.39 h** of 26 (86 %) · 50.7 GiB free · 1.44 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 286294 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 3 --episodes 2` | 2 min | 0.0 GiB |
-| 286300 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 3 --episodes 2` | 2 min | 22.5 GiB |
+| 286294 | `bench/libero_eval.py --model pi0 --prep none --suite libero_spatial --tasks 3 --episodes 2` | 8 min | 0.0 GiB |
 
 Latest log lines:
 
-- `libero_smoke.log` · Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
-- `libero_smoke.log` · Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your softwar
-- `libero_smoke.log` · See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional informati
+- `libero_smoke.log` · task 2 ep 1: fail    280 steps   running 0/6
+- `libero_smoke.log` · success 0/6 = 0.0%   inference 1110.78 ms x36, sim 36.55 ms
+- `libero_smoke.log` · wrote /tmp/claude-1001/-home-yanggon-00-VLA/12fafcae-396b-4192-9a5c-e6f36be46f1c/scratchpad/libero_smoke5
 - `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
 - `queue_libero.log` · task 3 ep 0: fail    280 steps   running 0/10
 - `queue_libero.log` · task 3 ep 1: fail    280 steps   running 0/11
@@ -83,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 16:39** (58 configurations)
+**Re-derived from every result CSV on disk at 16:59** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -145,8 +144,6 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
-
-*(published: pushed at 16:39)*
 <!-- SLOW:END -->
 
 ## Live status
