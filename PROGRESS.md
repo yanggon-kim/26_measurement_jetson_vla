@@ -132,6 +132,9 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: push failed: To github.com:yanggon-kim/26_measurement_jetson_vla.git
+ ! [rejected]        mai at 05:58)*
 <!-- SLOW:END -->
 
 ## Live status
