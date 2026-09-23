@@ -63,24 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 08:37:42** · elapsed **14.05 h** of 26 (54 %) · 50.9 GiB free · 1.14 GiB swap
+**Updated 08:57:43** · elapsed **14.38 h** of 26 (55 %) · 51.0 GiB free · 1.14 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
+- `queue_fix6.log` · ImportError: cannot import name 'VideoInput' from 'transformers.image_utils' (/home/yanggon/venvs/groot/lib/py
+- `queue_fix6.log` · EXIT=1 13s
+- `queue_fix6.log` · FIX6_DONE 2026-09-23T08:53:45-07:00
 - `queue_n1d6.log` · AssertionError: Qwen3 must use flash_attention_2 but got None
 - `queue_n1d6.log` · EXIT=1 9s
 - `queue_n1d6.log` · N1D6_DONE 2026-09-23T08:24:48-07:00
-- `queue_fix5.log` · Linear  input=torch.float32  weight=torch.bfloat16  weight_shape=(1024, 1024)
-- `queue_fix5.log` · EXIT=0 246s
-- `queue_fix5.log` · FIX5_DONE 2026-09-23T08:23:07-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 08:38** (56 configurations)
+**Re-derived from every result CSV on disk at 08:58** (56 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
