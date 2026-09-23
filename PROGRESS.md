@@ -63,27 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 09:17:44** · elapsed **14.71 h** of 26 (57 %) · 39.4 GiB free · 1.13 GiB swap
+**Updated 09:37:46** · elapsed **15.05 h** of 26 (58 %) · 50.5 GiB free · 1.13 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 219270 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 6 min | 0.4 GiB |
-| 219507 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 1 min | 11.5 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_fix7.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `queue_fix7.log` · === N=10  bf16_both: B2+B3 with everything compiled
-- `queue_fix7.log` · memory before: 50.4 GiB available, 1.13 GiB swap in use
-- `mk_groot16.log` · from torch._C import *  # noqa: F403
-- `mk_groot16.log` · ImportError: libcudss.so.0: cannot open shared object file: No such file or directory
-- `mk_groot16.log` · MKENV_DONE 2026-09-23T09:06:49-07:00
+- `queue_viscompile.log` · n1.5 stage clear 2026-09-23T09:36:53-07:00
+- `queue_viscompile.log` · ########## 09:36 n1.7 vis_compile
+- `queue_viscompile.log` · gate: {"gpu_cur_freq_hz": "1300500000", "gpu_min_freq_hz": "1300500000", "gpu_max_freq_hz": "1300500000", "cpu
+- `queue_n1d5b.log` · N1D5B_START 2026-09-23T09:36:22-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 09:18** (56 configurations)
+**Re-derived from every result CSV on disk at 09:38** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -99,6 +94,8 @@ Latest log lines:
 | pi05 | 10 | vlm_compile_nvg | 108.00 | 489.74 | 259.36 | 868.48 | 29.9 % |
 | pi05 | 10 | bf16_base | 104.19 | 290.55 | 190.52 | 591.95 | 32.2 % |
 | pi05 | 10 | bf16_vision | 89.88 | 290.37 | 189.46 | 576.81 | 32.8 % |
+| pi05 | 10 | bf16_norms | 103.23 | 290.53 | 189.70 | 590.14 | 32.1 % |
+| pi05 | 10 | bf16_both | 56.69 | 239.49 | 186.67 | 489.15 | 38.2 % |
 | pi0 | 4 | eager_fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
 | pi0 | 4 | eager_tf32 | 104.18 | 234.06 | 230.75 | 575.28 | 40.1 % |
 | pi0 | 4 | ae_compile | 103.26 | 234.25 | 99.94 | 444.35 | 22.5 % |
