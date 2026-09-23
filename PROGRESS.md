@@ -63,22 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 11:37:53** · elapsed **17.05 h** of 26 (66 %) · 36.7 GiB free · 1.13 GiB swap
+**Updated 11:57:54** · elapsed **17.38 h** of 26 (67 %) · 39.5 GiB free · 1.12 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_c1_lerobot.log` · csv rows=1830
-- `queue_c1_lerobot.log` · ########## pi0 eager ae_step_0 already done (verified)
-- `queue_c1_lerobot.log` · ########## 11:31 ncu pi0_best_vision (cap 40)
+- `queue_c1_lerobot.log` · rep 34M -> zst 1.2M
+- `queue_c1_lerobot.log` · csv rows=1832
+- `queue_c1_lerobot.log` · ########## 11:56 ncu pi05_eager_vision (cap 40)
 - `queue_c1_repair.log` · C1_REPAIR_START 2026-09-23T11:06:43-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 11:39** (58 configurations)
+**Re-derived from every result CSV on disk at 11:59** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
