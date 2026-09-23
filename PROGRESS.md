@@ -63,11 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 04:17:27** · elapsed **9.71 h** of 26 (37 %) · 44.4 GiB free · 0.70 GiB swap
+**Updated 04:37:28** · elapsed **10.04 h** of 26 (39 %) · 32.8 GiB free · 0.67 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 185700 | `bench/run_ncu_regions.sh results/20260922_E4g_pi0_ncu_reduce-overhead reduce-overhead 10 ae_la` | 196 min | 0.0 GiB |
+| 187240 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.0 GiB |
+| 187252 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.0 GiB |
+| 187253 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.0 GiB |
+| 187257 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 1 min | 0.4 GiB |
+| 187297 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --single-run` | 1 min | 11.5 GiB |
 
 Latest log lines:
 
@@ -81,7 +85,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 04:18** (36 configurations)
+**Re-derived from every result CSV on disk at 04:38** (36 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
