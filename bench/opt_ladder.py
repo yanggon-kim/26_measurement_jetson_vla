@@ -197,9 +197,17 @@ class NotApplicable(Exception):
 
 
 def _dominant_dtype(policy):
-    """The dtype most of the model's parameters are in."""
+    """The dtype most of the model's WEIGHT is in, by element count.
+
+    Counting parameter TENSORS instead of elements gets this wrong: pi0's checkpoint is
+    bfloat16 with a handful of fp32 islands, but those islands are many small norm tensors,
+    so they outnumber the few huge bf16 matrices and the model reads as fp32. That is why
+    pi0's bf16_base ran a cast it did not need instead of recording 'not applicable'.
+    """
     from collections import Counter
-    c = Counter(p.dtype for p in policy.model.parameters())
+    c = Counter()
+    for prm in policy.model.parameters():
+        c[prm.dtype] += prm.numel()
     return c.most_common(1)[0][0] if c else None
 
 
