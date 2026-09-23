@@ -63,22 +63,27 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 05:37:32** · elapsed **11.04 h** of 26 (42 %) · 51.0 GiB free · 1.10 GiB swap
+**Updated 05:57:33** · elapsed **11.38 h** of 26 (44 %) · 31.0 GiB free · 1.10 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 196881 | `bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --steps 10 -` | 2 min | 0.4 GiB |
+| 196921 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi0 --outdir results/20260922_E4c_pi0_opt_ladder --single-run` | 2 min | 24.4 GiB |
 
 Latest log lines:
 
+- `queue_partb_finish.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
+- `queue_partb_finish.log` · === N=10  bf16_base: B0: fp32 checkpoint -> bf16 (LeRobot's own cast)
+- `queue_partb_finish.log` · memory before: 54.4 GiB available, 1.10 GiB swap in use
 - `smolvla_partb2.log` · settled: 50.7 GiB available, 1.10 GiB swap
 - `smolvla_partb2.log` · merged 14 rung(s) into results/20260922_E4c_smolvla_opt_ladder/opt_ladder.csv
 - `smolvla_partb2.log` · wrote results/20260922_E4c_smolvla_opt_ladder (14 rungs)
-- `queue_groot.log` · GROOT_QUEUE_START 2026-09-23T05:28:36-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 05:38** (45 configurations)
+**Re-derived from every result CSV on disk at 05:58** (45 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
