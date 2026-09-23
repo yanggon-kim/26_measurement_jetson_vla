@@ -63,24 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 20:57:03** · elapsed **2.37 h** of 26 (9 %) · 50.7 GiB free · 0.92 GiB swap
+**Updated 21:17:05** · elapsed **2.70 h** of 26 (10 %) · 19.4 GiB free · 0.92 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 48 min | 0.2 GiB |
-| 136027 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 0 min | 0.6 GiB |
+| 131210 | `bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --steps 10` | 68 min | 0.2 GiB |
+| 136704 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260922_E4c_pi05_opt_ladder --single-r` | 2 min | 31.8 GiB |
 
 Latest log lines:
 
 - `pi05_ladder.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
-- `pi05_ladder.log` · === N=10  vlm_graphs: + CUDA graphs on pg.forward
+- `pi05_ladder.log` · === N=10  bf16_norms: B3: + bf16 layernorms
 - `pi05_ladder.log` · memory before: 50.8 GiB available, 0.92 GiB swap in use
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 20:57** (20 configurations)
+**Re-derived from every result CSV on disk at 21:17** (20 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
