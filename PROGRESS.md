@@ -63,18 +63,14 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 23:41:12** · elapsed **5.10 h** of 26 (20 %) · 51.2 GiB free · 0.72 GiB swap
+**Updated 23:45:13** · elapsed **5.17 h** of 26 (20 %) · 47.5 GiB free · 0.72 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `groot_probe.log` · File "/home/yanggon/venvs/groot/lib/python3.10/site-packages/torch/__init__.py", line 431, in <module>
-- `groot_probe.log` · from torch._C import *  # noqa: F403
-- `groot_probe.log` · ImportError: libcudss.so.0: cannot open shared object file: No such file or directory
-- `smolvla_nvg.log` · File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py", line 404, in <lambda>
-- `smolvla_nvg.log` · rows.sort(key=lambda r: (int(r["N"]), [w[0] for w in want].index(r["rung"])))
-- `smolvla_nvg.log` · ValueError: 'ae_compile' is not in list
+- `measure_S.log` · ########## 23:44 /home/yanggon/venvs/pi0/bin/python bench/measure_S.py --models pi05,smolvla --json results/20
+- `overnight.log` · OVERNIGHT_START 2026-09-22T23:44:52-07:00
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
@@ -155,6 +151,24 @@ Latest log lines:
 | π0 | N=4 eager fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
 | π0 | N=4 fully compiled | 99.92 | 192.78 | 69.72 | 369.52 | **18.9 %** |
 | *(their π0 on AGX Orin)* | *N=10 eager* | *110.47* | *257.76* | *543.14* | *920.58* | *59 %* |
+
+## Overnight plan (owner asleep from 23:45, 2026-09-22)
+
+**Running unattended, never aborting on a failed step:**
+`scratch/T004/overnight.sh` → S measurement for π0.5/SmolVLA, then **C1**: ncu per phase
+(`ae_layer[0]`, `ae_step[0]`, `vlm_prefix`, `vision`) for π0, π0.5 and SmolVLA in **both**
+eager and `reduce-overhead`, then `parse_ncu` on each. 3 models × 2 configs × 4 regions.
+
+**Needs me, and therefore waits:** GR00T N1.7/N1.6/N1.5. Its checkpoint is downloading; its
+input builder (`bench/groot_phases.py:build_inputs`) deliberately raises rather than
+guessing modality keys, because guessing is what made SmolVLA run nine full rungs while
+seeing no images. I write it when the probe reports the real keys, then run all three
+versions.
+
+**The Part A/B routine is NOT lost.** It is `bench/paper_repro.py --model <m>` +
+`bench/opt_ladder.py --model <m>`, both resolving everything through
+`bench/model_registry.py`. π0, π0.5 and SmolVLA are done; the same two commands run the
+GR00T versions once their descriptor and input builder exist.
 
 ## Rules that are not optional
 
