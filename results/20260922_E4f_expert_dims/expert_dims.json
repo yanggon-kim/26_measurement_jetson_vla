@@ -1,5 +1,9 @@
 {
   "_ridge_FLOP_per_byte": 180.57,
+  "_measured_S": {
+    "pi05": 50,
+    "smolvla": 50
+  },
   "_note": "I ~= S for a weight-stationary bf16 GEMM with S << K,N, so the suffix length is the arithmetic intensity to first order. S below the ridge means memory-bound by construction.",
   "models": {
     "pi0": {
@@ -15,213 +19,351 @@
       "projections": [
         {
           "projection": "mlp.down_proj",
+          "A_activations": "[51 x 4096]",
+          "B_weights": "[4096 x 1024]",
+          "C_out": "[51 x 1024]",
+          "M": 51,
           "K_in": 4096,
           "N_out": 1024,
-          "gemm": "51x4096x1024",
+          "gemm_MxKxN": "51x4096x1024",
+          "A_aspect_K_over_M": 80.3,
           "flops_per_call": 427819008,
-          "weight_bytes_bf16": 8388608
+          "weight_bytes_bf16": 8388608,
+          "arith_intensity": 48.0
         },
         {
           "projection": "mlp.gate_proj",
+          "A_activations": "[51 x 1024]",
+          "B_weights": "[1024 x 4096]",
+          "C_out": "[51 x 4096]",
+          "M": 51,
           "K_in": 1024,
           "N_out": 4096,
-          "gemm": "51x1024x4096",
+          "gemm_MxKxN": "51x1024x4096",
+          "A_aspect_K_over_M": 20.1,
           "flops_per_call": 427819008,
-          "weight_bytes_bf16": 8388608
+          "weight_bytes_bf16": 8388608,
+          "arith_intensity": 48.0
         },
         {
           "projection": "mlp.up_proj",
+          "A_activations": "[51 x 1024]",
+          "B_weights": "[1024 x 4096]",
+          "C_out": "[51 x 4096]",
+          "M": 51,
           "K_in": 1024,
           "N_out": 4096,
-          "gemm": "51x1024x4096",
+          "gemm_MxKxN": "51x1024x4096",
+          "A_aspect_K_over_M": 20.1,
           "flops_per_call": 427819008,
-          "weight_bytes_bf16": 8388608
+          "weight_bytes_bf16": 8388608,
+          "arith_intensity": 48.0
         },
         {
           "projection": "self_attn.k_proj",
+          "A_activations": "[51 x 1024]",
+          "B_weights": "[1024 x 256]",
+          "C_out": "[51 x 256]",
+          "M": 51,
           "K_in": 1024,
           "N_out": 256,
-          "gemm": "51x1024x256",
+          "gemm_MxKxN": "51x1024x256",
+          "A_aspect_K_over_M": 20.1,
           "flops_per_call": 26738688,
-          "weight_bytes_bf16": 524288
+          "weight_bytes_bf16": 524288,
+          "arith_intensity": 40.8
         },
         {
           "projection": "self_attn.o_proj",
+          "A_activations": "[51 x 2048]",
+          "B_weights": "[2048 x 1024]",
+          "C_out": "[51 x 1024]",
+          "M": 51,
           "K_in": 2048,
           "N_out": 1024,
-          "gemm": "51x2048x1024",
+          "gemm_MxKxN": "51x2048x1024",
+          "A_aspect_K_over_M": 40.2,
           "flops_per_call": 213909504,
-          "weight_bytes_bf16": 4194304
+          "weight_bytes_bf16": 4194304,
+          "arith_intensity": 47.5
         },
         {
           "projection": "self_attn.q_proj",
+          "A_activations": "[51 x 1024]",
+          "B_weights": "[1024 x 2048]",
+          "C_out": "[51 x 2048]",
+          "M": 51,
           "K_in": 1024,
           "N_out": 2048,
-          "gemm": "51x1024x2048",
+          "gemm_MxKxN": "51x1024x2048",
+          "A_aspect_K_over_M": 20.1,
           "flops_per_call": 213909504,
-          "weight_bytes_bf16": 4194304
+          "weight_bytes_bf16": 4194304,
+          "arith_intensity": 47.5
         },
         {
           "projection": "self_attn.v_proj",
+          "A_activations": "[51 x 1024]",
+          "B_weights": "[1024 x 256]",
+          "C_out": "[51 x 256]",
+          "M": 51,
           "K_in": 1024,
           "N_out": 256,
-          "gemm": "51x1024x256",
+          "gemm_MxKxN": "51x1024x256",
+          "A_aspect_K_over_M": 20.1,
           "flops_per_call": 26738688,
-          "weight_bytes_bf16": 524288
+          "weight_bytes_bf16": 524288,
+          "arith_intensity": 40.8
         }
       ]
     },
     "pi05": {
       "checkpoint": "lerobot/pi05_libero_base",
-      "suffix_tokens_S": null,
+      "suffix_tokens_S": 50,
       "S_source": "to be measured",
       "expert_layers": 18,
       "projections_per_layer": 9,
       "projections_total": 162,
       "expert_weight_bytes_bf16": 849346560,
-      "arithmetic_intensity_approx": null,
-      "verdict": null,
+      "arithmetic_intensity_approx": 50,
+      "verdict": "MEMORY-bound by construction (S < ridge)",
       "projections": [
         {
           "projection": "input_layernorm.dense",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 3072]",
+          "C_out": "[50 x 3072]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 3072,
-          "gemm": "Sx1024x3072",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 6291456
+          "gemm_MxKxN": "50x1024x3072",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 314572800,
+          "weight_bytes_bf16": 6291456,
+          "arith_intensity": 46.9
         },
         {
           "projection": "mlp.down_proj",
+          "A_activations": "[50 x 4096]",
+          "B_weights": "[4096 x 1024]",
+          "C_out": "[50 x 1024]",
+          "M": 50,
           "K_in": 4096,
           "N_out": 1024,
-          "gemm": "Sx4096x1024",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 8388608
+          "gemm_MxKxN": "50x4096x1024",
+          "A_aspect_K_over_M": 81.9,
+          "flops_per_call": 419430400,
+          "weight_bytes_bf16": 8388608,
+          "arith_intensity": 47.1
         },
         {
           "projection": "mlp.gate_proj",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 4096]",
+          "C_out": "[50 x 4096]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 4096,
-          "gemm": "Sx1024x4096",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 8388608
+          "gemm_MxKxN": "50x1024x4096",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 419430400,
+          "weight_bytes_bf16": 8388608,
+          "arith_intensity": 47.1
         },
         {
           "projection": "mlp.up_proj",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 4096]",
+          "C_out": "[50 x 4096]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 4096,
-          "gemm": "Sx1024x4096",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 8388608
+          "gemm_MxKxN": "50x1024x4096",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 419430400,
+          "weight_bytes_bf16": 8388608,
+          "arith_intensity": 47.1
         },
         {
           "projection": "post_attention_layernorm.dense",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 3072]",
+          "C_out": "[50 x 3072]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 3072,
-          "gemm": "Sx1024x3072",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 6291456
+          "gemm_MxKxN": "50x1024x3072",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 314572800,
+          "weight_bytes_bf16": 6291456,
+          "arith_intensity": 46.9
         },
         {
           "projection": "self_attn.k_proj",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 256]",
+          "C_out": "[50 x 256]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 256,
-          "gemm": "Sx1024x256",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 524288
+          "gemm_MxKxN": "50x1024x256",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 26214400,
+          "weight_bytes_bf16": 524288,
+          "arith_intensity": 40.2
         },
         {
           "projection": "self_attn.o_proj",
+          "A_activations": "[50 x 2048]",
+          "B_weights": "[2048 x 1024]",
+          "C_out": "[50 x 1024]",
+          "M": 50,
           "K_in": 2048,
           "N_out": 1024,
-          "gemm": "Sx2048x1024",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 4194304
+          "gemm_MxKxN": "50x2048x1024",
+          "A_aspect_K_over_M": 41.0,
+          "flops_per_call": 209715200,
+          "weight_bytes_bf16": 4194304,
+          "arith_intensity": 46.6
         },
         {
           "projection": "self_attn.q_proj",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 2048]",
+          "C_out": "[50 x 2048]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 2048,
-          "gemm": "Sx1024x2048",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 4194304
+          "gemm_MxKxN": "50x1024x2048",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 209715200,
+          "weight_bytes_bf16": 4194304,
+          "arith_intensity": 46.6
         },
         {
           "projection": "self_attn.v_proj",
+          "A_activations": "[50 x 1024]",
+          "B_weights": "[1024 x 256]",
+          "C_out": "[50 x 256]",
+          "M": 50,
           "K_in": 1024,
           "N_out": 256,
-          "gemm": "Sx1024x256",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 524288
+          "gemm_MxKxN": "50x1024x256",
+          "A_aspect_K_over_M": 20.5,
+          "flops_per_call": 26214400,
+          "weight_bytes_bf16": 524288,
+          "arith_intensity": 40.2
         }
       ]
     },
     "smolvla": {
       "checkpoint": "lerobot/smolvla_base",
-      "suffix_tokens_S": null,
+      "suffix_tokens_S": 50,
       "S_source": "to be measured",
       "expert_layers": 16,
       "projections_per_layer": 7,
       "projections_total": 112,
       "expert_weight_bytes_bf16": 192348160,
-      "arithmetic_intensity_approx": null,
-      "verdict": null,
+      "arithmetic_intensity_approx": 50,
+      "verdict": "MEMORY-bound by construction (S < ridge)",
       "projections": [
         {
           "projection": "mlp.down_proj",
+          "A_activations": "[50 x 2048]",
+          "B_weights": "[2048 x 720]",
+          "C_out": "[50 x 720]",
+          "M": 50,
           "K_in": 2048,
           "N_out": 720,
-          "gemm": "Sx2048x720",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 2949120
+          "gemm_MxKxN": "50x2048x720",
+          "A_aspect_K_over_M": 41.0,
+          "flops_per_call": 147456000,
+          "weight_bytes_bf16": 2949120,
+          "arith_intensity": 45.7
         },
         {
           "projection": "mlp.gate_proj",
+          "A_activations": "[50 x 720]",
+          "B_weights": "[720 x 2048]",
+          "C_out": "[50 x 2048]",
+          "M": 50,
           "K_in": 720,
           "N_out": 2048,
-          "gemm": "Sx720x2048",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 2949120
+          "gemm_MxKxN": "50x720x2048",
+          "A_aspect_K_over_M": 14.4,
+          "flops_per_call": 147456000,
+          "weight_bytes_bf16": 2949120,
+          "arith_intensity": 45.7
         },
         {
           "projection": "mlp.up_proj",
+          "A_activations": "[50 x 720]",
+          "B_weights": "[720 x 2048]",
+          "C_out": "[50 x 2048]",
+          "M": 50,
           "K_in": 720,
           "N_out": 2048,
-          "gemm": "Sx720x2048",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 2949120
+          "gemm_MxKxN": "50x720x2048",
+          "A_aspect_K_over_M": 14.4,
+          "flops_per_call": 147456000,
+          "weight_bytes_bf16": 2949120,
+          "arith_intensity": 45.7
         },
         {
           "projection": "self_attn.k_proj",
+          "A_activations": "[50 x 320]",
+          "B_weights": "[320 x 320]",
+          "C_out": "[50 x 320]",
+          "M": 50,
           "K_in": 320,
           "N_out": 320,
-          "gemm": "Sx320x320",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 204800
+          "gemm_MxKxN": "50x320x320",
+          "A_aspect_K_over_M": 6.4,
+          "flops_per_call": 10240000,
+          "weight_bytes_bf16": 204800,
+          "arith_intensity": 38.1
         },
         {
           "projection": "self_attn.o_proj",
+          "A_activations": "[50 x 960]",
+          "B_weights": "[960 x 720]",
+          "C_out": "[50 x 720]",
+          "M": 50,
           "K_in": 960,
           "N_out": 720,
-          "gemm": "Sx960x720",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 1382400
+          "gemm_MxKxN": "50x960x720",
+          "A_aspect_K_over_M": 19.2,
+          "flops_per_call": 69120000,
+          "weight_bytes_bf16": 1382400,
+          "arith_intensity": 44.6
         },
         {
           "projection": "self_attn.q_proj",
+          "A_activations": "[50 x 720]",
+          "B_weights": "[720 x 960]",
+          "C_out": "[50 x 960]",
+          "M": 50,
           "K_in": 720,
           "N_out": 960,
-          "gemm": "Sx720x960",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 1382400
+          "gemm_MxKxN": "50x720x960",
+          "A_aspect_K_over_M": 14.4,
+          "flops_per_call": 69120000,
+          "weight_bytes_bf16": 1382400,
+          "arith_intensity": 44.6
         },
         {
           "projection": "self_attn.v_proj",
+          "A_activations": "[50 x 320]",
+          "B_weights": "[320 x 320]",
+          "C_out": "[50 x 320]",
+          "M": 50,
           "K_in": 320,
           "N_out": 320,
-          "gemm": "Sx320x320",
-          "flops_per_call": null,
-          "weight_bytes_bf16": 204800
+          "gemm_MxKxN": "50x320x320",
+          "A_aspect_K_over_M": 6.4,
+          "flops_per_call": 10240000,
+          "weight_bytes_bf16": 204800,
+          "arith_intensity": 38.1
         }
       ]
     }
