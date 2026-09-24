@@ -63,15 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 19:38:20** · elapsed **25.06 h** of 26 (96 %) · 26.6 GiB free · 1.45 GiB swap
+**Updated 20:00:22** · elapsed **25.42 h** of 26 (98 %) · 50.7 GiB free · 1.45 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
+- `autotune_rerun.log` · wrote results/20260923_E4i_pi0_prefix_autotune/forced_autotune.json
 - `autotune_rerun.log` · EXIT=0
-- `autotune_rerun.log` · ########## 19:35 forced_autotune
-- `autotune_rerun.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
+- `autotune_rerun.log` · RERUN_DONE 2026-09-23T19:40:51-07:00
 - `autotune_prefix_control.log` · e2e 609.901 ms | vision 103.475 | PREFIX 203.152 | ae 297.478
 - `autotune_prefix_control.log` · references: eager prefix 234.57, vlm_compile prefix 192.76
 - `autotune_prefix_control.log` · wrote results/20260923_E4i_pi0_prefix_autotune/cublas_autotune.json
@@ -80,7 +80,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 19:40** (58 configurations)
+**Re-derived from every result CSV on disk at 20:00** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
