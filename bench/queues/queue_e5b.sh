@@ -46,6 +46,45 @@ while IFS= read -r line; do
   echo "EXIT=$?"
 done < "$TMP"
 
+# ---- SASS and the static instruction inventory -----------------------------------------
+# NOT via cuobjdump. The hot kernels live in libcublas / libcublasLt (ampere_sgemm_*,
+# cutlass::Kernel2, cuBLAS internal::kernel) or are Triton kernels that do not exist on
+# disk until they are compiled, so the binary would have to be located and the mangled
+# name guessed. `ncu --import --page source --print-source sass` prints the SASS that
+# ACTUALLY EXECUTED, straight from the report. docs/03 §3 wants the dump for this GPU's
+# architecture; this is that, by construction.
+for rep in results/${DATE}_E5b_*/ncu/*.ncu-rep.zst; do
+  [ -e "$rep" ] || continue
+  d=$(dirname "$(dirname "$rep")")
+  echo "########## $(date +%H:%M) SASS $(basename "$rep")"
+  $PY bench/ncu_sass_dump.py "$rep" --outdir "$d/raw/sass" || echo "  SASS EXPORT FAILED"
+done
+
+for sass in results/${DATE}_E5b_*/raw/sass/*.sass; do
+  [ -e "$sass" ] || continue
+  d=$(dirname "$(dirname "$(dirname "$sass")")")
+  k=$(basename "$sass" .sass)
+  mkdir -p "$d/inventory"
+  $PY bench/build_inst_inventory.py "$sass" --label "$k" --csv \
+      > "$d/inventory/${k}_inventory.csv" 2>/dev/null \
+    && $PY bench/build_inst_inventory.py "$sass" --label "$k" \
+      > "$d/inventory/${k}_inventory.md" 2>/dev/null \
+    || echo "  INVENTORY FAILED for $k"
+done
+
+# ---- static vs dynamic cross-check -----------------------------------------------------
+for inv in results/${DATE}_E5b_*/inventory/*_inventory.csv; do
+  [ -e "$inv" ] || continue
+  d=$(dirname "$(dirname "$inv")")
+  k=$(basename "$inv" _inventory.csv)
+  det=$(ls "$d"/ncu/*_details.csv 2>/dev/null | head -1)
+  [ -n "$det" ] || continue
+  $PY bench/crosscheck_sass.py --inventory "$inv" --ncu-csv "$det" \
+      --target-kernel "$k" --gpu-arch sm_87 \
+      > "$d/inventory/${k}_crosscheck.md" 2>/dev/null \
+    || echo "  CROSSCHECK FAILED for $k"
+done
+
 # One analysis pass over everything captured, and the report.
 $PY bench/analyze_e5b.py --glob "results/${DATE}_E5b_*" --md reports/E5b_summary.md
 echo "E5B_DONE $(date -Is)"
