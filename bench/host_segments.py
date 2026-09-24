@@ -335,6 +335,43 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
 # --------------------------------------------------------------------------- timing
 
 
+# --------------------------------------------------------------------- per-model dispatch
+
+
+def _model_module(spec):
+    """The per-model capture/segment module, or None when this file's own code serves.
+
+    π0 and π0.5 share the pi_gemma layer body, so `LayerCapture`, `intermediates` and
+    `build_segments` above serve both — the only difference between them is the AdaRMS
+    gate, which those functions branch on. SmolVLA's layer body is inlined in its
+    container's forward, so it needs a different capture AND a different replay, which is
+    bench/segments_smolvla.py.
+    """
+    if spec.layer_capture == "patch_layer_forward":
+        return None
+    import importlib
+    return importlib.import_module(f"segments_{spec.name}")
+
+
+def capture_layer(policy, layer_idx: int, spec):
+    m = _model_module(spec)
+    if m is None:
+        return LayerCapture(policy, layer_idx, spec)
+    return m.SmolVLALayerCapture(policy, layer_idx, spec)
+
+
+def layer_intermediates(policy, cap, spec):
+    m = _model_module(spec)
+    return intermediates(policy, cap) if m is None else m.intermediates(policy, cap, spec)
+
+
+def layer_segments(spec, t, S, D, I, H, HD, T_keys):
+    m = _model_module(spec)
+    return (build_segments(t, S, D, I, H, HD, T_keys) if m is None
+            else m.build_segments(t, S, D, I, H, HD, T_keys))
+
+
+
 def time_segment(fn, timing: str, warmup: int, n: int, gap_ms: float = 0.0) -> list[float]:
     """Protocol §13.1's three timing modes."""
     for _ in range(warmup):
@@ -601,10 +638,14 @@ def main() -> int:
     # --- capture the real layer arguments during one denoising step
     caps = {}
     for li in LAYERS:
-        with LayerCapture(policy, li, spec) as cap, torch.no_grad():
+        with capture_layer(policy, li, spec) as cap, torch.no_grad():
             policy.predict_action_chunk(batch)
         if cap.args is None:
-            raise SystemExit(f"layer {li} was never called — wrap point wrong")
+            raise SystemExit(
+                f"layer {li} was never called — wrap point wrong for {spec.name} "
+                f"(layer_capture={spec.layer_capture}). An EMPTY capture is the failure "
+                f"this guard exists for: every segment downstream would be computed from "
+                f"a zero tensor and would look entirely plausible.")
         caps[li] = cap
     torch.cuda.synchronize()
 
@@ -622,12 +663,12 @@ def main() -> int:
     notes_not_measured = []
 
     for li in LAYERS:
-        t = intermediates(policy, caps[li])
+        t = layer_intermediates(policy, caps[li], spec)
         t["_partials"] = torch.randn(4, Sn, D, device="cuda", dtype=t["x"].dtype)
         T_keys = t["scores"].shape[-1]
         print(f"\nlayer {li}: x{tuple(t['x'].shape)} scores{tuple(t['scores'].shape)} "
               f"T={T_keys} D={D} I={I} H={H} head_dim={HD}", flush=True)
-        segs = build_segments(t, Sn, D, I, H, HD, T_keys)
+        segs = layer_segments(spec, t, Sn, D, I, H, HD, T_keys)
 
         for sd in segs:
             if li == LAYERS[0]:
