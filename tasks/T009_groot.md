@@ -15,3 +15,5 @@ Acceptance: `reports/E3_E4_groot.md`, `reports/E5_groot_timeline.md`, `reports/E
 `reports/E6_groot_roofline.md`, `reports/E7_groot_power.md`; a GR00T row added to `reports/E5_E5b_models.md`.
 Raw files committed under each result directory's `raw/` as in T004 / T007 (protocol §3.5 / §6); repository-size
 lines in `STATUS.md` (§6f). Self-review (§11).
+
+status: claimed 2026-09-24

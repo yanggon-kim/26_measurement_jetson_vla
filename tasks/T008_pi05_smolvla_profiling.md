@@ -24,3 +24,5 @@ cross-model table in `reports/E5_E5b_models.md` (`model, S, ms/step eager, ms/st
 GPU idle % in ae_step, region-weighted SM occupancy, top stall reason and share, LSU load share, dominant kernel`).
 Raw files committed under each result directory's `raw/` exactly as in T004 / T007 (protocol §3.5 / §6);
 repository-size lines in `STATUS.md` after each model (§6f). Self-review (§11).
+
+status: claimed 2026-09-24

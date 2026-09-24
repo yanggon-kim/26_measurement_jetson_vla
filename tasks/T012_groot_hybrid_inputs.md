@@ -35,3 +35,5 @@ Acceptance: the result directories above with the T010 file sets; `reports/E11_g
 T010 report structure; a GR00T row added to `reports/E11_models.md`. Raw files under each `raw/` (protocol
 §3.5 / §6); repository-size lines in `STATUS.md` (§6f). Self-review (§11). A part that cannot be done is marked
 "not measured" with the exact error; it does not block the rest.
+
+status: claimed 2026-09-24

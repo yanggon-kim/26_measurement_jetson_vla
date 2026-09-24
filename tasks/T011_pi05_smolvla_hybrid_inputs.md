@@ -49,3 +49,5 @@ t_kv_materialise, t_vision, t_vlm_prefix, prefix_throughput, e2e_throughput, pre
 cpu_hog_100`) including the π0 row from T010. Raw files under each `raw/` (protocol §3.5 / §6); repository-size
 lines in `STATUS.md` after each model (§6f). Self-review (§11). A part that cannot be done is marked
 "not measured" with the exact error; it does not block the rest.
+
+status: claimed 2026-09-24

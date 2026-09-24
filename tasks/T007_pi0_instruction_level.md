@@ -21,3 +21,5 @@ every stall reason > 5 % traced to instructions; items that the device's tools c
 "not available" with the exact failing command. The **full** SASS / PTX dumps, the analysed `.cubin` files and
 every `.ncu-rep` are committed under `results/<run>/raw/` (compressed, protocol §3.5 / §6) and listed in
 `meta.json.raw_files`; repository-size lines in `STATUS.md` (§6f). Self-review (§11).
+
+status: claimed 2026-09-24
