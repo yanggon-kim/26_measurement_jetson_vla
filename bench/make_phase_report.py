@@ -32,7 +32,12 @@ MODELS = [
 ORDER = ["eager_fp32", "eager_tf32", "bf16_base", "ae_compile", "ae_graphs",
          "vis_compile", "vis_static_pos", "vis_graphs", "vlm_compile",
          "vlm_compile_nvg", "vlm_graphs", "whole_graphs", "bf16_vision",
-         "bf16_norms", "bf16_both"]
+         "bf16_norms", "bf16_both", "bf16_both_graphs",
+         # added 2026-09-23 after the ladder found untested crosses:
+         #   all_compile          GR00T vision AND llm together (each rung left the
+         #                        other half eager -- a gap in the GR00T ladder only)
+         #   all_compile_autotune the same, with inductor's 68-SM GEMM gate forced
+         "all_compile", "all_compile_autotune"]
 
 
 def num(x):

@@ -74,6 +74,8 @@ def main() -> int:
                     help="'old' is N1.5's Gr00tPolicy signature and flat obs keys")
     ap.add_argument("--data-config", default="oxe_droid",
                     help="N1.5 only: key into gr00t.experiment.data_config.DATA_CONFIG_MAP")
+    ap.add_argument("--force-gemm-autotune", action="store_true",
+                    help="override inductor's 68-SM gate so Triton GEMM templates run")
     ap.add_argument("--ncu-region", default=None,
                     help="C1: install NVTX ranges and profile ONE inference, then exit")
     ap.add_argument("--measure-s", action="store_true",
@@ -109,6 +111,21 @@ def main() -> int:
     if g["gpu_cur_freq_hz"] != g["gpu_max_freq_hz"]:
         raise SystemExit(f"clocks not locked: {g}; run sudo jetson_clocks first")
     torch.set_float32_matmul_precision("high" if args.tf32 == "on" else "highest")
+
+    if args.force_gemm_autotune:
+        # inductor's is_big_gpu() requires 68 SMs (torch/_inductor/utils.py:1426) and Orin
+        # has 16, so mode="max-autotune" silently keeps cuBLAS for every GEMM. Forcing it
+        # gave pi0's fp32 prefix 1.30x. Backends restricted to TRITON because leaving ATEN
+        # in while forcing the gate makes inductor register aten.bmm as both a fallback and
+        # a decomposition and assert. Recorded in meta.json -- not a stock configuration.
+        import torch._inductor.config as IC
+        import torch._inductor.utils as IU
+        IU.is_big_gpu = lambda *a, **k: True
+        for k, v in (("max_autotune", True), ("max_autotune_gemm", True),
+                     ("max_autotune_gemm_backends", "TRITON")):
+            if hasattr(IC, k):
+                setattr(IC, k, v)
+        print("force_gemm_autotune: is_big_gpu forced True, backends=TRITON", flush=True)
 
     compat = []
     if args.compat_shims:
@@ -475,6 +492,7 @@ def main() -> int:
         "checkpoint": args.checkpoint, "precision": "bfloat16",
         "matmul_precision": "high" if args.tf32 == "on" else "highest",
         "compile": ";".join(compiled_desc) or "eager",
+        "force_gemm_autotune": args.force_gemm_autotune,
         "rung": args.rung, "num_inference_timesteps": n,
         "n_warmup": args.warmup, "n_timed": args.timed, "gate": g,
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

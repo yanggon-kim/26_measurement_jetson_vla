@@ -400,6 +400,13 @@ RUNGS = [
      [("model", "denoise_step", GRAPHS, False)], True, True, prep_bf16_vision),
     ("bf16_norms",   "B3: + bf16 layernorms",                     "high",
      [("model", "denoise_step", GRAPHS, False)], True, True, prep_bf16_norms),
+    # Graphs on the prefix were a net loss for pi0.5 WITHOUT bf16 (871 vs 863 ms).
+    # Untested on top of bf16, where the prefix is 2.16x smaller and per-launch cost is a
+    # larger fraction of it -- which is exactly when graphs start paying.
+    ("bf16_both_graphs", "B2+B3 with CUDA graphs on the prefix too", "high",
+     [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
+      ("pg", "forward", GRAPHS, True)], True, True,
+     lambda pol: prep_bf16_vision(pol) + "; " + prep_bf16_norms(pol)),
     ("bf16_both",    "B2+B3 with everything compiled",            "high",
      [("model", "denoise_step", GRAPHS, False), ("pg", "embed_image", GRAPHS, True),
       ("pg", "forward", NOGRAPH, False)], True, True,

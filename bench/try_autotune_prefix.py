@@ -47,7 +47,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="pi0")
     ap.add_argument("--mode", default="forced_autotune",
-                    choices=("eager", "cublas_autotune", "forced_autotune"))
+                    choices=("eager", "cublas_autotune", "forced_autotune",
+                             "best_cublas", "best_forced"))
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--warmup", type=int, default=12)
     ap.add_argument("--timed", type=int, default=10)
@@ -55,7 +56,7 @@ def main() -> int:
     args = ap.parse_args()
 
     forced = False
-    if args.mode == "forced_autotune":
+    if args.mode in ("forced_autotune", "best_forced"):
         # Override the SM-count gate so Triton GEMM templates are actually benchmarked.
         # This is the whole point of the experiment; it is recorded in meta.json so no one
         # mistakes these numbers for a stock configuration.
@@ -79,8 +80,28 @@ def main() -> int:
     torch.set_float32_matmul_precision("high")
 
     desc = "eager"
-    if args.mode != "eager":
-        pg = P_container = getattr(policy.model, spec.container)
+    if args.mode.startswith("best"):
+        # The Part B bf16_both rung, exactly: bf16 vision tower + projector, bf16
+        # layernorms, denoise_step and embed_image graph-captured, pg.forward compiled.
+        # The expert is ALREADY graph-captured here, so the launch-overhead regression
+        # that spoiled the eager-expert experiment should not apply -- which is the whole
+        # point of running this combination.
+        import opt_ladder as OL
+        from graph_clone import clone_graph_outputs
+        print("  prep:", OL.prep_bf16_vision(policy), flush=True)
+        print("  prep:", OL.prep_bf16_norms(policy), flush=True)
+        pg = getattr(policy.model, spec.container)
+        t0 = time.time()
+        policy.model.denoise_step = torch.compile(policy.model.denoise_step,
+                                                  mode="reduce-overhead")
+        _c = torch.compile(pg.embed_image, mode="reduce-overhead")
+        pg.embed_image = lambda *a, _c=_c, **k: clone_graph_outputs(_c(*a, **k))
+        pg.forward = torch.compile(pg.forward, mode="max-autotune-no-cudagraphs")
+        desc = ("bf16_both + denoise_step/embed_image graphs + pg.forward "
+                + ("max-autotune FORCED" if forced else "max-autotune stock"))
+        print(f"  compiling: {desc} ({time.time()-t0:.1f} s to call)", flush=True)
+    elif args.mode != "eager":
+        pg = getattr(policy.model, spec.container)
         t0 = time.time()
         pg.forward = torch.compile(pg.forward, mode="max-autotune-no-cudagraphs")
         desc = ("max-autotune-no-cudagraphs on pg.forward, is_big_gpu FORCED True"

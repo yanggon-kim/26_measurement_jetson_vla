@@ -263,6 +263,42 @@ N1.6's 61.5 %. Architecture beats step count.
 
 ---
 
+## 5b. The combination search (2026-09-23, after the ladder)
+
+The ladder changes one factor at a time, which attributes a speedup but does not search
+combinations. The owner asked for the best combination per model, and specifically for
+configurations that make the **action expert's share larger**, since that is where a PIM
+case is strongest. Full detail: **`reports/E4i_best_combinations.md`**.
+
+| model | best rung | e2e (ms) | vision | prefix | expert | ae % | vs eager |
+|---|---|---:|---:|---:|---:|---:|---:|
+| SmolVLA | `vlm_graphs` | **92.30** | 31.26 | 7.93 | 44.86 | 48.6 | 7.88× |
+| GR00T N1.5 | `all_compile_autotune` | **168.75** | 32.22 | 70.73 | 60.55 | 35.9 | 1.51× |
+| GR00T N1.6 | `all_compile_autotune` | **174.59** | 48.80 | 52.61 | 72.83 | 41.7 | 1.87× |
+| GR00T N1.7 | `vlm_compile` | **240.49** | 70.82 | 87.59 | 79.57 | 33.1 | 1.55× |
+| π0 | `bf16_both` | **424.46** | 56.74 | 192.86 | 168.68 | 39.7 | 2.52× |
+| π0.5 | `bf16_both_graphs` | **487.81** | 56.57 | 239.47 | 185.60 | 38.0 | 6.21× |
+
+Three findings, one of them a correction:
+
+* **A defect in the GR00T ladder.** It was not cumulative: `vis_compile` left the LLM
+  eager and `vlm_compile` left vision eager, so the two were never compiled together. The
+  LeRobot ladder did accumulate. Fixing it gave N1.6 6.1 % and N1.5 7.3 %, and raised the
+  expert's share in both.
+* **Inductor's GEMM autotuning is gated off on this device.** `is_big_gpu()` requires 68
+  SMs (`torch/_inductor/utils.py:1426`) and Orin has 16, so `mode="max-autotune"` silently
+  keeps cuBLAS for every GEMM. Forcing it gains **9.4 % on N1.5** and 1.30× on π0's fp32
+  prefix, but **0.5 % on N1.6** — and on π0 it slows the *eager* expert enough to lose
+  end-to-end. Model-dependent, and the per-kernel data says why.
+* **Refuted:** CUDA graphs on π0.5's prefix on top of bf16. 0.3 %, inside noise.
+
+**The result that matters for the PIM premise.** The expert's share peaks at the **eager**
+baseline in every model. Optimisation shrinks the expert faster than the rest of the frame
+in five of six; the exception is π0.5, whose fp32 prefix was so pathological that fixing it
+promoted the expert from 20.4 % to 38.0 %. Across six models and roughly twenty
+configurations, **no optimised deployment has an action expert that dominates its frame** —
+the highest are SmolVLA at 48.6 % and GR00T N1.6 at 41.7 %.
+
 ## 6. How to trust these numbers — the gates, and what they caught
 
 Both reports are **generated from the raw files** (`bench/make_phase_report.py`,
@@ -291,10 +327,21 @@ defect:
 because LeRobot's whole-`sample_actions` path does not converge for SmolVLA. Every capture
 records which under `compile_style` in its JSON. Do not compare the two as if identical.
 
-**Still open at the time of writing:** the closed-loop accuracy check for the bf16 rungs
-(`bench/libero_eval.py`). π0's and π0.5's best rungs are `bf16_both`, which changes
-numerics, and until that check reports, those are **speed results without an accuracy
-statement**. `STATUS.md` carries the current state.
+**Accuracy of the bf16 rungs (`bench/libero_eval.py`, LIBERO closed loop):**
+
+* **π0 — not shown to degrade.** fp32 6/30 vs `bf16_both` 4/30 on libero_spatial, a
+  6.7 pp difference with SE 9.6 pp (z = 0.70), with per-task differences in both
+  directions. This resolves "bf16 broke the policy"; it does **not** resolve a
+  few-percent change, and 30 episodes against a 20 % baseline could only detect a
+  collapse toward zero.
+* **π0.5 — NOT VALIDATED.** Its fp32 baseline scores **0/30**: the checkpoint is
+  `pi05_libero_base`, a base model, not a LIBERO finetune like π0's. Comparing bf16
+  against a zero baseline cannot distinguish "fine" from "broken", so the arm was not
+  run. **π0.5's 6.21× therefore carries no accuracy statement.**
+
+Absolute rates sit below published LIBERO numbers, so harness differences remain and
+the absolute figure is not offered as a reproduction of anyone's benchmark. The
+comparison is internally valid: both arms ran the same harness, seeds and init states.
 
 ---
 

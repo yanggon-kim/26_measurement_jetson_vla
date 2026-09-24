@@ -19,6 +19,61 @@ The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGE
 After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
 power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
 
+## 2026-09-23 (late) — combination search, accuracy validation, and a defect in the GR00T ladder
+
+New reports: **`reports/E4i_best_combinations.md`** (generated), **`reports/E4h_vlm_prefix_kernels.md`**
+(per-kernel prefix analysis), **`reports/E4_PARTS_ABC_GUIDE.md`** (orientation for this side).
+
+### Best configuration per model, measured
+
+| model | best rung | e2e (ms) | vision | prefix | expert | ae % | vs eager |
+|---|---|---:|---:|---:|---:|---:|---:|
+| SmolVLA | `vlm_graphs` | 92.30 | 31.26 | 7.93 | 44.86 | 48.6 | 7.88× |
+| GR00T N1.5 | `all_compile_autotune` | 168.75 | 32.22 | 70.73 | 60.55 | 35.9 | 1.51× |
+| GR00T N1.6 | `all_compile_autotune` | 174.59 | 48.80 | 52.61 | 72.83 | 41.7 | 1.87× |
+| GR00T N1.7 | `vlm_compile` | 240.49 | 70.82 | 87.59 | 79.57 | 33.1 | 1.55× |
+| π0 | `bf16_both` | 424.46 | 56.74 | 192.86 | 168.68 | 39.7 | 2.52× |
+| π0.5 | `bf16_both_graphs` | 487.81 | 56.57 | 239.47 | 185.60 | 38.0 | 6.21× |
+
+### The finding that bears on the PIM premise
+
+**The action expert's share peaks at the eager baseline in every one of the six models.**
+Optimisation shrinks the expert faster than the rest of the frame in five of six (π0
+54.9 → 39.7 %, SmolVLA 85.3 → 48.6 %, N1.7 56.7 → 33.1 %, N1.6 61.5 → 41.7 %, N1.5
+38.6 → 35.9 %). The exception is π0.5, whose fp32 prefix was so pathological (2162 ms,
+71 % of the frame) that fixing it promoted the expert from 20.4 % to 38.0 %.
+
+Across six models and ~20 configurations, **no optimised deployment has an action expert
+that dominates its frame**. In four of six, the VLM prefix is the largest optimised phase.
+
+### Two defects found in our own method, both corrected
+
+* **The GR00T ladder was not cumulative.** `vis_compile` left the LLM eager and
+  `vlm_compile` left vision eager, so they were never compiled together — the LeRobot
+  ladder did accumulate. The missing combination is worth 6.1 % (N1.6) and 7.3 % (N1.5).
+* **Inductor silently disables GEMM autotuning here.** `is_big_gpu()` requires 68 SMs
+  (`torch/_inductor/utils.py:1426`); Orin has 16. Forcing it: **+9.4 % on N1.5**, +1.30×
+  on π0's fp32 prefix, but only 0.5 % on N1.6 and a net loss on π0 because it slows the
+  *eager* expert (allocator pressure on a launch-bound phase). Orin's 48 KB/block shared
+  memory also leaves **no valid Triton config** for π0's bf16 shapes.
+
+### Accuracy of the bf16 rungs
+
+* **π0 — not shown to degrade.** fp32 6/30 vs bf16 4/30, z = 0.70, differences in both
+  directions. Resolves "broken", not "a few percent".
+* **π0.5 — NOT VALIDATED.** fp32 baseline 0/30; `pi05_libero_base` is a base model, not a
+  LIBERO finetune. **π0.5's 6.21× carries no accuracy statement.**
+
+### Still open, in priority order
+
+1. **E7 energy — no data at all, for any model.** The PIM argument is about joules and we
+   have none. Capped power modes need two human reboots (standing item above).
+2. **T011 / T012 hybrid-model inputs** for π0.5, SmolVLA and GR00T; T010 did π0 only.
+3. `bench/check_report_numbers.py` extended to the E4* reports.
+4. GR00T N1.7 cannot use `all_compile`: its Qwen3-VL vision encoder passes
+   `int(grid_thw[:,1:].max().item())` to `flash_attn_varlen_func`, which dynamo cannot
+   trace. Its 240.49 ms is a structurally weaker optimum, not a tuning failure.
+
 ## 2026-09-23 — Part A + B complete for six models; Part C in progress
 
 `reports/E4d_phase_balance.md` (generated from the row JSONs) and

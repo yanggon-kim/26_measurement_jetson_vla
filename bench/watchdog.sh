@@ -133,4 +133,36 @@ ls -t scratch/T004/queue_*.log 2>/dev/null | head -3 | while read -r f; do
   grep -hE "_START |_DONE |^####|EXIT=[^0]" "$f" 2>/dev/null | tail -6 | sed 's/^/    /'
 done
 echo
-echo "--- 4. ORDER: Part A+B all models error-free -> then Part C. Re-derive before acting."
+echo
+echo "--- 4. ACTION-EXPERT SHARE per configuration (owner: prefer combinations that make"
+echo "        the expert LARGER -- that is where a PIM case is strongest)"
+$HOME/venvs/pi0/bin/python - <<'PYEOF'
+import glob, json
+best = {}
+for pat, name in (("results/20260922_E4c_pi0_opt_ladder/raw/rows/*.json", "pi0"),
+                  ("results/20260922_E4c_pi05_opt_ladder/raw/rows/*.json", "pi0.5"),
+                  ("results/20260922_E4c_smolvla_opt_ladder/raw/rows/*.json", "SmolVLA"),
+                  ("results/20260923_E4d_groot_n17_ladder/raw/rows/*.json", "GR00T N1.7"),
+                  ("results/20260923_E4d_groot_n16_ladder/raw/rows/*.json", "GR00T N1.6"),
+                  ("results/20260923_E4d_groot_n15_ladder/raw/rows/*.json", "GR00T N1.5")):
+    rows = []
+    for f in glob.glob(pat):
+        r = json.load(open(f))
+        try:
+            e = float(r.get("e2e_median_ms")); a = float(r.get("ae_total_ms"))
+        except (TypeError, ValueError):
+            continue
+        if e != e or a != a or e <= 0:
+            continue
+        if name == "pi0" and int(r.get("N", 10)) != 10:
+            continue
+        rows.append((100 * a / e, e, r["rung"]))
+    if rows:
+        best[name] = (max(rows), min(rows, key=lambda x: x[1]))
+print(f"  {'model':12s}{'max AE share':>26s}   {'lowest e2e':>26s}")
+for m, (hi, lo) in best.items():
+    print(f"  {m:12s}{hi[0]:8.1f} % {hi[2][:14]:15s}{lo[1]:9.2f} ms {lo[2][:14]:15s}")
+PYEOF
+echo
+echo "--- 5. ORDER: gaps A (groot vision+llm) -> B (groot GEMM autotune) -> C (pi0.5 bf16+graphs)."
+echo "        Then E7 energy and T011/T012, which have no data at all."

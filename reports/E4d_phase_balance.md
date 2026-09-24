@@ -11,11 +11,11 @@ Each model gets an identical treatment — the same one-factor ladder, at its ow
 | model | N | action head, eager | action head, best | e2e eager (ms) | e2e best (ms) | overall speedup |
 |---|---:|---:|---:|---:|---:|---:|
 | π0 | 10 | 54.9 % | 39.7 % (`bf16_both`) | 1069.04 | 424.46 (`bf16_both`) | 2.52× |
-| π0.5 | 10 | 20.4 % | 38.2 % (`bf16_both`) | 3028.56 | 489.15 (`bf16_both`) | 6.19× |
+| π0.5 | 10 | 20.4 % | 38.0 % (`bf16_both_graphs`) | 3028.56 | 487.81 (`bf16_both_graphs`) | 6.21× |
 | SmolVLA | 10 | 85.3 % | 48.6 % (`vlm_graphs`) | 727.46 |  80.97 (`whole_graphs`) | 8.98× |
 | GR00T N1.7 | 4 | 56.7 % | 33.1 % (`vlm_compile`) | 372.48 | 240.49 (`vlm_compile`) | 1.55× |
-| GR00T N1.6 | 4 | 61.5 % | 39.5 % (`vis_compile`) | 327.22 | 186.12 (`vis_compile`) | 1.76× |
-| GR00T N1.5 | 4 | 38.6 % | 31.0 % (`vlm_compile`) | 255.22 | 200.85 (`vlm_compile`) | 1.27× |
+| GR00T N1.6 | 4 | 61.5 % | 41.7 % (`all_compile_autotune`) | 327.22 | 174.59 (`all_compile_autotune`) | 1.87× |
+| GR00T N1.5 | 4 | 38.6 % | 35.9 % (`all_compile_autotune`) | 255.22 | 168.75 (`all_compile_autotune`) | 1.51× |
 
 **Two shares, at the SAME N.** π0's directory holds both an N = 10 ladder and an N = 4 control, and an earlier version of this generator keyed rows by rung alone, so the N = 4 rows silently overwrote the N = 10 ones. That produced a perfectly plausible table in which π0 appeared to fall to 18.9 % — which is its N = 4 figure. At its configured N = 10 it falls to 39.7 %. Every row above is filtered to one N.
 
@@ -73,6 +73,7 @@ Same model, same machine, only N changes: the action-head share nearly doubles a
 | `bf16_vision` | 576.81 |  89.88 | 290.37 | 189.46 | |
 | `bf16_norms` | 590.14 | 103.23 | 290.53 | 189.70 | |
 | `bf16_both` | 489.15 |  56.69 | 239.49 | 186.67 | |
+| `bf16_both_graphs` | 487.81 |  56.57 | 239.47 | 185.60 | |
 
 ### SmolVLA (N = 10)
 
@@ -123,6 +124,8 @@ Same model, same machine, only N changes: the action-head share nearly doubles a
 | `vis_compile` | 186.12 |  46.77 |  63.44 |  73.60 | |
 | `vlm_compile` | 189.77 |  62.33 |  51.17 |  73.49 | |
 | `vlm_graphs` | 199.80 |  66.75 |  51.16 |  73.57 | |
+| `all_compile` | 175.40 |  47.29 |  50.23 |  73.10 | |
+| `all_compile_autotune` | 174.59 |  48.80 |  52.61 |  72.83 | |
 
 ### GR00T N1.5 (N = 4)
 
@@ -137,6 +140,8 @@ Same model, same machine, only N changes: the action-head share nearly doubles a
 | `vis_compile` | 206.67 |  35.06 | 101.27 |  61.93 | |
 | `vlm_compile` | 200.85 |  50.17 |  78.80 |  62.25 | |
 | `vlm_graphs` | 204.15 |  50.09 |  82.41 |  61.95 | |
+| `all_compile` | 186.17 |  35.37 |  81.37 |  62.39 | |
+| `all_compile_autotune` | 168.75 |  32.22 |  70.73 |  60.55 | |
 
 ## 3. Which lever moved which phase
 
@@ -145,11 +150,11 @@ Best measured value per phase, against that model's eager baseline.
 | model | vision eager → best | vlm_prefix eager → best | action head eager → best |
 |---|---|---|---|
 | π0 | 241.0 → **56.7** (4.25×, `bf16_both`) | 234.6 → **192.8** (1.22×, `vlm_compile`) | 586.9 → **168.7** (3.48×, `bf16_both`) |
-| π0.5 | 239.5 → **56.7** (4.22×, `bf16_both`) | 2162.5 → **239.5** (9.03×, `bf16_both`) | 617.7 → **186.7** (3.31×, `bf16_both`) |
+| π0.5 | 239.5 → **56.6** (4.23×, `bf16_both_graphs`) | 2162.5 → **239.5** (9.03×, `bf16_both_graphs`) | 617.7 → **185.6** (3.33×, `bf16_both_graphs`) |
 | SmolVLA | 33.3 → **31.2** (1.07×, `vlm_compile`) | 65.8 → **7.9** (8.30×, `vlm_graphs`) | 620.6 → **43.6** (14.22×, `vis_compile`) |
 | GR00T N1.7 | 70.6 → **70.1** (1.01×, `eager_tf32`) | 88.6 → **87.1** (1.02×, `ae_compile`) | 211.1 → **79.5** (2.66×, `ae_graphs`) |
-| GR00T N1.6 | 61.9 → **46.8** (1.32×, `vis_compile`) | 61.7 → **51.2** (1.21×, `vlm_graphs`) | 201.3 → **73.0** (2.76×, `ae_graphs`) |
-| GR00T N1.5 | 50.2 → **35.1** (1.43×, `vis_compile`) | 100.6 → **78.8** (1.28×, `vlm_compile`) | 98.5 → **61.9** (1.59×, `vis_compile`) |
+| GR00T N1.6 | 61.9 → **46.8** (1.32×, `vis_compile`) | 61.7 → **50.2** (1.23×, `all_compile`) | 201.3 → **72.8** (2.76×, `all_compile_autotune`) |
+| GR00T N1.5 | 50.2 → **32.2** (1.56×, `all_compile_autotune`) | 100.6 → **70.7** (1.42×, `all_compile_autotune`) | 98.5 → **60.5** (1.63×, `all_compile_autotune`) |
 
 Two things this table is for. First, **precision beats compilation on the VLM prefix for π0.5**: compiling moved it 534 → 516 ms (1.04×) while casting the fp32 checkpoint to bf16 moved it 516 → 239 ms (2.16×). Second, **CUDA graphs on the prefix are model-dependent, not a general win** — a 2× gain on SmolVLA and a net loss on π0 and π0.5, which is consistent with π0's prefix being compute-bound at 816 FLOP/B while SmolVLA's is small enough to be launch-bound.
 
