@@ -63,11 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 04:40:48** · elapsed **34.10 h** of 26 (131 %) · 37.9 GiB free · 0.68 GiB swap
+**Updated 05:00:49** · elapsed **34.43 h** of 26 (132 %) · 37.2 GiB free · 0.68 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 359952 | `bench/host_segments.py --model pi05 --outdir scratch/preflight/E11a_pi05 --steps 4 --timed 2` | 3 min | 15.7 GiB |
+| 361045 | `bench/mempressure.py --model pi05 --outdir-prefix scratch/preflight/E11e_pi05 --steps 4 --` | 8 min | 20.8 GiB |
 
 Latest log lines:
 
@@ -82,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 04:41** (59 configurations)
+**Re-derived from every result CSV on disk at 05:01** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
