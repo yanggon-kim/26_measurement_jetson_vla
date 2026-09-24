@@ -63,15 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 23:20:33** · elapsed **28.76 h** of 26 (111 %) · 49.2 GiB free · 1.44 GiB swap
+**Updated 23:40:34** · elapsed **29.09 h** of 26 (112 %) · 50.7 GiB free · 1.44 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_gaps.log` · compiled action_head.get_action@reduce-overhead+clone, backbone.model.visual.forward@max-autotune-no-cudagraph
-- `queue_gaps.log` · observation shapes: {"video": {"video.exterior_image_1": [1, 256, 256, 3], "video.exterior_image_2": [1, 256, 
-- `queue_gaps.log` · data_processing (CPU): 58.94 ms
+- `queue_gaps.log` · wrote results/20260922_E4c_pi05_opt_ladder (15 rungs)
+- `queue_gaps.log` · EXIT=0
+- `queue_gaps.log` · GAPS_DONE 2026-09-23T23:32:01-07:00
 - `queue_groot_combined.log` · wrote results/20260923_E4d_groot_n15_ladder
 - `queue_groot_combined.log` · EXIT=0
 - `queue_groot_combined.log` · COMBINED_DONE 2026-09-23T23:12:20-07:00
@@ -80,7 +80,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 23:20** (58 configurations)
+**Re-derived from every result CSV on disk at 23:40** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -97,6 +97,7 @@ Latest log lines:
 | pi05 | 10 | bf16_base | 104.19 | 290.55 | 190.52 | 591.95 | 32.2 % |
 | pi05 | 10 | bf16_vision | 89.88 | 290.37 | 189.46 | 576.81 | 32.8 % |
 | pi05 | 10 | bf16_norms | 103.23 | 290.53 | 189.70 | 590.14 | 32.1 % |
+| pi05 | 10 | bf16_both_graphs | 56.57 | 239.47 | 185.60 | 487.81 | 38.0 % |
 | pi05 | 10 | bf16_both | 56.69 | 239.49 | 186.67 | 489.15 | 38.2 % |
 | pi0 | 4 | eager_fp32 | 241.31 | 234.06 | 230.12 | 711.75 | 32.3 % |
 | pi0 | 4 | eager_tf32 | 104.18 | 234.06 | 230.75 | 575.28 | 40.1 % |
