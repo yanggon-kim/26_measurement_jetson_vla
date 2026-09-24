@@ -178,7 +178,11 @@ def main() -> int:
     all_rows: list[dict] = []
     for d in sorted(glob.glob(args.glob)):
         for f in sorted(Path(d).glob("ncu/*_details.csv")):
-            m = re.match(r"(.+?)_(eager|best)_(.+)_details\.csv$", f.name)
+            # <model>_<mode>_<region>_<kernel>_details.csv. The kernel is part of the
+            # tag because all targets of one (model, mode) share a region; without it the
+            # captures overwrite each other.
+            m = re.match(r"(.+?)_(eager|best)_(ae_step_0|ae_step|vision|vlm_prefix)"
+                         r"(?:_.+)?_details\.csv$", f.name)
             if not m:
                 continue
             all_rows += rows_for(f, *m.groups())

@@ -36,7 +36,12 @@ case "$MODEL" in
   *) echo "unknown model $MODEL"; exit 2 ;;
 esac
 
-TAG="${MODEL}_${MODE}_${REGION}"
+# The TAG must include the KERNEL. Every target of one (model, mode) shares the same
+# region -- ae_step_0 -- so a tag of ${MODEL}_${MODE}_${REGION} is identical for all of
+# them and each capture would silently overwrite the previous one, leaving one report
+# where the queue thinks there are three. Sanitised because the name goes in a filename.
+KSAFE=$(printf '%s' "${KREGEX:-all}" | tr -c 'A-Za-z0-9_' '_' | cut -c1-60)
+TAG="${MODEL}_${MODE}_${REGION}_${KSAFE}"
 REP="$OUT/ncu/${TAG}"
 
 # Refuse to start while another profiler is live. Killing a queue does NOT kill the ncu it
