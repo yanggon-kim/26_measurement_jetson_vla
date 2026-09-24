@@ -1,8 +1,41 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-24 by jetson-owner*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-24 (E12 issued) by jetson-owner*
 
 ## Current status
+
+### 2026-09-24, later: E12 / T014 issued and pushed (`88ad91a`) — the co-run experiment, pre-registered
+
+User-approved push. **E12 = π0 `bf16_both` prefix(k) ∥ expert(k−1) on two CUDA streams on one Orin GPU**,
+fresh KV per frame. Spec `docs/E12_corun/README.md` (purpose, definitions, 5 non-negotiables, 5 steps,
+hazards, outputs, acceptance, **dated pre-registered outcome table §9**); task `tasks/T014_pi0_corun.md`;
+order-table row 6 (right after T004) + note "finish the task in progress, then T014 before other open
+MAXN work"; protocol **§14** (binding E12 rules) and **§1** (E12 Step 1 rides the `MODE_30W` session, no
+extra reboot); T004 step 4b (iii); README / AGENTS read lists. Decisive number `s = B_co / B_iso` against
+the in-session `r = A_iso / B_iso` (E7: 251.28 / 167.36 = 1.50 at N = 10; 3.72 at N = 4).
+
+Judgement calls made in the spec (report to main; user may reverse):
+1. `s < r` alone is not "ideal overlap": the period also needs `p ≈ 1`, so `s`, `p`, `T_pipe` are always
+   reported together and §9 has a row for "`s < r` but the prefix slows".
+2. Threshold is the **same-session** `r`, not E7's 1.50; in `MODE_30W` compare with the in-mode `r`.
+3. Equivalence check strengthened beyond the brief: **distinct observations + noise per frame** (with one
+   fixture a stale-KV bug is invisible), **negative stale control must fail**, and the check runs through the
+   **compiled** timed path too (CUDA-graph static buffers / cross-stream allocator reuse are compiled-only hazards).
+4. `MODE_30W` also changes GPU clock (612 MHz, 2.1×) and CPU (8 cores, 1.73 GHz) — the spec says what does
+   not cancel; optional cleaner controls: `MODE_50W` (16 SM @ 816 MHz, no reboot) and an 8-SM partition at MAXN.
+5. Energy compared as whole-frame loops (pipeline vs serial `full`), not from phase loops — because of the
+   open E7 30 % residual.
+6. Found while writing: **E11f's "high-priority" stream was priority 0 = torch's default** (lower number =
+   higher priority; range (0, −3)); no high-priority stream has been measured. Stated in the spec's Step 3.
+7. libsmctrl README lists CUDA ≤ 12.1 vs device 12.6 (from brainstorm case 001) — "try and record".
+
+**Next on this item:** on each pull look for `results/*_E12_pi0_*`, `reports/E12_pi0_corun.md`, T014 status
+lines. Check first: `equivalence.*` present with the negative control failing; `s` from unprofiled runs;
+isolated A/B in-session vs E7 (±3 %); nsys decomposition of `B_co − B_iso`; `mechanisms.csv` with evidence.
+Then hand `s`, `p`, `T_pipe` to main as "for microarch-owner / brainstorm-owner (case 001) / evaluation-owner"
+with result dir, device commit, power mode, n.
+
+### 2026-09-24, earlier: the 315-commit pull
 
 **2026-09-24: 315-commit pull (`5f30ea5..cf72121`), read-only. The second measurement round has LANDED
 and is much larger than asked for: six models (π0, π0.5, SmolVLA, GR00T N1.5/N1.6/N1.7), a 9-rung
@@ -229,6 +262,7 @@ counters, temperature logs, compiled per-region from nsys, step 4b capped modes)
 | T003 | π0 compiled (E4) — **done, accepted** (`results/2026092{1,2}_E4_pi0_*/`) | P0 | T002 |
 | T010 | π0 E11 → `model_inputs.csv` — **complete on content, accepted; `status: done` still to be appended** | P1 | T003 |
 | **T004** | **claimed 2026-09-22**; π0 E5 (done, `reports/E5_timeline.md`), E6, E7 (**complete 14/14 at MAXN**, `reports/E7_power_energy.md`); capped modes 30 W / 15 W still pending two human reboots | P1 | T003 |
+| **T014** | **E12 π0 co-run (prefix ∥ expert, one GPU) — issued 2026-09-24 (`88ad91a`), order row 6; Step 4 rides MODE_30W** | P1 | T004 (E7 MAXN) |
 | T005 | E1/E2 — **done, accepted** (`results/20260922_E1_peak/`, `_E2_ae_kernels/`) | P1 | T001 |
 | **T007** | **claimed 2026-09-24**; π0 E5b instruction level. Targets already chosen from C1 data by `bench/pick_e5b_targets.py` — 22 captures, 1–8 kernels per model, no exploratory pass needed | P1 | T004, T005 |
 | T006 | π0.5 + SmolVLA E3/E4, LIBERO E8 — **effectively delivered** by the 2026-09-22/24 six-model campaign (E4c/E4d/E4f/E4g/E4i ladders + E8q LIBERO); no `status:` line appended, so verify before closing | P2 | T003 |
