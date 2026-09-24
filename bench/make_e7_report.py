@@ -262,6 +262,26 @@ def main() -> int:
           "opposite — and the latency argument overstates the energy case.",
           ""]
 
+    # ---- a prediction E5 can falsify -----------------------------------------------------
+    L += ["## Why π0's ratio is so much lower, and how to check it", "",
+          "π0's expert is 0.32–0.40 while every other model's is 0.69–0.83. The "
+          "hypothesis, from E5: **the ratio should track the phase's GPU-idle "
+          "fraction.** Idle time occupies the frame and draws almost no power above "
+          "idle, so a phase that is mostly idle must have an energy share well below its "
+          "time share — by roughly `1 − idle_frac`.",
+          "",
+          "E5 measured π0's `ae_step` at **84.3 % GPU idle**, against vision at 1.2 % and "
+          "the VLM prefix at 1.6 %. π0's action expert launches ~968 kernels per "
+          "denoising step with a 62 µs median gap between them: it is dispatch-bound, and "
+          "a dispatch-bound phase is cheap in joules precisely because the GPU is doing "
+          "nothing for most of it.",
+          "",
+          "**This is a prediction, not a result.** E5's per-region idle fraction has been "
+          "measured for π0 only. The E5 matrix now queued measures it for all six, and if "
+          "the hypothesis is right SmolVLA's expert — ratio 0.83 — should be markedly "
+          "less idle than π0's. If it is not, the hypothesis is wrong and this section "
+          "should say so rather than be quietly dropped.", ""]
+
     # ---- per-rail detail ---------------------------------------------------------------
     L += ["## Per-rail detail", "",
           "Every rail separately, as protocol §4 requires. `above idle` is this run's own "
