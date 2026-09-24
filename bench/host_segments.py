@@ -606,7 +606,7 @@ def main() -> int:
                     help="`count` only counts kernels per call with torch.profiler and writes "
                          "kernels_per_call.csv; it needs root for CUPTI on this device. "
                          "`time` does the timing and never attaches a profiler, because CUPTI "
-                         "inflates every subsequent call by ~30 %. Run `count` first, then "
+                         "inflates every subsequent call by ~30 %%. Run `count` first, then "
                          "`time` with --kernels-csv pointing at its output.")
     ap.add_argument("--kernels-csv", default=None,
                     help="kernels_per_call.csv from a previous --mode count run")
