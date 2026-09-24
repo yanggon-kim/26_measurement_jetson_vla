@@ -631,7 +631,7 @@ def main() -> int:
     fx = P.load_fixture()
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
-    tok = P.token_counts(policy, batch)
+    tok = P.token_counts(policy, batch, spec)
     Pn, Sn = int(tok["prefix_tokens_P"]), int(tok["suffix_tokens_S"])
     print("tokens:", json.dumps(tok), flush=True)
 

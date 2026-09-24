@@ -95,7 +95,7 @@ def main() -> int:
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
     try:
-        tok = P.token_counts(policy, batch)
+        tok = P.token_counts(policy, batch, spec)
     except Exception as e:                                         # noqa: BLE001
         # token_counts calls embed_suffix, whose signature differs: three arguments for
         # pi0, two for pi0.5 and SmolVLA (modeling_pi05.py:684, modeling_smolvla.py:719).
