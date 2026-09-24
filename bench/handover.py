@@ -35,8 +35,24 @@ from phase_loops import build, prefix_once  # noqa: E402
 
 
 def cache_layers(pkv):
-    """(keys, values) per layer, across the two transformers Cache APIs."""
+    """(keys, values) per layer, across the THREE cache shapes in this study.
+
+    pi0 and pi0.5 get a `transformers` Cache, in either of its two APIs. SmolVLA does not
+    use one at all: `SmolVLMWithExpertModel.forward` keeps a plain dict,
+    `past_key_values[layer_idx] = {"key_states": ..., "value_states": ...}`
+    (smolvlm_with_expert.py:253-256), and concatenates on dim=1 rather than dim=2 because
+    its tensors stay in B, L, H, D. Without this branch the dict falls through both
+    `try`s and raises AttributeError on `.key_cache`.
+    """
     out = []
+    if isinstance(pkv, dict):
+        for i in sorted(pkv):
+            e = pkv[i]
+            if isinstance(e, dict) and "key_states" in e:
+                out.append((e["key_states"], e["value_states"]))
+            elif isinstance(e, (tuple, list)) and len(e) >= 2:
+                out.append((e[0], e[1]))
+        return out
     try:
         for lay in pkv.layers:
             out.append((lay.keys, lay.values))
