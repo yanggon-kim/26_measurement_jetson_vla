@@ -10,21 +10,30 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.
 
-**Coverage: 11 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `groot_n15/eager_fp32`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
+**Coverage: 14 of 14 planned runs.** Complete. Present: `groot_n15/all_compile_autotune`, `groot_n15/eager_fp32`, `groot_n16/all_compile_autotune`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `groot_n17/vlm_compile`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
 
 ## Energy per inference
 
 | model | N | configuration | phase | median ms | module W | above idle W | mJ / inference | mJ above idle |
 |---|---:|---|---|---:|---:|---:|---:|---:|
+| GR00T N1.5 | 4 | `all_compile_autotune` | prefix | 98.08 | 64.07 | 53.44 | 6284.1 | 5241.3 |
+| GR00T N1.5 | 4 | `all_compile_autotune` | ae | 60.24 | 55.55 | 44.92 | 3346.3 | 2705.9 |
+| GR00T N1.5 | 4 | `all_compile_autotune` | full | 159.65 | 52.19 | 41.56 | 8332.5 | 6635.3 |
 | GR00T N1.5 | 4 | `eager_fp32` | prefix | 141.67 | 59.99 | 48.62 | 8498.3 | 6888.7 |
 | GR00T N1.5 | 4 | `eager_fp32` | ae | 108.37 | 40.32 | 28.95 | 4368.9 | 3137.6 |
 | GR00T N1.5 | 4 | `eager_fp32` | full | 251.27 | 54.63 | 43.27 | 13726.9 | 10871.9 |
+| GR00T N1.6 | 4 | `all_compile_autotune` | prefix | 88.19 | 59.50 | 48.93 | 5247.2 | 4315.2 |
+| GR00T N1.6 | 4 | `all_compile_autotune` | ae | 73.73 | 45.38 | 34.81 | 3345.5 | 2566.3 |
+| GR00T N1.6 | 4 | `all_compile_autotune` | full | 163.06 | 56.85 | 46.28 | 9269.4 | 7546.1 |
 | GR00T N1.6 | 4 | `eager_fp32` | prefix | 126.03 | 49.59 | 38.37 | 6249.7 | 4836.1 |
 | GR00T N1.6 | 4 | `eager_fp32` | ae | 215.24 | 28.92 | 17.71 | 6225.1 | 3810.9 |
 | GR00T N1.6 | 4 | `eager_fp32` | full | 333.00 | 37.28 | 26.06 | 12414.8 | 8679.7 |
 | GR00T N1.7 | 4 | `eager_fp32` | prefix | 161.75 | 42.34 | 31.23 | 6848.1 | 5052.0 |
 | GR00T N1.7 | 4 | `eager_fp32` | ae | 226.84 | 29.37 | 18.26 | 6661.2 | 4142.5 |
 | GR00T N1.7 | 4 | `eager_fp32` | full | 381.65 | 35.37 | 24.27 | 13498.8 | 9261.1 |
+| GR00T N1.7 | 4 | `vlm_compile` | prefix | 158.61 | 42.50 | 31.93 | 6740.3 | 5064.7 |
+| GR00T N1.7 | 4 | `vlm_compile` | ae | 81.05 | 45.48 | 34.91 | 3685.8 | 2829.5 |
+| GR00T N1.7 | 4 | `vlm_compile` | full | 239.85 | 40.39 | 29.83 | 9688.0 | 7154.2 |
 | π0.5 | 10 | `bf16_both_graphs` | prefix | 291.85 | 48.22 | 37.16 | 14072.0 | 10846.2 |
 | π0.5 | 10 | `bf16_both_graphs` | ae | 184.27 | 32.81 | 21.75 | 6045.1 | 4008.4 |
 | π0.5 | 10 | `bf16_both_graphs` | full | 482.09 | 45.33 | 34.28 | 21854.6 | 16526.2 |
@@ -56,12 +65,17 @@ The `full` loop is the complete inference. This is the number a robot's battery 
 
 | model | N | eager J | best J | eager ms | best ms | energy saved | time saved | energy ÷ time saving |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
+| GR00T N1.5 | 4 | 13.73 | 8.33 | 251.3 | 159.6 | 1.65× | 1.57× | 1.05 |
+| GR00T N1.6 | 4 | 12.41 | 9.27 | 333.0 | 163.1 | 1.34× | 2.04× | 0.66 |
+| GR00T N1.7 | 4 | 13.50 | 9.69 | 381.6 | 239.8 | 1.39× | 1.59× | 0.88 |
 | π0 | 10 | 37.09 | 18.16 | 1083.2 | 424.7 | 2.04× | 2.55× | 0.80 |
 | π0 | 4 | 29.75 | 15.12 | 722.6 | 323.1 | 1.97× | 2.24× | 0.88 |
 | π0.5 | 10 | 132.99 | 21.85 | 3041.6 | 482.1 | 6.09× | 6.31× | 0.96 |
 | SmolVLA | 10 | 14.12 | 3.77 | 740.7 | 88.2 | 3.74× | 8.40× | 0.45 |
 
 **The last column is the one to watch.** Above 1 means the optimised configuration saves proportionally MORE energy than time — it is removing work, not just running it sooner. Below 1 means it is buying speed with power, and the latency figure overstates the benefit. Either is possible and only measurement distinguishes them; this is why E7 exists alongside Part B.
+
+**With all 14 points measured, it goes both ways.** Six of the seven model/N combinations save proportionally LESS energy than time — SmolVLA worst at 0.45, meaning its 8.4× speedup buys only 3.7× the energy. But **GR00T N1.5 is 1.05**: it saves slightly more energy than time, so its optimisation genuinely removes work rather than running the same work sooner. Any statement of the form "optimisation always trades power for speed here" is falsified by that row, and I made it before N1.5 was measured.
 
 **Compare like with like.** An earlier commit message of mine put π0.5's energy saving at 6.6× against a 6.2× latency saving and concluded the optimisation was removing work rather than trading power for speed. That was wrong: 6.6× was the sum of the `prefix` and `ae` loops' above-idle energy, which is not the whole frame, set against the whole frame's latency. On the `full` loop, like for like, π0.5 saves 6.09× the energy and 6.31× the time — its optimised configuration draws slightly MORE power (45.33 W against 43.72 W), so it is buying a little speed with power. The sub-phase table below is for attributing energy WITHIN a frame; this table is for comparing frames.
 
@@ -73,9 +87,12 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 
 | model | N | configuration | prefix mJ | ae mJ | prefix % of energy | ae % of energy | prefix % of time | ae % of time | **ae energy ÷ time** |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| GR00T N1.5 | 4 | `all_compile_autotune` | 5241.3 | 2705.9 | 66.0 | 34.0 | 62.0 | 38.0 | **0.89** |
 | GR00T N1.5 | 4 | `eager_fp32` | 6888.7 | 3137.6 | 68.7 | 31.3 | 56.7 | 43.3 | **0.72** |
+| GR00T N1.6 | 4 | `all_compile_autotune` | 4315.2 | 2566.3 | 62.7 | 37.3 | 54.5 | 45.5 | **0.82** |
 | GR00T N1.6 | 4 | `eager_fp32` | 4836.1 | 3810.9 | 55.9 | 44.1 | 36.9 | 63.1 | **0.70** |
 | GR00T N1.7 | 4 | `eager_fp32` | 5052.0 | 4142.5 | 54.9 | 45.1 | 41.6 | 58.4 | **0.77** |
+| GR00T N1.7 | 4 | `vlm_compile` | 5064.7 | 2829.5 | 64.2 | 35.8 | 66.2 | 33.8 | **1.06** |
 | π0.5 | 10 | `bf16_both_graphs` | 10846.2 | 4008.4 | 73.0 | 27.0 | 61.3 | 38.7 | **0.70** |
 | π0.5 | 10 | `eager` | 84253.7 | 13781.8 | 85.9 | 14.1 | 79.5 | 20.5 | **0.69** |
 | π0 | 10 | `bf16_both` | 6395.8 | 3112.5 | 67.3 | 32.7 | 60.0 | 40.0 | **0.82** |
@@ -99,6 +116,29 @@ E5 measured π0's `ae_step` at **84.3 % GPU idle**, against vision at 1.2 % and 
 
 Every rail separately, as protocol §4 requires. `above idle` is this run's own 60 s baseline in the same power mode, subtracted.
 
+### GR00T N1.5 — `all_compile_autotune`, N=4, MAXN (compiled)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 4292 | 406 | 3887 | 421.0 |  |
+| prefix | VDD_CPU_CV | 2054 | 1228 | 826 | 201.4 |  |
+| prefix | VDD_GPU_SOC | 47521 | 4786 | 42736 | 4661.1 |  |
+| prefix | VIN_SYS_5V0 | 10200 | 4212 | 5988 | 1000.5 |  |
+| prefix | module | 64068 | 10631 | 53437 | 6284.1 |  |
+| prefix | module_without_memory_rail | 59775 | 10225 | 49550 | 5863.0 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 4507 | 406 | 4102 | 271.5 | 67.9 |
+| ae | VDD_CPU_CV | 1775 | 1228 | 547 | 106.9 | 26.7 |
+| ae | VDD_GPU_SOC | 38697 | 4786 | 33911 | 2331.2 | 582.8 |
+| ae | VIN_SYS_5V0 | 10568 | 4212 | 6356 | 636.6 | 159.2 |
+| ae | module | 55547 | 10631 | 44916 | 3346.3 | 836.6 |
+| ae | module_without_memory_rail | 51039 | 10225 | 40814 | 3074.8 | 768.7 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3800 | 406 | 3394 | 606.6 | 151.7 |
+| full | VDD_CPU_CV | 2291 | 1228 | 1063 | 365.7 | 91.4 |
+| full | VDD_GPU_SOC | 36693 | 4786 | 31907 | 5857.9 | 1464.5 |
+| full | VIN_SYS_5V0 | 9410 | 4212 | 5198 | 1502.3 | 375.6 |
+| full | module | 52194 | 10631 | 41563 | 8332.5 | 2083.1 |
+| full | module_without_memory_rail | 48394 | 10225 | 38168 | 7725.9 | 1931.5 |
+
 ### GR00T N1.5 — `eager_fp32`, N=4, MAXN (eager)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -121,6 +161,29 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | VIN_SYS_5V0 | 10205 | 4306 | 5899 | 2564.3 | 641.1 |
 | full | module | 54630 | 11362 | 43268 | 13726.9 | 3431.7 |
 | full | module_without_memory_rail | 50361 | 10866 | 39494 | 12654.2 | 3163.5 |
+
+### GR00T N1.6 — `all_compile_autotune`, N=4, MAXN (compiled)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3824 | 405 | 3419 | 337.2 |  |
+| prefix | VDD_CPU_CV | 2589 | 1220 | 1369 | 228.3 |  |
+| prefix | VDD_GPU_SOC | 43587 | 4783 | 38804 | 3843.8 |  |
+| prefix | VIN_SYS_5V0 | 9502 | 4162 | 5341 | 838.0 |  |
+| prefix | module | 59501 | 10569 | 48932 | 5247.2 |  |
+| prefix | module_without_memory_rail | 55678 | 10164 | 45514 | 4910.0 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 4091 | 405 | 3686 | 301.6 | 75.4 |
+| ae | VDD_CPU_CV | 1828 | 1220 | 609 | 134.8 | 33.7 |
+| ae | VDD_GPU_SOC | 29521 | 4783 | 24739 | 2176.6 | 544.1 |
+| ae | VIN_SYS_5V0 | 9935 | 4162 | 5773 | 732.5 | 183.1 |
+| ae | module | 45375 | 10569 | 34807 | 3345.5 | 836.4 |
+| ae | module_without_memory_rail | 41285 | 10164 | 31121 | 3043.9 | 761.0 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 4343 | 405 | 3938 | 708.2 | 177.0 |
+| full | VDD_CPU_CV | 2143 | 1220 | 924 | 349.5 | 87.4 |
+| full | VDD_GPU_SOC | 40014 | 4783 | 35231 | 6524.6 | 1631.2 |
+| full | VIN_SYS_5V0 | 10347 | 4162 | 6185 | 1687.1 | 421.8 |
+| full | module | 56847 | 10569 | 46278 | 9269.4 | 2317.4 |
+| full | module_without_memory_rail | 52504 | 10164 | 42340 | 8561.2 | 2140.3 |
 
 ### GR00T N1.6 — `eager_fp32`, N=4, MAXN (eager)
 
@@ -167,6 +230,29 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | VIN_SYS_5V0 | 7910 | 4258 | 3652 | 3018.9 | 754.7 |
 | full | module | 35370 | 11104 | 24266 | 13498.8 | 3374.7 |
 | full | module_without_memory_rail | 32609 | 10645 | 21964 | 12445.2 | 3111.3 |
+
+### GR00T N1.7 — `vlm_compile`, N=4, MAXN (compiled)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3226 | 406 | 2820 | 511.7 |  |
+| prefix | VDD_CPU_CV | 2865 | 1220 | 1646 | 454.4 |  |
+| prefix | VDD_GPU_SOC | 27847 | 4784 | 23063 | 4417.0 |  |
+| prefix | VIN_SYS_5V0 | 8557 | 4154 | 4402 | 1357.3 |  |
+| prefix | module | 42496 | 10564 | 31931 | 6740.3 |  |
+| prefix | module_without_memory_rail | 39270 | 10158 | 29111 | 6228.7 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 4248 | 406 | 3842 | 344.3 | 86.1 |
+| ae | VDD_CPU_CV | 1826 | 1220 | 606 | 148.0 | 37.0 |
+| ae | VDD_GPU_SOC | 29244 | 4784 | 24460 | 2370.2 | 592.5 |
+| ae | VIN_SYS_5V0 | 10158 | 4154 | 6004 | 823.3 | 205.8 |
+| ae | module | 45476 | 10564 | 34912 | 3685.8 | 921.4 |
+| ae | module_without_memory_rail | 41228 | 10158 | 31070 | 3341.5 | 835.4 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3309 | 406 | 2903 | 793.7 | 198.4 |
+| full | VDD_CPU_CV | 2510 | 1220 | 1290 | 601.9 | 150.5 |
+| full | VDD_GPU_SOC | 25886 | 4784 | 21102 | 6208.7 | 1552.2 |
+| full | VIN_SYS_5V0 | 8688 | 4154 | 4533 | 2083.7 | 520.9 |
+| full | module | 40393 | 10564 | 29828 | 9688.0 | 2422.0 |
+| full | module_without_memory_rail | 37084 | 10158 | 26925 | 8894.4 | 2223.6 |
 
 ### π0.5 — `bf16_both_graphs`, N=10, MAXN (compiled_subpath)
 
@@ -363,9 +449,12 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 
 | model | N | configuration | E7 `full` loop median ms | Part B e2e median ms | ratio |
 |---|---:|---|---:|---:|---:|
+| GR00T N1.5 | 4 | `all_compile_autotune` | 159.65 | 168.75 | 0.95× |
 | GR00T N1.5 | 4 | `eager_fp32` | 251.27 | 255.22 | 0.98× |
+| GR00T N1.6 | 4 | `all_compile_autotune` | 163.06 | 174.59 | 0.93× |
 | GR00T N1.6 | 4 | `eager_fp32` | 333.00 | 327.22 | 1.02× |
 | GR00T N1.7 | 4 | `eager_fp32` | 381.65 | 372.48 | 1.02× |
+| GR00T N1.7 | 4 | `vlm_compile` | 239.85 | 240.49 | 1.00× |
 | π0.5 | 10 | `bf16_both_graphs` | 482.09 | 487.81 | 0.99× |
 | π0.5 | 10 | `eager` | 3041.59 | 3028.56 | 1.00× |
 | π0 | 10 | `bf16_both` | 424.68 | 424.46 | 1.00× |

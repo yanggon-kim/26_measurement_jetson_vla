@@ -209,6 +209,13 @@ def main() -> int:
           "work, not just running it sooner. Below 1 means it is buying speed with power, "
           "and the latency figure overstates the benefit. Either is possible and only "
           "measurement distinguishes them; this is why E7 exists alongside Part B.", "",
+          "**With all 14 points measured, it goes both ways.** Six of the seven "
+          "model/N combinations save proportionally LESS energy than time — SmolVLA "
+          "worst at 0.45, meaning its 8.4× speedup buys only 3.7× the energy. But "
+          "**GR00T N1.5 is 1.05**: it saves slightly more energy than time, so its "
+          "optimisation genuinely removes work rather than running the same work sooner. "
+          "Any statement of the form \"optimisation always trades power for speed here\" "
+          "is falsified by that row, and I made it before N1.5 was measured.", "",
           "**Compare like with like.** An earlier commit message of mine put π0.5's "
           "energy saving at 6.6× against a 6.2× latency saving and concluded the "
           "optimisation was removing work rather than trading power for speed. That was "
