@@ -31,6 +31,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 from e11_summaries import e11d  # noqa: E402
@@ -70,8 +71,9 @@ def make_fixture(base: dict, n_images: int, prompt: str | None) -> dict:
     return fx
 
 
-def run_point(policy, fx, steps, warmup, timed, instrument):
-    batch, _, _ = P.build_batch(policy, fx)
+def run_point(policy, fx, steps, warmup, timed, instrument, spec):
+    batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
     tok = P.token_counts(policy, batch)
     rec = R.Recorder() if instrument else None
     undo = R.instrument(policy, rec) if instrument else None
@@ -117,12 +119,15 @@ def linfit(xs, ys):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0",
+                    help="pi0 | pi05 | smolvla. T011 extends E11 beyond pi0; the expert layout and the checkpoint-specific processors come from bench/model_registry.py.")
     ap.add_argument("--outdir-prefix", required=True)
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--warmup", type=int, default=5)
     ap.add_argument("--timed", type=int, default=30)
     ap.add_argument("--modes", default="eager,reduce-overhead")
     args = ap.parse_args()
+    spec = MR.get(args.model)
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
     base = P.load_fixture()
@@ -132,7 +137,7 @@ def main() -> int:
         (out / "raw").mkdir(parents=True, exist_ok=True)
         cm = None if mode == "eager" else mode
         t_load = time.perf_counter()
-        policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=cm)
+        policy, cfg, shipped = MR.load_policy(spec, n=args.steps, compile_mode=cm)
         real = P.assert_real_weights(policy)
         print(f"\n=== {mode} (load {time.perf_counter()-t_load:.1f} s) ===", flush=True)
         rows, samples, compile_s = [], [], {}
@@ -142,7 +147,8 @@ def main() -> int:
                 label = f"{n_img}img_{plabel}"
                 # warm each shape until it stops recompiling; the first call carries compile
                 t0 = time.perf_counter()
-                b0, _, _ = P.build_batch(policy, fx)
+                b0, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
                 policy.predict_action_chunk(b0)
                 torch.cuda.synchronize()
                 compile_s[label] = round(time.perf_counter() - t0, 3)
@@ -222,7 +228,7 @@ def main() -> int:
             w.writeheader()
             w.writerows(fits)
 
-        mi = ModelInputs("pi0", P.REVISION, sh_out(f"git -C {REPO} rev-parse HEAD"),
+        mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
                          "MAXN+jetson_clocks", rows[0]["P_processed"], 51, args.steps)
         qmap = {"vision": "t_vision", "vlm_prefix": "t_vlm_prefix", "ae_step": "t_ae_step",
                 "ae_total": "t_ae_total", "e2e": "t_e2e", "preprocess": "t_preprocess",
@@ -255,8 +261,9 @@ def main() -> int:
         write_json(out / "meta.json", {
             "experiment": "E11d", "task": "T010",
             "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
-            "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+            "model": spec.name, "model_repo": spec.checkpoint,
+            "model_commit": spec.revision, "model_revision": spec.revision,
+            "checkpoint": spec.checkpoint, "precision": "bfloat16",
             "compile_mode": cm, "batch": 1, "num_denoise_steps": args.steps,
             "action_horizon": getattr(cfg, "chunk_size", None),
             "prefix_tokens": rows[0]["P_processed"], "suffix_tokens": 51,

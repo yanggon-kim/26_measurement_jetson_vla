@@ -25,10 +25,27 @@ from common import (REPO, collect_raw, sh_out, software_versions, write_json,  #
                     write_summary)
 from host_segments import MI_HEADER  # noqa: E402
 
-PARTS = ["E11a_pi0_hostseg", "E11b_xfer", "E11c_pi0_handover",
-         "E11d_pi0_eager_prefixsweep", "E11d_pi0_reduce-overhead_prefixsweep",
-         "E11e_pi0_eager_mempressure", "E11e_pi0_reduce-overhead_mempressure",
-         "E11f_pi0_pipelining"]
+def parts_for(model: str) -> list[str]:
+    """The E11 parts that belong to `model`, in the order they are consolidated.
+
+    T011 reshapes this for the models after pi0: **E11b is dropped** and the exact
+    transfer measurement moves inside E11c as `xfer_exact.csv`. E11b (xfer_latency.py)
+    measures host<->device copies with no model in them at all, so re-running it per
+    model would produce the same numbers under a different name and invite someone to
+    average them as if they were independent.
+    """
+    ps = [f"E11a_{model}_hostseg", f"E11c_{model}_handover",
+          f"E11d_{model}_eager_prefixsweep",
+          f"E11d_{model}_reduce-overhead_prefixsweep",
+          f"E11e_{model}_eager_mempressure",
+          f"E11e_{model}_reduce-overhead_mempressure",
+          f"E11f_{model}_pipelining"]
+    if model == "pi0":
+        # pi0's E11b ran as its own part before T011 reshaped this, and its rows are
+        # committed. Keeping it for pi0 only preserves that history without implying the
+        # later models are missing something.
+        ps.insert(1, "E11b_xfer")
+    return ps
 REGION_Q = {"preprocess": "t_preprocess", "vision": "t_vision", "vlm_prefix": "t_vlm_prefix",
             "postprocess": "t_postprocess", "ae_step": "t_ae_step", "ae_total": "t_ae_total",
             "e2e_wall": "t_e2e", "e2e": "t_e2e"}
@@ -62,13 +79,38 @@ def restate(out: Path, src_dir: Path, filename: str) -> str | None:
     return f"raw/restated/{src_dir.name}/{filename}"
 
 
+def _pick_ps(rows: list[list], which: str):
+    """P or S as the PARTS reported it, never asserted.
+
+    pi0's P = 816 is a property of its tokenizer_max_length=48 and empty_cameras=1;
+    pi0.5 has 200 and 0. Hardcoding pi0's constant into a consolidated file for another
+    model would put a wrong number in the one artefact the research side reads directly.
+    """
+    i = MI_HEADER.index(which)
+    seen = {r[i] for r in rows if r[i] not in ("", None)}
+    if len(seen) == 1:
+        v = seen.pop()
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return v
+    if not seen:
+        return None
+    return sorted(seen)          # disagreement is reported, not averaged away
+
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
+    ap.add_argument("--model", default="pi0", help="pi0 | pi05 | smolvla")
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
     bench_commit = sh_out(f"git -C {REPO} rev-parse HEAD")
+    import model_registry as MR                                       # noqa: PLC0415
+    spec = MR.get(args.model)
+    PARTS = parts_for(args.model)
     rows, provenance, missing = [], [], []
 
     # --- 1. every part's own rows, with source_file repointed at a restated copy
@@ -94,7 +136,12 @@ def main() -> int:
         print(f"  {part:38s} {n:5d} rows from {d.name}")
 
     # --- 2. the E3/E4 region latencies (§13.8 copy rule)
-    for tag, pat, style, cm in (("E3 eager", "*_E3_pi0_eager_N{n}", "eager", ""),
+    # E3 and E4 ran for pi0 only (T002/T003). For any other model the equivalent region
+    # latencies live in the Part B ladder rows instead, so this section is SKIPPED rather
+    # than silently matching pi0's directories and copying pi0's numbers into another
+    # model's file -- which is exactly what the glob would have done.
+    for tag, pat, style, cm in () if args.model != "pi0" else (
+                               ("E3 eager", "*_E3_pi0_eager_N{n}", "eager", ""),
                                 ("E4 reduce-overhead",
                                  "*_E4_pi0_reduce-overhead_N{n}", "compiled",
                                  "reduce-overhead")):
@@ -129,7 +176,9 @@ def main() -> int:
             print(f"  {tag + f' N={n_steps}':38s} {cnt:5d} rows from {d.name}")
 
     # --- 3. the slope definition of ms/step, restated from the E3/E4 summaries
-    for name, style, cm in (("20260921_E4_pi0_summary.csv", "", ""),):
+    # pi0 only, for the same reason as section 2: this summary file is pi0's.
+    for name, style, cm in (() if args.model != "pi0"
+                            else (("20260921_E4_pi0_summary.csv", "", ""),)):
         f = REPO / "results" / name
         if not f.exists():
             missing.append(name)
@@ -177,14 +226,19 @@ def main() -> int:
 
     sw = software_versions()
     write_json(out / "meta.json", {
-        "experiment": "E11 (consolidated)", "task": "T010",
+        "experiment": "E11 (consolidated)",
+        "task": "T010" if args.model == "pi0" else "T011",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": "lerobot/pi0_libero_finetuned_v044",
-        "model_repo": "lerobot/pi0_libero_finetuned_v044",
-        "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-        "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+        "model": spec.name,
+        "model_repo": spec.checkpoint,
+        "model_commit": spec.revision,
+        "checkpoint": spec.checkpoint,
         "precision": "bfloat16", "compile_mode": "eager and reduce-overhead",
-        "batch": 1, "prefix_tokens": 816, "suffix_tokens": 51,
+        # P and S are READ from the parts' own rows, never asserted: pi0.5 has
+        # tokenizer_max_length=200 and empty_cameras=0 against pi0's 48 and 1, so pi0's
+        # P = 816 does not carry over to any other model.
+        "batch": 1, "prefix_tokens": _pick_ps(rows, "P"),
+        "suffix_tokens": _pick_ps(rows, "S"),
         "power_mode": "NV Power Mode: MAXN", "bench_commit": bench_commit,
         "bench_files_sha256": sw.get("bench_files_sha256"),
         "torch": sw.get("torch"), "python": sw.get("python"),
@@ -236,15 +290,19 @@ def main() -> int:
            "`source_file` points at a copy of that run's tidy CSV under "
            "`raw/restated/<run dir>/`, never at a profiler report."),
         ("Conditions",
-         "π0 `lerobot/pi0_libero_finetuned_v044` @ `45dcc8fc`, bf16, MAXN + jetson_clocks, "
-         "P = 816 processed (533 valid), S = 51. Each row's own run directory holds its gate "
+         f"{spec.name} `{spec.checkpoint}`"
+         + (f" @ `{spec.revision[:8]}`" if spec.revision else "")
+         + f", bf16, MAXN + jetson_clocks, P = {_pick_ps(rows, 'P')}, "
+         f"S = {_pick_ps(rows, 'S')}. Each row's own run directory holds its gate "
          "record, device state and raw files; this directory is derived and measures nothing "
          "itself."),
         ("Reproduce",
-         f"```\npython bench/consolidate_e11.py --outdir {args.outdir}\n"
+         f"```\npython bench/consolidate_e11.py --model {args.model} "
+         f"--outdir {args.outdir}\n"
          f"python docs/reference_scripts/check_model_inputs.py "
          f"{args.outdir}/model_inputs.csv\n```"),
-    ], [f"{q}: not measured — see reports/E11_pi0_hybrid_inputs.md" for q in absent]
+    ], [f"{q}: not measured — see reports/E11_{spec.name}_hybrid_inputs.md"
+        for q in absent]
        + [f"part {m} missing" for m in missing])
     meta = json.loads((out / "meta.json").read_text())
     meta["raw_files"] = collect_raw(out, meta["command"])

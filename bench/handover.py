@@ -25,6 +25,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 from e11_summaries import e11c  # noqa: E402
 from common import (REPO, collect_raw, sh_out, software_versions, summarize,  # noqa: E402
@@ -77,24 +78,28 @@ def timed_event(fn, warmup, n):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0",
+                    help="pi0 | pi05 | smolvla. T011 extends E11 beyond pi0; the expert layout and the checkpoint-specific processors come from bench/model_registry.py.")
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=1000)   # §13.1: >= 1,000 timed calls
     ap.add_argument("--steps", type=int, default=4)
     args = ap.parse_args()
+    spec = MR.get(args.model)
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
 
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
-    policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps)
+    policy, cfg, shipped = MR.load_policy(spec, n=args.steps)
     real = P.assert_real_weights(policy)
     fx = P.load_fixture()
-    batch, _, _ = P.build_batch(policy, fx)
+    batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
     tok = P.token_counts(policy, batch)
     Pn, Sn = int(tok["prefix_tokens_P"]), int(tok["suffix_tokens_S"])
     P_valid = int(tok["prefix_tokens_valid"])
-    ctx = build(policy, batch)
+    ctx = build(policy, batch, spec)
     pkv, prefix_pad_masks = prefix_once(ctx)
     layers = cache_layers(pkv)
     print(f"cache: {len(layers)} layers; P={Pn} ({P_valid} valid, {Pn - P_valid} padded)")
@@ -163,7 +168,7 @@ def main() -> int:
     # modeling_pi0.py:918. Capturing only on entry to denoise_step would show a stable
     # address -- the same source object is passed in every step -- and would wrongly read as
     # "referenced, not copied".
-    pgx = policy.model.paligemma_with_expert
+    pgx = getattr(policy.model, spec.container)
     orig_pg = pgx.forward
 
     def wrapped_pg(*a, **kw):
@@ -300,7 +305,7 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
 """)
 
     # --- model_inputs.csv
-    mi = ModelInputs("pi0", P.REVISION, sh_out(f"git -C {REPO} rev-parse HEAD"),
+    mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
                      "MAXN+jetson_clocks", Pn, Sn, args.steps)
     mi.add("kv_bytes_per_layer", per_layer, "bytes", "value", 1, "handover.csv", key="padded")
     mi.add("kv_bytes_per_layer", per_layer * P_valid // Pn, "bytes", "value", 1,
@@ -337,8 +342,9 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
     write_json(out / "meta.json", {
         "experiment": "E11c", "task": "T010",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
-        "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+        "model": spec.name, "model_repo": spec.checkpoint,
+        "model_commit": spec.revision, "model_revision": spec.revision,
+        "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": None, "batch": 1, "num_denoise_steps": args.steps,
         "action_horizon": getattr(cfg, "chunk_size", None),
         "prefix_tokens": Pn, "prefix_tokens_valid": P_valid, "suffix_tokens": Sn,

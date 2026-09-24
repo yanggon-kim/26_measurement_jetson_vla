@@ -29,6 +29,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 import phase_loops as PL  # noqa: E402
 from e11_summaries import e11f  # noqa: E402
@@ -133,14 +134,14 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str, n_inferences: int = 2) -> dict 
             "per_inference": True}
 
 
-def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float):
+def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec):
     """The per-layer host-segment sequence, `layers_per_inf` times with a pause between
     segments — the plan's 18 x N layers per inference."""
-    cap = LayerCapture(policy, 0)
+    cap = LayerCapture(policy, 0, spec)
     with cap, torch.no_grad():
         policy.predict_action_chunk(batch)
     t = intermediates(policy, cap)
-    ex = policy.model.paligemma_with_expert.gemma_expert
+    ex = spec.resolve(policy, spec.expert_layers_path.rsplit('.', 1)[0])
     S = t["x"].shape[1]
     t["_partials"] = torch.randn(4, S, ex.config.hidden_size, device="cuda", dtype=t["x"].dtype)
     segs = [s for s in build_segments(t, S, ex.config.hidden_size, ex.config.intermediate_size,
@@ -162,13 +163,13 @@ def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float):
 
 
 def emit_model_inputs(out: Path, trows, crows, irows, steps: int,
-                      bench_commit: str) -> int:
+                      bench_commit: str, spec) -> int:
     """Every model_inputs.csv row E11f is responsible for, from the three CSVs.
 
     Shared by the measuring path and by --from-csv, so a re-emission cannot drift
     from what a fresh run would write.
     """
-    mi = ModelInputs("pi0", P.REVISION, bench_commit,
+    mi = ModelInputs(spec.name, spec.revision or "", bench_commit,
                      "MAXN+jetson_clocks", 816, 51, steps)
     qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
     for r in trows:
@@ -225,8 +226,11 @@ def rebuild_from_csv(out: Path, args) -> int:
         print(f"{out}: meta.json is missing; refusing to invent one")
         return 1
     meta = json.loads(meta_p.read_text())
+    # The re-emit path has no CLI, so the model comes from the run's own meta.json --
+    # never from a default, which would relabel another model's rows as pi0.
     n_mi = emit_model_inputs(out, trows, crows, irows, int(meta.get("num_denoise_steps", 4)),
-                             meta.get("bench_commit") or sh_out(f"git -C {REPO} rev-parse HEAD"))
+                             meta.get("bench_commit") or sh_out(f"git -C {REPO} rev-parse HEAD"),
+                             MR.get(meta.get("model", "pi0")))
     e11f(out)
     meta["model_inputs_rows"] = n_mi
     meta.setdefault("notes", []).append(
@@ -244,6 +248,8 @@ def rebuild_from_csv(out: Path, args) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0",
+                    help="pi0 | pi05 | smolvla. T011 extends E11 beyond pi0; the expert layout and the checkpoint-specific processors come from bench/model_registry.py.")
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--seconds", type=float, default=60.0)
     ap.add_argument("--steps", type=int, default=4)
@@ -258,6 +264,7 @@ def main() -> int:
                          "pretending to have measured it again. meta.json keeps the original "
                          "run's device state and gains a note saying this happened.")
     args = ap.parse_args()
+    spec = MR.get(args.model)
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
     (out / "nsys").mkdir(parents=True, exist_ok=True)
@@ -271,13 +278,14 @@ def main() -> int:
     trows, crows, irows = [], [], []
     for mode in [m for m in args.modes.split(",") if m]:
         cm = None if mode == "eager" else mode
-        policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=cm)
+        policy, cfg, shipped = MR.load_policy(spec, n=args.steps, compile_mode=cm)
         real = P.assert_real_weights(policy)
         fx = P.load_fixture()
-        batch, _, _ = P.build_batch(policy, fx)
+        batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
         print(f"\n=== {mode}: throughput ===", flush=True)
         for phase in ("prefix", "ae", "full"):
-            fn = PL.make_phase(policy, batch, phase, args.steps)
+            fn = PL.make_phase(policy, batch, phase, args.steps, spec)
             r = PL.run_loop(fn, args.seconds, phase)
             r.pop("samples")
             trows.append({"mode": mode, "phase": phase,
@@ -287,8 +295,8 @@ def main() -> int:
 
         # --- (c) concurrency
         print(f"=== {mode}: concurrency ===", flush=True)
-        seq_fn, n_segs = host_sequence_fn(policy, batch, 18, args.pause_ms)
-        prefix_fn = PL.make_phase(policy, batch, "prefix", args.steps)
+        seq_fn, n_segs = host_sequence_fn(policy, batch, 18, args.pause_ms, spec)
+        prefix_fn = PL.make_phase(policy, batch, "prefix", args.steps, spec)
 
         # The mapping's 2 ms pause x 6 segments x 18 layers puts 216 ms of time.sleep inside
         # a ~250 ms measurement. A raw before/after ratio is diluted by 250/34 = 7.3x and
@@ -384,7 +392,7 @@ def main() -> int:
         # Measure the same loop here, with no profiler attached, and correct with it.
         unprof = {}
         for n in (4, 10):
-            fn = PL.make_phase(policy, batch, "ae", n)
+            fn = PL.make_phase(policy, batch, "ae", n, spec)
             r = PL.run_loop(fn, 20.0, f"ae_unprofiled_N{n}")
             r.pop("samples")
             unprof[n] = r["median_ms"]
@@ -440,14 +448,15 @@ def main() -> int:
                 w.writerows([{k: r.get(k, "") for k in keys} for r in rows_])
 
     n_mi = emit_model_inputs(out, trows, crows, irows, args.steps,
-                             sh_out(f"git -C {REPO} rev-parse HEAD"))
+                             sh_out(f"git -C {REPO} rev-parse HEAD"), spec)
 
     sw = software_versions()
     write_json(out / "meta.json", {
         "experiment": "E11f", "task": "T010",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
-        "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+        "model": spec.name, "model_repo": spec.checkpoint,
+        "model_commit": spec.revision, "model_revision": spec.revision,
+        "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": args.modes, "batch": 1, "num_denoise_steps": args.steps,
         "prefix_tokens": 816, "suffix_tokens": 51,
         "n_warmup": 5, "n_timed": f"{args.seconds} s loops; {args.conc_reps} concurrency reps",

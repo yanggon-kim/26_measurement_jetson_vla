@@ -32,6 +32,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import model_registry as MR  # noqa: E402
 import pi0_common as P  # noqa: E402
 import phase_loops as PL  # noqa: E402
 from e11_summaries import e11e  # noqa: E402
@@ -141,12 +142,15 @@ def start_tegrastats(log: Path):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--model", default="pi0",
+                    help="pi0 | pi05 | smolvla. T011 extends E11 beyond pi0; the expert layout and the checkpoint-specific processors come from bench/model_registry.py.")
     ap.add_argument("--outdir-prefix", required=True)
     ap.add_argument("--seconds", type=float, default=60.0)
     ap.add_argument("--steps", type=int, default=4)
     ap.add_argument("--modes", default="eager,reduce-overhead")
     ap.add_argument("--phases", default="prefix")
     args = ap.parse_args()
+    spec = MR.get(args.model)
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
     try:
@@ -165,14 +169,15 @@ def main() -> int:
         (out / "raw").mkdir(parents=True, exist_ok=True)
         hog_self_test(out)          # before the model loads and the 47 minutes start
         cm = None if mode == "eager" else mode
-        policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps, compile_mode=cm)
+        policy, cfg, shipped = MR.load_policy(spec, n=args.steps, compile_mode=cm)
         real = P.assert_real_weights(policy)
         fx = P.load_fixture()
-        batch, _, _ = P.build_batch(policy, fx)
+        batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
         print(f"\n=== {mode} ===", flush=True)
         rows, base = [], {}
         for phase in [p for p in args.phases.split(",") if p]:
-            fn = PL.make_phase(policy, batch, phase, args.steps)
+            fn = PL.make_phase(policy, batch, phase, args.steps, spec)
             for label, kind, duty in loads:
                 tag = label if duty == 0 or label.endswith("control") else f"{label}_{duty}"
                 hog_log = out / "raw" / f"bw_hog_{tag}.log"
@@ -231,7 +236,7 @@ def main() -> int:
         # from /proc/stat (the only one that sees the whole machine).
         cpu_rows, sampler = [], CpuSampler(0.5)
         for phase in ("prefix", "ae", "full"):
-            fn = PL.make_phase(policy, batch, phase, args.steps)
+            fn = PL.make_phase(policy, batch, phase, args.steps, spec)
             for _ in range(3):
                 fn()
             torch.cuda.synchronize()
@@ -277,7 +282,7 @@ def main() -> int:
         # --- power per phase, from the four rails
         prows = []
         for phase in ("prefix", "ae", "full"):
-            fn = PL.make_phase(policy, batch, phase, args.steps)
+            fn = PL.make_phase(policy, batch, phase, args.steps, spec)
             acc = {}
             t_end = time.perf_counter() + 20
             while time.perf_counter() < t_end:
@@ -307,7 +312,7 @@ def main() -> int:
             w.writeheader()
             w.writerows(prows)
 
-        mi = ModelInputs("pi0", P.REVISION, sh_out(f"git -C {REPO} rev-parse HEAD"),
+        mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
                          "MAXN+jetson_clocks", 816, 51, args.steps)
         style = "eager" if cm is None else "compiled"
         for r in rows:
@@ -341,8 +346,9 @@ def main() -> int:
         write_json(out / "meta.json", {
             "experiment": "E11e", "task": "T010",
             "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
-            "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+            "model": spec.name, "model_repo": spec.checkpoint,
+            "model_commit": spec.revision, "model_revision": spec.revision,
+            "checkpoint": spec.checkpoint, "precision": "bfloat16",
             "compile_mode": cm, "batch": 1, "num_denoise_steps": args.steps,
             "action_horizon": getattr(cfg, "chunk_size", None),
             "prefix_tokens": 816, "suffix_tokens": 51,
