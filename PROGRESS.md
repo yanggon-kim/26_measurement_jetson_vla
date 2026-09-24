@@ -63,11 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 05:20:50** · elapsed **34.76 h** of 26 (134 %) · 20.3 GiB free · 4.94 GiB swap
+**Updated 05:40:51** · elapsed **35.10 h** of 26 (135 %) · 15.2 GiB free · 0.69 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 362770 | `bench/pipelining.py --model pi05 --outdir scratch/preflight/E11f_pi05 --steps 4 --seconds` | 11 min | 16.2 GiB |
+| 365966 | `bench/pipelining.py --model smolvla --outdir scratch/preflight/E11f_smolvla --steps 4 --s` | 5 min | 2.8 GiB |
 
 Latest log lines:
 
@@ -82,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 05:21** (59 configurations)
+**Re-derived from every result CSV on disk at 05:41** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
