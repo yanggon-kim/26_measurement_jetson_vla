@@ -63,17 +63,15 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 18:38:17** · elapsed **24.05 h** of 26 (93 %) · 36.1 GiB free · 1.44 GiB swap
+**Updated 18:58:18** · elapsed **24.39 h** of 26 (94 %) · 50.7 GiB free · 1.44 GiB swap
 
-| pid | running | for | rss |
-|---|---|---:|---:|
-| 287578 | `bench/libero_eval.py --model pi05 --prep none --suite libero_spatial --tasks 10 --episodes` | 45 min | 21.6 GiB |
+> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
-- `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
-- `queue_libero.log` · [Warning]: datasets path /home/yanggon/LIBERO/libero/libero/../datasets does not exist!
-- `queue_libero.log` · task 7 ep 0: fail    280 steps   running 0/22
+- `queue_libero.log` · Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+- `queue_libero.log` · Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your softwar
+- `queue_libero.log` · See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional informati
 - `libero_smoke.log` · task 2 ep 1: fail    280 steps   running 1/6
 - `libero_smoke.log` · success 1/6 = 16.7%   inference 1157.37 ms x32, sim 36.68 ms
 - `libero_smoke.log` · wrote /tmp/claude-1001/-home-yanggon-00-VLA/12fafcae-396b-4192-9a5c-e6f36be46f1c/scratchpad/libero_smoke6
@@ -82,7 +80,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 18:40** (58 configurations)
+**Re-derived from every result CSV on disk at 19:00** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
