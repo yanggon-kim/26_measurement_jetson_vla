@@ -4,6 +4,8 @@
 
 This is the quantity the processing-in-memory case actually rests on. Parts A, B and C measured where the *time* goes; this measures where the *energy* goes, and the two need not agree. Every run is a 60 s idle baseline in the same power mode followed by three back-to-back loops of 60 s each — prefix-only, action-expert-only and full inference — with all four INA3221 rails sampled from sysfs at 20 Hz and tegrastats recording alongside (protocol §4).
 
+**`prefix` is vision AND the VLM prefix together.** The study's latency work splits those two (E4d), but the power loops do not: `prefix_once` runs `embed_prefix` followed by the container's `forward`, which is one call chain, and isolating the vision encoder would need a fourth loop feeding it inputs the prefix builds internally. So this report can say what the action expert costs against everything else, and cannot say what vision costs against the VLM. T004 specifies these three loops; a vision-only loop would be a new measurement, not a re-analysis of this one.
+
 **On the memory rail.** `VDDQ_VDD2_1V8AO` is measured at the regulator **input** (~5.04 V) and is never rescaled to 1.8 V. It is an **upper bound** on DRAM power, not DRAM power. Both its absolute value and its above-idle delta are given.
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.

@@ -124,6 +124,14 @@ def main() -> int:
          "action-expert-only and full inference — with all four INA3221 rails sampled from "
          "sysfs at 20 Hz and tegrastats recording alongside (protocol §4).",
          "",
+         "**`prefix` is vision AND the VLM prefix together.** The study's latency work "
+         "splits those two (E4d), but the power loops do not: `prefix_once` runs "
+         "`embed_prefix` followed by the container's `forward`, which is one call chain, "
+         "and isolating the vision encoder would need a fourth loop feeding it inputs the "
+         "prefix builds internally. So this report can say what the action expert costs "
+         "against everything else, and cannot say what vision costs against the VLM. "
+         "T004 specifies these three loops; a vision-only loop would be a new "
+         "measurement, not a re-analysis of this one.", "",
          "**On the memory rail.** `VDDQ_VDD2_1V8AO` is measured at the regulator **input** "
          "(~5.04 V) and is never rescaled to 1.8 V. It is an **upper bound** on DRAM power, "
          "not DRAM power. Both its absolute value and its above-idle delta are given.",
