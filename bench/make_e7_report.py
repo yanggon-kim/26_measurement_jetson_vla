@@ -135,6 +135,18 @@ def main() -> int:
          ""]
 
     # ---- headline: energy per inference, per model and configuration -------------------
+    # A partial report must say so. The E7 matrix is 14 points and takes hours; a reader
+    # who sees four rows should know whether that is the whole answer or a checkpoint.
+    EXPECTED = 14
+    have = [(r["rows"][0].get("model", "?"), r["rows"][0].get("mode", "?"))
+            for r in runs]
+    L += [f"**Coverage: {len(runs)} of {EXPECTED} planned runs.** "
+          + ("Complete." if len(runs) >= EXPECTED else
+             "**This is an interim report** — the remaining points are still measuring, "
+             "and any cross-model claim below is provisional until they land.")
+          + " Present: "
+          + ", ".join(f"`{m}/{md}`" for m, md in sorted(set(have))) + ".", ""]
+
     L += ["## Energy per inference", "",
           "| model | N | configuration | phase | median ms | module W | above idle W | "
           "mJ / inference | mJ above idle |",
