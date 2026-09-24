@@ -55,6 +55,11 @@ lerobot() {
   bash bench/run_nsys.sh "$out" "${tag}_N${n}" -- \
       "$PY" bench/nsys_target.py --model "$m" --steps "$n" --inferences 2 "$@"
   echo "EXIT=$?"
+  # run_nsys.sh exports the CSVs; parse_nsys turns them into the timeline. Without this
+  # a capture leaves nsys/*.csv and no timeline_summary.csv, which is exactly what the
+  # audit reports as "present but not usable".
+  "$PY" bench/parse_nsys.py "$out" --tag "${tag}_N${n}" --steps "$n" --inferences 2 \
+    || echo "  PARSE FAILED for $out"
 }
 
 # $1 version  $2 venv  $3 root  $4 tag  then the rung's own flags
@@ -78,6 +83,8 @@ groot() {
           --outdir $out --version $ver --ncu-region all --profile-inferences 2 \
           ${root:+--gr00t-root $root} $*"
   echo "EXIT=$?"
+  "$PY" bench/parse_nsys.py "$out" --tag "$tag" --steps 4 --inferences 2 \
+    || echo "  PARSE FAILED for $out"
 }
 
 # pi0: the eager half is already committed for N=4 and N=10, so only the compiled half.
