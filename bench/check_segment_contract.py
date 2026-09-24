@@ -47,6 +47,41 @@ def keys_returned(fn) -> set[str]:
     return set(re.findall(r'"(\w+)":', src.split("return {")[-1]))
 
 
+def dead_params(mod, names) -> list[str]:
+    """Parameters a function declares and never reads, found with AST rather than regex.
+
+    The `last_hidden` argument was threaded through build_extras and measure_extras after
+    the final-norm fix stopped using it, and the only thing still producing it -- a
+    wrapper on layers[-1].forward -- is never called for SmolVLA, whose layer body is
+    inlined. The result was a KeyError AFTER the whole measurement had succeeded. A
+    parameter nothing reads is the signature of exactly that: a producer kept alive for a
+    consumer that no longer exists.
+
+    The first version of this check used a regex on the source text and reported `policy`
+    and `batch` as unused because its way of skipping the signature threw away the first
+    line of the body, where they are used. A check that cries wolf is worse than none, so
+    it parses now.
+    """
+    import ast
+    import inspect
+    import textwrap
+    out = []
+    for name in names:
+        fn = getattr(mod, name, None)
+        if fn is None:
+            continue
+        tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
+        fdef = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)
+                    and n.name == name)
+        params = {a.arg for a in fdef.args.args} - {"self"}
+        # every Name loaded anywhere in the body, nested functions included
+        loaded = {n.id for n in ast.walk(fdef)
+                  if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+        for p_ in sorted(params - loaded):
+            out.append(f"{name}({p_})")
+    return out
+
+
 def main() -> int:
     import host_segments as H
     import segments_groot as G
@@ -65,6 +100,13 @@ def main() -> int:
         print(f"  {name:30s} reads={len(reads):3d} returns={len(ret):3d}  {status}")
         if missing:
             bad += 1
+    dead = dead_params(H, ("build_extras", "measure_extras", "finish"))
+    if dead:
+        print(f"  UNUSED PARAMETERS (a producer kept alive for a dead consumer): {dead}")
+        bad += 1
+    else:
+        print(f"  {'host_segments extras':30s} no unused parameters")
+
     if bad:
         print(f"\n{bad} segment module(s) read a key their intermediates() does not "
               f"return. That is a KeyError waiting to happen on the first model whose "

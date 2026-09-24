@@ -869,21 +869,10 @@ def main() -> int:
                            key="sum_of_segments", variant=f"layer={li}", exec_style=style,
                            timing="wall_isolated")
     if args.mode == "count":
-        last = spec.resolve(policy, spec.expert_layers_path)[-1]
-        holder, orig_f = {}, last.forward
-
-        def cap_last(*a, **k):
-            r = orig_f(*a, **k)
-            holder.setdefault("h", r[0] if isinstance(r, tuple) else r)
-            return r
-
-        last.forward = cap_last
-        try:
-            with torch.no_grad():
-                policy.predict_action_chunk(batch)
-        finally:
-            last.forward = orig_f
-        defs, err = build_extras(policy, batch, args, holder["h"].detach().clone())
+        # No last-layer capture here either: build_extras captures the final norm's own
+        # arguments, and SmolVLA never calls layers[-1].forward (its layer body is
+        # inlined in the container's forward), so wrapping it set nothing.
+        defs, err = build_extras(policy, batch, args)
         for name, fn, _ref, _ops in defs:
             for style in styles:
                 f_, e = make_style(fn, style, name)
@@ -961,7 +950,7 @@ class DenoiseCapture:
         return False
 
 
-def build_extras(policy, batch, args, last_hidden):
+def build_extras(policy, batch, args):
     """The three per-step extras (`order_in_layer = -1`), as (name, callable, ref, ops)."""
     m = policy.model
     import model_registry as MR                                       # noqa: PLC0415
@@ -1028,8 +1017,8 @@ def build_extras(policy, batch, args, last_hidden):
     ], None
 
 
-def measure_extras(policy, batch, args, mi, all_rows, notes, styles, last_hidden, kernels):
-    defs, err = build_extras(policy, batch, args, last_hidden)
+def measure_extras(policy, batch, args, mi, all_rows, notes, styles, kernels):
+    defs, err = build_extras(policy, batch, args)
     if err:
         notes.append(err)
         return []
@@ -1087,33 +1076,29 @@ def measure_extras(policy, batch, args, mi, all_rows, notes, styles, last_hidden
 
 def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows, layer_rows,
            samples, mi, notes, styles, Pn, Sn):
-    # capture the last expert layer's output, which final_norm_out_proj consumes
+    # The last expert layer's output used to be captured here, by wrapping
+    # layers[-1].forward, and threaded into build_extras for final_norm_out_proj. Two
+    # things made that both dead and broken:
+    #   * build_extras now CAPTURES the final norm's own arguments from a real
+    #     inference, so it does not need a hidden-state tensor passed in; and
+    #   * SmolVLA never calls layers[-1].forward at all -- its layer body is inlined in
+    #     the container's forward -- so holder["h"] was never set and finish() died with
+    #         KeyError: 'h'
+    #     after the whole measurement had succeeded.
+    # The capture is removed rather than guarded: a tensor nothing consumes should not be
+    # collected, and keeping it would have needed a second per-model capture path for no
+    # measurement at all.
     import model_registry as MR                                       # noqa: PLC0415
     spec = MR.get(getattr(args, "model", "pi0"))
-    last = spec.resolve(policy, spec.expert_layers_path)[-1]
-    holder, orig = {}, last.forward
-
-    def cap(*a, **k):
-        r = orig(*a, **k)
-        holder.setdefault("h", r[0] if isinstance(r, tuple) else r)
-        return r
-
     print("\n=== per-step extras ===", flush=True)
     fx = P.load_fixture()
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
-    last.forward = cap
-    try:
-        with torch.no_grad():
-            policy.predict_action_chunk(batch)
-    finally:
-        last.forward = orig
     kmap = {}
     if args.kernels_csv and Path(args.kernels_csv).exists():
         for r in csv.DictReader(Path(args.kernels_csv).open()):
             kmap[(r["segment"], r["exec_style"])] = float(r["n_kernels"])
-    seg_rows += measure_extras(policy, batch, args, mi, all_rows, notes, styles,
-                               holder["h"].detach().clone(), kmap)
+    seg_rows += measure_extras(policy, batch, args, mi, all_rows, notes, styles, kmap)
 
     with (out / "segments.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(seg_rows[0].keys()))
