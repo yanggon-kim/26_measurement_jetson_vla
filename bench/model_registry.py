@@ -246,6 +246,29 @@ def load_policy(spec: ModelSpec, n: int | None = None, compile_mode: str | None 
 
     policy = cls.from_pretrained(spec.checkpoint, config=cfg, **kw)
     policy.to(device).eval()
+
+    # SmolVLA cannot be stream-captured as shipped: SmolVLMVisionEmbeddings.forward ends
+    # in a boolean-mask index_put whose output shape depends on the mask's VALUES, so it
+    # needs a device-to-host sync and any CUDA-graph capture around it dies with
+    # "operation failed due to a previous error during capture". The replacement is exact,
+    # not an approximation -- LeRobot passes patch_attention_mask=None unconditionally, so
+    # the mask is all-true by construction and the statement IS position_ids = pos_ids;
+    # prep_smolvlm_static_posids asserts both premises and fails loudly if either changes.
+    #
+    # It lives HERE rather than in each driver because putting it in each driver is what
+    # failed. E7 hit this and the fix went into opt_ladder.effective_prep(), which only
+    # covers callers that go through a ladder rung. prefix_sweep, mempressure and
+    # pipelining each call load_policy(compile_mode=...) directly, so all three inherited
+    # the original bug and smolvla E11d died on it at 16:24 on 2026-09-24. One gate on the
+    # one function they all share is the only version of this fix that cannot be missed by
+    # the next driver somebody writes.
+    #
+    # Gated on compile_mode because eager needs nothing, and that gate is also what keeps
+    # it from applying twice: opt_ladder and ncu_target both pass compile_mode=None and
+    # then apply the prep themselves.
+    if spec.name == "smolvla" and compile_mode is not None:
+        import opt_ladder as _OL          # local: opt_ladder imports this module
+        shipped["smolvla_static_posids_prep"] = _OL.prep_smolvlm_static_posids(policy)
     if n is not None:
         # the inner module keeps its own config reference and reads it when the caller
         # passes None, so both must agree or a sweep silently uses the default
