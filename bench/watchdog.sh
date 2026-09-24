@@ -182,27 +182,64 @@ JOBS = ("opt_ladder.py", "groot_phases.py", "paper_repro.py", "power_phases.py",
         # reported "NOTHING RUNNING" with pipelining.py live. One list, two readers.
         "handover.py", "prefix_sweep.py", "mempressure.py", "pipelining.py",
         "groot_segments.py", "consolidate_e11.py")
-me, n = os.getpid(), 0
-for d in sorted(Path('/proc').iterdir(), key=lambda p: p.name):
+
+me = os.getpid()
+ppid, argvs, hits = {}, {}, []
+for d in Path('/proc').iterdir():
     if not d.name.isdigit() or int(d.name) == me:
         continue
+    pid = int(d.name)
     try:
-        argv = [a for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+        argv = [a.decode('utf-8', 'replace')
+                for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+        stat = (d / 'stat').read_bytes()
     except OSError:
         continue
     if not argv:
         continue
-    exe = argv[0].rsplit(b'/', 1)[-1]
-    is_py = exe.startswith(b'python') or exe in (b'ncu', b'nsys')
-    hit = any(a.rsplit(b'/', 1)[-1].decode('utf-8', 'replace') in JOBS for a in argv[1:])
-    if is_py and (hit or exe in (b'ncu', b'nsys')):
-        print(f"  {d.name}: {b' '.join(argv).decode('utf-8', 'replace')[:130]}")
-        n += 1
-if not n:
+    argvs[pid] = argv
+    # ppid is field 4 of /proc/<pid>/stat, AFTER the comm field, which can contain
+    # spaces and parentheses -- so split on the last ')' rather than on whitespace.
+    try:
+        ppid[pid] = int(stat.rsplit(b')', 1)[1].split()[1])
+    except (IndexError, ValueError):
+        ppid[pid] = 1
+    exe = argv[0].rsplit('/', 1)[-1]
+    is_py = exe.startswith('python')
+    is_prof = exe in ('ncu', 'nsys')
+    named = any(a.rsplit('/', 1)[-1] in JOBS for a in argv[1:])
+    # nsys' own helpers are not jobs: the agent daemonises (reparenting to init) and
+    # nsys-tee is a pipe relay. Counting them as separate work is what produced
+    # "MORE THAN ONE GPU JOB LIVE" for a single healthy capture.
+    helper = ('--start-agent' in argv) or exe.startswith('nsys-tee')
+    if (is_py and named) or (is_prof and not helper):
+        hits.append(pid)
+
+hitset = set(hits)
+
+
+def root_of(pid):
+    """The outermost matched ancestor: a capture launched BY a measurement is the same
+    job, not a second one competing for the GPU."""
+    seen, cur, best = set(), pid, pid
+    while cur in ppid and cur not in seen:
+        seen.add(cur)
+        cur = ppid[cur]
+        if cur in hitset:
+            best = cur
+    return best
+
+
+for pid in sorted(hits):
+    print(f"  {pid}: {' '.join(argvs[pid])[:130]}")
+roots = {root_of(p) for p in hits}
+if not hits:
     print("  NOTHING RUNNING  <-- if the queue is not done, this is the defect")
-elif n > 1:
-    print("  *** MORE THAN ONE GPU JOB LIVE -- they are sharing the GPU and every "
-          "number from both is confounded ***")
+elif len(roots) > 1:
+    print(f"  *** {len(roots)} INDEPENDENT GPU JOBS LIVE (roots {sorted(roots)}) -- they "
+          f"are sharing the GPU and every number from both is confounded ***")
+else:
+    print(f"  one job tree (root {sorted(roots)[0]}), {len(hits)} process(es) -- healthy")
 PYC
 echo
 echo "--- 2b. PROFILER CONCURRENCY (owner, 2026-09-23: never two at once)"
@@ -210,32 +247,57 @@ $HOME/venvs/pi0/bin/python - <<'PYD'
 import os
 from pathlib import Path
 me = os.getpid()
-live = []
+ppid, sessions, helpers = {}, [], []
 for d in Path('/proc').iterdir():
     if not d.name.isdigit() or int(d.name) == me:
         continue
+    pid = int(d.name)
     try:
-        argv = [a for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+        argv = [a.decode('utf-8', 'replace')
+                for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+        stat = (d / 'stat').read_bytes()
     except OSError:
         continue
     if not argv:
         continue
-    # exact argv element only; substring-matching the joined cmdline self-matches
-    is_ncu = argv[0].rsplit(b'/', 1)[-1] in (b'ncu', b'nsys')
-    is_target = any(a.endswith(b'ncu_target.py') or a.endswith(b'nsys_target.py')
-                    for a in argv[1:])
-    if is_ncu or is_target:
-        live.append((d.name, is_ncu,
-                     b' '.join(argv[:3]).decode('utf-8', 'replace')[:80]))
-n_prof = sum(1 for _, is_ncu, _ in live if is_ncu)
-print(f"  profiler processes: {len(live)}  (ncu/nsys binaries: {n_prof})")
-for pid, _, c in live:
+    try:
+        ppid[pid] = int(stat.rsplit(b')', 1)[1].split()[1])
+    except (IndexError, ValueError):
+        ppid[pid] = 1
+    exe = argv[0].rsplit('/', 1)[-1]
+    if exe not in ('ncu', 'nsys'):
+        continue
+    # ONE nsys session spawns several nsys processes: the launcher, a daemonised
+    # --start-agent that reparents to init, and nsys-tee. Counting processes reported
+    # "TWO OR MORE PROFILERS LIVE" for a single healthy capture and would have had me
+    # kill it. A session is a top-level `ncu`/`nsys` invocation with a subcommand.
+    if '--start-agent' in argv or exe.startswith('nsys-tee'):
+        helpers.append((pid, ' '.join(argv[:3])[:70]))
+    else:
+        sessions.append((pid, ' '.join(argv[:3])[:70]))
+
+# a launcher that is a child of another session is part of it, not a second one
+sess_pids = {p for p, _ in sessions}
+
+
+def has_matched_ancestor(pid):
+    seen, cur = set(), pid
+    while cur in ppid and cur not in seen:
+        seen.add(cur)
+        cur = ppid[cur]
+        if cur in sess_pids:
+            return True
+    return False
+
+
+roots = [(p, c) for p, c in sessions if not has_matched_ancestor(p)]
+print(f"  profiler sessions: {len(roots)}  (+{len(sessions) - len(roots)} child "
+      f"launcher(s), {len(helpers)} helper(s))")
+for pid, c in roots:
     print(f"    {pid}: {c}")
-if n_prof > 1:
-    print("  *** TWO OR MORE PROFILERS LIVE - STOP ONE NOW "
+if len(roots) > 1:
+    print("  *** TWO OR MORE PROFILER SESSIONS LIVE - STOP ONE NOW "
           "(they are root-owned; plain kill returns Operation not permitted) ***")
-elif n_prof == 0 and live:
-    print("  (python targets without a profiler: a capture that has finished profiling)")
 PYD
 echo
 echo "--- 2c. ORPHANS (root-owned survivors of a killed queue, which load the machine)"
