@@ -298,7 +298,27 @@ statement**. `STATUS.md` carries the current state.
 
 ---
 
-## 7. Raw data that is not in this repository
+## 7. Where the raw ncu data lives — read this before concluding anything is missing
+
+**The Hugging Face dataset holds π0 only, and that is correct.** It is a spillover for
+files git cannot take, not the primary home. Everything current is in this repository:
+
+| what | where | size |
+|---|---|---|
+| **current C1 captures, all six models** — eager and best, three phases each, 36 `.ncu-rep.zst` + 36 `_details.csv` | **in git**, `results/20260923_E4g_c1_<model>_<mode>/ncu/` | **47 MB total, ~900 KB each** |
+| superseded first C1 attempt, **π0 only**, 4 files | Hugging Face (below) | 707.6 MB, 88–203 MB each |
+
+The difference is the capture command, not the coverage. The first attempt used
+`--set full -c 300` and produced reports of 88–203 MB — over GitHub's 100 MB hard limit and
+over protocol §6's 50 MB cap, so they could not be committed. The current captures request
+four targeted sections plus the 14 stall metrics by name and come to about **900 KB each
+after `zstd -19`**, answering the same question. So there was never a reason to put the
+other five models on Hugging Face: they fit in git.
+
+If you are looking for GR00T's or SmolVLA's ncu data, it is in this repository, not on
+Hugging Face.
+
+## 7b. The four oversized files that are not in this repository
 
 Four `.ncu-rep` files from the superseded first C1 attempt are 88–203 MB each. GitHub
 rejects anything over 100 MB and protocol §6 caps a committed file at 50 MB, so they are
