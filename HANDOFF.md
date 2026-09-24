@@ -1,8 +1,178 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-22 by jetson-owner*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-24 by jetson-owner*
 
 ## Current status
+
+**2026-09-24: 315-commit pull (`5f30ea5..cf72121`), read-only. The second measurement round has LANDED
+and is much larger than asked for: six models (π0, π0.5, SmolVLA, GR00T N1.5/N1.6/N1.7), a 9-rung
+one-factor optimisation ladder per model in which `vision` and `vlm_prefix` are compiled / CUDA-graphed /
+cast to bf16 alongside `denoise_step`, a combination search on top of it, per-phase ncu bottleneck
+captures (Part C), an nsys GPU-idle study (E5) and E7 power/energy complete at 14/14 points at MAXN.**
+Device commit `cf72121`, pushed 2026-09-24 13:31 PDT — the device is live (20-minute `PROGRESS` ticks)
+and currently on T007/T008/T009/T011/T012, all `claimed 2026-09-24`. Nothing is `blocked`.
+
+### The gating answer for workspace commit `2e76296`: yes, vision and vlm_prefix are optimised
+
+π0, LeRobot port, MAXN, bf16, N = 10 (π0's *configured* default — the earlier 34/34/31 % split was
+N = 4, eager). `results/20260922_E4c_pi0_opt_ladder/opt_ladder.csv`, `reports/E4d_phase_balance.md`,
+`reports/E4i_best_combinations.md`. n = 100 per point.
+
+| π0, N = 10 | e2e ms | vision | vlm_prefix | action head | vis % | pre % | ae % |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `eager_fp32` | 1069.04 | 241.01 | 234.57 | 586.91 | 22.5 | 21.9 | 54.9 |
+| `ae_graphs` (expert only, as before) | 516.42 | 103.36 | 234.74 | 172.18 | 20.0 | 45.5 | 33.3 |
+| `vlm_compile` (prefix compiled) | 466.99 | 99.18 | 192.76 | 168.84 | 21.2 | 41.3 | 36.2 |
+| **`bf16_both` — BEST** | **424.46** | **56.74** | **192.86** | **168.68** | **13.4** | **45.4** | **39.7** |
+| `whole_graphs` (no split possible) | 463.86 | — | — | — | — | — | — |
+
+**New phase split, best configuration: 13.4 / 45.4 / 39.7 % (vision / vlm_prefix / action head).**
+The VLM prefix, not vision, is now the largest phase. Against the earlier 34 / 34 / 31 % (N = 4 eager),
+vision has collapsed and the prefix has taken its place. π0's own N = 4 control: `vlm_graphs` 369.51 ms,
+AE share **18.7 %** (eager 32.3 %).
+
+**Which lever moved which phase** (π0, eager → best): vision 241.0 → **56.7** (4.25×) — and it is the
+**bf16 cast of the vision tower + dropping `embed_image`'s fp32 cast**, not compilation, that does it
+(`vis_compile`/`vis_graphs` move vision by 1 %); vlm_prefix 234.6 → **192.8** (1.22×, `vlm_compile`);
+action head 586.9 → **168.7** (3.48×). CUDA graphs on the prefix are a **net loss** on π0 and π0.5 and
+a 2× win on SmolVLA — not a general win (Part C: compilation already removes 92 % of the prefix's
+memory-latency stall, 34.44 → 2.73 cycles/issue, so the stall graphs would target is gone).
+
+### For the concurrency design question (frame t vision+VLM on GPU ∥ frame t−1 expert on AiM)
+
+The measured GPU-side fixed cost and the expert cost, same run, same power mode:
+
+| π0 best (`bf16_both`), MAXN | latency | above-idle power | above-idle energy |
+|---|---:|---:|---:|
+| `prefix` loop = vision **+** VLM prefix | **251.28 ms** | 25.45 W | 6395.8 mJ |
+| `ae` loop = action expert, N = 10 | **167.36 ms** | 18.60 W | 3112.5 mJ |
+| `full` = whole inference | 424.68 ms | 32.18 W | 13 666.2 mJ |
+
+`reports/E7_power_energy.md`. **The pipeline is GPU-dominated, 1.50 : 1.** A perfectly overlapped
+two-engine pipeline is bound by the GPU at ≈ 251 ms/frame, so the whole PIM win over the best GPU
+baseline is 424.7 → 251.3 ms = **1.69× at most**, and *any* expert implementation faster than 251 ms
+is free — the AiM design has 251 ms of slack against the 9.31 ms / 5.87 ms design point, i.e. it is
+not the critical path at all. At N = 4 it is far worse: prefix 249.92 ms against ae 67.18 ms, **3.72 : 1**.
+E7 also says the prefix is the power-hungry phase: the expert is 40.0 % of the two-phase time but
+32.7 % of its energy (ratio 0.82 optimised; **0.40** eager, 0.32 at N = 4).
+
+### Action expert per step — the best figure has NOT moved, and the ladder does not contain the KV fix
+
+Best remains **10.37 ms/step**, `reduce-overhead` + crop-not-clone KV (`DynamicCache.crop(P)` instead of
+`copy.deepcopy`), from T003 — 3.3× the 3.115 ms analytic floor, 1.67× the 6.230 ms "optimistic bound".
+Ladder for the record: 52.56–52.94 eager → 16.30 `reduce-overhead` → 10.37 with the KV fix.
+
+**Gap to raise with the device (not yet a task):** the E4c ladder and the E4i combination search never
+include `cropcache`. Slopes derived from `opt_ladder.csv` (ae_total at N = 10 minus N = 4, ÷ 6):
+`ae_graphs` 16.80, `vlm_compile` 16.52 ms/step — i.e. the "best" 424.46 ms frame still carries the
+`copy.deepcopy` of the KV cache. Combining the two is unmeasured and worth ≈ 6 ms/step × 10 ≈ 60 ms,
+which would put π0 near 365 ms and lower the AE share further (to ≈ 28 %).
+
+### What contradicts what the research side currently believes
+
+1. **"The action expert dominates the frame."** Across six models and ~20 configurations **no optimised
+   deployment has an expert that dominates**; the share peaks at or near the *eager* baseline in all six
+   (π0 54.9 → 39.7, SmolVLA 85.3 → 48.6, N1.7 56.7 → 33.1, N1.6 61.5 → 41.7, N1.5 38.6 → 35.9; π0.5 is
+   the exception only because its fp32 prefix was pathological at 2162 ms). Highest optimised share is
+   SmolVLA 48.6 %.
+2. **"The action expert is the memory-bound phase."** Part C (`reports/E4g_c1_c2_bottlenecks.md`):
+   **false eager, true compiled.** Eager `ae_step_0` is issue-limited — SM 22.7 %, Mem 21.6 %,
+   `imc_miss` 35 %, `long_scoreboard` only third at 16 %. Compiled: Mem **56.5 %** and
+   `long_scoreboard` triples to dominant (11.44 cycles/issue). The phase that is memory-latency-bound
+   *eager* is the **VLM prefix** (`long_scoreboard` 74 % at 40 % SM). Our eager expert SM 22.7 % matches
+   arXiv:2604.24447's 22.3 % — independent check.
+3. **Paper Finding #4 ("the VLM is compute-bound from operational intensity, 840 FLOP/B")** is
+   contradicted by the counters: the eager prefix stalls 74 % on Long Scoreboard at 40 % SM and 49 %
+   memory throughput. High arithmetic intensity does not help when latency-bound at low occupancy.
+4. **Whole-frame fixed cost.** Was 485 ms, then 428 under whole-model compile. Now **249.6 ms**
+   (56.74 + 192.86) — a 1.90× reduction on the eager 475.6 ms, and it is the number the pipeline is
+   bound by.
+5. **"GPU idle 84 % of the frame"** — that is the `ae_step` *region*, not the frame, and E11's
+   nsys-inflation correction (×1.53 on region wall time) puts it at **75.6 %**. E5 reports 84.3 %
+   uncorrected. Whole capture is 54.7 % (N = 10) / 36.5 % (N = 4). Quote 75.6 % for `ae_step`.
+6. **N is not the driver of the AE share.** The plan predicted the share tracks N; GR00T N1.6/N1.7 at
+   N = 4 sit *above* π0 at N = 10, because they carry **32** DiT blocks against N1.5's 16. Architecture
+   beats step count.
+7. **Latency is not a proxy for energy.** Frame energy-saving ÷ time-saving ranges 1.05 (N1.5, removes
+   work) to 0.45 (SmolVLA, buys speed with power). A speedup predicts the energy saving only to a
+   factor of two.
+8. **π0.5's 6.21× carries no accuracy statement** — `pi05_libero_base` is a base model, not a LIBERO
+   finetune, fp32 baseline 0/30 on LIBERO. π0's bf16 rungs *are* validated (fp32 6/30 vs bf16 4/30,
+   z = 0.70).
+
+### ⛔ Two energy residuals — do NOT quote GPU-vs-PIM energy until these close
+
+Found by microarch-owner in the E7 numbers I handed over (2026-09-24). Both are in
+`reports/E7_power_energy.md`, π0 N = 10 `bf16_both`:
+
+1. **6.04 ms unplaced.** The stage loops sum to **418.64 ms** against the `full` loop's
+   **424.68 ms** measured. The report says the two sub-loops do not cover the whole inference
+   (pre/postprocess, the action-sampling tail), but 6.04 ms is not attributed to anything.
+2. **A 30 % energy gap.** The stage above-idle energies sum to **9509 mJ** against `full`'s
+   **13 666 mJ** — 4157 mJ, 30 %, unaccounted. A 1.4 % time gap cannot produce a 30 % energy gap,
+   so this is not the same discrepancy twice: it is either a real cost outside both loops or a
+   difference in how the loops' idle baseline is subtracted.
+
+**Consequence: GPU-versus-PIM energy is not comparable until this is resolved.** Latency figures
+are unaffected. Reconciling it needs a per-stage accounting question put to the device (the
+`prefix`/`ae`/`full` loop definitions and their idle-baseline subtraction), not a re-measurement —
+write it as a question in `docs/04`, not a new task, unless the loops themselves must change.
+
+### Queued measurement requests — NOT approved, do not write as tasks
+
+From microarch-owner's design memo, priority order (2026-09-24). Recorded here so they survive;
+the user has not approved either, so no task file exists and none is to be written.
+
+- **P1, highest value: `vlm_prefix` with the GPU restricted to 8 of 16 LPDDR channels.** A PIM
+  channel is *unavailable* to the GPU, not merely slower, so this decides whether a two-stage
+  GPU-prefix / PIM-expert pipeline is implementable at all. If the prefix degrades materially the
+  whole design collapses. Note the device already has the relevant lever characterised in one
+  direction — E0 recorded MODE_30W as 8 SMs / 612 MHz, which changes SMs *and* clock, so it is not
+  a clean channel-restriction control; this needs a real channel/bank-mask mechanism or a
+  documented statement that none is exposed on Orin.
+- **P2: `bf16_both` + `cropcache`** — the one combination never measured, worth ≈ 60 ms. It moves
+  the design's end-to-end ceiling from ≈ 1.65× to ≈ 1.39×, so it changes the headline. Slopes in
+  `results/20260922_E4c_pi0_opt_ladder/opt_ladder.csv` give the compiled expert at 16.5–16.8 ms/step
+  against 10.37 with the KV fix.
+
+Also held, not approved: adding `groot_n16` / `groot_n15` to `MODELS` in
+`docs/reference_scripts/check_model_inputs.py` (the device's own request). Until it lands the device
+records `meta.json.schema_note` and does **not** relabel rows — that is the correct behaviour.
+
+### Capped power modes and device state
+
+E7 is **complete, 14/14, MAXN only**. `MODE_50W` (id 3) the device can do unattended at the end of a
+MAXN session; **`MODE_30W` (id 2) and `MODE_15W` (id 1) are `PENDING — ask the owner`, one human reboot
+each.** The device is **not** waiting on them now: its stated order is E7 MAXN (done) → E11 (T011/T012)
+→ E5 → E5b → MODE_50W → MODE_30W/15W, so the reboots come after E5b.
+
+**User's decision 2026-09-24: the reboots are the on-device agent's business. Do not escalate
+MODE_30W / MODE_15W to main or to the user again.** This standing item lives here, in my own
+HANDOFF, and I simply wait for the device's queue to reach it. Carry the row forward on every pull
+and note the date it clears; raise it only if the device marks it `blocked` or asks directly.
+
+### Open items the device has raised (answers owed, no task written this round)
+
+- **`docs/reference_scripts/check_model_inputs.py`**: may `groot_n16` and `groot_n15` be added to
+  `MODELS` (currently `pi0, pi05, smolvla, groot_n17, none`)? Their E11a rows are otherwise identical.
+  The device will not relabel rows to pass the checker; it records `meta.json.schema_note` instead.
+  **This is ours to fix** — a one-line `docs/` edit, deliberately not made in this pull-only round.
+- π0's committed E11f two-stream rows carry `bench_commit` `de325f77`/`5eeddd5c`, both **before** the
+  GIL fix `773d2a9`, so π0's two-stream numbers on disk are still GIL-confounded. Re-run is queued.
+- Four `.ncu-rep` (725 MB, 89–203 MB each) cannot be committed; published to the **private** HF dataset
+  `yang-gon/vla-orin-ncu-raw`, hashes in `results/20260922_E4g_pi0_ncu_eager/RAW_FILES.md`.
+- GR00T N1.7 `vis_compile` **failed** and cannot be fixed: Qwen3-VL passes
+  `int(grid_thw[:,1:].max().item())` to `flash_attn_varlen_func`, untraceable by dynamo. Its 240.49 ms
+  is a structurally weaker optimum, not a tuning failure.
+- Repository: `du -sh results/` = **920 MB**; size-pack 62.49 KiB. Passwordless sudo still not set up.
+
+### Superseded below
+
+The 2026-09-22 status block that follows is kept for the T001–T005/T010 record. Where it and the block
+above disagree, the block above is newer.
+
+## Current status (2026-09-22, superseded)
+
 **2026-09-22: T002 (E3), T003 (E4), T005 (E1/E2) received, verified, accepted; T010 (E11) complete on content
 (status line still "claimed"); T004 claimed by the device.** 34 device commits `c1c7fe7..e6a0af7`. Checked here:
 55 `meta.json` (all MAXN, `bench_commit`, 20/100 where §2 applies; E11d ran 5/30 — deviation to be stated),
@@ -58,14 +228,14 @@ counters, temperature logs, compiled per-region from nsys, step 4b capped modes)
 | T002 | π0 eager (E3) — **done, accepted** (`results/20260921_E3_pi0_eager_N*/`) | P0 | T001 |
 | T003 | π0 compiled (E4) — **done, accepted** (`results/2026092{1,2}_E4_pi0_*/`) | P0 | T002 |
 | T010 | π0 E11 → `model_inputs.csv` — **complete on content, accepted; `status: done` still to be appended** | P1 | T003 |
-| **T004** | **claimed 2026-09-22**; π0 E5 (nsys from E11f exports + ncu), E6, E7 incl. required capped modes (4b) | P1 | T003 |
+| **T004** | **claimed 2026-09-22**; π0 E5 (done, `reports/E5_timeline.md`), E6, E7 (**complete 14/14 at MAXN**, `reports/E7_power_energy.md`); capped modes 30 W / 15 W still pending two human reboots | P1 | T003 |
 | T005 | E1/E2 — **done, accepted** (`results/20260922_E1_peak/`, `_E2_ae_kernels/`) | P1 | T001 |
-| T007 | π0 E5b instruction level | P1 | T004, T005 |
-| T006 | π0.5 + SmolVLA E3/E4, LIBERO E8 | P2 | T003 |
-| **T011** | **π0.5 + SmolVLA E11** (right after T006 step 1) | P2 | T006, T010 |
-| T008 | π0.5 + SmolVLA E5/E5b/E6/E7 | P2 | T006, T004, T007 |
-| T009 | GR00T N1.7 full set | P3 | T008 |
-| **T012** | **GR00T N1.7 E11** | P3 | T009, T010 |
+| **T007** | **claimed 2026-09-24**; π0 E5b instruction level. Targets already chosen from C1 data by `bench/pick_e5b_targets.py` — 22 captures, 1–8 kernels per model, no exploratory pass needed | P1 | T004, T005 |
+| T006 | π0.5 + SmolVLA E3/E4, LIBERO E8 — **effectively delivered** by the 2026-09-22/24 six-model campaign (E4c/E4d/E4f/E4g/E4i ladders + E8q LIBERO); no `status:` line appended, so verify before closing | P2 | T003 |
+| **T011** | **claimed 2026-09-24**; π0.5 + SmolVLA E11 | P2 | T006, T010 |
+| **T008** | **claimed 2026-09-24**; π0.5 + SmolVLA E5/E5b/E6/E7 (E7 half already done at MAXN) | P2 | T006, T004, T007 |
+| **T009** | **claimed 2026-09-24**; GR00T N1.7 full set — in practice N1.5/N1.6/N1.7 all measured for E4/E7 | P3 | T008 |
+| **T012** | **claimed 2026-09-24**; GR00T N1.7 E11; driver written (`bench/groot_segments.py`), DiT blocks confirmed patchable | P3 | T009, T010 |
 
 Execution order is the table at the top of `docs/01_measurement_plan.md` (rows above are already in that order).
 
@@ -165,7 +335,13 @@ MAXN, n = 100). Idle module power at MAXN 11,012 mW (E0). E7 power numbers not y
 - (medium) openpi may want a torch other than 2.8.0 / pip may swap in the CPU wheel (T002 header warns).
 
 ## Next steps
-0. **Next pull:** expect T010 `status: done` + the six small fixes, then T004 results (E5 from the E11f exports,
+0. **2026-09-24 pull done** (`5f30ea5..cf72121`, 315 commits). Owed to the device, in order: (a) add
+   `groot_n16` / `groot_n15` to `MODELS` in `docs/reference_scripts/check_model_inputs.py`; (b) answer its
+   three Part-C questions in `docs/04` (does the conditional memory-bound result change the PIM target;
+   re-examine paper Finding #4; is fp32 the intended π0.5 deployment); (c) a task asking for
+   `bf16_both` **+ cropcache** on π0, the one combination never measured; (d) schedule the two reboots
+   for MODE_30W / MODE_15W. None written in the 2026-09-24 pull-only round.
+0b. (superseded) **Next pull:** expect T010 `status: done` + the six small fixes, then T004 results (E5 from the E11f exports,
    ncu per region, E6, E7 at MAXN, then "next: resume E7 at mode 2" and a stop for the human reboot). Check the
    E5 idle split for the compiled mode and that `parse_ncu.py` uses the two counters. Then T007 (E5b) / T006.
 0a. On each pull: check `STATUS.md` "Repository size", `find results -size +50M`, and that `raw_files` hashes match
