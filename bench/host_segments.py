@@ -61,8 +61,16 @@ LAYERS = (0, 9)
 class LayerCapture:
     """Record one expert layer's own arguments during a real denoising step."""
 
-    def __init__(self, policy, layer_idx: int):
-        self.layer = policy.model.paligemma_with_expert.gemma_expert.model.layers[layer_idx]
+    def __init__(self, policy, layer_idx: int, spec=None):
+        import model_registry as _MR
+        spec = spec or _MR.get("pi0")
+        if spec.layer_capture != "patch_layer_forward":
+            raise SystemExit(
+                f"{spec.name} needs layer_capture={spec.layer_capture!r}, not "
+                f"patch_layer_forward. Patching layers[{layer_idx}].forward would capture "
+                f"NOTHING for it, silently -- see bench/model_registry.py. Use the "
+                f"per-model capture in bench/segments_{spec.name}.py.")
+        self.layer = spec.resolve(policy, spec.expert_layers_path)[layer_idx]
         self.idx = layer_idx
         self.args = None
         self._orig = None
@@ -150,18 +158,25 @@ def intermediates(policy, cap: LayerCapture) -> dict:
         probs_cast = probs.to(q_r.dtype)                                     # gemma:213
         ctx = torch.matmul(probs_cast, MG.repeat_kv(v_full, kv_groups)).transpose(1, 2).contiguous()
         attn_out = attn.o_proj(ctx.reshape(*x.shape[:-1], -1).contiguous())  # gemma:288-289
-        resid1 = attn_out + x                                                # pi_gemma:182 (gate None)
+        # pi_gemma.py:182 applies _gated_residual(residual, hidden_states, gate), which is
+        # `x + y` only when gate is None. pi0's embed_suffix returns adarms_cond=None so
+        # its gate IS None and `attn_out + x` was right for pi0 -- and silently WRONG for
+        # pi0.5, whose AdaRMS norms return a real gate. Calling the model's own function
+        # instead of reimplementing the None case keeps both correct and cannot drift.
+        from lerobot.policies.pi_gemma import _gated_residual                # noqa: PLC0415
+        resid1 = _gated_residual(x, attn_out, gate1)                         # pi_gemma:182
         normed2, gate2 = layer.post_attention_layernorm(resid1, cond=a["adarms_cond"])
         g = layer.mlp.gate_proj(normed2)
         u = layer.mlp.up_proj(normed2)
         mlp_out = layer.mlp.down_proj(layer.mlp.act_fn(g) * u)               # gemma:81
+        resid2 = _gated_residual(resid1, mlp_out, gate2)                     # pi_gemma:187
     return {"x": x, "normed1": normed1, "gate1": gate1, "q": q, "k": k, "v": v,
             "cos": cos, "sin": sin, "q_r": q_r, "k_r": k_r,
             "scores": scores_masked, "scores_fp32": scores_masked.float(),
             "k_full": k_full, "v_full": v_full,
             "probs_cast": probs_cast, "ctx": ctx, "attn_out": attn_out,
             "resid1": resid1, "normed2": normed2, "gate2": gate2,
-            "g": g, "u": u, "mlp_out": mlp_out, "mask": mask,
+            "g": g, "u": u, "mlp_out": mlp_out, "resid2": resid2, "mask": mask,
             "attn": attn, "layer": layer, "adarms_cond": a["adarms_cond"],
             "kv_groups": kv_groups}
 
@@ -180,6 +195,15 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
 
     layer, attn, cond = t["layer"], t["attn"], t["adarms_cond"]
     B2 = 2                                                    # bf16
+    # pi0's embed_suffix returns adarms_cond=None, so its residuals are plain x + y and
+    # its norms are unconditioned. pi0.5's AdaRMS norms return a real gate, so the same
+    # segments read one more tensor and do one more multiply. The strings and the byte and
+    # flop counts below therefore have to branch on it rather than assert pi0's case --
+    # this is the "measure P per model" mistake in a different place.
+    gated = t.get("gate1") is not None
+    gtxt = ("x + y * gate (AdaRMS gate present)" if gated else "x + y (gate is None)")
+    gbytes = (S * D * B2 if gated else 0)      # reading the gate tensor
+    gflops = (S * D if gated else 0)           # the extra multiply
     segs = [
         dict(bytes_formula="read x[S,D] bf16 + weight[D] bf16; write normed[S,D] bf16", segment="rmsnorm1", order=0, in_model="yes",
              source_ref="lerobot/policies/pi_gemma.py:111-135 (call site :171)",
@@ -224,14 +248,18 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
                    "the mask add is fused into this segment per the plan's definition"),
         dict(bytes_formula="read x + attn_out + weight; write the sum and the normed result", segment="residual_rmsnorm2", order=3, in_model="yes",
              source_ref="lerobot/policies/pi_gemma.py:182-186 (_gated_residual at :54-67)",
-             ops="x + attn_out (gate None); then PiGemmaRMSNorm",
+             ops=f"_gated_residual(x, attn_out): {gtxt}; then PiGemmaRMSNorm",
              fn=lambda: layer.post_attention_layernorm(
                  PG._gated_residual(t["x"], t["attn_out"], t["gate1"]), cond=cond),
              inputs=f"x:{tuple(t['x'].shape)};attn_out:{tuple(t['attn_out'].shape)}",
              outputs=f"normed2:{tuple(t['normed2'].shape)}",
-             bytes_read=3 * S * D * B2, bytes_written=2 * S * D * B2,
-             flops=9 * S * D, flops_formula="S*D (add) + 8*S*D (rmsnorm)",
-             notes="gate is None for pi0, so _gated_residual reduces to x + y"),
+             bytes_read=3 * S * D * B2 + gbytes, bytes_written=2 * S * D * B2,
+             flops=9 * S * D + gflops,
+             flops_formula=("S*D (add) + S*D (gate multiply) + 8*S*D (rmsnorm)" if gated
+                            else "S*D (add) + 8*S*D (rmsnorm)"),
+             notes=("the AdaRMS gate is a real tensor here, so this segment reads it and "
+                    "does one extra multiply" if gated else
+                    "gate is None for this model, so _gated_residual reduces to x + y")),
         dict(bytes_formula="read gate[S,I] + up[S,I]; write h[S,I], all bf16", segment="gelu_gate_mul_up", order=4, in_model="yes",
              source_ref="transformers/models/gemma/modeling_gemma.py:81",
              ops="act_fn(gate_proj_out) * up_proj_out; act_fn = gelu_pytorch_tanh",
@@ -254,12 +282,13 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
                    "results; the model has no such tensor, so random bf16 values are used"),
         dict(bytes_formula="read x[S,D] + y[S,D]; write out[S,D], all bf16", segment="residual", order=6, in_model="yes",
              source_ref="lerobot/policies/pi_gemma.py:54-67 (call sites :182, :188)",
-             ops="x + y (gate is None for pi0)",
-             fn=lambda: PG._gated_residual(t["x"], t["attn_out"], None),
+             ops=f"_gated_residual(x, y): {gtxt}",
+             fn=lambda: PG._gated_residual(t["x"], t["attn_out"], t["gate1"]),
              inputs=f"x:{tuple(t['x'].shape)};y:{tuple(t['attn_out'].shape)}",
              outputs=f"out:{tuple(t['x'].shape)}",
-             bytes_read=2 * S * D * B2, bytes_written=S * D * B2,
-             flops=S * D, flops_formula="S*D",
+             bytes_read=2 * S * D * B2 + gbytes, bytes_written=S * D * B2,
+             flops=S * D + gflops,
+             flops_formula=("S*D (add) + S*D (gate multiply)" if gated else "S*D"),
              notes="the plain-residual variant, without the partial sums"),
         dict(segment="attention_gpu", order=7, in_model="yes",
              source_ref="transformers/models/gemma/modeling_gemma.py:195-218",
@@ -527,6 +556,10 @@ class ModelInputs:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
+    ap.add_argument("--model", default="pi0",
+                    help="pi0 | pi05 | smolvla. The expert's layer path and how to "
+                         "capture one layer come from bench/model_registry.py; SmolVLA "
+                         "needs a different capture because its layer body is inlined.")
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=1000)
     ap.add_argument("--steps", type=int, default=4)
@@ -553,11 +586,14 @@ def main() -> int:
 
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
-    policy, cfg, shipped = P.load_policy(num_inference_steps=args.steps)
+    import model_registry as MR                                       # noqa: PLC0415
+    spec = MR.get(args.model)
+    policy, cfg, shipped = MR.load_policy(spec, n=args.steps)
     real = P.assert_real_weights(policy)
     print("weights:", json.dumps(real), flush=True)
     fx = P.load_fixture()
-    batch, _, _ = P.build_batch(policy, fx)
+    batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
     tok = P.token_counts(policy, batch)
     Pn, Sn = int(tok["prefix_tokens_P"]), int(tok["suffix_tokens_S"])
     print("tokens:", json.dumps(tok), flush=True)
@@ -565,20 +601,23 @@ def main() -> int:
     # --- capture the real layer arguments during one denoising step
     caps = {}
     for li in LAYERS:
-        with LayerCapture(policy, li) as cap, torch.no_grad():
+        with LayerCapture(policy, li, spec) as cap, torch.no_grad():
             policy.predict_action_chunk(batch)
         if cap.args is None:
             raise SystemExit(f"layer {li} was never called — wrap point wrong")
         caps[li] = cap
     torch.cuda.synchronize()
 
-    ex = policy.model.paligemma_with_expert.gemma_expert
+    # The module that OWNS the layer list carries the expert's config, whatever it is
+    # called: gemma_expert.model for pi0/pi0.5, lm_expert for SmolVLA. Only .config is
+    # read from it, so the parent of the layers path is the right handle for all three.
+    ex = spec.resolve(policy, spec.expert_layers_path.rsplit(".", 1)[0])
     D = ex.config.hidden_size
     I = ex.config.intermediate_size
     H = ex.config.num_attention_heads
     HD = ex.config.head_dim
     all_rows, seg_rows, layer_rows, samples = [], [], [], []
-    mi = ModelInputs("pi0", P.REVISION, sh_out(f"git -C {REPO} rev-parse HEAD"),
+    mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
                      "MAXN+jetson_clocks", Pn, Sn, args.steps)
     notes_not_measured = []
 
@@ -593,7 +632,7 @@ def main() -> int:
         for sd in segs:
             if li == LAYERS[0]:
                 seg_rows.append({
-                    "model": "pi0", "segment": sd["segment"], "order_in_layer": sd["order"],
+                    "model": spec.name, "segment": sd["segment"], "order_in_layer": sd["order"],
                     "layer_kind": "expert_self_attn", "source_ref": sd["source_ref"],
                     "ops": sd["ops"], "inputs": sd["inputs"], "outputs": sd["outputs"],
                     "bytes_read": sd["bytes_read"], "bytes_written": sd["bytes_written"],
@@ -765,7 +804,7 @@ def main() -> int:
                            key="sum_of_segments", variant=f"layer={li}", exec_style=style,
                            timing="wall_isolated")
     if args.mode == "count":
-        last = policy.model.paligemma_with_expert.gemma_expert.model.layers[-1]
+        last = spec.resolve(policy, spec.expert_layers_path)[-1]
         holder, orig_f = {}, last.forward
 
         def cap_last(*a, **k):
@@ -850,7 +889,9 @@ def build_extras(policy, batch, args, last_hidden):
     if dc.args is None:
         return [], "per-step extras: denoise_step was never called"
     st, x_t, ts = dc.args["state"], dc.args["x_t"], dc.args["timestep"]
-    ex_norm = m.paligemma_with_expert.gemma_expert.model.norm
+    import model_registry as MR                                       # noqa: PLC0415
+    spec = MR.get(getattr(args, "model", "pi0"))
+    ex_norm = spec.resolve(policy, spec.expert_norm_path)
     chunk = m.config.chunk_size
     dt = -1.0 / args.steps
     v_t = torch.randn_like(x_t)
@@ -914,7 +955,7 @@ def measure_extras(policy, batch, args, mi, all_rows, notes, styles, last_hidden
                        variant=f"step_extra=1;exec_style={style}", exec_style=style)
             print(f"  {name:22s} {style:9s} {all_rows[-4]['median_ms']:.4f} ms kernels={nk}",
                   flush=True)
-        rows.append({"model": "pi0", "segment": name, "order_in_layer": -1,
+        rows.append({"model": mi.base["model"], "segment": name, "order_in_layer": -1,
                      "layer_kind": "per_step", "source_ref": ref, "ops": ops,
                      "inputs": "", "outputs": "", "bytes_read": "", "bytes_written": "",
                      "flops": "", "flops_formula": "", "in_model_code": "yes",
@@ -933,7 +974,9 @@ def measure_extras(policy, batch, args, mi, all_rows, notes, styles, last_hidden
 def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows, layer_rows,
            samples, mi, notes, styles, Pn, Sn):
     # capture the last expert layer's output, which final_norm_out_proj consumes
-    last = policy.model.paligemma_with_expert.gemma_expert.model.layers[-1]
+    import model_registry as MR                                       # noqa: PLC0415
+    spec = MR.get(getattr(args, "model", "pi0"))
+    last = spec.resolve(policy, spec.expert_layers_path)[-1]
     holder, orig = {}, last.forward
 
     def cap(*a, **k):
@@ -943,7 +986,8 @@ def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
 
     print("\n=== per-step extras ===", flush=True)
     fx = P.load_fixture()
-    batch, _, _ = P.build_batch(policy, fx)
+    batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
+                                revision=spec.revision)
     last.forward = cap
     try:
         with torch.no_grad():
@@ -995,10 +1039,12 @@ def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
     n_mi = mi.write(out / "model_inputs.csv")
     sw = software_versions()
     write_json(out / "meta.json", {
-        "experiment": "E11a", "task": "T010",
+        "experiment": "E11a",
+        "task": {"pi0": "T010", "pi05": "T011", "smolvla": "T011"}.get(spec.name, "T012"),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": P.CHECKPOINT, "model_revision": P.REVISION, "model_repo": P.CHECKPOINT,
-        "model_commit": P.REVISION, "checkpoint": P.CHECKPOINT,
+        "model": spec.name, "model_revision": spec.revision,
+        "model_repo": spec.checkpoint, "model_commit": spec.revision,
+        "checkpoint": spec.checkpoint,
         "precision": "bfloat16", "compile_mode": None, "batch": 1,
         "num_denoise_steps": args.steps, "action_horizon": getattr(cfg, "chunk_size", None),
         "prefix_tokens": Pn, "suffix_tokens": Sn, "token_counts": tok,

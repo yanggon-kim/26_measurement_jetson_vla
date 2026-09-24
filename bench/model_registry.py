@@ -65,6 +65,14 @@ class ModelSpec:
     container: str               # attribute on policy.model holding the VLM+expert pair
     family: str = "lerobot"
     per_layer_ok: bool = True    # does regions.py's ae_layer[j] record anything?
+    # ---- E11 (T011/T012): where the ACTION EXPERT's layers live, and how to capture one.
+    # `per_layer_ok` above only DOCUMENTED that SmolVLA's layer body is inlined. These
+    # fields make that dispatch instead, so bench/host_segments.py can stop hardcoding
+    # `paligemma_with_expert.gemma_expert.model.layers` at five separate sites.
+    expert_layers_path: str = "gemma_expert.model.layers"   # relative to the container
+    expert_norm_path: str = "gemma_expert.model.norm"       # the expert's final norm
+    layer_capture: str = "patch_layer_forward"
+    layer_kinds: tuple[str, ...] = ("decoder",)
     notes: str = ""
 
     @property
@@ -81,6 +89,33 @@ class ModelSpec:
     def owner(self, policy, which: str):
         m = policy.model
         return m if which == "model" else getattr(m, self.container)
+
+    def resolve(self, policy, path: str):
+        """Walk a dotted path from the CONTAINER, so a model's layout is data not code.
+
+        `spec.resolve(policy, spec.expert_layers_path)` is the expert's layer list for
+        every model in the family, which is what lets one piece of E11 code serve all of
+        them. Raises with the full path rather than an AttributeError on the last
+        component, because "no attribute 'model'" on its own has cost real debugging time.
+        """
+        obj = getattr(policy.model, self.container)
+        walked = [self.container]
+        for part in path.split("."):
+            if part.endswith("]"):                     # e.g. layers[0]
+                name, _, idx = part[:-1].partition("[")
+                obj = getattr(obj, name)[int(idx)]
+            else:
+                if not hasattr(obj, part):
+                    raise AttributeError(
+                        f"{'.'.join(walked)} has no attribute {part!r} "
+                        f"(resolving {path!r} for {self.name})")
+                obj = getattr(obj, part)
+            walked.append(part)
+        return obj
+
+    @property
+    def expert_layers_attr(self) -> str:
+        return self.expert_layers_path
 
 
 REGISTRY: dict[str, ModelSpec] = {
@@ -115,6 +150,14 @@ REGISTRY: dict[str, ModelSpec] = {
         policy_class="SmolVLAPolicy",
         n_field="num_steps", n_default=10,
         container="vlm_with_expert", per_layer_ok=False,
+        expert_layers_path="lm_expert.layers", expert_norm_path="lm_expert.norm",
+        # The layer body is INLINED in SmolVLMWithExpertModel.forward (:456-470): it calls
+        # forward_attn_layer (:197) or forward_cross_attn_layer (:274) and then applies
+        # o_proj, post_attention_layernorm and mlp itself. `layers[j].forward` is never
+        # called, so patching it captures nothing -- silently. The wrap point that DOES
+        # see a layer's real arguments is those two methods on the container.
+        layer_capture="patch_container_attn_fns",
+        layer_kinds=("self_attn", "cross_attn"),
         notes="16 expert layers, 8 self-attention and 8 cross-attention, decided per index "
               "by attention_mode / self_attn_every_n_layers (smolvlm_with_expert.py:425-443). "
               "ae_layer[j] records NOTHING: the layer body is inlined in "
