@@ -1,0 +1,67 @@
+SmolVLA static-posids prep: which E11 parts it touches, and the bound on its cost
+2026-09-24, written while queue_e11.sh was running. For reports/E11_models.md.
+
+## What the prep is
+
+bench/opt_ladder.py:prep_smolvlm_static_posids replaces SmolVLMVisionEmbeddings.forward
+to drop a boolean-mask index_put whose output shape depends on the mask's VALUES. It
+needs a device-to-host sync, so nothing containing it can be CUDA-graph captured. The
+replacement is exact, not an approximation: LeRobot passes patch_attention_mask=None
+unconditionally, so the mask is all-true by construction and the statement IS
+position_ids = pos_ids. The prep asserts both premises.
+
+Since f7b91a9 it is applied by MR.load_policy whenever spec.name == "smolvla" and a
+compile_mode is set, and recorded in meta.json as
+shipped_config.smolvla_static_posids_prep.
+
+## Which E11 parts actually exercise it -- MEASURED, not assumed
+
+  prefix_sweep (E11d)   AFFECTED. Sweeps shapes (n_img 1/2/3 x prompt lengths) and calls
+                        policy.predict_action_chunk, the compiled entry point, so each new
+                        shape records a fresh CUDA graph with the vision tower inside it.
+                        This is what died at 16:24 with cudaErrorStreamCaptureInvalidated.
+
+  pipelining (E11f)     AFFECTED. Runs phases ("prefix", "ae", "full"); `full` is
+                        policy.predict_action_chunk, i.e. the compiled entry point.
+
+  mempressure (E11e)    NOT AFFECTED. --phases defaults to "prefix" only, and
+                        phase_loops.effective_exec_style returns "eager_subpath" for
+                        every phase except "full" -- prefix and ae call BELOW
+                        sample_actions, so they stay eager whatever the compile mode and
+                        the vision tower is never captured. The reduce-overhead point ran
+                        clean at 16:47 with the UNPATCHED module imported, which is the
+                        direct evidence: 95.93 ms prefix/none, no capture error.
+
+I predicted mempressure would fail and it did not. The code fact -- all three drivers
+called load_policy(compile_mode=...) without the prep -- was right; the consequence was
+not, because two of the three reach a compiled entry point and one does not.
+
+## The confound this raises, and the bound on it
+
+Because the prep is gated on compile_mode, pipelining's `prefix` and `ae` rows are
+labelled effective_exec_style=eager_subpath in BOTH modes but do not run identical vision
+code: the reduce-overhead run has the prep applied globally (it is a monkeypatch on the
+transformers module), the eager run does not. A reader comparing those rows could
+attribute part of the difference to compilation when it came from the prep removing a
+device-to-host sync.
+
+Part B already measured that cost in isolation. vis_static_pos sits directly after
+vis_compile in the ladder and its own description says "no new graph", so the difference
+between them IS the prep:
+
+    results/20260922_E4c_smolvla_opt_ladder/raw/rows/
+      vis_compile      152.7043 ms
+      vis_static_pos   153.6343 ms
+
++0.93 ms on a 152.7 ms frame, 0.6 %, and SLOWER rather than faster -- the opposite sign
+to the sync-removal mechanism, i.e. run-to-run noise. The confound is therefore bounded
+below 1 ms and is not material at E11's resolution. State the bound in the report; do not
+re-run anything for it.
+
+## Consequences for the queue
+
+* E11d smolvla reduce-overhead: re-run WITH the prep. queue_e11_fixup.sh does this.
+* E11e smolvla reduce-overhead: measured at 16:47 without the prep and VALID, because the
+  prep is irrelevant to an eager sub-path. Do not re-run: the fixup's have() guard skips
+  it, and a second measurement of an already-measured point invites averaging.
+* E11f smolvla: never ran under reduce-overhead before, and picks up the fix on import.
