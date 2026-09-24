@@ -235,7 +235,11 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
     layer, attn = t["layer"], t["attn"]
     B2, B4 = 2, 4                                          # bf16, fp32
     bsz, hd = t["bsz"], t["head_dim"]
-    mask = t["mask"]
+    # `mask` was only used by the score/softmax segments, which this model does not
+    # decompose (see intermediates). Left here as a local so the signature of the
+    # remaining segments is unchanged, and read with .get so a future tensor removal
+    # fails at ITS use site rather than at the top of the builder.
+    mask = t.get("mask_full")
 
     return [
         dict(segment="rmsnorm1", order=0, in_model="yes",

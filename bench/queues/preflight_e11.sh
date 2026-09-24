@@ -39,6 +39,15 @@ step() {                      # $1 label  $2.. command
 
 echo "E11_PREFLIGHT_START $(date -Is)"
 
+# CPU-only contract check first: every key a segment builder reads must be one its
+# intermediates() returns. This broke twice in one morning and cost two preflight runs
+# at ~20 minutes each, both times from dropping a tensor without following its
+# consumers. It needs no GPU, so it runs before anything loads a model.
+if ! $PY bench/check_segment_contract.py; then
+  echo "*** segment contract broken -- fix before the preflight is worth running ***"
+  exit 2
+fi
+
 for M in pi05 smolvla; do
   step "$M E11a" $PY bench/host_segments.py --model "$M" \
       --outdir "$OUT/E11a_$M" --steps 4 --timed 20 --warmup 3 --styles eager
