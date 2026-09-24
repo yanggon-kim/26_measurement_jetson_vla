@@ -150,21 +150,26 @@ def main() -> int:
                                  "timing": "wall_isolated", **{
                                      k: round(v, 6) for k, v in s.items()
                                      if k != "n"}, "n": s["n"]})
-                mi.add_stats(f"t_seg_{sd['segment']}", s, "ms", s["n"],
-                             "host_segments.csv",
+                # §13.8's `quantity` is a CLOSED table and the segment name goes in
+                # `key`, not into the quantity. An invented quantity like
+                # `t_seg_rmsnorm1` is rejected by the in-place checker, and the whole
+                # point of model_inputs.csv is that one checker validates every model's.
+                mi.add_stats("t_host_segment", s, "ms", s["n"], "host_segments.csv",
+                             key=sd["segment"],
                              variant=f"block={bi};kind={cap.kind}", exec_style=style,
                              timing="wall_isolated")
                 if style == "eager":
                     nk = count_kernels(fn)
                     row["kernels_eager"] = nk
-                    mi.add(f"kernels_seg_{sd['segment']}", nk, "count", "median", 1,
-                           "host_segments.csv",
+                    mi.add("n_kernels_host_segment", nk, "count", "value", 1,
+                           "host_segments.csv", key=sd["segment"],
                            variant=f"block={bi};kind={cap.kind}", exec_style=style)
-            mi.add(f"bytes_seg_{sd['segment']}", sd["bytes_read"] + sd["bytes_written"],
-                   "bytes", "analytic", 1, "host_segments.csv",
-                   variant=f"block={bi};kind={cap.kind}")
-            mi.add(f"flops_seg_{sd['segment']}", sd["flops"], "flops", "analytic", 1,
-                   "host_segments.csv", variant=f"block={bi};kind={cap.kind}")
+            mi.add("bytes_host_segment", sd["bytes_read"] + sd["bytes_written"],
+                   "bytes", "value", 1, "host_segments.csv", key=sd["segment"],
+                   variant=f"block={bi};kind={cap.kind}", timing="analytic")
+            mi.add("flops_host_segment", sd["flops"], "flops", "value", 1,
+                   "host_segments.csv", key=sd["segment"],
+                   variant=f"block={bi};kind={cap.kind}", timing="analytic")
             seg_rows.append(row)
             print(f"  {sd['segment']:20s} "
                   + "  ".join(f"{s}={row.get(f'{s}_median_ms', '')}" for s in styles),
