@@ -94,7 +94,14 @@ def main() -> int:
     ap.add_argument("--force-gemm-autotune", action="store_true",
                     help="override inductor's 68-SM gate so Triton GEMM templates run")
     ap.add_argument("--ncu-region", default=None,
-                    help="C1: install NVTX ranges and profile ONE inference, then exit")
+                    help="C1/E5: install NVTX ranges and profile the inferences between "
+                         "cudaProfilerStart/Stop, then exit. ncu filters on the range "
+                         "name; nsys captures the whole window and uses the ranges to "
+                         "split the timeline, so for nsys the value is only a label.")
+    ap.add_argument("--profile-inferences", type=int, default=1,
+                    help="how many inferences to profile. ncu wants 1 (a filtered range "
+                         "per capture); nsys wants 1-3 steady-state inferences "
+                         "(protocol §3.1), so E5 passes 2.")
     ap.add_argument("--measure-s", action="store_true",
                     help="C3: read the action head's token count off a real inference")
     ap.add_argument("--compat-shims", action="store_true",
@@ -393,10 +400,12 @@ def main() -> int:
             step()
         torch.cuda.synchronize()
         torch.cuda.cudart().cudaProfilerStart()
-        step()
-        torch.cuda.synchronize()
+        for _ in range(max(1, args.profile_inferences)):
+            step()
+            torch.cuda.synchronize()
         torch.cuda.cudart().cudaProfilerStop()
-        print(f"profiled one inference with NVTX range {args.ncu_region!r}", flush=True)
+        print(f"profiled {max(1, args.profile_inferences)} inference(s) with NVTX range "
+              f"{args.ncu_region!r}", flush=True)
         return 0
 
     if args.measure_s:
