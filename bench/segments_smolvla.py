@@ -174,14 +174,29 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
         else:
             k_full, v_full = k_r, v
 
-        # ---- eager_attention_forward (:504-549), rebuilt step by step ------------------
+        # ---- the attention: the MODEL'S OWN, not a reimplementation --------------------
+        # I first rebuilt eager_attention_forward here step by step and it produced a
+        # context 720 wide where o_proj wants 320:
+        #     RuntimeError: mat1 and mat2 shapes cannot be multiplied (50x720 and 320x320)
+        # The reason is a genuine asymmetry in the model, not a typo in the replay:
+        # forward_attn_layer builds q/k/v with the EXPERT layer's head_dim (:222) while
+        # eager_attention_forward reshapes with the VLM's head counts and the VLM's
+        # head_dim (:507-508, :424), and the trailing `-1` in its reshape absorbs the
+        # difference. Reconstructing that correctly means encoding the asymmetry, which
+        # is exactly the kind of assumption this harness exists to avoid.
+        #
+        # So the CONTEXT comes from the model's own call. The score and probability
+        # tensors below are still rebuilt, because the `softmax` segment needs their
+        # shapes and dtypes for its byte and FLOP accounting -- and they are used for
+        # nothing else.
         nh, nkv = c.num_attention_heads, c.num_key_value_heads
         groups = nh // nkv
         T = k_full.shape[1]
-        ke = k_full[:, :, :, None, :].expand(bsz, T, nkv, groups, hd).reshape(
-            bsz, T, nkv * groups, hd)                                  # :513-518
-        ve = v_full[:, :, :, None, :].expand(bsz, T, nkv, groups, hd).reshape(
-            bsz, T, nkv * groups, hd)
+        ctx = c.eager_attention_forward(a["attention_mask"], bsz, hd,
+                                        q_r, k_full, v_full)           # :504-549
+
+        ke = k_full[:, :, :, None, :].expand(bsz, T, nkv, groups, k_full.shape[-1]
+                                             ).reshape(bsz, T, nkv * groups, -1)
         qf = q_r.to(torch.float32).transpose(1, 2)                     # :528-531, FP32
         kf = ke.to(torch.float32).transpose(1, 2)
         scores = torch.matmul(qf, kf.transpose(2, 3)) * (hd ** -0.5)   # :534-535
@@ -192,9 +207,7 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
         masked = (scores if mask is None
                   else torch.where(mask[:, None, :, :], scores, big_neg))   # :539-540
         probs = torch.nn.functional.softmax(masked, dim=-1)            # :541, fp32
-        probs_cast = probs.to(dtype=ve.dtype)                          # :542
-        ctx = torch.matmul(probs_cast, ve.permute(0, 2, 1, 3))         # :544
-        ctx = ctx.permute(0, 2, 1, 3).reshape(bsz, -1, nkv * groups * hd)   # :546-548
+        probs_cast = probs.to(dtype=v_full.dtype)                      # :542
 
         # ---- the inlined tail in forward (:466-481) ------------------------------------
         att_out = ctx
@@ -228,6 +241,7 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
             "attn": attn, "layer": layer, "adarms_cond": None,
             "kv_groups": groups, "container": c, "kind": cap.kind,
             "bsz": bsz, "head_dim": hd, "T_keys": T, "position_ids": pos,
+            "mask_full": a["attention_mask"],
             "apply_rope": apply_rope}
 
 
@@ -321,7 +335,7 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              ops="expand+reshape KV, fp32 score matmul, where-mask, fp32 softmax, "
                  "bf16 context matmul",
              fn=lambda: t["container"].eager_attention_forward(
-                 t["mask"], bsz, hd, t["q_r"], t["k_full"], t["v_full"]),
+                 t["mask_full"], bsz, hd, t["q_r"], t["k_full"], t["v_full"]),
              inputs=f"q:{tuple(t['q_r'].shape)};k:{tuple(t['k_full'].shape)};"
                     f"v:{tuple(t['v_full'].shape)}",
              outputs=f"att:{tuple(t['ctx'].shape)}",
