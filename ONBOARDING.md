@@ -1,6 +1,6 @@
 # ONBOARDING — jetson
 
-*Root: `/home/yanggon/0007_26summer/05_VLA_LPDDR/jetson` · Owner: `jetson-owner`. Stable facts only; state is in `HANDOFF.md`.*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner`. Stable facts only; state is in `HANDOFF.md`.*
 
 ## 1. Identity
 Clone of `git@github.com:yanggon-kim/26_measurement_jetson_vla.git`: the channel between the research server
@@ -17,7 +17,7 @@ The device's: `env/`, `bench/`, `results/<date>_<Exx>_…/` (`meta.json`, tidy C
 
 ## 3. Commands
 No build. `git -C <root> pull --rebase` before anything; push after committing instructions. Analysis scripts
-run with `/home/yanggon/0007_26summer/05_VLA_LPDDR/microarch/.venv/bin/python` (pandas, matplotlib available).
+run with `/home/yanggon/05_VLA_LPDDR/microarch/.venv/bin/python` (pandas, matplotlib available).
 
 ## 4. Git
 One remote `origin`, branch `main`, **two writers**: you and the on-device agent. Fetch, rebase, re-read before

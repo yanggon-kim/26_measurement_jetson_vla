@@ -1,6 +1,6 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/0007_26summer/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-22 by jetson-owner*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-22 by jetson-owner*
 
 ## Current status
 **2026-09-22: T002 (E3), T003 (E4), T005 (E1/E2) received, verified, accepted; T010 (E11) complete on content
