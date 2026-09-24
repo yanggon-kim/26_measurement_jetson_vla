@@ -22,7 +22,8 @@ typed in.
    thermal or battery budget, above-idle for "what does this phase cost".
 
 3. **The sampler perturbs a launch-bound workload.** The rail thread reads four sysfs
-   files 20 times a second in the same process, and π0's eager frame is 84 % GPU-idle —
+   files 20 times a second in the same process, and π0's eager `ae_step` is 84 % GPU-idle
+   (E5; the frame as a whole is 55 % at N=10, and vision and the prefix are under 2 %) —
    dispatch-bound work is exactly what extra host activity slows down. So the loop's own
    median latency is printed beside the Part B median for the same configuration, and the
    difference is stated rather than left for a reader to trip over.
@@ -236,8 +237,10 @@ def main() -> int:
           "because isolating the expert requires it.",
           "",
           "**The sampler is not free.** The rail thread reads four sysfs files 20 times a "
-          "second inside the measured process, and π0's eager frame is 84 % GPU-idle — "
-          "dispatch-bound work is precisely what extra host activity slows. The table "
+          "second inside the measured process, and π0's eager `ae_step` is 84 % GPU-idle "
+          "(E5 — the frame as a whole is 55 % at N=10, and vision and the prefix are "
+          "under 2 %) — dispatch-bound work is precisely what extra host activity "
+          "slows. The table "
           "below puts each loop's own median next to Part B's median for the same "
           "configuration so the perturbation is visible instead of implicit.",
           "",
