@@ -443,14 +443,19 @@ def apply_rung(policy, spec, key: str):
     application is factored out here rather than reimplemented. One definition, one set of
     semantics; a rung that changes here changes for both.
 
-    Returns (compiled_desc, prep_note, precision, compile_s, fails). Raises NotApplicable
-    if the rung's prep refuses this model, which the caller must handle rather than
-    silently measuring an unprepared policy.
+    Returns (compiled_desc, prep_note, precision, compile_s, fails, regions_ok). Raises
+    NotApplicable if the rung's prep refuses this model, which the caller must handle
+    rather than silently measuring an unprepared policy.
+
+    `regions_ok` is the rung's own flag: False for the rungs that compile
+    `sample_actions` as one unit, because a region context manager inside a compiled
+    graph graph-breaks it. A caller that instruments regions must respect it or it
+    produces a capture with no per-region split and no indication why.
     """
     rung = next((r for r in RUNGS if r[0] == key), None)
     if rung is None:
         raise SystemExit(f"unknown rung {key!r}; have {[r[0] for r in RUNGS]}")
-    _, _, prec, targets, _, _, prep = rung
+    _, _, prec, targets, _, regions_ok, prep = rung
     prep = effective_prep(spec, key, prep)
     torch.set_float32_matmul_precision(prec)
     prep_note = prep(policy) if prep else ""
@@ -470,7 +475,7 @@ def apply_rung(policy, spec, key: str):
             compiled_desc.append(f"{which}.{attr}@{mode}" + ("+clone" if clone_out else ""))
         except Exception as e:                                    # noqa: BLE001
             fails.append(f"{which}.{attr}@{mode}: {type(e).__name__}: {str(e)[:160]}")
-    return compiled_desc, prep_note, prec, round(compile_s, 3), fails
+    return compiled_desc, prep_note, prec, round(compile_s, 3), fails, regions_ok
 
 
 

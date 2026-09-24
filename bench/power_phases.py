@@ -166,7 +166,7 @@ def main() -> int:
         if args.rung:
             import opt_ladder as OL
             try:
-                compiled_desc, rung_note, prec, comp_s, fails = OL.apply_rung(
+                compiled_desc, rung_note, prec, comp_s, fails, _ = OL.apply_rung(
                     policy, spec, args.rung)
             except OL.NotApplicable as e:
                 raise SystemExit(f"rung {args.rung!r} is not applicable to {args.model}: "

@@ -56,7 +56,17 @@ def main() -> int:
     rung_desc = ""
     if args.rung:
         import opt_ladder as OL                                       # noqa: PLC0415
-        compiled, prep_note, prec, comp_s, fails = OL.apply_rung(policy, spec, args.rung)
+        compiled, prep_note, prec, comp_s, fails, regions_ok = OL.apply_rung(
+            policy, spec, args.rung)
+        if not regions_ok and not args.no_regions:
+            # This rung compiles sample_actions as one unit, so a region context manager
+            # inside it graph-breaks the model. Instrumenting anyway produces a capture
+            # with no per-region split and nothing saying why -- which is the state
+            # 20260922_E5_pi0_reduce-overhead_N4 has been in since it was abandoned.
+            print(f"  rung {args.rung} has regions_ok=False (it compiles sample_actions "
+                  f"as one unit); running WITHOUT regions. The capture will have a "
+                  f"whole_capture row and no per-region split.", flush=True)
+            args.no_regions = True
         if fails:
             raise SystemExit(f"rung {args.rung!r} failed to compile: {fails}. "
                              f"A partially-applied rung is not the rung.")
