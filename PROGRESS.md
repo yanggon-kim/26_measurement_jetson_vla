@@ -63,24 +63,22 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 18:58:18** · elapsed **24.39 h** of 26 (94 %) · 50.7 GiB free · 1.44 GiB swap
+**Updated 19:18:19** · elapsed **24.72 h** of 26 (95 %) · 34.4 GiB free · 1.44 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
+- `autotune_prefix.log` · gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 
 - `queue_libero.log` · Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
 - `queue_libero.log` · Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your softwar
 - `queue_libero.log` · See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional informati
-- `libero_smoke.log` · task 2 ep 1: fail    280 steps   running 1/6
-- `libero_smoke.log` · success 1/6 = 16.7%   inference 1157.37 ms x32, sim 36.68 ms
-- `libero_smoke.log` · wrote /tmp/claude-1001/-home-yanggon-00-VLA/12fafcae-396b-4192-9a5c-e6f36be46f1c/scratchpad/libero_smoke6
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 19:00** (58 configurations)
+**Re-derived from every result CSV on disk at 19:20** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
