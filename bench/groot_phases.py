@@ -710,6 +710,59 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
     return 0
 
 
+def load_for_segments(args):
+    """Load GR00T and build its inputs, for a driver other than main().
+
+    bench/groot_segments.py (T012 / E11a) needs exactly what main() sets up before it
+    starts timing: the policy, the model, one collated input batch, N, and the observation
+    shapes. Factored out so both go through ONE loader -- a second one would eventually
+    differ in a detail (the compat shim, the worktree on sys.path, the embodiment tag)
+    and the two sets of numbers would stop being comparable without anyone noticing.
+
+    Returns (policy, ckpt_dir, model, inputs, n, shapes).
+    """
+    compat = []
+    if getattr(args, "compat_shims", False):
+        import transformers.image_utils as IU
+        if not hasattr(IU, "VideoInput"):
+            from transformers.video_utils import VideoInput
+            IU.VideoInput = VideoInput
+            compat.append("transformers.image_utils.VideoInput")
+    if args.gr00t_root:
+        sys.path.insert(0, args.gr00t_root)
+
+    from huggingface_hub import snapshot_download                     # noqa: E402
+    ckpt_dir = (args.checkpoint if Path(args.checkpoint).is_dir()
+                else snapshot_download(args.checkpoint))
+    if args.api == "old":
+        policy = _load_n15(args, ckpt_dir)
+    else:
+        from gr00t.policy.gr00t_policy import Gr00tPolicy            # noqa: E402
+        from gr00t.data.embodiment_tags import EmbodimentTag         # noqa: E402
+        tag = args.embodiment_tag
+        try:
+            tag = EmbodimentTag(tag)
+        except ValueError:
+            tag = EmbodimentTag[tag.upper()]
+        policy = Gr00tPolicy(embodiment_tag=tag, model_path=ckpt_dir, device="cuda")
+    model = policy.model
+    n = args.steps or int(getattr(model.action_head.config,
+                                  "num_inference_timesteps", 4))
+    model.action_head.num_inference_timesteps = n
+
+    if args.api == "old":
+        obs, shapes = _build_obs_n15(policy, ckpt_dir)
+        import numpy as _np
+        inputs = policy.apply_transforms(
+            {k: (v if isinstance(v, list) else _np.expand_dims(v, 0))
+             for k, v in obs.items()})
+    else:
+        obs, shapes = build_observation(policy, ckpt_dir)
+        inputs = build_inputs(policy, obs)
+    return policy, ckpt_dir, model, inputs, n, shapes
+
+
+
 def _load_n15(args, ckpt_dir):
     """N1.5 uses the older Gr00tPolicy API, so it gets its own constructor.
 
