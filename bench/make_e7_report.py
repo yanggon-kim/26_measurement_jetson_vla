@@ -163,9 +163,14 @@ def main() -> int:
           "`full` is listed separately because it is the whole inference including the "
           "parts neither loop isolates.",
           "",
+          "The last column is the one to read: the expert's share of the ENERGY divided "
+          "by its share of the TIME. Below 1 means the expert is the cheap phase — it "
+          "occupies the frame without drawing the power — and a memory-side accelerator "
+          "aimed at it addresses less of the joules than of the milliseconds, by exactly "
+          "that factor.", "",
           "| model | N | configuration | prefix mJ | ae mJ | prefix % of energy | "
-          "ae % of energy | prefix % of time | ae % of time |",
-          "|---|---:|---|---:|---:|---:|---:|---:|---:|"]
+          "ae % of energy | prefix % of time | ae % of time | **ae energy ÷ time** |",
+          "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|"]
     for run in runs:
         rows, meta = run["rows"], run["meta"]
         model = rows[0].get("model", "?")
@@ -180,9 +185,11 @@ def main() -> int:
         pt, at = num(p["median_ms"]), num(a["median_ms"])
         if None in (pe, ae, pt, at) or pe + ae <= 0 or pt + at <= 0:
             continue
+        ae_e, ae_t = ae / (pe + ae), at / (pt + at)
         L.append(f"| {LABEL.get(model, model)} | {n} | `{mode}` | {pe:.1f} | {ae:.1f} | "
                  f"{100*pe/(pe+ae):.1f} | {100*ae/(pe+ae):.1f} | "
-                 f"{100*pt/(pt+at):.1f} | {100*at/(pt+at):.1f} |")
+                 f"{100*pt/(pt+at):.1f} | {100*at/(pt+at):.1f} | "
+                 + (f"**{ae_e/ae_t:.2f}** |" if ae_t > 0 else "— |"))
     L += ["",
           "**Read the last four columns against each other.** If a phase's energy share "
           "and time share are equal it draws the average power of the frame; if its energy "
