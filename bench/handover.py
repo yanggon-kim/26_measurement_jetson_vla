@@ -171,14 +171,17 @@ def main() -> int:
     orig_ds = policy.model.denoise_step
     step_i = {"n": 0}
 
-    def wrapped(state, prefix_pad_masks, past_key_values, x_t, timestep):
+    def wrapped(*a, **kw):
+        # Signature-agnostic: pi0 passes these positionally with a state, pi0.5 and
+        # SmolVLA by keyword without one (their state is in the prefix).
+        past_key_values = kw.get('past_key_values', a[2] if len(a) > 2 else None)
         ls = cache_layers(past_key_values)
         ptr_log.append({"step": step_i["n"], "when": "entry",
                         "layer0_key_ptr": ls[0][0].data_ptr(),
                         "layer0_value_ptr": ls[0][1].data_ptr(),
                         "layer0_key_shape": str(tuple(ls[0][0].shape))})
         step_i["n"] += 1
-        return orig_ds(state, prefix_pad_masks, past_key_values, x_t, timestep)
+        return orig_ds(*a, **kw)
 
     # ...and the cache the expert actually receives, i.e. AFTER the deepcopy at
     # modeling_pi0.py:918. Capturing only on entry to denoise_step would show a stable

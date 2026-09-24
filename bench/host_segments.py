@@ -908,11 +908,26 @@ class DenoiseCapture:
         self._orig = self.model.denoise_step
         cap = self
 
-        def wrapper(state, prefix_pad_masks, past_key_values, x_t, timestep):
+        def wrapper(*a, **kw):
+            # pi0's denoise_step is (state, prefix_pad_masks, past_key_values, x_t,
+            # timestep) POSITIONALLY. pi0.5's and SmolVLA's is keyword-only and has NO
+            # state -- theirs goes in the prefix -- so a fixed signature raised
+            #     TypeError: wrapper() missing 1 required positional argument: 'state'
+            # Accept whatever the model passes and pick the tensors out by name or
+            # position, so the capture follows the model instead of asserting a shape.
             if cap.args is None:
-                cap.args = {"state": state.detach().clone(), "x_t": x_t.detach().clone(),
-                            "timestep": timestep.detach().clone()}
-            return cap._orig(state, prefix_pad_masks, past_key_values, x_t, timestep)
+                def pick(name, idx):
+                    if name in kw:
+                        return kw[name]
+                    return a[idx] if len(a) > idx else None
+                st = pick("state", 0)
+                x_t = pick("x_t", 3)
+                ts = pick("timestep", 4)
+                cap.args = {
+                    "state": st.detach().clone() if st is not None else None,
+                    "x_t": x_t.detach().clone() if x_t is not None else None,
+                    "timestep": ts.detach().clone() if ts is not None else None}
+            return cap._orig(*a, **kw)
 
         self.model.denoise_step = wrapper
         return self

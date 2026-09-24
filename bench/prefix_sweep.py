@@ -154,7 +154,8 @@ def main() -> int:
                 torch.cuda.synchronize()
                 compile_s[label] = round(time.perf_counter() - t0, 3)
                 tok, e2e, reg, peak = run_point(
-                    policy, fx, args.steps, args.warmup, args.timed, instrument=(cm is None))
+                    policy, fx, args.steps, args.warmup, args.timed,
+                    instrument=(cm is None), spec=spec)
                 s = summarize(e2e)
                 base_row = {
                     "mode": mode, "n_images": n_img, "prompt_label": plabel,
