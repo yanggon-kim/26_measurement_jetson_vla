@@ -63,24 +63,24 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 22:40:31** · elapsed **28.09 h** of 26 (108 %) · 50.7 GiB free · 1.44 GiB swap
+**Updated 23:00:32** · elapsed **28.43 h** of 26 (109 %) · 50.7 GiB free · 1.45 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
 Latest log lines:
 
+- `best_combo.log` · Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to
+- `best_combo.log` · EXIT=1
+- `best_combo.log` · BESTCOMBO_DONE 2026-09-23T22:56:00-07:00
 - `autotune_rerun.log` · wrote results/20260923_E4i_pi0_prefix_autotune/forced_autotune.json
 - `autotune_rerun.log` · EXIT=0
 - `autotune_rerun.log` · RERUN_DONE 2026-09-23T19:40:51-07:00
-- `autotune_prefix_control.log` · e2e 609.901 ms | vision 103.475 | PREFIX 203.152 | ae 297.478
-- `autotune_prefix_control.log` · references: eager prefix 234.57, vlm_compile prefix 192.76
-- `autotune_prefix_control.log` · wrote results/20260923_E4i_pi0_prefix_autotune/cublas_autotune.json
 <!-- FAST:END -->
 
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 22:40** (58 configurations)
+**Re-derived from every result CSV on disk at 23:00** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
