@@ -63,9 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 16:23:18** · elapsed **45.81 h** of 26 (176 %) · 48.0 GiB free · 0.81 GiB swap
+**Updated 16:43:19** · elapsed **46.14 h** of 26 (177 %) · 49.6 GiB free · 0.78 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 432462 | `bench/mempressure.py --model smolvla --outdir-prefix results/20260924_E11e_smolvla --steps` | 19 min | 2.9 GiB |
 
 Latest log lines:
 
@@ -80,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 16:24** (59 configurations)
+**Re-derived from every result CSV on disk at 16:44** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
