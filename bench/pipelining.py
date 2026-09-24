@@ -158,7 +158,9 @@ def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec):
     segs = [s for s in layer_segments(spec, t, S, ex.config.hidden_size,
                                       ex.config.intermediate_size,
                                       ex.config.num_attention_heads, ex.config.head_dim,
-                                      t["scores"].shape[-1])
+                                      (t["scores"].shape[-1] if "scores" in t
+                                       else (t.get("ctx").shape[1] if t.get("ctx")
+                                             is not None else t["x"].shape[1])))
             if s["segment"] in want]
     print(f"  host sequence: {len(segs)}/{len(want)} mapping segments present for "
           f"{spec.name}: {[s['segment'] for s in segs]}", flush=True)

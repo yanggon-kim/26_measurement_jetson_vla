@@ -678,8 +678,19 @@ def main() -> int:
     for li in LAYERS:
         t = layer_intermediates(policy, caps[li], spec)
         t["_partials"] = torch.randn(4, Sn, D, device="cuda", dtype=t["x"].dtype)
-        T_keys = t["scores"].shape[-1]
-        print(f"\nlayer {li}: x{tuple(t['x'].shape)} scores{tuple(t['scores'].shape)} "
+        # T (the number of keys attended over) comes from the score matrix where a
+        # model exposes one. SmolVLA does not: its attention is taken as the model
+        # computed it, because its two layer kinds project k/v differently, so there is
+        # no reconstructed `scores` tensor to read a width off. Fall back to the
+        # captured attention output's own T, and say which was used.
+        if "scores" in t:
+            T_keys = t["scores"].shape[-1]
+            tdesc = f"scores{tuple(t['scores'].shape)}"
+        else:
+            ctx_ = t.get("ctx")
+            T_keys = ctx_.shape[1] if ctx_ is not None else t["x"].shape[1]
+            tdesc = f"attention not decomposed; T from the captured output"
+        print(f"\nlayer {li}: x{tuple(t['x'].shape)} {tdesc} "
               f"T={T_keys} D={D} I={I} H={H} head_dim={HD}", flush=True)
         segs = layer_segments(spec, t, Sn, D, I, H, HD, T_keys)
 
