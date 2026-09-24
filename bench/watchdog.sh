@@ -237,7 +237,57 @@ echo
 echo "--- 2c. ORPHANS (root-owned survivors of a killed queue, which load the machine)"
 ps -eo pid,user,etime,args --no-headers 2>/dev/null \
   | awk '$3 ~ /bin\/python$/ && $4 ~ /compile_worker/ {n[$2]++} END {for (u in n) printf "  %d orphaned inductor compile_worker owned by %s\n", n[u], u}'
-pgrep -x tegrastats >/dev/null 2>&1 && echo "  *** tegrastats is running outside a measurement -- it corrupts the next power log" || true
+$HOME/venvs/pi0/bin/python - <<'PYF'
+"""Orphans and missing artefacts — but only where a measurement is NOT running.
+
+The first version of these two checks fired on the run that was in progress: tegrastats
+IS supposed to be running during a power measurement, and a directory has no meta.json
+until its run finishes. An audit that reports healthy work as broken gets ignored.
+"""
+import glob, os
+from pathlib import Path
+
+JOBS = ("power_phases.py", "groot_phases.py", "host_segments.py", "handover.py",
+        "prefix_sweep.py", "mempressure.py", "pipelining.py", "nsys_target.py",
+        "ncu_target.py", "groot_segments.py", "opt_ladder.py")
+live_dirs, running, hogs = set(), False, []
+me = os.getpid()
+for d in Path('/proc').iterdir():
+    if not d.name.isdigit() or int(d.name) == me:
+        continue
+    try:
+        argv = [a.decode('utf-8', 'replace')
+                for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+    except OSError:
+        continue
+    if not argv:
+        continue
+    names = [a.rsplit('/', 1)[-1] for a in argv[1:]]
+    if any(n in JOBS for n in names):
+        running = True
+        live_dirs |= {a for a in argv[1:] if a.startswith(("results/", "scratch/"))}
+    if any(n == "bw_hog.py" for n in names):
+        hogs.append(d.name)
+
+if hogs:
+    print(f"  *** bw_hog still running (pids {hogs}) — it saturates memory bandwidth "
+          f"and silently slows whatever measures next")
+if os.system("pgrep -x tegrastats >/dev/null 2>&1") == 0 and not running:
+    print("  *** tegrastats is running with NO measurement — it corrupts the next "
+          "power log (tegrastats --stop, then pkill -9 -x tegrastats, both under sudo)")
+
+missing = []
+for d in sorted(glob.glob("results/*_E7_*") + glob.glob("results/*_E11*")
+                + glob.glob("results/*_E5*")):
+    if Path(d, "meta.json").exists():
+        continue
+    if any(d == v or d.startswith(v) for v in live_dirs):
+        continue                       # in progress: meta.json is written at the end
+    missing.append(os.path.basename(d))
+if missing:
+    print(f"  {len(missing)} finished run(s) with NO meta.json (protocol §5): "
+          f"{missing[:4]}")
+PYF
 echo
 echo "--- 3. QUEUE MARKERS"
 # glob every queue log: naming two of them by hand meant the 07:22 audit printed markers

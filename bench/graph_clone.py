@@ -18,6 +18,8 @@ three separate times, each looking like a different bug:
 Cloning walks containers AND HF cache objects, because a bare tensor .clone() fixed only
 the first of the three.
 """
+import collections.abc as _abc
+
 import torch
 
 
@@ -44,7 +46,15 @@ def clone_graph_outputs(r):
         return tuple(clone_graph_outputs(x) for x in r)
     if isinstance(r, list):
         return [clone_graph_outputs(x) for x in r]
-    if isinstance(r, dict):
+    # `dict` OR any Mapping. transformers' BatchFeature -- which is what GR00T's backbone
+    # returns -- is a **UserDict**, so `isinstance(r, dict)` is FALSE for it and this
+    # function used to hand it straight back uncloned. GR00T N1.6's and N1.7's compiled
+    # E7 runs both died with
+    #     RuntimeError: accessing tensor output of CUDAGraphs that has been overwritten
+    # reading backbone_features inside action_head.get_action, from tensors this clone was
+    # supposed to have copied out of the graph's memory pool and had not touched at all.
+    # MutableMapping covers dict, OrderedDict, UserDict and HF's ModelOutput alike.
+    if isinstance(r, (dict, _abc.MutableMapping)):
         # HF's ModelOutput (BaseModelOutputWithPast and friends) SUBCLASSES OrderedDict.
         # Rebuilding it as a plain dict silently destroys the class, and the caller then
         # dies on attribute access: GR00T's vlm_graphs failed with "'dict' object has no
