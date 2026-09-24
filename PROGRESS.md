@@ -63,9 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 02:40:43** · elapsed **32.10 h** of 26 (123 %) · 24.1 GiB free · 0.66 GiB swap
+**Updated 03:00:44** · elapsed **32.43 h** of 26 (125 %) · 45.1 GiB free · 0.67 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 349412 | `bench/pipelining.py --model pi0 --outdir scratch/preflight/E11f_pi0 --steps 4 --seconds 5` | 5 min | 13.9 GiB |
 
 Latest log lines:
 
@@ -80,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 02:41** (59 configurations)
+**Re-derived from every result CSV on disk at 03:01** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
