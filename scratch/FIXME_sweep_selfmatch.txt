@@ -57,3 +57,26 @@ already correct.
 
 Still outstanding from before: regenerate meta.json for 20260924_E11a_pi05_hostseg
 (model_commit None -> a217bfd3...) and 20260924_E11c_pi05_handover.
+
+--- 2026-09-24 17:00, found while dry-running bench/make_e11_models_report.py ---
+
+pi0's CONSOLIDATED model_inputs.csv still cites the confounded two-stream run.
+
+  results/20260922b_E11_pi0_inputs/meta.json provenance:
+      E11f_pi0_pipelining  <-  20260922b_E11f_pi0_pipelining
+
+That run's bench_commit predates the two-stream fix 773d2a9, so its numbers are the
+GIL-confounded ones T011 states are not reusable. 20260924_E11f_pi0_pipelining was
+measured today to replace them, but queue_e11.sh only consolidates `for M in pi05
+smolvla`, so nothing rebuilt pi0's consolidated file.
+
+It matters because model_inputs.csv is the artefact the research side reads DIRECTLY:
+leaving it publishes a confounded pi0 row beside correct pi0.5 and SmolVLA rows in the
+same cross-model table.
+
+Handled: queue_e11_fixup.sh now re-consolidates pi0. No re-measurement needed --
+consolidate_e11.py's pick_run() takes the newest dated directory per part, so E11f moves
+to 20260924 and every other part keeps its existing source.
+
+Worth remembering as a pattern: a re-measured PART does not update a consolidated FILE.
+Any future re-run of one part must be followed by re-consolidating that model.

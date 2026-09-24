@@ -90,4 +90,28 @@ run "$M re-consolidate" $PY bench/consolidate_e11.py --model "$M" --outdir "$D"
 $PY docs/reference_scripts/check_model_inputs.py "$D/model_inputs.csv" \
   && echo "CHECK_OK $M" || echo "CHECK_FAILED $M"
 
+# ---- pi0: re-consolidate, because its published table still cites the CONFOUNDED E11f --
+#
+# results/20260922b_E11_pi0_inputs/meta.json provenance says
+#     E11f_pi0_pipelining  <-  20260922b_E11f_pi0_pipelining
+# and that run's bench_commit predates the two-stream fix 773d2a9, so its two-stream
+# numbers are the GIL-confounded ones T011 said are not reusable. Today's
+# 20260924_E11f_pi0_pipelining exists precisely to replace them -- but queue_e11.sh only
+# consolidates `for M in pi05 smolvla`, so pi0's consolidated model_inputs.csv was never
+# rebuilt and still carries the superseded rows.
+#
+# That matters more than an ordinary stale file: model_inputs.csv is the one artefact the
+# research side reads DIRECTLY to build the PIM model, so leaving it would publish a
+# confounded pi0 row next to correct pi0.5 and SmolVLA rows in the same table.
+#
+# No re-measurement is needed. consolidate_e11.py's pick_run() takes the newest dated
+# directory per part, so a fresh run picks 20260924_E11f_pi0_pipelining for E11f and
+# leaves every other part on the source it already had. The old consolidated directory is
+# kept, not overwritten (protocol §5).
+D="results/${DATE}_E11_pi0_inputs"
+run "pi0 re-consolidate (picks up the fixed E11f)" \
+  $PY bench/consolidate_e11.py --model pi0 --outdir "$D"
+$PY docs/reference_scripts/check_model_inputs.py "$D/model_inputs.csv" \
+  && echo "CHECK_OK pi0" || echo "CHECK_FAILED pi0"
+
 echo "E11FIX_DONE $(date -Is)"
