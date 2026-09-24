@@ -139,7 +139,7 @@ def main() -> int:
         cm = None if mode == "eager" else mode
         t_load = time.perf_counter()
         policy, cfg, shipped = MR.load_policy(spec, n=args.steps, compile_mode=cm)
-        real = P.assert_real_weights(policy)
+        real = P.assert_real_weights(policy, spec=spec)
         print(f"\n=== {mode} (load {time.perf_counter()-t_load:.1f} s) ===", flush=True)
         rows, samples, compile_s = [], [], {}
         for n_img in (1, 2, 3):

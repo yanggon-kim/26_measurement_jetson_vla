@@ -171,7 +171,7 @@ def main() -> int:
         hog_self_test(out)          # before the model loads and the 47 minutes start
         cm = None if mode == "eager" else mode
         policy, cfg, shipped = MR.load_policy(spec, n=args.steps, compile_mode=cm)
-        real = P.assert_real_weights(policy)
+        real = P.assert_real_weights(policy, spec=spec)
         fx = P.load_fixture()
         batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)

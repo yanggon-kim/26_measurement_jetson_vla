@@ -108,7 +108,7 @@ def main() -> int:
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
     policy, cfg, shipped = MR.load_policy(spec, n=args.steps)
-    real = P.assert_real_weights(policy)
+    real = P.assert_real_weights(policy, spec=spec)
     fx = P.load_fixture()
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)

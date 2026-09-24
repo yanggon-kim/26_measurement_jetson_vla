@@ -47,8 +47,7 @@ def main() -> int:
     spec = MR.get(args.model)
     policy, _, _ = MR.load_policy(spec, n=args.steps,
                                   compile_mode=None if args.rung else args.compile_mode)
-    if args.model == "pi0":
-        P.assert_real_weights(policy)       # the checksum it asserts is pi0's
+    P.assert_real_weights(policy, spec=spec)   # this model's own checkpoint
     fx = P.load_fixture()
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)

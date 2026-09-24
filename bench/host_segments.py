@@ -626,7 +626,7 @@ def main() -> int:
     import model_registry as MR                                       # noqa: PLC0415
     spec = MR.get(args.model)
     policy, cfg, shipped = MR.load_policy(spec, n=args.steps)
-    real = P.assert_real_weights(policy)
+    real = P.assert_real_weights(policy, spec=spec)
     print("weights:", json.dumps(real), flush=True)
     fx = P.load_fixture()
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,

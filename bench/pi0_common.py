@@ -111,13 +111,44 @@ def load_policy(num_inference_steps: int | None = None, compile_mode: str | None
     return policy, cfg, shipped
 
 
-def assert_real_weights(policy, n: int = 400) -> dict:
-    """Guard 3. `from_pretrained` can silently return random weights — prove it did not."""
+def assert_real_weights(policy, n: int = 400, spec=None) -> dict:
+    """Guard 3. `from_pretrained` can silently return random weights — prove it did not.
+
+    `spec` names WHICH checkpoint to diff against. Without it this always downloaded
+    π0's, so calling it on π0.5 or SmolVLA reported
+
+        WEIGHT INTEGRITY FAILED: 0/357 tensors match the checkpoint
+
+    which is true and useless: it was comparing a correctly-loaded model against a
+    different model's weights. Ten of the twelve E11 preflight steps failed this way.
+
+    The fix is to verify the right checkpoint rather than to skip the check, because the
+    guard is worth having for every model — `from_pretrained` swallowing a load error and
+    returning random weights is not a π0-specific hazard, and a latency measured on random
+    weights looks entirely normal.
+
+    Some checkpoints shard their weights, so the single-file name is tried first and the
+    index is followed if it is not there.
+    """
     import safetensors.torch as st
     from huggingface_hub import hf_hub_download
 
-    f = hf_hub_download(CHECKPOINT, "model.safetensors", revision=REVISION)
-    ck = st.load_file(f)
+    ckpt = getattr(spec, "checkpoint", None) or CHECKPOINT
+    rev = getattr(spec, "revision", None) if spec is not None else REVISION
+    kw = {"revision": rev} if rev else {}
+    try:
+        f = hf_hub_download(ckpt, "model.safetensors", **kw)
+        ck = st.load_file(f)
+    except Exception:                                              # noqa: BLE001
+        # sharded: follow the index and load the first shard, which is enough tensors
+        import json as _json
+        idx = hf_hub_download(ckpt, "model.safetensors.index.json", **kw)
+        shards = sorted(set(_json.loads(Path(idx).read_text())["weight_map"].values()))
+        ck = {}
+        for shard in shards:
+            ck.update(st.load_file(hf_hub_download(ckpt, shard, **kw)))
+            if len(ck) >= n:
+                break
     sd = policy.state_dict()
     checked = matched = 0
     for k, v in list(ck.items())[:n]:
@@ -129,12 +160,14 @@ def assert_real_weights(policy, n: int = 400) -> dict:
             matched += 1
     if checked < 100 or matched != checked:
         raise SystemExit(
-            f"WEIGHT INTEGRITY FAILED: {matched}/{checked} tensors match the checkpoint. "
-            f"PI0Policy.from_pretrained swallows load errors and returns RANDOM weights — "
-            f"see env/README.md §10. Refusing to measure.")
+            f"WEIGHT INTEGRITY FAILED: {matched}/{checked} tensors of {ckpt} match the "
+            f"checkpoint. from_pretrained swallows load errors and returns RANDOM weights "
+            f"— see env/README.md §10. Refusing to measure. (If `checked` is 0 the key "
+            f"names did not line up, which is a harness bug, not a bad checkpoint.)")
     del ck
-    return {"checked": checked, "matched": matched,
-            "checkpoint_file_sha256_source": "huggingface_hub cache", "verdict": "real weights"}
+    return {"checked": checked, "matched": matched, "checkpoint": ckpt,
+            "checkpoint_file_sha256_source": "huggingface_hub cache",
+            "verdict": "real weights"}
 
 
 # --------------------------------------------------------------------------- input
