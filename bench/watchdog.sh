@@ -2,9 +2,19 @@
 # Wake the agent after N minutes WITH the audit already rendered, so the wake-up is the
 # audit and not a status glance (owner, 2026-09-23): past correctness, what is running,
 # what is next. Usage: bash bench/watchdog.sh [minutes]
+# Usage:
+#   bash bench/watchdog.sh [minutes]           one audit after N minutes, then exit
+#   bash bench/watchdog.sh [minutes] --every   audit EVERY N minutes, forever
+#
+# The one-shot form fires once and has to be re-armed by hand, which means the cadence
+# depends on the agent remembering -- and on 2026-09-24 it drifted from every ~20 minutes
+# to on-demand without anyone noticing. --every removes that dependency: one invocation
+# keeps auditing at a fixed cadence until it is stopped.
 MIN="${1:-25}"
+EVERY="${2:-}"
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
-sleep $((MIN * 60))
+
+audit_once() {
 
 echo "=================== WATCHDOG AUDIT $(date +%H:%M) ==================="
 echo
@@ -321,6 +331,7 @@ JOBS = ("opt_ladder.py", "groot_phases.py", "paper_repro.py", "power_phases.py",
         "handover.py", "prefix_sweep.py", "mempressure.py", "pipelining.py",
         "groot_segments.py", "consolidate_e11.py")
 live_dirs, running, hogs = set(), False, []
+_all_argv = []
 me = os.getpid()
 for d in Path('/proc').iterdir():
     if not d.name.isdigit() or int(d.name) == me:
@@ -332,6 +343,7 @@ for d in Path('/proc').iterdir():
         continue
     if not argv:
         continue
+    _all_argv.append(argv)
     names = [a.rsplit('/', 1)[-1] for a in argv[1:]]
     if any(n in JOBS for n in names):
         running = True
@@ -339,9 +351,19 @@ for d in Path('/proc').iterdir():
     if any(n == "bw_hog.py" for n in names):
         hogs.append(d.name)
 
-if hogs:
-    print(f"  *** bw_hog still running (pids {hogs}) — it saturates memory bandwidth "
-          f"and silently slows whatever measures next")
+# bw_hog is mempressure's OWN background load, so it is supposed to be running while
+# E11e is. Warning unconditionally reported 7 healthy hogs as orphans at 12:21 -- the
+# same false alarm the tegrastats check already had fixed, in a check written right
+# beside it. An orphan is a hog with no mempressure alive to own it.
+mempressure_live = any(
+    "mempressure.py" in [a.rsplit("/", 1)[-1] for a in argv[1:]]
+    for argv in _all_argv)
+if hogs and not mempressure_live:
+    print(f"  *** bw_hog ORPHANED (pids {hogs}) with no mempressure running — it "
+          f"saturates memory bandwidth and silently slows whatever measures next")
+elif hogs:
+    print(f"  ({len(hogs)} bw_hog process(es) — mempressure's own background load, "
+          f"expected while E11e runs)")
 if os.system("pgrep -x tegrastats >/dev/null 2>&1") == 0 and not running:
     print("  *** tegrastats is running with NO measurement — it corrupts the next "
           "power log (tegrastats --stop, then pkill -9 -x tegrastats, both under sudo)")
@@ -416,3 +438,14 @@ cat <<'ORD'
          prompt, never use nvpmodel --force; write "next: resume E7 at mode <id>" at the
          top of STATUS.md and hand off with the exact commands.
 ORD
+}
+
+if [ "$EVERY" = "--every" ]; then
+  while true; do
+    sleep $((MIN * 60))
+    audit_once
+  done
+else
+  sleep $((MIN * 60))
+  audit_once
+fi
