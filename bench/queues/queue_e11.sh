@@ -22,11 +22,19 @@
 # invite someone to average them as independent measurements. The exact transfer figure
 # each later model needs comes from its own E11c instead.
 #
-# ## GR00T is absent on purpose
+# ## GR00T gets E11a only, and that is the honest scope
 #
-# T012 needs a GR00T ModelSpec and a check that its 16 DiT blocks expose a patchable
-# forward. Neither exists yet, and MR.get("groot_n17") raises by design rather than
-# guessing wrap points -- the same mistake as assuming regions.py works for SmolVLA.
+# DiT.forward (dit.py:310-326) calls block(...), so transformer_blocks[i].forward IS a
+# valid wrap point -- checked before anything was written, because assuming it would have
+# been the same mistake as assuming regions.py worked for SmolVLA. So E11a (the per-block
+# segment split) runs, through bench/groot_segments.py.
+#
+# The other E11 parts do NOT run for GR00T, and this is a scope statement rather than a
+# gap: E11c/d/e/f are built on the LeRobot phase loops and on a transformers KV cache,
+# and GR00T has neither -- its prefix is a whole VLM invoked as one unit and its action
+# head takes the backbone output, not a cache. Porting them is a separate piece of work.
+# What GR00T contributes here is the per-segment bytes, FLOPs and times of its DiT block,
+# which is what the PIM model needs from a DiT architecture.
 set -u
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 DATE=20260924
@@ -90,5 +98,31 @@ for M in pi05 smolvla; do
   $PY docs/reference_scripts/check_model_inputs.py "$D/model_inputs.csv" \
     && echo "CHECK_OK $M" || echo "CHECK_FAILED $M"
 done
+
+# ---- GR00T: E11a only ------------------------------------------------------------------
+groot_e11a() {
+  local ver="$1" venv="$2" root="$3"; shift 3
+  local d="results/${DATE}_E11a_groot_${ver}_hostseg"
+  if have "$d"; then
+    echo "########## $(date +%H:%M) groot_$ver E11a already done"; return
+  fi
+  echo "########## $(date +%H:%M) groot_$ver E11a DiT block segments"
+  sweep
+  bash -c "export TRITON_CACHE_DIR=$TRITON_CACHE_DIR TORCHINDUCTOR_CACHE_DIR=$TORCHINDUCTOR_CACHE_DIR; \
+           source \$HOME/venvs/$venv/activate_orin_venv.sh >/dev/null 2>&1; \
+           cd /home/yanggon/00_VLA/26_measurement_jetson_vla; \
+           exec \$HOME/venvs/$venv/bin/python bench/groot_segments.py \
+             --outdir $d --version $ver ${root:+--gr00t-root $root} $*"
+  echo "EXIT=$?"
+  $PY docs/reference_scripts/check_model_inputs.py "$d/model_inputs.csv" \
+    && echo "CHECK_OK groot_$ver" || echo "CHECK_FAILED groot_$ver"
+}
+
+groot_e11a n17 groot "" --checkpoint nvidia/GR00T-N1.7-3B
+groot_e11a n16 groot16 /home/yanggon/00_VLA/Isaac-GR00T-n1d6 \
+      --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron
+groot_e11a n15 groot16 /home/yanggon/00_VLA/Isaac-GR00T-n1d5 \
+      --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid \
+      --data-config oxe_droid
 
 echo "E11_DONE $(date -Is)"
