@@ -176,6 +176,50 @@ def main() -> int:
                 f"{num(r['energy_per_inference_above_idle_mJ']):.1f} |")
     L.append("")
 
+    # ---- the deployment number: joules per inference, eager vs best --------------------
+    L += ["## Energy per inference of the whole frame, eager against best", "",
+          "The `full` loop is the complete inference. This is the number a robot's "
+          "battery sees, and the one to quote when comparing a model against another "
+          "model or against an accelerator proposal.", "",
+          "| model | N | eager J | best J | eager ms | best ms | energy saved | "
+          "time saved | energy ÷ time saving |",
+          "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    full: dict[tuple, dict] = {}
+    for run in runs:
+        rows, meta = run["rows"], run["meta"]
+        r = pick(rows, "full", "module")
+        if not r:
+            continue
+        model = rows[0].get("model", "?")
+        n = meta.get("num_denoise_steps") or meta.get("num_inference_timesteps") or ""
+        is_eager = rows[0].get("mode", "") in ("eager", "eager_fp32")
+        full.setdefault((model, str(n)), {})["eager" if is_eager else "best"] = r
+    for (model, n), pair in sorted(full.items()):
+        e, b = pair.get("eager"), pair.get("best")
+        if not (e and b):
+            continue
+        eJ, bJ = num(e["energy_per_inference_mJ"]) / 1000, num(b["energy_per_inference_mJ"]) / 1000
+        em, bm = num(e["median_ms"]), num(b["median_ms"])
+        es, ts = eJ / bJ, em / bm
+        L.append(f"| {LABEL.get(model, model)} | {n} | {eJ:.2f} | {bJ:.2f} | {em:.1f} | "
+                 f"{bm:.1f} | {es:.2f}× | {ts:.2f}× | {es/ts:.2f} |")
+    L += ["",
+          "**The last column is the one to watch.** Above 1 means the optimised "
+          "configuration saves proportionally MORE energy than time — it is removing "
+          "work, not just running it sooner. Below 1 means it is buying speed with power, "
+          "and the latency figure overstates the benefit. Either is possible and only "
+          "measurement distinguishes them; this is why E7 exists alongside Part B.", "",
+          "**Compare like with like.** An earlier commit message of mine put π0.5's "
+          "energy saving at 6.6× against a 6.2× latency saving and concluded the "
+          "optimisation was removing work rather than trading power for speed. That was "
+          "wrong: 6.6× was the sum of the `prefix` and `ae` loops' above-idle energy, "
+          "which is not the whole frame, set against the whole frame's latency. On the "
+          "`full` loop, like for like, π0.5 saves 6.09× the energy and 6.31× the time — "
+          "its optimised configuration draws slightly MORE power (45.33 W against "
+          "43.72 W), so it is buying a little speed with power. The sub-phase table "
+          "below is for attributing energy WITHIN a frame; this table is for comparing "
+          "frames.", ""]
+
     # ---- where the energy goes, against where the time goes ---------------------------
     L += ["## Where the energy goes, against where the time goes",
           "",

@@ -38,6 +38,18 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | SmolVLA | 10 | `eager` | ae | 641.35 | 19.37 | 8.20 | 12422.4 | 5259.0 |
 | SmolVLA | 10 | `eager` | full | 740.69 | 19.06 | 7.89 | 14119.6 | 5846.6 |
 
+## Energy per inference of the whole frame, eager against best
+
+The `full` loop is the complete inference. This is the number a robot's battery sees, and the one to quote when comparing a model against another model or against an accelerator proposal.
+
+| model | N | eager J | best J | eager ms | best ms | energy saved | time saved | energy ÷ time saving |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| π0.5 | 10 | 132.99 | 21.85 | 3041.6 | 482.1 | 6.09× | 6.31× | 0.96 |
+
+**The last column is the one to watch.** Above 1 means the optimised configuration saves proportionally MORE energy than time — it is removing work, not just running it sooner. Below 1 means it is buying speed with power, and the latency figure overstates the benefit. Either is possible and only measurement distinguishes them; this is why E7 exists alongside Part B.
+
+**Compare like with like.** An earlier commit message of mine put π0.5's energy saving at 6.6× against a 6.2× latency saving and concluded the optimisation was removing work rather than trading power for speed. That was wrong: 6.6× was the sum of the `prefix` and `ae` loops' above-idle energy, which is not the whole frame, set against the whole frame's latency. On the `full` loop, like for like, π0.5 saves 6.09× the energy and 6.31× the time — its optimised configuration draws slightly MORE power (45.33 W against 43.72 W), so it is buying a little speed with power. The sub-phase table below is for attributing energy WITHIN a frame; this table is for comparing frames.
+
 ## Where the energy goes, against where the time goes
 
 The share columns are of the two measured sub-phases only (`prefix` + `ae`); `full` is listed separately because it is the whole inference including the parts neither loop isolates.

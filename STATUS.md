@@ -91,6 +91,29 @@ the action expert specifically; the other two keep the GPU fed. Two generators s
   third self-matching-process incident here. Every pattern now brackets its first
   character.
 
+### Correction to a claim in an earlier commit message (2026-09-24)
+
+Commit `e190d34` said π0.5's optimisation gives "a 6.6× energy reduction against Part B's
+6.2× latency reduction — so on this model the optimisation is not trading power for
+speed, it is removing work." **That is wrong and the conclusion is backwards.** The 6.6×
+was the sum of the `prefix` and `ae` loops' above-idle energy, which is not the whole
+frame, compared against the whole frame's latency.
+
+Like for like, on the `full` loop:
+
+| | eager | best | ratio |
+|---|---:|---:|---:|
+| latency | 3041.59 ms | 482.09 ms | **6.31×** |
+| energy (absolute) | 132.99 J | 21.85 J | **6.09×** |
+| energy (above idle) | 100.00 J | 16.53 J | **6.05×** |
+| mean module power | 43.72 W | 45.33 W | 1.04× |
+
+π0.5's optimised configuration draws **more** power and saves slightly **less** energy
+than time. It is buying a little speed with power, not removing work. The result is still
+strongly positive — 6× less energy per inference — but the direction of the sub-claim was
+inverted. `reports/E7_power_energy.md` now carries the like-for-like table and this
+correction.
+
 ### Question for the research side — `check_model_inputs.py` MODELS set
 
 `docs/reference_scripts/check_model_inputs.py` has
