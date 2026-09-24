@@ -93,8 +93,15 @@ def main() -> int:
     # Which blocks: one of each kind. `interleave_self_attention` decides, but reading the
     # config would be an assumption — the capture records what it SAW, and the pair is
     # chosen from that.
-    want = ([int(x) for x in args.blocks.split(",") if x.strip()]
-            or [0, 1] if len(blocks) > 1 else [0])
+    # Explicit rather than relying on `A or B if C else D` precedence, which parses as
+    # `(A or B) if C else D` and reads as the opposite.
+    want = [int(x) for x in args.blocks.split(",") if x.strip()]
+    if not want:
+        want = [0, 1] if len(blocks) > 1 else [0]
+    bad = [b for b in want if b >= len(blocks)]
+    if bad:
+        raise SystemExit(f"--blocks {bad} out of range: this model has {len(blocks)} "
+                         f"DiT blocks (0..{len(blocks) - 1})")
     caps = {}
     for bi in want:
         with SG.DiTBlockCapture(model, bi) as cap, torch.no_grad():
