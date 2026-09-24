@@ -59,8 +59,10 @@ configuration is missing or the window turns out too short.
    `MODE_30W`, then later `MODE_15W`. In each capped session: §1 gate in that mode (record SM count, GPU and EMC
    clocks, `jetson_clocks` applied), then only (i) the four E7 loops above for eager and `reduce-overhead` at N = 10,
    and (ii) one E3-style latency run at N = 4 and N = 10 in both modes (20 warm-up / 100 timed, regions on for
-   eager only) so that latency and energy per step exist per power mode. Result directories carry the mode in
-   their name; nothing from a capped mode is ever averaged with MAXN.
+   eager only) so that latency and energy per step exist per power mode, and **(iii) in the `MODE_30W` session
+   only: T014 Step 4** — E12 Step 1 (the π0 prefix ∥ expert co-run, `bf16_both`, N = 10) at 8 SMs, per
+   `docs/E12_corun/README.md` §5 and protocol §14 (added 2026-09-24; no extra reboot). Result directories carry
+   the mode in their name; nothing from a capped mode is ever averaged with MAXN.
 Result directories: `results/<date>_E5_pi0_<mode>_N<N>/`, `results/<date>_E6_pi0/`, `results/<date>_E7_pi0_<mode>_<powermode>/`,
 `results/<date>_E3_pi0_<mode>_N<N>_<powermode>/` for 4b(ii).
 Acceptance: `reports/E5_pi0_timeline.md` answering (a) kernels executing vs GPU waiting, per mode, and the

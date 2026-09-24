@@ -1,8 +1,9 @@
 # 01 — Measurement plan
 
 Priorities: **P0** = E0, E3, E4 for π0 · **P1** = **E11 for π0** (inputs for the hybrid GPU + PIM model — right
-after E3 / E4, because it reuses their harness and fixture), then E5 (nsys + ncu), E5b, E6, E7 for π0, and E2, E1 ·
-**P2** = π0.5 and SmolVLA through E3, E4, **E11**, **E5, E5b, E6, E7**, and E8 · **P3** = GR00T N1.7 through the
+after E3 / E4, because it reuses their harness and fixture), then E5 (nsys + ncu), E5b, E6, E7 for π0, and E2, E1, and
+**E12 for π0** (co-running the prefix and the action expert on one GPU; T014, placed right after T004 in the
+order table) · **P2** = π0.5 and SmolVLA through E3, E4, **E11**, **E5, E5b, E6, E7**, and E8 · **P3** = GR00T N1.7 through the
 same set including **E11**, E9, E10. The profiling experiments (E5, E5b, E6, E7) **and E11** are **required for
 every model that runs**, not only for π0;
 π0 goes first. First deliverable (end of P0): the ladder table for π0 —
@@ -22,13 +23,19 @@ task whose dependencies are done:
 | 3 | T003 | E4 π0 compiled | P0 | T002 |
 | 4 | **T010** | **E11 π0** | P1 | T003 |
 | 5 | T004 | E5, E6, E7 π0 | P1 | T003 |
-| 6 | T005 | E1, E2 | P1 | T001 |
-| 7 | T007 | E5b π0 | P1 | T004, T005 |
-| 8 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
-| 9 | **T011** | **E11 π0.5 + SmolVLA** | P2 | T006 (step 1), T010 |
-| 10 | T008 | E5, E5b, E6, E7 π0.5 + SmolVLA | P2 | T006, T004, T007 |
-| 11 | T009 | GR00T N1.7: E3, E4, E5, E5b, E6, E7 | P3 | T008 |
-| 12 | **T012** | **E11 GR00T N1.7** | P3 | T009 (step 1), T010 |
+| 6 | **T014** | **E12 π0 co-run: prefix ∥ expert on one GPU** (Steps 1–3, 5 at MAXN; Step 4 inside T004's `MODE_30W` session) | P1 | T004 (E7 at MAXN — done) |
+| 7 | T005 | E1, E2 | P1 | T001 |
+| 8 | T007 | E5b π0 | P1 | T004, T005 |
+| 9 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
+| 10 | **T011** | **E11 π0.5 + SmolVLA** | P2 | T006 (step 1), T010 |
+| 11 | T008 | E5, E5b, E6, E7 π0.5 + SmolVLA | P2 | T006, T004, T007 |
+| 12 | T009 | GR00T N1.7: E3, E4, E5, E5b, E6, E7 | P3 | T008 |
+| 13 | **T012** | **E11 GR00T N1.7** | P3 | T009 (step 1), T010 |
+
+**T014 (added 2026-09-24) goes next.** Several tasks above are claimed and part-done at once; finish the task you
+are executing when you read this, then take T014 before any other open MAXN work (T012 if not yet under way, the
+remaining E5 / E5b, `MODE_50W`). Its Step 4 is not a separate session: it runs in the `MODE_30W` session of T004
+step 4b (protocol §1). The research side considers E12 the most decisive measurement of the current thread.
 
 ## E0 — Platform record
 Everything in protocol §1, plus `nvidia-smi` (if present), `free -h`, storage, `tegrastats` idle snapshot, the list
@@ -282,3 +289,12 @@ eager and best compiled, instrumented and slope) restated from their result dire
 §13.8. Report: `reports/E11_<model>_hybrid_inputs.md` — the table of quantities, what differs from the analytic
 assumptions listed in `docs/00_context.md`, the limits of part 5, and "not measured" items with the failing
 command.
+
+## E12 — Co-running the VLM prefix and the action expert on one GPU (π0)
+**Specification: `docs/E12_corun/README.md`** (purpose, definitions, non-negotiables, steps, outputs, acceptance);
+binding rules in protocol §14; task T014. In one line: run prefix(k) and expert(k − 1) concurrently on two CUDA
+streams as a steady-state pipeline with a fresh KV cache per frame, and measure the expert's co-run slowdown
+`s = B_co / B_iso` against `A_iso / B_iso` (≈ 1.50 at N = 10, MAXN), the prefix's slowdown, the achieved period,
+the reason from an nsys timeline, every software mitigation available on Orin (priorities, graphs, green contexts,
+`libsmctrl`, MPS, two processes), the 8-SM case in `MODE_30W`, N = 4, and energy per frame against serial.
+Result directories `results/<date>_E12_pi0_*`; report `reports/E12_pi0_corun.md`.

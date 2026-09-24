@@ -24,7 +24,8 @@
   them yourself. **Updated 2026-09-22:** the owner committed directly to the two reboots (your `STATUS.md`
   standing item), so for π0 the capped half of E7 is **required**, not optional: MAXN first (T004), then the
   human reboots into `MODE_30W`, then `MODE_15W`, and you re-run only the E7 power points and the short E3
-  latency check listed in T004 step 4b in each. Write "next: resume E7 at mode <id>" in `STATUS.md` before any
+  latency check listed in T004 step 4b in each — **plus, in the `MODE_30W` session only, E12 Step 1 (T014 Step 4,
+  §14; added 2026-09-24)**. Write "next: resume E7 at mode <id>" in `STATUS.md` before any
   switch, and re-run the §1 gate (mode, SM count, `jetson_clocks`, `cur_freq`) in the new mode — record the
   mode's SM count and clocks per run; a capped-mode number is never presented as an Orin number without its mode.
 - Save `sudo jetson_clocks --show`, `cat /etc/nv_tegra_release`, `dpkg -l | grep -E 'nvidia-jetpack|cuda-toolkit|tensorrt|cudnn'`,
@@ -720,3 +721,28 @@ Report at least `median`, `p5`, `p95` for every timed quantity. Quantities (`key
 Check the file with `python docs/reference_scripts/check_model_inputs.py results/<run>/model_inputs.csv` (standard
 library only, runs anywhere) before committing; it must exit 0. It verifies the header, the enumerations, that
 `value` parses, and that every `source_file` exists.
+
+## 14. E12 — co-running the prefix and the action expert on one GPU (added 2026-09-24)
+The full specification, with purpose, steps, hazards and outputs, is `docs/E12_corun/README.md` (task T014). The
+rules below are binding; the specification elaborates them and leaves everything else to the agent's judgement.
+- **Definitions.** `A_iso`, `B_iso`: prefix (vision + VLM prefix) and action-expert (all N steps) stage times,
+  each running alone through the same harness, stream and code path as the co-run. `A_co`, `B_co`: the same
+  stages while co-running in the steady-state pipeline, timed with CUDA events on the stage's own stream (start
+  after any cross-stream wait that gates the stage). `T_serial`: the two stages back to back on one stream.
+  `T_pipe`: wall time of a steady-state pipeline loop ÷ frames. **`s = B_co / B_iso`**, `p = A_co / A_iso`,
+  `r = A_iso / B_iso`. All from unprofiled runs; nsys is for the mechanism, never for these numbers.
+- **Same session.** `A_iso`, `B_iso`, `T_serial` are measured in the same session and power mode as the co-runs
+  they are divided into, bracketing them (isolated → co-run → isolated).
+- **Fresh KV, verified.** Each frame's expert reads that frame's own KV cache. Verified by comparing pipelined
+  against serial actions frame by frame with **distinct observations and noise seeds per frame**, in eager and
+  through the compiled path that is timed, with a deliberately stale negative control that must fail. A
+  mechanism whose actions fail the check is reported as invalid, never as a speed-up.
+- **Baseline unchanged**: π0 rung `bf16_both` as E7 ran it, no `cropcache`. A mechanism that needs a different
+  compilation of a stage is a labelled variant with its own isolated times.
+- **Issuing.** §13.7 applies: the in-process two-stream pipeline is issued from one Python thread. A second
+  thread or a second process is a separately labelled mechanism. Host synchronisations in either stage's issue
+  path are found and removed or reported (the equivalence check re-run after any such harness change).
+- **Unavailable mechanisms** (green contexts, `libsmctrl`, MPS, …) are recorded with the version check, the exact
+  call and the error, committed under `raw/` and summarised in `mechanisms.csv`.
+- **Power modes.** MAXN for everything except E12 Step 4, which runs in the `MODE_30W` session of §1 alongside
+  the E7 / E3 points (no extra reboot).
