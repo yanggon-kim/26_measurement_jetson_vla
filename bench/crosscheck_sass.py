@@ -95,21 +95,55 @@ LSU_LD_RE = __import__("re").compile(
 
 
 def _short_name(name: str) -> str:
-    """Demangled kernel name -> the short name used by --target-kernel and the inventory.
+    """Demangled kernel signature -> the function's own name.
 
-    Strips a leading return type, cuts at the first template or argument bracket, and
-    keeps the last namespace component. Returns "" for anything that does not leave a
-    usable identifier, which the caller skips — the first version returned '' and 'void'
-    as if they were kernels, because a name like
-    `void at::native::elementwise_kernel<...>(...)` was cut before the `void ` was
-    removed.
+    A demangled C++ name is `<return type> <namespaces>::<name><template args>(<args>)`,
+    and the return type can itself contain `::` and `<>` -- SFINAE signatures like
+    `typename std::enable_if<...>::type at::native::foo(...)` are common in ATen. Cutting
+    at the first `<` and keeping the last `::` component therefore returned **enable_if**,
+    a return type, as if it were a kernel; `cub::...::Kernel2<...>` came out as the right
+    word only by luck.
+
+    So: find the argument list -- the first `(` that is not inside angle brackets -- take
+    everything before it, drop any trailing template arguments by scanning back over a
+    balanced `<...>`, and keep the last `::` component. Returns "" if that leaves nothing
+    usable, and the caller skips it.
     """
     import re as _re
     n = name.strip()
-    n = _re.sub(r"^(void|__global__|static)\s+", "", n)
-    n = _re.split(r"[<(]", n)[0].strip()
-    n = n.rsplit("::", 1)[-1].strip()
-    return n if _re.fullmatch(r"[A-Za-z_]\w*", n or "") else ""
+    depth = 0
+    cut = len(n)
+    for i, ch in enumerate(n):
+        if ch == "<":
+            depth += 1
+        elif ch == ">":
+            depth -= 1
+        elif ch == "(" and depth == 0:
+            cut = i
+            break
+    head = n[:cut].rstrip()
+    # strip a trailing balanced <...>: walk back from the end
+    if head.endswith(">"):
+        depth = 0
+        for i in range(len(head) - 1, -1, -1):
+            if head[i] == ">":
+                depth += 1
+            elif head[i] == "<":
+                depth -= 1
+                if depth == 0:
+                    head = head[:i]
+                    break
+    parts = [x for x in head.strip().split("::") if x]
+    last = parts[-1].split()[-1] if parts and parts[-1].split() else ""
+    # A last component like `kernel` identifies nothing: cuBLAS's GEMV entry point is
+    # literally `internal::kernel<...cublasGemvParamsEx...>`, and a table row reading
+    # "kernel" is useless. Keep one qualifier for these.
+    GENERIC = {"kernel", "Kernel", "run", "main", "launch", "entry", "type"}
+    if last in GENERIC and len(parts) >= 2:
+        prev = parts[-2].split()[-1] if parts[-2].split() else ""
+        if _re.fullmatch(r"[A-Za-z_]\w*", prev or ""):
+            last = f"{prev}::{last}"
+    return last if _re.fullmatch(r"[A-Za-z_]\w*(::[A-Za-z_]\w*)?", last or "") else ""
 
 
 def ncu_from_csv(path: Path) -> dict:
