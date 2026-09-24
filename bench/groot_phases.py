@@ -55,10 +55,27 @@ def gate() -> dict:
             return Path(p).read_text().strip()
         except OSError:
             return d
-    return {"gpu_cur_freq_hz": rd("/sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq"),
+    # ADDED 2026-09-24 (E7): the power mode and the SM count. Protocol §1 requires both in
+    # every result -- "a latency without its power mode is not a result" -- and this gate
+    # recorded neither, so the E4d runs carry the clocks but not the mode they were taken
+    # in. E7 cannot work without it at all: the whole point of the capped-mode sweep is
+    # that the mode is the independent variable.
+    import subprocess
+    try:
+        mode = subprocess.run(["nvpmodel", "-q"], capture_output=True, text=True,
+                              timeout=20).stdout.strip().splitlines()
+        mode = mode[0] if mode else "?"
+    except (OSError, subprocess.SubprocessError):
+        mode = "?"
+    return {"power_mode": mode,
+            "sm_count": (torch.cuda.get_device_properties(0).multi_processor_count
+                         if torch.cuda.is_available() else 0),
+            "tpc_pg_mask": rd("/sys/devices/platform/gpu.0/tpc_pg_mask"),
+            "gpu_cur_freq_hz": rd("/sys/devices/platform/17000000.gpu/devfreq_dev/cur_freq"),
             "gpu_min_freq_hz": rd("/sys/devices/platform/17000000.gpu/devfreq_dev/min_freq"),
             "gpu_max_freq_hz": rd("/sys/devices/platform/17000000.gpu/devfreq_dev/max_freq"),
             "cpu_online": rd("/sys/devices/system/cpu/online"),
+            "cpu_governor": rd("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"),
             "torch": torch.__version__,
             "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "-",
             "capability": str(torch.cuda.get_device_capability(0))
@@ -102,13 +119,20 @@ def main() -> int:
                     help="torch.compile mode for backbone.model.language_model.forward")
     ap.add_argument("--rung", default="eager",
                     help="name for this configuration; one row file per rung")
+    ap.add_argument("--power", action="store_true",
+                    help="E7: measure power and energy for the prefix / ae / full loops "
+                         "instead of the phase split, using bench/power_core.py")
+    ap.add_argument("--seconds", type=float, default=60.0,
+                    help="E7 only: wall time per loop and for the idle baseline")
+    ap.add_argument("--allow-capped", action="store_true",
+                    help="E7 only: permit a non-MAXN power mode (it is still recorded)")
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
 
     g = gate()
     print("gate:", json.dumps(g), flush=True)
-    if g["gpu_cur_freq_hz"] != g["gpu_max_freq_hz"]:
+    if g["gpu_cur_freq_hz"] != g["gpu_max_freq_hz"] and not args.allow_capped:
         raise SystemExit(f"clocks not locked: {g}; run sudo jetson_clocks first")
     torch.set_float32_matmul_precision("high" if args.tf32 == "on" else "highest")
 
@@ -321,6 +345,9 @@ def main() -> int:
         with torch.no_grad():
             return model.get_action(inputs)
 
+    if args.power:
+        return run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc)
+
     if args.ncu_region:
         # C1 needs ncu to see ONE instance of one phase. Same shape as
         # bench/ncu_target.py does for the LeRobot models: NVTX ranges on the three wrap
@@ -522,6 +549,155 @@ def main() -> int:
                                 "num_inference_timesteps loop (:366+)"},
     }, indent=1))
     print(f"\nwrote {out}")
+    return 0
+
+
+def _run_loop(fn, seconds: float, label: str, warmup: int = 5) -> dict:
+    """Back-to-back for `seconds`. Same contract as bench/phase_loops.run_loop.
+
+    Kept here rather than imported because phase_loops imports lerobot, which does not
+    exist in ~/venvs/groot. The shared part -- the rails, tegrastats and the row schema --
+    is bench/power_core.py, so the two families' power numbers are produced by one
+    implementation even though the loop driver differs.
+    """
+    for _ in range(warmup):
+        fn()
+    torch.cuda.synchronize()
+    samples, k = [], 0
+    t0 = time.perf_counter()
+    end = t0 + seconds
+    while time.perf_counter() < end:
+        a = time.perf_counter()
+        fn()
+        torch.cuda.synchronize()
+        samples.append((time.perf_counter() - a) * 1e3)
+        k += 1
+    wall = time.perf_counter() - t0
+    st = summarize(samples) if samples else {}
+    return {"label": label, "iterations": k, "wall_s": round(wall, 4),
+            "throughput_inf_per_s": round(k / wall, 4),
+            "median_ms": round(st.get("median_ms", 0), 4),
+            "p5_ms": round(st.get("p5_ms", 0), 4), "p95_ms": round(st.get("p95_ms", 0), 4),
+            "max_ms": round(st.get("max_ms", 0), 4), "n": k}
+
+
+def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> int:
+    """E7 for GR00T: power and energy for the prefix-only, expert-only and full loops.
+
+    ## The split is GR00T's own, not an analogy
+
+    `Gr00tN1d7.get_action` (gr00t_n1d7.py:603-612), and identically in N1.6 and N1.5:
+
+        backbone_inputs, action_inputs = self.prepare_input(inputs)
+        backbone_outputs = self.backbone(backbone_inputs)                  # <- prefix
+        action_outputs   = self.action_head.get_action(backbone_outputs, action_inputs)
+
+    so `prefix` is the backbone alone and `ae` is the action head alone on a backbone
+    output computed once -- exactly what `bench/phase_loops.py` does for the LeRobot family
+    by caching the KV cache. The loops therefore mean the same thing in both families, and
+    `full` is `model.get_action` in both.
+
+    ## GR00T's prefix includes vision, and that is not hidden
+
+    In the LeRobot models the `prefix` loop is vision + VLM together too, so the comparison
+    holds. E4d separates vision inside the backbone for the timing split; doing the same
+    here would need a third loop driving `.visual` alone with inputs the backbone builds
+    internally, which is a different measurement and is not attempted. The rows say
+    `prefix = backbone (vision INSIDE)`.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import power_core as PC                                          # noqa: E402
+
+    model_name = f"groot_{args.version}"
+    pm = (g.get("power_mode") or "UNKNOWN").split(":")[-1].strip().replace(" ", "")
+    if pm in ("", "?", "UNKNOWN"):
+        raise SystemExit(
+            "the power mode could not be read (nvpmodel -q failed). Protocol §1 requires "
+            "it in every result and E7 is a comparison BETWEEN power modes, so refusing "
+            "to write a power run that cannot name the mode it was taken in.")
+    mode = args.rung
+    base_fields = {"model": model_name, "mode": mode,
+                   "exec_style": "compiled" if compiled_desc else "eager",
+                   "power_mode": pm}
+
+    print(f"\n=== {model_name}/{mode}: {args.seconds:.0f} s idle baseline first "
+          f"(protocol §4) ===", flush=True)
+    idle_means, _, idle_s = PC.measure(None, args.seconds, "idle",
+                                       out / "raw" / "tegrastats_idle.log", _run_loop)
+    print("  idle " + "  ".join(f"{k}={v:.0f}mW" for k, v in idle_means.items()), flush=True)
+
+    # prepare_input is the CPU-side collation; doing it once keeps the loops on the GPU
+    # path, which is the same choice the phase-split measurement makes.
+    backbone_inputs, action_inputs = model.prepare_input(inputs)
+    with torch.no_grad():
+        backbone_outputs = model.backbone(backbone_inputs)
+
+    # N1.7's action_head.get_action takes an extra `options` argument that N1.6 and N1.5
+    # do not have. Checked by signature rather than by version string, so a checkout that
+    # moves does not silently take the wrong branch.
+    import inspect
+    n_params = len(inspect.signature(model.action_head.get_action).parameters)
+
+    def ae_once():
+        if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+            torch.compiler.cudagraph_mark_step_begin()
+        with torch.no_grad():
+            if n_params >= 3:
+                return model.action_head.get_action(backbone_outputs, action_inputs, None)
+            return model.action_head.get_action(backbone_outputs, action_inputs)
+
+    def prefix_once():
+        if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+            torch.compiler.cudagraph_mark_step_begin()
+        with torch.no_grad():
+            return model.backbone(backbone_inputs)
+
+    phases = {"prefix": prefix_once, "ae": ae_once, "full": step}
+    rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
+    for phase, fn in phases.items():
+        means, r, samples = PC.measure(fn, args.seconds, phase,
+                                       out / "raw" / f"tegrastats_{phase}.log", _run_loop)
+        all_samples += [{"phase": phase, **x} for x in samples]
+        rows += PC.phase_rows(means=means, idle_means=idle_means, r=r,
+                              n_samples=len(samples), phase=phase, steps=n,
+                              base_fields=base_fields)
+        module = sum(means.values())
+        print(f"  {phase:7s} module {module:7.0f} mW "
+              f"(+{module - sum(idle_means.values()):6.0f}) {r['median_ms']:8.2f} ms  "
+              f"{module * r['median_ms'] / 1e3:8.2f} mJ/inf", flush=True)
+
+    PC.write_power_csv(out, rows, all_samples)
+    (out / "meta.json").write_text(json.dumps({
+        "experiment": "E7 (power and energy per phase)", "task": "T009",
+        "model": model_name, "checkpoint": args.checkpoint, "precision": "bfloat16",
+        "matmul_precision": "high" if args.tf32 == "on" else "highest",
+        "compile": ";".join(compiled_desc) or "eager", "rung": args.rung,
+        "num_inference_timesteps": n,
+        "n_warmup": 5, "n_timed": f"{args.seconds} s loop per phase", "sample_hz": 20,
+        "power_mode": g["power_mode"], "sm_count": g.get("sm_count"),
+        "gate": g, "allow_capped": args.allow_capped,
+        "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "command": " ".join(sys.argv),
+        "gr00t_root": args.gr00t_root,
+        "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()}
+                               for k, v in shapes.items()},
+        "idle_baseline_mW": {k: round(v, 1) for k, v in idle_means.items()},
+        "phases": {
+            "prefix": "model.backbone(backbone_inputs) -- the whole VLM, vision INSIDE",
+            "ae": "model.action_head.get_action on a backbone output computed once; "
+                  "contains the num_inference_timesteps loop",
+            "full": "model.get_action(inputs) on already-collated inputs, i.e. the GPU "
+                    "path only -- prepare_input (CPU) is outside all three loops"},
+        "notes": PC.PROTOCOL_NOTES + [
+            "prefix and ae are driven BELOW model.get_action, so if a compile mode was "
+            "applied to get_action itself they would not go through it. This run compiled: "
+            + (";".join(compiled_desc) or "nothing (eager)") + ".",
+            "GR00T's prefix loop includes its vision encoder, as the LeRobot models' "
+            "prefix loop does. Splitting vision out again would need a fourth loop driving "
+            ".visual on inputs the backbone builds internally; it is not attempted here.",
+        ],
+    }, indent=1))
+    print(f"\nwrote {out}", flush=True)
     return 0
 
 

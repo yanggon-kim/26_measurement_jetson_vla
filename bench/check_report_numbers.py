@@ -5,7 +5,9 @@ that appears in no committed file, usually because it survived from a superseded
 recomputes the numbers from `results/` and checks that the report text actually contains them,
 so the defect fails loudly instead of being found by a reviewer.
 
-    python bench/check_report_numbers.py
+    python bench/check_report_numbers.py                    # T005's E1/E2 report
+    python bench/check_report_numbers.py --task=T010        # E11
+    python bench/check_report_numbers.py --task=E4          # E4d + E4g + E4i
 """
 from __future__ import annotations
 
@@ -47,6 +49,42 @@ def newest(pattern: str) -> Path | None:
     c = [d for d in sorted((REPO / "results").glob(pattern))
          if DATED.match(d.name) and not (d / "SUPERSEDED.md").exists()]
     return c[-1] if c else None
+
+
+
+def present(v: str, text: str) -> bool:
+    """Accept the value at the precision the report actually writes it.
+
+    A figure quoted as 2.938 and recomputed as 2.94 is the same number; demanding one
+    spelling makes the guard fire on formatting rather than on a wrong value. Only
+    trailing precision is flexed — the leading digits must match exactly.
+
+    Hoisted out of t010(), where it was a closure over that function's `text`, so the E4
+    reports can use the same comparison instead of a second, subtly different one.
+    """
+    if v in text:
+        return True
+    try:
+        f = float(v)
+    except ValueError:
+        return False
+    nd = len(v.split(".")[1]) if "." in v else 0
+    return any(f"{f:.{d}f}" in text for d in range(max(0, nd - 1), nd + 3))
+
+
+def verdict(checks: list[tuple[str, str]], text: str, rep: Path) -> int:
+    """Print one line per check and return 1 if any recomputed value is absent."""
+    bad = [(lab, v) for lab, v in checks if not present(v, text)]
+    for lab, v in checks:
+        print(f"  {'ok  ' if present(v, text) else 'MISS'} {lab:38s} {v}")
+    if bad:
+        print(f"\n{len(bad)} value(s) recomputed from results/ do NOT appear in "
+              f"{rep.relative_to(REPO)}:")
+        for lab, v in bad:
+            print(f"    {lab}: expected {v!r}")
+        return 1
+    print(f"\nall {len(checks)} recomputed values appear in {rep.relative_to(REPO)}")
+    return 0
 
 
 def fmt(x: float, nd: int) -> str:
@@ -139,38 +177,126 @@ def t010() -> int:
             checks.append((f"E11f {r['mode']} {r['phase']} inf/s",
                            f"{float(r['throughput_inf_per_s']):.2f}"))
 
-    def present(v: str) -> bool:
-        """Accept the value at the precision the report actually writes it.
+    return verdict(checks, text, rep)
 
-        A figure quoted as 2.938 and recomputed as 2.94 is the same number; demanding one
-        spelling makes the guard fire on formatting rather than on a wrong value. Only
-        trailing precision is flexed — the leading digits must match exactly.
-        """
-        if v in text:
-            return True
-        try:
-            f = float(v)
-        except ValueError:
-            return False
-        nd = len(v.split(".")[1]) if "." in v else 0
-        return any(f"{f:.{d}f}" in text for d in range(max(0, nd - 1), nd + 3))
 
-    bad = [(lab, v) for lab, v in checks if not present(v)]
-    for lab, v in checks:
-        print(f"  {'ok  ' if present(v) else 'MISS'} {lab:36s} {v}")
-    if bad:
-        print(f"\n{len(bad)} value(s) recomputed from results/ do NOT appear in "
-              f"{rep.relative_to(REPO)}:")
-        for lab, v in bad:
-            print(f"    {lab}: expected {v!r}")
-        return 1
-    print(f"\nall {len(checks)} recomputed values appear in {rep.relative_to(REPO)}")
-    return 0
+def e4g() -> int:
+    """E4g's bottleneck tables, re-derived from the C1/C2 CSVs.
+
+    The most mechanical of the E4 checks: `c1_bounds.csv` and `c2_eager_vs_best.csv` map
+    one-to-one onto the report's two tables, so every headline number in the prose has a
+    row behind it or it is wrong.
+
+    Only the HEADLINE rows are checked, not all 36. t010() documents why: demanding every
+    row makes the guard fire on a report being a summary rather than on a value being
+    wrong, and a guard that cries wolf gets ignored.
+    """
+    rep = REPO / "reports" / "E4g_c1_c2_bottlenecks.md"
+    if not rep.exists():
+        print(f"{rep.relative_to(REPO)} does not exist — nothing to check")
+        return 0
+    text = rep.read_text()
+    d = REPO / "results" / "20260923_E4g_c1_summary"
+    checks: list[tuple[str, str]] = []
+    if (d / "c1_bounds.csv").exists():
+        br = rows(d / "c1_bounds.csv")
+        # the action expert in each model, eager and best: the study's central claim is
+        # about what ae_step is bound by, so those rows must survive verbatim
+        for r in br:
+            if r["region"] != "ae_step_0":
+                continue
+            checks.append((f"C1 {r['model']}/{r['mode']} ae SM%", fmt(float(r["sm_pct"]), 1)))
+            checks.append((f"C1 {r['model']}/{r['mode']} ae mem%",
+                           fmt(float(r["mem_pct"]), 1)))
+    if (d / "c2_eager_vs_best.csv").exists():
+        for r in rows(d / "c2_eager_vs_best.csv"):
+            if r["region"] != "ae_step_0":
+                continue
+            checks.append((f"C2 {r['model']} ae d_long_scoreboard",
+                           fmt(float(r["d_long_scoreboard"]), 3)))
+    return verdict(checks, text, rep)
+
+
+def e4d() -> int:
+    """E4d's phase-balance table, re-derived from the ladder rows."""
+    rep = REPO / "reports" / "E4d_phase_balance.md"
+    if not rep.exists():
+        print(f"{rep.relative_to(REPO)} does not exist — nothing to check")
+        return 0
+    text = rep.read_text()
+    checks: list[tuple[str, str]] = []
+    for model, d, n in (("pi0", "20260922_E4c_pi0_opt_ladder", 10),
+                        ("pi05", "20260922_E4c_pi05_opt_ladder", 10),
+                        ("smolvla", "20260922_E4c_smolvla_opt_ladder", 10),
+                        ("groot_n17", "20260923_E4d_groot_n17_ladder", 4),
+                        ("groot_n16", "20260923_E4d_groot_n16_ladder", 4),
+                        ("groot_n15", "20260923_E4d_groot_n15_ladder", 4)):
+        for f in sorted((REPO / "results" / d / "raw" / "rows").glob("*.json")):
+            r = json.loads(f.read_text())
+            if r.get("rung") != "eager_fp32" or int(r.get("N", n)) != n:
+                continue
+            try:
+                e = float(r["e2e_median_ms"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            if e == e:
+                checks.append((f"E4d {model} eager e2e", fmt(e, 2)))
+    return verdict(checks, text, rep)
+
+
+def e4i() -> int:
+    """E4i's best-configuration table, re-derived from the ladder rows.
+
+    The generator (bench/make_best_combo_report.py) picks the fastest rung that HAS a
+    phase split; this recomputes that same choice independently, so a change to either
+    the generator or the rows shows up as a mismatch rather than as agreement by
+    construction.
+    """
+    rep = REPO / "reports" / "E4i_best_combinations.md"
+    if not rep.exists():
+        print(f"{rep.relative_to(REPO)} does not exist — nothing to check")
+        return 0
+    text = rep.read_text()
+    checks: list[tuple[str, str]] = []
+    for model, d, n in (("pi0", "20260922_E4c_pi0_opt_ladder", 10),
+                        ("pi05", "20260922_E4c_pi05_opt_ladder", 10),
+                        ("smolvla", "20260922_E4c_smolvla_opt_ladder", 10),
+                        ("groot_n17", "20260923_E4d_groot_n17_ladder", 4),
+                        ("groot_n16", "20260923_E4d_groot_n16_ladder", 4),
+                        ("groot_n15", "20260923_E4d_groot_n15_ladder", 4)):
+        cand = []
+        for f in sorted((REPO / "results" / d / "raw" / "rows").glob("*.json")):
+            r = json.loads(f.read_text())
+            if int(r.get("N", n)) != n:
+                continue
+            try:
+                e, a = float(r["e2e_median_ms"]), float(r["ae_total_ms"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            if e == e and a == a and e > 0:
+                cand.append((e, a, r["rung"]))
+        if not cand:
+            continue
+        e, a, rung = min(cand)
+        checks.append((f"E4i {model} best e2e ({rung})", fmt(e, 2)))
+        checks.append((f"E4i {model} best ae share %", fmt(100 * a / e, 1)))
+        hi = max((100 * aa / ee, k) for ee, aa, k in cand)
+        checks.append((f"E4i {model} max ae share % ({hi[1]})", fmt(hi[0], 1)))
+    return verdict(checks, text, rep)
 
 
 def main() -> int:
     if TASK == "T010":
         return t010()
+    if TASK == "E4g":
+        return e4g()
+    if TASK == "E4d":
+        return e4d()
+    if TASK == "E4i":
+        return e4i()
+    if TASK == "E4":
+        # all three, with a non-zero exit if ANY of them has a stale number
+        return max(e4d(), e4g(), e4i())
     text = REPORT.read_text()
     checks: list[tuple[str, str]] = []          # (label, string that must appear)
 

@@ -414,6 +414,44 @@ RUNGS = [
 ]
 
 
+def apply_rung(policy, spec, key: str):
+    """Put `policy` into the configuration a named rung describes, and say what was done.
+
+    The ladder applies its rungs inline inside `main()`'s loop. E7 needs the SAME
+    configuration — the best rung per model, not merely a `torch.compile` mode — so the
+    application is factored out here rather than reimplemented. One definition, one set of
+    semantics; a rung that changes here changes for both.
+
+    Returns (compiled_desc, prep_note, precision, compile_s, fails). Raises NotApplicable
+    if the rung's prep refuses this model, which the caller must handle rather than
+    silently measuring an unprepared policy.
+    """
+    rung = next((r for r in RUNGS if r[0] == key), None)
+    if rung is None:
+        raise SystemExit(f"unknown rung {key!r}; have {[r[0] for r in RUNGS]}")
+    _, _, prec, targets, _, _, prep = rung
+    torch.set_float32_matmul_precision(prec)
+    prep_note = prep(policy) if prep else ""
+    compiled_desc, compile_s, fails = [], 0.0, []
+    for which, attr, mode, clone_out in targets:
+        ownr = owner_of(policy, which, spec)
+        try:
+            t0 = time.time()
+            c = torch.compile(getattr(ownr, attr), mode=mode)
+            if clone_out:
+                def _cloned(*a, _c=c, **k):
+                    return clone_graph_outputs(_c(*a, **k))
+                setattr(ownr, attr, _cloned)
+            else:
+                setattr(ownr, attr, c)
+            compile_s += time.time() - t0
+            compiled_desc.append(f"{which}.{attr}@{mode}" + ("+clone" if clone_out else ""))
+        except Exception as e:                                    # noqa: BLE001
+            fails.append(f"{which}.{attr}@{mode}: {type(e).__name__}: {str(e)[:160]}")
+    return compiled_desc, prep_note, prec, round(compile_s, 3), fails
+
+
+
 def write_tables(out: Path, rows: list[dict], steps: list[int]) -> None:
     """Write the CSVs after EVERY rung, not once at the end.
 
