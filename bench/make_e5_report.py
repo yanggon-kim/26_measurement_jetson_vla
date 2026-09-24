@@ -151,10 +151,22 @@ def main() -> int:
     # ---- the headline ------------------------------------------------------------------
     L += ["## What this means for a memory-side accelerator", "",
           "The idle fraction is the share of the phase during which **no kernel is "
-          "running at all**. Whatever a memory-side design does to the kernels, it "
-          "cannot touch that share — the work is not on the GPU during it. So the idle "
-          "fraction is a ceiling on what any such design can remove, and it belongs next "
-          "to every speedup claim in this study.", "",
+          "running at all**. It bounds what a change can deliver — but only a change of "
+          "a particular kind, and the distinction matters:",
+          "",
+          "* A design that makes each kernel **faster** without changing how many there "
+          "are cannot touch the idle share at all. The work is not on the GPU during it. "
+          "For such a change the table below is a hard ceiling.",
+          "* A design that **reduces the number of kernels** — by fusing them, or by "
+          "replacing a sequence of small launches with one operation — attacks the idle "
+          "time directly, because the idle time *is* the launch gaps. π0's `ae_step` "
+          "issues ~968 kernels per denoising step with a 62 µs median gap; a design that "
+          "issued ten would remove most of that 84 % rather than run into it.",
+          "",
+          "So the ceiling below is the right number for \"this kernel gets faster\" and "
+          "the wrong number for \"this kernel stops existing\". A processing-in-memory "
+          "proposal can be either, and which one it is has to be stated before this "
+          "table is applied to it.", "",
           "| model | mode | region | idle frac (corrected where available) | "
           "ceiling on any kernel-side speedup |", "|---|---|---|---:|---:|"]
     for r in rs:
@@ -171,10 +183,12 @@ def main() -> int:
     L += ["",
           "The right-hand column is Amdahl's law with the idle time as the serial part: "
           "even a kernel-side change that made every kernel take **zero** time would "
-          "leave the idle share untouched. For π0's eager `ae_step` — 84.3 % idle — the "
-          "ceiling is 6.4×, and it is reached only in the limit of free kernels. For the "
-          "whole eager inference at N=10 it is 2.2×, because the two phases that are NOT "
-          "dispatch-bound make up the rest of the frame.", "",
+          "leave the idle share untouched **if the kernel count is unchanged**. For "
+          "π0's eager `ae_step` — 84.3 % idle — that ceiling is 6.4×, reached only in "
+          "the limit of free kernels. For the whole eager inference at N=10 it is 2.2×, "
+          "because the two phases that are not dispatch-bound make up the rest of the "
+          "frame. A design that also removes launches is not bound by these numbers.",
+          "",
           "This is the third independent measurement pointing the same way. Part B: no "
           "optimised configuration has an action expert that dominates its frame. E7: "
           "the expert is 55.5 % of π0's latency at N=10 but 22.4 % of its above-idle "
