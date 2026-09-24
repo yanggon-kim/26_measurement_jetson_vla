@@ -162,13 +162,14 @@ def main() -> int:
           "`full` is listed separately because it is the whole inference including the "
           "parts neither loop isolates.",
           "",
-          "| model | configuration | prefix mJ | ae mJ | prefix % of energy | "
+          "| model | N | configuration | prefix mJ | ae mJ | prefix % of energy | "
           "ae % of energy | prefix % of time | ae % of time |",
-          "|---|---|---:|---:|---:|---:|---:|---:|"]
+          "|---|---:|---|---:|---:|---:|---:|---:|---:|"]
     for run in runs:
-        rows = run["rows"]
+        rows, meta = run["rows"], run["meta"]
         model = rows[0].get("model", "?")
         mode = rows[0].get("mode", "?")
+        n = meta.get("num_denoise_steps") or meta.get("num_inference_timesteps") or ""
         p = pick(rows, "prefix", "module")
         a = pick(rows, "ae", "module")
         if not (p and a):
@@ -178,7 +179,7 @@ def main() -> int:
         pt, at = num(p["median_ms"]), num(a["median_ms"])
         if None in (pe, ae, pt, at) or pe + ae <= 0 or pt + at <= 0:
             continue
-        L.append(f"| {LABEL.get(model, model)} | `{mode}` | {pe:.1f} | {ae:.1f} | "
+        L.append(f"| {LABEL.get(model, model)} | {n} | `{mode}` | {pe:.1f} | {ae:.1f} | "
                  f"{100*pe/(pe+ae):.1f} | {100*ae/(pe+ae):.1f} | "
                  f"{100*pt/(pt+at):.1f} | {100*at/(pt+at):.1f} |")
     L += ["",
@@ -240,8 +241,9 @@ def main() -> int:
           "below puts each loop's own median next to Part B's median for the same "
           "configuration so the perturbation is visible instead of implicit.",
           "",
-          "| model | configuration | E7 `full` loop median ms | Part B e2e median ms | ratio |",
-          "|---|---|---:|---:|---:|"]
+          "| model | N | configuration | E7 `full` loop median ms | "
+          "Part B e2e median ms | ratio |",
+          "|---|---:|---|---:|---:|---:|"]
     for run in runs:
         rows, meta = run["rows"], run["meta"]
         model = rows[0].get("model", "?")
@@ -253,7 +255,7 @@ def main() -> int:
         rung = meta.get("rung") or ("eager_fp32" if mode == "eager" else mode)
         ref = ladder_e2e(model, rung, int(n) if n else None)
         got = num(r["median_ms"])
-        L.append(f"| {LABEL.get(model, model)} | `{mode}` | {got:.2f} | "
+        L.append(f"| {LABEL.get(model, model)} | {n} | `{mode}` | {got:.2f} | "
                  + (f"{ref:.2f} | {got/ref:.2f}× |" if ref else "— | — |"))
     L += ["",
           "A ratio near 1.00 means the sampler cost nothing measurable. A ratio above 1 is "

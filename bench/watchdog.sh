@@ -67,6 +67,37 @@ import csv, glob, os
 from pathlib import Path
 
 
+def _live_outdirs():
+    """Output directories named on the command line of a process running right now.
+
+    Without this, a run that is HALFWAY THROUGH is reported as BROKEN ("no power.csv"),
+    because its CSV is only written at the end. An audit that cries wolf on healthy work
+    gets ignored, which defeats the point of auditing at all. Matched on the exact argv
+    elements, never on a substring of the joined cmdline.
+    """
+    live = set()
+    me = os.getpid()
+    for d in Path('/proc').iterdir():
+        if not d.name.isdigit() or int(d.name) == me:
+            continue
+        try:
+            argv = [a.decode('utf-8', 'replace')
+                    for a in (d / 'cmdline').read_bytes().split(b'\0') if a]
+        except OSError:
+            continue
+        for a in argv[1:]:
+            if a.startswith("results/") or a.startswith("scratch/"):
+                live.add(a)
+    return live
+
+
+LIVE = _live_outdirs()
+
+
+def _is_live(dirname: str) -> bool:
+    return any(dirname == v or dirname.startswith(v) for v in LIVE)
+
+
 def power_ok(p, need_phases=frozenset(("prefix", "ae", "full")), minrows=18):
     f = Path(p) / "power.csv"
     if not f.exists():
@@ -106,7 +137,9 @@ for label, pat in E7:
         lines.append(f"       {label:18s} not started")
         continue
     why = power_ok(ds[-1])
-    if why:
+    if why and _is_live(ds[-1]):
+        lines.append(f"       {label:18s} RUNNING NOW ({why} — expected mid-run)")
+    elif why:
         bad += 1
         lines.append(f"       {label:18s} BROKEN: {why}   ({ds[-1]})")
     else:

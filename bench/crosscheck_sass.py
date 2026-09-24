@@ -88,12 +88,100 @@ def collect_kernel_data(ncu: dict, target_kernel: str,
     return rows
 
 
+PIPE_RE = __import__("re").compile(
+    r"sm__inst_executed_pipe_(\w+)\.avg\.pct_of_peak_sustained_active")
+LSU_LD_RE = __import__("re").compile(
+    r"l1tex__t_requests_pipe_lsu_mem_global_op_(ld|st)\.sum")
+
+
+def _short_name(name: str) -> str:
+    """Demangled kernel name -> the short name used by --target-kernel and the inventory.
+
+    Strips a leading return type, cuts at the first template or argument bracket, and
+    keeps the last namespace component. Returns "" for anything that does not leave a
+    usable identifier, which the caller skips — the first version returned '' and 'void'
+    as if they were kernels, because a name like
+    `void at::native::elementwise_kernel<...>(...)` was cut before the `void ` was
+    removed.
+    """
+    import re as _re
+    n = name.strip()
+    n = _re.sub(r"^(void|__global__|static)\s+", "", n)
+    n = _re.split(r"[<(]", n)[0].strip()
+    n = n.rsplit("::", 1)[-1].strip()
+    return n if _re.fullmatch(r"[A-Za-z_]\w*", n or "") else ""
+
+
+def ncu_from_csv(path: Path) -> dict:
+    """Build {kernel_short_name: {pipe_utilization, pipe_lsu_split}} from an ncu CSV.
+
+    This script came from the desktop study, where a `parse_ncu_results.py` emitted a
+    JSON. That script does not exist on this device; what exists is `parse_ncu.py` and
+    the `--csv --page details` exports that bench/run_ncu_*.sh writes. Rather than port
+    the whole desktop pipeline, this reads the same metrics off the CSV and hands this
+    script the shape it already expects.
+
+    The kernel key is the SHORT name — the demangled name truncated at the first `<` or
+    `(` — because that is what --target-kernel is given and what the inventory files are
+    named after.
+
+    A kernel whose capture did not request the pipe metrics arrives with zeros, which the
+    table then shows as zeros. That is the correct outcome: it says the metrics are
+    missing, rather than silently omitting the row. `ncu` reports the sections' metrics
+    but NOT the per-pipe ones unless they are requested by name, which is the same trap
+    that cost C1 two captures before it was caught.
+    """
+    import csv as _csv
+    import re as _re
+    kernels: dict[str, dict] = {}
+    with open(path) as f:
+        for r in _csv.DictReader(f):
+            name = (r.get("Kernel Name") or "").strip()
+            if not name:
+                continue
+            short = _short_name(name)
+            if not short:
+                continue
+            k = kernels.setdefault(short, {"pipe_utilization": {},
+                                           "pipe_lsu_split": {},
+                                           "_ld": 0.0, "_st": 0.0})
+            metric = (r.get("Metric Name") or "").strip()
+            try:
+                v = float((r.get("Metric Value") or "").replace(",", ""))
+            except ValueError:
+                continue
+            m = PIPE_RE.fullmatch(metric)
+            if m:
+                k["pipe_utilization"][f"{m.group(1)}_active_pct"] = v
+                continue
+            m = LSU_LD_RE.fullmatch(metric)
+            if m:
+                k["_ld" if m.group(1) == "ld" else "_st"] += v
+    for k in kernels.values():
+        ld, st = k.pop("_ld"), k.pop("_st")
+        tot = ld + st
+        if tot > 0:
+            k["pipe_lsu_split"] = {"load_pct": 100 * ld / tot,
+                                   "write_pct": 100 * st / tot,
+                                   "load_to_write_ratio": ld / max(1e-9, st)}
+    return kernels
+
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--inventory", type=Path, required=True,
                     help="CSV from build_inst_inventory.py (total-kernel)")
-    ap.add_argument("--ncu-json", type=Path, required=True,
-                    help="JSON from parse_ncu_results.py with pipe_lsu_split")
+    ap.add_argument("--ncu-json", type=Path, default=None,
+                    help="JSON from parse_ncu_results.py (the desktop reference's "
+                         "schema). On this device use --ncu-csv instead.")
+    ap.add_argument("--ncu-csv", type=Path, default=None,
+                    help="ncu --csv --page details export, which is what "
+                         "bench/run_ncu_*.sh actually produces here. There is no "
+                         "parse_ncu_results.py on this device; parse_ncu.py reads the "
+                         "same pipe metrics off this CSV, so the adapter below builds "
+                         "the structure this script was written against rather than "
+                         "inventing a second one.")
     ap.add_argument("--target-kernel", type=str, required=True,
                     help="short kernel name (e.g. csrmv_v3_kernel)")
     ap.add_argument("--single-run", action="store_true",
@@ -103,9 +191,17 @@ def main():
                     help="optional GPU arch label for the report header (e.g. sm_120)")
     args = ap.parse_args()
 
+    if not (args.ncu_json or args.ncu_csv):
+        print("ERROR: pass --ncu-csv (this device) or --ncu-json (desktop reference).",
+              file=sys.stderr)
+        return 1
     inv = read_inventory(args.inventory)
-    with open(args.ncu_json) as f:
-        ncu = json.load(f)
+    if args.ncu_csv:
+        ncu = ncu_from_csv(args.ncu_csv)
+        args.single_run = True
+    else:
+        with open(args.ncu_json) as f:
+            ncu = json.load(f)
 
     total = inv.get("TOTAL", sum(v for k, v in inv.items() if k != "TOTAL"))
     if total == 0:
@@ -140,7 +236,8 @@ def main():
     rows = collect_kernel_data(ncu, args.target_kernel, args.single_run)
     if not rows:
         print(f"WARNING: no entries for kernel '{args.target_kernel}' in "
-              f"{args.ncu_json}. Check --target-kernel and --single-run.",
+              f"{args.ncu_csv or args.ncu_json}. Available: "
+              f"{sorted(ncu)[:8]}{'...' if len(ncu) > 8 else ''}",
               file=sys.stderr)
     else:
         single_config = len(rows) == 1
