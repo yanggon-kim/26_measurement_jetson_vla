@@ -405,6 +405,46 @@ ls -t scratch/T004/queue_*.log scratch/queues/*.log 2>/dev/null | head -3 | whil
   grep -hE "_START |_DONE |^####|EXIT=[^0]" "$f" 2>/dev/null | tail -6 | sed 's/^/    /'
 done
 echo
+echo "--- 3b. NON-ZERO EXITS, all of them, across every queue log"
+# Section 3 already greps EXIT=[^0], but inside a `tail -6` window per file. The 16:22
+# audit on 2026-09-24 therefore printed six healthy lines and stayed silent about
+# "EXIT=1 smolvla E11d prefix sweep" four lines above them -- a real lost measurement
+# that I found by reading the log by hand, not from the audit. A failure must not be
+# able to scroll out of the audit that exists to catch it, so this counts ALL of them
+# and prints each one.
+# Scoped to scratch/queues/, THIS plan's queues. The first version also scanned
+# scratch/T004/queue_*.log and reported nine failures from a task that finished days ago
+# and whose failures were all resolved -- a check that cries wolf is worse than none.
+# A non-zero EXIT is only OUTSTANDING if no _DONE marker follows it in the same log:
+# a queue that failed, was fixed and then ran to completion has already dealt with it.
+# E7's log holds six EXIT=1 lines -- every one of them a defect I fixed and re-ran green,
+# 14/14 points -- and screaming about those every ten minutes is the same crying-wolf
+# failure as scanning the finished T004 logs. Matching on the LABEL does not work here:
+# the older run() wrote a bare "EXIT=$?" with no label at all.
+_fails=0
+for f in scratch/queues/*.log; do
+  [ -f "$f" ] || continue
+  # grep -c prints 0 and exits 1 on no match, so `|| echo 0` appended a SECOND line and
+  # made every comparison "[: 0\n0: integer expression expected".
+  out=$(awk '
+    /^EXIT=[^0]/          { pending[++n] = FNR ": " $0 }
+    /_DONE/               { n = 0 }   # E7_MAXN_DONE, E11_DONE, E11FIX_DONE: no space
+                                        # before _DONE, which "/ _DONE /" did not match
+    END { for (i = 1; i <= n; i++) print pending[i] }' "$f")
+  [ -n "$out" ] || continue
+  n=$(printf "%s\n" "$out" | wc -l)
+  _fails=$((_fails + n))
+  echo "  QUEUE_FAILURES=$n outstanding in $f"
+  printf "%s\n" "$out" | sed 's/^/      line /'
+done
+if [ "$_fails" -eq 0 ]; then
+  echo "  QUEUE_FAILURES=0 outstanding (earlier failures all followed by a _DONE marker)"
+else
+  echo "  *** QUEUE_FAILURES=$_fails outstanding -- each is a point that is NOT measured;"
+  echo "      check whether the queue's have() guard will re-run it or silently skip it ***"
+fi
+
+echo
 echo "--- 4. ACTION-EXPERT SHARE per configuration (owner: prefer combinations that make"
 echo "        the expert LARGER -- that is where a PIM case is strongest)"
 $HOME/venvs/pi0/bin/python - <<'PYE'
@@ -440,13 +480,20 @@ cat <<'ORD'
     Parts A/B/C are COMPLETE and reported. What follows is the original campaign, with
     everything that needs a human reboot LAST (owner, 2026-09-24).
 
-      1. E7 energy at MAXN, six models, eager + best     <- the empty column; no power
-                                                            or energy number exists for
-                                                            any model, and PIM is joules
-      2. E11 hybrid inputs T011/T012 (pi05, smolvla, groot)  <- the PIM model's direct
-                                                            input; needs per-model segment
-                                                            code, not a --model flag
-      3. E5 nsys timeline, six models (the compiled half + the busy 16 %)
+      1. E7 energy at MAXN, six models, eager + best     DONE 2026-09-24, 14/14 points,
+                                                            reports/E7_power_energy.md
+      2. E11 hybrid inputs T011/T012 (pi05, smolvla, groot)  <- RUNNING. The PIM model's
+                                                            direct input; needs per-model
+                                                            segment code, not a --model flag
+      2b. queue_e11_fixup.sh -- CHAINED on E11_DONE. Re-runs the SmolVLA compiled-mode
+          points lost to the static-posids bug (fixed in load_policy, f7b91a9) and
+          re-consolidates smolvla. Do NOT re-run queue_e11.sh instead: its have() guard
+          keys on the eager directory and would skip exactly what is missing.
+      2c. Then, with nothing executing them: fix that have() guard, and regenerate
+          meta.json for 20260924_E11a_pi05_hostseg and _E11c_pi05_handover (empty
+          model_commit). Both recorded in scratch/FIXME_sweep_selfmatch.txt.
+      3. E5 nsys timeline, six models (the compiled half + the busy 16 %). Also tests the
+         GPU-idle hypothesis registered in reports/E7_power_energy.md.
       4. E5b / T007 instruction level, six models
       5. check_report_numbers.py extended to E4d/E4g/E4i  (CPU-only; run between GPU jobs)
       6. E7 at MODE_50W, unattended -- decline any reboot prompt and record it

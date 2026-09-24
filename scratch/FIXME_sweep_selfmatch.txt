@@ -1,0 +1,59 @@
+FIX AFTER QUEUE: bench/queues/queue_e7_maxn.sh sweep() -- pkill -f "TreeLauncherSubreaper" matches the sudo sh running it (its own argv contains the pattern), so it kills its own shell, prints Terminated, and the tegrastats cleanup after it never runs. Use a bracket class: "[T]reeLauncherSubreaper". Same latent bug in queue_c1_lerobot.sh and queue_c1_repair.sh. Harmless for E7 because power_core.measure() calls stop_tegrastats() itself before every loop.
+AFTER THE E7 QUEUE: re-run 'bash bench/queues/queue_e7_maxn.sh'. It will redo ONLY
+pi0 N=4 bf16_both and pi0 N=10 bf16_both -- those two ran with the pre-fix source, where
+assert_real_weights ran AFTER the rung's bf16 cast and correctly reported 325/400 tensors
+matching the fp32 checkpoint. Everything else is skipped by done_ok.
+
+RE-RUN LIST after the E7 queue finishes (bash bench/queues/queue_e7_maxn.sh picks up
+exactly these, done_ok skips the rest):
+  1. pi0 N=4  bf16_both        -- ran with assert_real_weights AFTER the bf16 cast
+  2. pi0 N=10 bf16_both        -- same
+  3. smolvla vlm_graphs        -- apply_rung lacked SmolVLA's static-posids prep, so
+                                  CUDA-graph capture of embed_image failed
+  4. groot_n17 vlm_compile   -- backbone output not cloned out of CUDA-graph memory
+  5. groot_n16 all_compile_autotune -- same CUDA-graph overwrite; the clone was a no-op
+                                       because BatchFeature is a UserDict, not a dict
+  (groot_n15 all_compile_autotune will likely have failed for the same reason; the
+   re-run picks up whatever has no power.csv)
+
+2026-09-24 10:30 — NEVER EDIT A RUNNING SHELL SCRIPT.
+bash reads a script incrementally from a byte offset. Editing preflight_e11.sh at 10:20
+to insert the contract check, while pass 7 was executing it, shifted every later byte:
+bash resumed at the old offset, re-ran "smolvla E11f" out of order at 10:16, and died at
+10:30 with "syntax error near unexpected token `done'". The file itself is valid.
+Results from steps that STARTED before the edit are fine; anything after 10:02 is
+suspect. I had explicitly avoided this for queue_e7_maxn.sh earlier in the day and then
+did it anyway. Edit a copy, or wait for the run to finish.
+
+2026-09-24 14:20 — REGENERATE meta.json FOR EARLY E11 MATRIX RUNS
+The resolved-commit fix for meta.json (d80b0ce) landed AFTER these steps had finished, so
+their meta.json still has model_commit: None while their model_inputs.csv has the
+resolved sha. Both are otherwise correct; only the meta field is stale.
+  results/20260924_E11f_pi0_pipelining      (pi0 pins a revision, so actually fine)
+  results/20260924_E11a_pi05_hostseg        (model_commit: None -> a217bfd3...)
+  results/20260924_E11c_pi05_handover       (check; ran 14:13, fix ~14:20)
+Fix at the END of the matrix, not now: editing a file a running queue may rewrite is how
+pass 7 was destroyed. Either re-run those steps or patch the single field in place after
+E11_DONE.
+
+--- 2026-09-24 16:3x, added while queue_e11.sh was still executing ---
+
+queue_e11.sh `have` guard is keyed on the EAGER directory for E11d and E11e:
+
+    have "results/${DATE}_E11d_${M}_eager_prefixsweep" || run "$M E11d prefix sweep" ...
+
+but the command it guards writes BOTH modes. A run whose eager half succeeded and
+whose reduce-overhead half crashed therefore looks complete, and re-running the queue
+skips exactly the point that is missing. This is how smolvla E11d's compiled half would
+have been lost silently; it was caught only because EXIT=1 was visible in the log.
+
+Fix once NOTHING is executing queue_e11.sh (editing a running bash script is what
+destroyed preflight pass 7): guard on both directories, e.g.
+
+    { have ..._eager_prefixsweep && have ..._reduce-overhead_prefixsweep; } || run ...
+
+Same change for E11e. E11f already writes one directory for both modes, so its guard is
+already correct.
+
+Still outstanding from before: regenerate meta.json for 20260924_E11a_pi05_hostseg
+(model_commit None -> a217bfd3...) and 20260924_E11c_pi05_handover.
