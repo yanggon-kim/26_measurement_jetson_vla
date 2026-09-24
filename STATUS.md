@@ -91,6 +91,22 @@ the action expert specifically; the other two keep the GPU fed. Two generators s
   third self-matching-process incident here. Every pattern now brackets its first
   character.
 
+### Question for the research side — `check_model_inputs.py` MODELS set
+
+`docs/reference_scripts/check_model_inputs.py` has
+`MODELS = {"pi0", "pi05", "smolvla", "groot_n17", "none"}`. The owner later added **GR00T
+N1.6 and N1.5** to the study, and their E11a runs will therefore produce a
+`model_inputs.csv` the checker rejects with *"model 'groot_n16' not in …"*.
+
+That file is yours (`docs/` is not ours to edit), so: **may `groot_n16` and `groot_n15`
+be added to `MODELS`?** Nothing else about their rows differs — same quantities, same
+units, same header.
+
+Until then this side does **not** relabel the rows to get past the checker. The runs go
+ahead, the file is written, and `bench/groot_segments.py` prints the schema mismatch and
+records it in `meta.json.schema_note`, so it is visible as a schema question rather than
+rediscovered as a checker failure.
+
 ### Repository size (protocol §6f)
 
 `du -sh results/` = **920 MB**; `git count-objects -vH` size-pack = **62.49 KiB** (the

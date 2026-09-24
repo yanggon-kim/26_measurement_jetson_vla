@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import statistics
 import sys
 import time
@@ -187,6 +188,31 @@ def main() -> int:
         w.writerows([{k: r.get(k, "") for k in keys} for r in all_rows])
     mi.write(out / "model_inputs.csv")
 
+    # docs/reference_scripts/check_model_inputs.py is the research side's, is run IN
+    # PLACE and is never edited by this side (AGENTS.md). Its MODELS set is
+    # {pi0, pi05, smolvla, groot_n17, none} -- so a model_inputs.csv for groot_n16 or
+    # groot_n15 will FAIL it with "model 'groot_n16' not in ...". That is a schema
+    # question for the research side, not a defect here and not something to work around
+    # by relabelling the rows. The data is written either way; the run says so loudly and
+    # meta.json records it, so nobody has to rediscover it from a checker failure.
+    schema_note = ""
+    try:
+        chk = (REPO / "docs" / "reference_scripts" / "check_model_inputs.py").read_text()
+        allowed = set(re.findall(r'"([a-z0-9_]+)"', re.search(
+            r"MODELS\s*=\s*\{([^}]*)\}", chk).group(1)))
+        if mi.base["model"] not in allowed:
+            schema_note = (
+                f"model_inputs.csv names model={mi.base['model']!r}, which is NOT in "
+                f"check_model_inputs.py's MODELS set {sorted(allowed)}. The checker will "
+                f"reject this file. The rows are correct; the SCHEMA needs extending, "
+                f"which is the research side's call (AGENTS.md) — raised in STATUS.md "
+                f"under 'Questions for the research side'. The file is written anyway so "
+                f"the measurement is not lost.")
+            print(f"\n  *** {schema_note}\n", flush=True)
+            notes.append(schema_note)
+    except (OSError, AttributeError):
+        pass
+
     sw = software_versions()
     write_json(out / "meta.json", {
         "experiment": "E11a (GR00T DiT block)", "task": "T012",
@@ -205,6 +231,7 @@ def main() -> int:
         "command": " ".join(sys.argv),
         "raw_files": [],
         "not_measured": notes,
+        "schema_note": schema_note,
         "notes": [
             "Both kinds of DiT block are measured. DiT.forward (dit.py:310-326) sends "
             "encoder_hidden_states only on even indices when interleave_self_attention "
