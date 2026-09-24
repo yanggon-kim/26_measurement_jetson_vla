@@ -638,8 +638,19 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
     # prepare_input is the CPU-side collation; doing it once keeps the loops on the GPU
     # path, which is the same choice the phase-split measurement makes.
     backbone_inputs, action_inputs = model.prepare_input(inputs)
+    from graph_clone import clone_graph_outputs                      # noqa: E402
     with torch.no_grad():
-        backbone_outputs = model.backbone(backbone_inputs)
+        # CLONED, and this is not optional. The backbone output is computed once and then
+        # read by every iteration of the ae loop, while the prefix loop replays graphs in
+        # between. Without the clone, N1.7's vlm_compile run died with
+        #     RuntimeError: accessing tensor output of CUDAGraphs that has been
+        #     overwritten by a subsequent run
+        # inside action_head.get_action -> process_backbone_output, reading a tensor whose
+        # memory a later replay had reused. cudagraph_mark_step_begin() advances the
+        # generation but does not protect a tensor held ACROSS generations; only a copy
+        # out of the graph's memory pool does. This is the same fix the ladder applies to
+        # its graph-captured callables (compile_and_clone).
+        backbone_outputs = clone_graph_outputs(model.backbone(backbone_inputs))
 
     # N1.7's action_head.get_action takes an extra `options` argument that N1.6 and N1.5
     # do not have. Checked by signature rather than by version string, so a checkout that
@@ -659,7 +670,9 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
         if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
             torch.compiler.cudagraph_mark_step_begin()
         with torch.no_grad():
-            return model.backbone(backbone_inputs)
+            # cloned for the same reason, so a replay cannot invalidate the tensor the
+            # previous iteration is still finishing with
+            return clone_graph_outputs(model.backbone(backbone_inputs))
 
     phases = {"prefix": prefix_once, "ae": ae_once, "full": step}
     rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
