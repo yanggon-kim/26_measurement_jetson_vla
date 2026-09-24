@@ -126,13 +126,13 @@ def main() -> int:
         for name, t in (("key", k), ("value", v)):
             nb = t.numel() * t.element_size()
             tot_bytes += nb
-            hrows.append({"model": "pi0", "layer": li, "tensor": name,
+            hrows.append({"model": spec.name, "layer": li, "tensor": name,
                           "shape": str(tuple(t.shape)), "dtype": str(t.dtype).split(".")[-1],
                           "stride": str(tuple(t.stride())), "contiguous": t.is_contiguous(),
                           "bytes": nb, "valid_tokens": P_valid, "padded_tokens": Pn - P_valid,
                           "notes": ""})
     per_layer = tot_bytes // len(layers)
-    hrows.append({"model": "pi0", "layer": "TOTAL", "tensor": "key+value",
+    hrows.append({"model": spec.name, "layer": "TOTAL", "tensor": "key+value",
                   "shape": f"({len(layers)}, 2, {Pn}, {layers[0][0].shape[1]}, "
                            f"{layers[0][0].shape[-1]})",
                   "dtype": str(layers[0][0].dtype).split(".")[-1], "stride": "", "contiguous": "",
@@ -217,31 +217,42 @@ def main() -> int:
 
     # --- boundary.csv
     brows = [
-        {"model": "pi0", "tensor": "prefix_kv_cache", "direction": "gpu_to_expert",
+        {"model": spec.name, "tensor": "prefix_kv_cache", "direction": "gpu_to_expert",
          "shape": f"({len(layers)}, 2, {Pn}, {layers[0][0].shape[1]}, "
                   f"{layers[0][0].shape[-1]})",
          "dtype": str(layers[0][0].dtype).split(".")[-1], "bytes": tot_bytes,
          "per": "inference", "notes": "the hand-over object itself"},
-        {"model": "pi0", "tensor": "x_t_noisy_actions", "direction": "into_expert",
+        {"model": spec.name, "tensor": "x_t_noisy_actions", "direction": "into_expert",
          "shape": f"(1, {policy.config.chunk_size}, {policy.config.max_action_dim})",
          "dtype": "float32",
          "bytes": policy.config.chunk_size * policy.config.max_action_dim * 4,
          "per": "step", "notes": "current noisy action chunk"},
-        {"model": "pi0", "tensor": "state", "direction": "into_expert",
-         "shape": str(tuple(ctx["state"].shape)),
-         "dtype": str(ctx["state"].dtype).split(".")[-1],
-         "bytes": ctx["state"].numel() * ctx["state"].element_size(),
-         "per": "step", "notes": "re-embedded every step by embed_suffix"},
-        {"model": "pi0", "tensor": "timestep", "direction": "into_expert", "shape": "(1,)",
+        # pi0 re-embeds the robot state on EVERY denoising step, because embed_suffix
+        # takes it. pi0.5 and SmolVLA put the state in the PREFIX instead, so it crosses
+        # into the expert once per inference, not once per step -- ctx["state"] is None
+        # for them. That is a real architectural difference in the hand-over traffic a
+        # PIM model has to account for, so it is recorded as such rather than skipped.
+        ({"model": spec.name, "tensor": "state", "direction": "into_expert",
+          "shape": str(tuple(ctx["state"].shape)),
+          "dtype": str(ctx["state"].dtype).split(".")[-1],
+          "bytes": ctx["state"].numel() * ctx["state"].element_size(),
+          "per": "step", "notes": "re-embedded every step by embed_suffix"}
+         if ctx["state"] is not None else
+         {"model": spec.name, "tensor": "state", "direction": "into_prefix",
+          "shape": "", "dtype": "", "bytes": 0, "per": "inference",
+          "notes": "this model carries the state in the PREFIX (embed_prefix), not "
+                   "through embed_suffix, so it does NOT cross into the expert per "
+                   "step -- 0 bytes per step is the measurement, not a gap"}),
+        {"model": spec.name, "tensor": "timestep", "direction": "into_expert", "shape": "(1,)",
          "dtype": "float32", "bytes": 4, "per": "step", "notes": "scalar per step"},
-        {"model": "pi0", "tensor": "v_t_velocity", "direction": "out_of_expert",
+        {"model": spec.name, "tensor": "v_t_velocity", "direction": "out_of_expert",
          "shape": f"(1, {policy.config.chunk_size}, {policy.config.max_action_dim})",
          "dtype": "float32",
          "bytes": policy.config.chunk_size * policy.config.max_action_dim * 4,
          "per": "step", "notes": "the step's output, consumed by the Euler update"},
     ]
     per_step_total = sum(r["bytes"] for r in brows if r["per"] == "step")
-    brows.append({"model": "pi0", "tensor": "total", "direction": "both", "shape": "",
+    brows.append({"model": spec.name, "tensor": "total", "direction": "both", "shape": "",
                   "dtype": "", "bytes": per_step_total, "per": "step",
                   "notes": "sum of the per-step tensors; excludes the KV cache, which the "
                            "model assumes is loaded once"})

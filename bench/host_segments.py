@@ -958,8 +958,14 @@ def build_extras(policy, batch, args, last_hidden):
         return m.action_out_proj(h[:, -chunk:].to(dtype=torch.float32))
 
     return [
-        ("suffix_embed", lambda: m.embed_suffix(st, x_t, ts),
-         "lerobot/policies/pi0/modeling_pi0.py:688-749",
+        # pi0: embed_suffix(state, noisy_actions, timestep). pi0.5 and SmolVLA:
+        # embed_suffix(noisy_actions, timestep) -- their state is in the PREFIX, so there
+        # is no state argument to give. Branch on the descriptor, not on a try/except,
+        # so a genuine error is not swallowed as "wrong signature".
+        ("suffix_embed",
+         (lambda: m.embed_suffix(st, x_t, ts)) if spec.name == "pi0"
+         else (lambda: m.embed_suffix(x_t, ts)),
+         f"{spec.policy_module.replace('.', '/')}.py embed_suffix",
          "state_proj; sinusoidal time embedding; action_in_proj; expand; cat; "
          "action_time_mlp_in; swish; action_time_mlp_out"),
         ("final_norm_out_proj", final_norm_out_proj,
