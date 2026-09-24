@@ -52,6 +52,16 @@ import torch
 SRC = "lerobot/policies/smolvla/smolvlm_with_expert.py"
 
 
+def _iadd(a, b):
+    """`a += b`, on a copy. The model's residuals are in-place (:474, :480) and that is
+    not a stylistic detail: o_proj's output is bf16 and the hidden states are fp32, so an
+    out-of-place add promotes and the following bf16 matmul fails. Timing `a + b` here
+    would also be timing a wider add than the model performs."""
+    out = a.clone()
+    out += b
+    return out
+
+
 class SmolVLALayerCapture:
     """Record one expert layer's real arguments during a denoising step.
 
@@ -191,12 +201,23 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
         if att_out.dtype != attn.o_proj.weight.dtype:                  # :469-470
             att_out = att_out.to(attn.o_proj.weight.dtype)
         attn_out = attn.o_proj(att_out)                                # :472
-        resid1 = attn_out + x                                          # :474, PLAIN add
+        # IN-PLACE, exactly as the model does it: `out_emb += hidden_states` (:474).
+        # That is not the same as `attn_out + x`. o_proj's output is bf16 and the
+        # hidden states are fp32, so the out-of-place add PROMOTES to fp32 and the very
+        # next line died with
+        #     RuntimeError: expected mat1 and mat2 to have the same dtype,
+        #                   but got: float != c10::BFloat16
+        # at mlp.gate_proj, whose weights are bf16. An in-place add keeps the target's
+        # dtype, which is why the model itself does not hit this. Replaying with `+`
+        # where the model writes `+=` is replaying a different computation.
+        resid1 = attn_out.clone()
+        resid1 += x                                                    # :474
         normed2 = layer.post_attention_layernorm(resid1)               # :477, no cond
         g = layer.mlp.gate_proj(normed2)
         u = layer.mlp.up_proj(normed2)
         mlp_out = layer.mlp.down_proj(layer.mlp.act_fn(g) * u)
-        resid2 = mlp_out + resid1                                      # :480
+        resid2 = mlp_out.clone()
+        resid2 += resid1                                               # :480
 
     return {"x": x, "normed1": normed1, "gate1": None, "q": q, "k": k, "v": v,
             "q_r": q_r, "k_r": k_r, "k_full": k_full, "v_full": v_full,
@@ -266,8 +287,8 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
                    "matrix instead of adding a float one"),
         dict(segment="residual_rmsnorm2", order=3, in_model="yes",
              source_ref=f"{SRC}:474-477",
-             ops="out_emb += x (plain, no gate); then post_attention_layernorm",
-             fn=lambda: layer.post_attention_layernorm(t["attn_out"] + t["x"]),
+             ops="out_emb += x IN-PLACE (no gate); then post_attention_layernorm",
+             fn=lambda: layer.post_attention_layernorm(_iadd(t["attn_out"], t["x"])),
              inputs=f"x:{tuple(t['x'].shape)};attn_out:{tuple(t['attn_out'].shape)}",
              outputs=f"normed2:{tuple(t['normed2'].shape)}",
              bytes_formula="read x + attn_out + weight; write the sum and the normed result",
@@ -287,8 +308,8 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
                    "the segment (protocol §13.2)"),
         dict(segment="residual", order=6, in_model="yes",
              source_ref=f"{SRC}:480",
-             ops="out_emb += after_first_residual (plain add)",
-             fn=lambda: t["mlp_out"] + t["resid1"],
+             ops="out_emb += after_first_residual, in-place",
+             fn=lambda: _iadd(t["mlp_out"], t["resid1"]),
              inputs=f"x:{tuple(t['resid1'].shape)};y:{tuple(t['mlp_out'].shape)}",
              outputs=f"out:{tuple(t['resid1'].shape)}",
              bytes_formula="read x[S,D] + y[S,D]; write out[S,D], all bf16",

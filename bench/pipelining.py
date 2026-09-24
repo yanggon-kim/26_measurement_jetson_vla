@@ -36,7 +36,8 @@ import phase_loops as PL  # noqa: E402
 from e11_summaries import e11f  # noqa: E402
 from common import (REPO, collect_raw, sh_out, software_versions, summarize,  # noqa: E402
                     write_json)
-from host_segments import LayerCapture, ModelInputs, build_segments, intermediates  # noqa: E402
+from host_segments import (ModelInputs, capture_layer,  # noqa: E402
+                           layer_intermediates, layer_segments)
 
 
 def _open_csv(path_glob: str):
@@ -138,18 +139,29 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str, n_inferences: int = 2) -> dict 
 def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec):
     """The per-layer host-segment sequence, `layers_per_inf` times with a pause between
     segments — the plan's 18 x N layers per inference."""
-    cap = LayerCapture(policy, 0, spec)
+    # Through host_segments' DISPATCHER, not LayerCapture directly. SmolVLA's layer body
+    # is inlined in its container's forward, so LayerCapture refuses it by design --
+    # loudly, which is why the preflight caught this rather than a silent empty capture.
+    cap = capture_layer(policy, 0, spec)
     with cap, torch.no_grad():
         policy.predict_action_chunk(batch)
-    t = intermediates(policy, cap)
+    t = layer_intermediates(policy, cap, spec)
     ex = spec.resolve(policy, spec.expert_layers_path.rsplit('.', 1)[0])
     S = t["x"].shape[1]
     t["_partials"] = torch.randn(4, S, ex.config.hidden_size, device="cuda", dtype=t["x"].dtype)
-    segs = [s for s in build_segments(t, S, ex.config.hidden_size, ex.config.intermediate_size,
+    # The six mapping segments, INTERSECTED with what this model actually has: SmolVLA
+    # has no `partials_residual` (that is a mapping-only segment pi0's table carries) and
+    # GR00T has no separable `softmax`. Asking for a segment a model does not have would
+    # silently shorten the sequence, so take whatever of the six exist and record which.
+    want = ("rmsnorm1", "rope", "softmax", "residual_rmsnorm2",
+            "gelu_gate_mul_up", "partials_residual")
+    segs = [s for s in layer_segments(spec, t, S, ex.config.hidden_size,
+                                      ex.config.intermediate_size,
                                       ex.config.num_attention_heads, ex.config.head_dim,
                                       t["scores"].shape[-1])
-            if s["segment"] in ("rmsnorm1", "rope", "softmax", "residual_rmsnorm2",
-                                "gelu_gate_mul_up", "partials_residual")]
+            if s["segment"] in want]
+    print(f"  host sequence: {len(segs)}/{len(want)} mapping segments present for "
+          f"{spec.name}: {[s['segment'] for s in segs]}", flush=True)
 
     def run():
         for _ in range(layers_per_inf):
