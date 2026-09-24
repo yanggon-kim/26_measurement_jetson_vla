@@ -1,0 +1,30 @@
+{
+ "model": "pi0",
+ "mode": "cublas_autotune",
+ "compile": "max-autotune-no-cudagraphs on pg.forward, stock",
+ "is_big_gpu_forced": false,
+ "N": 10,
+ "n_timed": 10,
+ "e2e_median_ms": 642.491,
+ "vision_ms": 103.245,
+ "vlm_prefix_ms": 203.7,
+ "ae_total_ms": 328.993,
+ "reference_eager_prefix_ms": 234.57,
+ "reference_vlm_compile_prefix_ms": 192.76,
+ "note": "inductor's is_big_gpu() requires 68 SMs and this device has 16, so mode='max-autotune' keeps cuBLAS for GEMMs unless the gate is forced. forced_autotune overrides it; cublas_autotune is the stock behaviour.",
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_cur_freq_hz": 1300500000,
+  "gpu_min_freq_hz": 1300500000,
+  "gpu_max_freq_hz": 1300500000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "0",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "2201600",
+  "cpu_max_freq_khz": "2201600"
+ },
+ "date_utc": "2026-09-24T02:35:46Z",
+ "command": "bench/try_autotune_prefix.py --mode cublas_autotune"
+}
