@@ -77,6 +77,7 @@ class SmolVLALayerCapture:
         self.idx = layer_idx
         self.args = None
         self.kind = None
+        self.att_output = None
         self._orig = {}
 
     def __enter__(self):
@@ -116,10 +117,25 @@ class SmolVLALayerCapture:
                             "prefix_k": pk, "prefix_v": pv,
                             "layer": layer,
                         }
-                return orig(model_layers, inputs_embeds, layer_idx, position_ids,
-                            attention_mask, batch_size, head_dim, use_cache=use_cache,
-                            fill_kv_cache=fill_kv_cache, past_key_values=past_key_values,
-                            **kw)
+                out = orig(model_layers, inputs_embeds, layer_idx, position_ids,
+                           attention_mask, batch_size, head_dim, use_cache=use_cache,
+                           fill_kv_cache=fill_kv_cache, past_key_values=past_key_values,
+                           **kw)
+                # The attention OUTPUT, as the model produced it. SmolVLA's two layer
+                # kinds wire their projections differently -- a cross-attention layer's
+                # k_proj/v_proj take the VLM's key width and are applied to the CACHED
+                # VLM keys (:352-360), while a self-attention layer's take the expert's
+                # and are applied to its own states. Reconstructing q/k/v here therefore
+                # needs a different computation per kind, and three attempts at it each
+                # found another asymmetry. Taking the output instead is exact for every
+                # kind and cannot drift.
+                if cap.args is not None and cap.att_output is None:
+                    try:
+                        o = out[0][0] if isinstance(out, tuple) else out[0]
+                        cap.att_output = o.detach().clone()
+                    except (IndexError, TypeError, AttributeError):
+                        pass
+                return out
 
             self._orig[name] = orig
             setattr(c, name, wrapper)
@@ -142,8 +158,6 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
     capture is empty — an empty capture here used to be the failure mode, and it must be
     loud.
     """
-    from lerobot.policies.smolvla.smolvlm_with_expert import apply_rope
-
     if cap.args is None:
         raise SystemExit(
             f"layer {cap.idx} was never captured. Either the layer index does not map to "
@@ -156,61 +170,28 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
     c = getattr(policy.model, spec.container)
     bsz, hd = a["batch_size"], a["head_dim"]
 
+    if cap.att_output is None:
+        raise SystemExit(
+            f"layer {cap.idx}: the attention output was never captured. The wrapper saw "
+            f"the call but could not read its return value -- refusing to build segments "
+            f"from a reconstruction.")
+
     with torch.no_grad():
         normed1 = layer.input_layernorm(x)                             # :216, no cond
-        shape = (*normed1.shape[:-1], -1, attn.head_dim)               # :221-222
-        casted = normed1.to(dtype=attn.q_proj.weight.dtype)            # :224
-        q = attn.q_proj(casted).view(shape)                            # B, L, H, D  :225
-        k = attn.k_proj(casted).view(shape)
-        v = attn.v_proj(casted).view(shape)
-        pos = a["position_ids"]
-        if pos is not None and q.shape[1] < pos.shape[1]:              # :236-238
-            pos = pos[:, :q.shape[1]]
-        q_r = apply_rope(q, pos)                                       # :246, fp32 inside
-        k_r = apply_rope(k, pos)
-        if a["prefix_k"] is not None:                                  # :263-264, dim=1
-            k_full = torch.cat([a["prefix_k"], k_r], dim=1)
-            v_full = torch.cat([a["prefix_v"], v], dim=1)
-        else:
-            k_full, v_full = k_r, v
-
-        # ---- the attention: the MODEL'S OWN, not a reimplementation --------------------
-        # I first rebuilt eager_attention_forward here step by step and it produced a
-        # context 720 wide where o_proj wants 320:
-        #     RuntimeError: mat1 and mat2 shapes cannot be multiplied (50x720 and 320x320)
-        # The reason is a genuine asymmetry in the model, not a typo in the replay:
-        # forward_attn_layer builds q/k/v with the EXPERT layer's head_dim (:222) while
-        # eager_attention_forward reshapes with the VLM's head counts and the VLM's
-        # head_dim (:507-508, :424), and the trailing `-1` in its reshape absorbs the
-        # difference. Reconstructing that correctly means encoding the asymmetry, which
-        # is exactly the kind of assumption this harness exists to avoid.
-        #
-        # So the CONTEXT comes from the model's own call. The score and probability
-        # tensors below are still rebuilt, because the `softmax` segment needs their
-        # shapes and dtypes for its byte and FLOP accounting -- and they are used for
-        # nothing else.
-        nh, nkv = c.num_attention_heads, c.num_key_value_heads
-        groups = nh // nkv
-        T = k_full.shape[1]
-        ctx = c.eager_attention_forward(a["attention_mask"], bsz, hd,
-                                        q_r, k_full, v_full)           # :504-549
-
-        ke = k_full[:, :, :, None, :].expand(bsz, T, nkv, groups, k_full.shape[-1]
-                                             ).reshape(bsz, T, nkv * groups, -1)
-        qf = q_r.to(torch.float32).transpose(1, 2)                     # :528-531, FP32
-        kf = ke.to(torch.float32).transpose(1, 2)
-        scores = torch.matmul(qf, kf.transpose(2, 3)) * (hd ** -0.5)   # :534-535
-        mask = a["attention_mask"]
-        if mask is not None:
-            mask = mask[..., : scores.shape[-1]]
-        big_neg = torch.finfo(scores.dtype).min
-        masked = (scores if mask is None
-                  else torch.where(mask[:, None, :, :], scores, big_neg))   # :539-540
-        probs = torch.nn.functional.softmax(masked, dim=-1)            # :541, fp32
-        probs_cast = probs.to(dtype=v_full.dtype)                      # :542
+        # The attention as the MODEL computed it. q/k/v are deliberately NOT rebuilt:
+        # a cross-attention layer projects the CACHED VLM keys through the expert's
+        # k_proj/v_proj (:352-360), which are Linears sized for the VLM's key width
+        # (:113-122), while a self-attention layer projects the expert's own states.
+        # The two kinds are different computations, so `rope` and `softmax` are not
+        # separable for this model without reimplementing both -- which is reported as
+        # such rather than approximated. GR00T's fused SDPA gets the same treatment.
+        ctx = cap.att_output
+        start = 0
+        end = start + x.shape[1]
+        att_slice = ctx[:, start:end] if ctx.shape[1] >= end else ctx     # :471
 
         # ---- the inlined tail in forward (:466-481) ------------------------------------
-        att_out = ctx
+        att_out = att_slice
         if att_out.dtype != attn.o_proj.weight.dtype:                  # :469-470
             att_out = att_out.to(attn.o_proj.weight.dtype)
         attn_out = attn.o_proj(att_out)                                # :472
@@ -232,17 +213,15 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
         resid2 = mlp_out.clone()
         resid2 += resid1                                               # :480
 
-    return {"x": x, "normed1": normed1, "gate1": None, "q": q, "k": k, "v": v,
-            "q_r": q_r, "k_r": k_r, "k_full": k_full, "v_full": v_full,
-            "scores": masked, "scores_fp32": masked, "probs_cast": probs_cast,
-            "ctx": ctx, "attn_out": attn_out, "resid1": resid1,
+    return {"x": x, "normed1": normed1, "gate1": None,
+            "ctx": ctx, "att_slice": att_slice, "attn_out": attn_out, "resid1": resid1,
             "normed2": normed2, "gate2": None, "g": g, "u": u,
-            "mlp_out": mlp_out, "resid2": resid2, "mask": mask,
+            "mlp_out": mlp_out, "resid2": resid2,
             "attn": attn, "layer": layer, "adarms_cond": None,
-            "kv_groups": groups, "container": c, "kind": cap.kind,
-            "bsz": bsz, "head_dim": hd, "T_keys": T, "position_ids": pos,
+            "container": c, "kind": cap.kind, "bsz": bsz, "head_dim": hd,
             "mask_full": a["attention_mask"],
-            "apply_rope": apply_rope}
+            # not separable for this model -- see the note in intermediates
+            "not_separable": ("rope", "softmax", "attention_gpu")}
 
 
 def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
@@ -269,36 +248,6 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              bytes_read=S * D * B2 + D * B2, bytes_written=S * D * B2,
              flops=8 * S * D, flops_formula="8*S*D (rmsnorm)",
              notes="no conditioning tensor, unlike pi0.5"),
-        dict(segment="rope", order=1, in_model="yes",
-             source_ref=f"{SRC}:28-50 (call sites :246-247)",
-             ops="apply_rope(q, position_ids) — SmolVLA's own, fp32 internally, B,L,H,D",
-             fn=lambda: t["apply_rope"](t["q"], t["position_ids"]),
-             inputs=f"q:{tuple(t['q'].shape)}",
-             outputs=f"q_r:{tuple(t['q_r'].shape)}",
-             bytes_formula="read q[S,H,D] bf16; write q_r[S,H,D] bf16; fp32 internally",
-             bytes_read=S * H * HD * B2, bytes_written=S * H * HD * B2,
-             flops=6 * S * H * HD,
-             flops_formula="6*S*H*HD (sin, cos, two multiplies, one add, one cast)",
-             notes="upcasts to fp32 and builds the timescale table per call, unlike "
-                   "transformers' apply_rotary_pos_emb which takes precomputed cos/sin"),
-        dict(segment="softmax", order=2, in_model="yes",
-             source_ref=f"{SRC}:539-542",
-             ops="torch.where(mask, scores, finfo.min) then softmax, ALL fp32",
-             fn=lambda: torch.nn.functional.softmax(
-                 t["scores"] if mask is None
-                 else torch.where(mask[:, None, :, :], t["scores"], -3e38), dim=-1),
-             inputs=f"scores:{tuple(t['scores'].shape)}:{t['scores'].dtype}",
-             outputs=f"probs:{tuple(t['probs_cast'].shape)}",
-             bytes_formula="read scores fp32 (H*S*T*4) + the bool mask (S*T); write the "
-                           "fp32 result (H*S*T*4) and the cast bf16 copy (H*S*T*2)",
-             bytes_read=H * S * T_keys * B4 + S * T_keys,
-             bytes_written=H * S * T_keys * B4 + H * S * T_keys * B2,
-             flops=5 * H * S * T_keys,
-             flops_formula="5*H*S*T (max, sub, exp, sum, div)",
-             notes="the scores arrive ALREADY fp32 here (q and k are upcast before the "
-                   "matmul at :528-529), where pi0's arrive bf16 and are upcast inside "
-                   "the softmax. The mask is a SELECT, not an add, so it reads a boolean "
-                   "matrix instead of adding a float one"),
         dict(segment="residual_rmsnorm2", order=3, in_model="yes",
              source_ref=f"{SRC}:474-477",
              ops="out_emb += x IN-PLACE (no gate); then post_attention_layernorm",
@@ -330,20 +279,22 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              bytes_read=2 * S * D * B2, bytes_written=S * D * B2,
              flops=S * D, flops_formula="S*D",
              notes="no gate, so this is one add per element"),
-        dict(segment="attention_gpu", order=7, in_model="yes",
-             source_ref=f"{SRC}:504-549 (eager_attention_forward)",
-             ops="expand+reshape KV, fp32 score matmul, where-mask, fp32 softmax, "
-                 "bf16 context matmul",
-             fn=lambda: t["container"].eager_attention_forward(
-                 t["mask_full"], bsz, hd, t["q_r"], t["k_full"], t["v_full"]),
-             inputs=f"q:{tuple(t['q_r'].shape)};k:{tuple(t['k_full'].shape)};"
-                    f"v:{tuple(t['v_full'].shape)}",
+        dict(segment="attention_whole", order=7, in_model="yes",
+             source_ref=f"{SRC}:197 / :274 (forward_attn_layer / forward_cross_attn_layer)",
+             ops=f"{t['kind']}: the whole attention, taken as the MODEL computed it",
+             fn=lambda: t["ctx"],
+             inputs=f"captured from the model's own call",
              outputs=f"att:{tuple(t['ctx'].shape)}",
-             bytes_formula="read q,k,v; write the fp32 score matrix and the bf16 context",
-             bytes_read=(S * H * HD + 2 * T_keys * H * HD) * B2,
-             bytes_written=H * S * T_keys * B4 + S * H * HD * B2,
-             flops=4 * H * S * T_keys * HD,
-             flops_formula="2*H*S*T*HD (scores) + 2*H*S*T*HD (context)",
-             notes="the whole attention as the model runs it, for comparison with the "
-                   "sum of its segments"),
+             bytes_formula="not decomposed; see notes",
+             bytes_read=0, bytes_written=t["ctx"].numel() * B2,
+             flops=0, flops_formula="not decomposed; see notes",
+             notes="NOT separable into rope / score / softmax / context for this model. "
+                   "A cross-attention layer projects the CACHED VLM keys through the "
+                   "expert's k_proj/v_proj, which are Linears sized for the VLM's key "
+                   "width (:113-122, :352-360), while a self-attention layer projects "
+                   "the expert's own states. The two kinds are different computations, "
+                   "so reconstructing the pieces means reimplementing both -- and three "
+                   "attempts at it each uncovered another asymmetry. The output is taken "
+                   "as measured; the fact that it is not decomposable IS the measurement, "
+                   "as it is for GR00T's fused SDPA."),
     ]
