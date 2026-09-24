@@ -23,11 +23,13 @@ import collections
 import csv
 import glob
 import json
+import time
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import write_json  # noqa: E402
+from common import (REPO, collect_raw, sh_out,  # noqa: E402
+                    software_versions, write_json)
 
 
 def num(x):
@@ -73,6 +75,18 @@ def union_ms(intervals):
             cs, ce = a, b
     busy += ce - cs
     return busy / 1e6
+
+
+_MODELS = ("groot_n17", "groot_n16", "groot_n15", "smolvla", "pi05", "pi0")
+
+
+def _model_from_dirname(name: str) -> str:
+    """<date>_E5_<model>_<mode>[_N<n>] -> <model>. Longest match first: 'pi05' contains
+    'pi0', and 'groot_n17' contains neither, so ordering decides correctness."""
+    for m in _MODELS:
+        if f"_{m}_" in name or name.endswith(f"_{m}"):
+            return m
+    return ""
 
 
 def main() -> int:
@@ -220,6 +234,61 @@ def main() -> int:
             "Compiled captures run with --no-regions because regions.py's context managers "
             "graph-break the model, so only whole_capture is available for those.",
         ]})
+    # ---- meta.json (protocol §5) --------------------------------------------------
+    # The E5 runs had none. bench/nsys_target.py prints a JSON line with the gate, the
+    # model, N and the rung, and run_nsys.sh saves its stdout, so the run describes
+    # itself -- it just was not being collected. GR00T's target (groot_phases
+    # --ncu-region) prints its gate too. Without this a capture has a timeline and no
+    # record of the device state it was taken in, which protocol §5 does not allow and
+    # which "a latency without its power mode is not a result" covers directly.
+    target = {}
+    for log in sorted((d / "raw").glob("*stdout*")):
+        for line in log.read_text(errors="replace").splitlines():
+            line = line.strip()
+            if line.startswith("{") and '"gate"' in line:
+                try:
+                    target = json.loads(line)
+                except ValueError:
+                    pass
+            elif line.startswith("gate: {"):
+                try:
+                    target = {"gate": json.loads(line[6:])}
+                except ValueError:
+                    pass
+    sw = software_versions()
+    write_json(d / "meta.json", {
+        "experiment": "E5 (nsys timeline)", "task": "T004/T008/T009",
+        "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "tag": args.tag,
+        # The stdout JSON carries the model for runs taken after nsys_target gained
+        # --model; older captures predate it, so the directory name is the fallback
+        # rather than leaving the field blank in the artefact protocol §5 governs.
+        "model": target.get("model") or _model_from_dirname(d.name),
+        "compile_mode": target.get("compile_mode"),
+        "rung": target.get("rung"), "rung_detail": target.get("rung_detail", ""),
+        "num_denoise_steps": target.get("steps", args.steps),
+        "inferences_captured": target.get("inferences", args.inferences),
+        "regions_present": sorted(regions),
+        "gate": target.get("gate", {}),
+        "power_mode": (target.get("gate") or {}).get("power_mode", ""),
+        "torch": sw.get("torch"), "python": sw.get("python"),
+        "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
+        "command": " ".join(sys.argv),
+        "raw_files": [],
+        "notes": [
+            "The .nsys-rep and .sqlite are NOT committed on this device: they embed the "
+            "system-wide process environment including a session token, verified to "
+            "survive `env -i`. They stay in scratch/ and are listed committed:false "
+            "(protocol §3.5). The exported CSVs carry everything the analysis reads.",
+            "nsys's own tracing inflates region wall time by about x1.53 on this device, "
+            "so gpu_idle_frac computed from traced wall time OVERSTATES idleness. Where "
+            "gpu_idle_frac_corrected is present, that is the number to trust.",
+        ],
+    })
+    meta = json.loads((d / "meta.json").read_text())
+    meta["raw_files"] = collect_raw(d, meta["command"])
+    write_json(d / "meta.json", meta)
+
     for t in trows:
         print(f"  {t['region']:14s} wall {t['wall_ms']:9.3f} ms  busy "
               f"{t['kernel_union_ms']:9.3f}  idle {t['gpu_idle_ms']:8.3f} "
