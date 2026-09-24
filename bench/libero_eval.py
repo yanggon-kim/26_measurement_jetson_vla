@@ -62,8 +62,12 @@ def build_obs(obs: dict, feats: dict, task: str) -> dict:
     This mirrors bench/pi0_common.py:build_batch.
     """
     out: dict = {}
-    ag = obs["agentview_image"][::-1]                 # LIBERO renders bottom-up
-    wr = obs["robot0_eye_in_hand_image"][::-1]
+    # 180 degrees, not a vertical flip. robosuite returns these images in OpenGL order and
+    # the openpi LIBERO pipeline the pi0 finetune follows applies `[::-1, ::-1]`. Using
+    # `[::-1]` alone is a plausible-looking image the policy was never trained on: it
+    # produced sensible, in-range actions and solved 0 of 11 episodes.
+    ag = obs["agentview_image"][::-1, ::-1]
+    wr = obs["robot0_eye_in_hand_image"][::-1, ::-1]
     for key, spec in feats.items():
         if not key.startswith("observation.images."):
             continue
@@ -80,8 +84,18 @@ def build_obs(obs: dict, feats: dict, task: str) -> dict:
             t = torch.nn.functional.interpolate(t[None], size=(h, w), mode="bilinear",
                                                 align_corners=False)[0]
         out[key] = t                                     # CHW in [0,1], unbatched
-    st = np.concatenate([obs["robot0_joint_pos"],
-                         obs["robot0_gripper_qpos"][:1]]).astype(np.float32)
+    # The 8-dim state is eef_pos(3) + axis-angle(3) + gripper_qpos(2), which is the
+    # convention pi0's LIBERO finetune was trained on. My first mapping used
+    # joint_pos(7) + gripper(1), also 8 wide, and it ran without error while the policy
+    # solved nothing: 0/11 with every episode hitting the 280-step ceiling. Same width,
+    # different meaning -- the kind of mistake that produces a complete, plausible,
+    # entirely wrong accuracy number.
+    from robosuite.utils.transform_utils import quat2axisangle
+    st = np.concatenate([
+        np.asarray(obs["robot0_eef_pos"], dtype=np.float32),
+        np.asarray(quat2axisangle(obs["robot0_eef_quat"]), dtype=np.float32),
+        np.asarray(obs["robot0_gripper_qpos"], dtype=np.float32),
+    ]).astype(np.float32)
     dim = feats["observation.state"].shape[0]
     if st.shape[0] < dim:
         st = np.pad(st, (0, dim - st.shape[0]))
@@ -147,7 +161,7 @@ def main() -> int:
     # the checkpoint's own preprocessor: tokenizer + its normalisation statistics
     from lerobot.policies.factory import make_pre_post_processors
     kw = {"pretrained_revision": spec.revision} if spec.revision else {}
-    preprocess, _post = make_pre_post_processors(
+    preprocess, postprocess = make_pre_post_processors(
         policy.config, spec.checkpoint,
         preprocessor_overrides={"device_processor": {"device": "cuda"}}, **kw)
 
@@ -188,7 +202,17 @@ def main() -> int:
                     t_policy.append(dt)
                     if dt > 10.0:            # a real forward, not a queue hit
                         t_infer.append(dt)
-                    a = act.squeeze(0).float().cpu().numpy()
+                    # select_action returns NORMALISED actions -- it does not
+                    # unnormalise (modeling_pi0.py: it just pops the action queue). The
+                    # postprocessor is what maps them back to robot units. Feeding the
+                    # normalised values straight to the simulator gave 0/11 with every
+                    # episode running the full 280 steps, which is what a policy doing
+                    # nothing looks like.
+                    act = postprocess(act)
+                    if isinstance(act, dict):
+                        act = act.get("action", next(iter(act.values())))
+                    a = np.asarray(act).squeeze()
+                    a = a.astype(np.float32)
                     chunk = [a] if a.ndim == 1 else list(a)
                 t0 = time.perf_counter()
                 obs, _, done, _ = env.step(chunk.pop(0))
