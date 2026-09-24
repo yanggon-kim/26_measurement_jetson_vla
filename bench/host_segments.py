@@ -79,10 +79,21 @@ class LayerCapture:
         self._orig = self.layer.forward
         cap = self
 
+        # An AdaRMS norm has no `weight`: its scale comes from `cond` through a dense
+        # layer. So for pi0.5 a capture taken with adarms_cond=None is unusable and fails
+        # later, far from here, with
+        #     AttributeError: 'PiGemmaRMSNorm' object has no attribute 'weight'
+        # inside the replay. The expert's layer is reached before the denoising pass with
+        # cond=None, and `cap.args is None` recorded that first call. Require the
+        # conditioning tensor when the model needs one, so the capture is of a DENOISING
+        # step rather than of whatever ran first.
+        _needs_cond = not hasattr(self.layer.input_layernorm, "weight")
+
         def wrapper(hidden_states, attention_mask=None, position_ids=None,
                     past_key_values=None, use_cache=False, cache_position=None,
                     position_embeddings=None, adarms_cond=None, **kw):
-            if cap.args is None:                       # first denoising step only
+            usable = adarms_cond is not None or not _needs_cond
+            if cap.args is None and usable:            # first denoising step only
                 # The prefix K/V for THIS layer, read before the attention updates the cache,
                 # so it holds the P prefix tokens only. Without it the replayed attention
                 # would run over S=51 keys instead of the real T = P + S = 867, which is a
@@ -642,10 +653,12 @@ def main() -> int:
             policy.predict_action_chunk(batch)
         if cap.args is None:
             raise SystemExit(
-                f"layer {li} was never called — wrap point wrong for {spec.name} "
-                f"(layer_capture={spec.layer_capture}). An EMPTY capture is the failure "
-                f"this guard exists for: every segment downstream would be computed from "
-                f"a zero tensor and would look entirely plausible.")
+                f"layer {li} was never captured for {spec.name} "
+                f"(layer_capture={spec.layer_capture}). Either the wrap point is wrong, "
+                f"or -- for a model with AdaRMS norms -- the layer was only ever reached "
+                f"with adarms_cond=None, which is not a denoising step. An EMPTY capture "
+                f"is the failure this guard exists for: every segment downstream would be "
+                f"computed from a zero tensor and would look entirely plausible.")
         caps[li] = cap
     torch.cuda.synchronize()
 
