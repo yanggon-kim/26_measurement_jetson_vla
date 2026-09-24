@@ -10,7 +10,7 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.
 
-**Coverage: 8 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `groot_n15/eager_fp32`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`.
+**Coverage: 9 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `groot_n15/eager_fp32`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`.
 
 ## Energy per inference
 
@@ -34,6 +34,9 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | π0 | 10 | `eager` | prefix | 477.93 | 51.88 | 40.72 | 24794.9 | 19460.0 |
 | π0 | 10 | `eager` | ae | 595.65 | 20.61 | 9.45 | 12275.0 | 5626.0 |
 | π0 | 10 | `eager` | full | 1083.19 | 34.24 | 23.08 | 37092.9 | 25001.8 |
+| π0 | 4 | `bf16_both` | prefix | 249.92 | 43.46 | 32.36 | 10860.5 | 8087.0 |
+| π0 | 4 | `bf16_both` | ae | 67.18 | 29.17 | 18.08 | 1960.0 | 1214.4 |
+| π0 | 4 | `bf16_both` | full | 323.11 | 46.79 | 35.69 | 15117.2 | 11531.5 |
 | π0 | 4 | `eager` | prefix | 478.39 | 51.72 | 40.93 | 24744.0 | 19580.5 |
 | π0 | 4 | `eager` | ae | 238.89 | 20.47 | 9.68 | 4890.4 | 2311.9 |
 | π0 | 4 | `eager` | full | 722.55 | 41.18 | 30.38 | 29753.1 | 21954.2 |
@@ -47,6 +50,7 @@ The `full` loop is the complete inference. This is the number a robot's battery 
 
 | model | N | eager J | best J | eager ms | best ms | energy saved | time saved | energy ÷ time saving |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
+| π0 | 4 | 29.75 | 15.12 | 722.6 | 323.1 | 1.97× | 2.24× | 0.88 |
 | π0.5 | 10 | 132.99 | 21.85 | 3041.6 | 482.1 | 6.09× | 6.31× | 0.96 |
 
 **The last column is the one to watch.** Above 1 means the optimised configuration saves proportionally MORE energy than time — it is removing work, not just running it sooner. Below 1 means it is buying speed with power, and the latency figure overstates the benefit. Either is possible and only measurement distinguishes them; this is why E7 exists alongside Part B.
@@ -67,6 +71,7 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 | π0.5 | 10 | `bf16_both_graphs` | 10846.2 | 4008.4 | 73.0 | 27.0 | 61.3 | 38.7 | **0.70** |
 | π0.5 | 10 | `eager` | 84253.7 | 13781.8 | 85.9 | 14.1 | 79.5 | 20.5 | **0.69** |
 | π0 | 10 | `eager` | 19460.0 | 5626.0 | 77.6 | 22.4 | 44.5 | 55.5 | **0.40** |
+| π0 | 4 | `bf16_both` | 8087.0 | 1214.4 | 86.9 | 13.1 | 78.8 | 21.2 | **0.62** |
 | π0 | 4 | `eager` | 19580.5 | 2311.9 | 89.4 | 10.6 | 66.7 | 33.3 | **0.32** |
 | SmolVLA | 10 | `eager` | 2124.0 | 5259.0 | 28.8 | 71.2 | 13.8 | 86.2 | **0.83** |
 
@@ -222,6 +227,29 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | module | 34244 | 11163 | 23082 | 37092.9 | 3709.3 |
 | full | module_without_memory_rail | 32140 | 10709 | 21431 | 34813.2 | 3481.3 |
 
+### π0 — `bf16_both`, N=4, MAXN (compiled_subpath)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3140 | 445 | 2695 | 784.7 |  |
+| prefix | VDD_CPU_CV | 1919 | 1610 | 309 | 479.6 |  |
+| prefix | VDD_GPU_SOC | 29963 | 4784 | 25179 | 7488.5 |  |
+| prefix | VIN_SYS_5V0 | 8433 | 4259 | 4175 | 2107.7 |  |
+| prefix | module | 43455 | 11097 | 32358 | 10860.5 |  |
+| prefix | module_without_memory_rail | 40315 | 10652 | 29663 | 10075.8 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2144 | 445 | 1698 | 144.0 | 36.0 |
+| ae | VDD_CPU_CV | 2044 | 1610 | 434 | 137.3 | 34.3 |
+| ae | VDD_GPU_SOC | 18029 | 4784 | 13246 | 1211.3 | 302.8 |
+| ae | VIN_SYS_5V0 | 6957 | 4259 | 2699 | 467.4 | 116.8 |
+| ae | module | 29174 | 11097 | 18076 | 1960.0 | 490.0 |
+| ae | module_without_memory_rail | 27030 | 10652 | 16378 | 1816.0 | 454.0 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3402 | 445 | 2956 | 1099.1 | 274.8 |
+| full | VDD_CPU_CV | 1615 | 1610 | 5 | 521.7 | 130.4 |
+| full | VDD_GPU_SOC | 32874 | 4784 | 28090 | 10621.8 | 2655.4 |
+| full | VIN_SYS_5V0 | 8896 | 4259 | 4638 | 2874.6 | 718.6 |
+| full | module | 46786 | 11097 | 35689 | 15117.2 | 3779.3 |
+| full | module_without_memory_rail | 43385 | 10652 | 32733 | 14018.1 | 3504.5 |
+
 ### π0 — `eager`, N=4, MAXN (eager)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -285,6 +313,7 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | π0.5 | 10 | `bf16_both_graphs` | 482.09 | 487.81 | 0.99× |
 | π0.5 | 10 | `eager` | 3041.59 | 3028.56 | 1.00× |
 | π0 | 10 | `eager` | 1083.19 | 1069.04 | 1.01× |
+| π0 | 4 | `bf16_both` | 323.11 | — | — |
 | π0 | 4 | `eager` | 722.55 | 711.75 | 1.02× |
 | SmolVLA | 10 | `eager` | 740.69 | 727.46 | 1.02× |
 
