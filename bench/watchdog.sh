@@ -177,11 +177,20 @@ for tag, pat, need, target in (
           + (f"   RUNNING: {live}" if live else "")
           + (f"   BROKEN: {broken[:3]}" if broken else ""))
 
-# A 0-byte stdout is a run that produced nothing while leaving a directory behind.
-empty = [f for f in glob.glob("results/*/raw/*stdout*") if os.path.getsize(f) == 0]
+# A 0-byte stdout is a run that produced nothing while leaving a directory behind --
+# UNLESS that run is still going, in which case a capture whose output is still buffered
+# is entirely normal. This was the sixth false alarm of the same class today; every other
+# check in this audit had already been made live-aware one at a time, which is how a
+# checker accumulates them. Whole file swept now, not another instance.
+empty_all = [f for f in glob.glob("results/*/raw/*stdout*") if os.path.getsize(f) == 0]
+empty, empty_live = [], []
+for f in empty_all:
+    d = os.path.dirname(os.path.dirname(f))
+    (empty_live if _is_live(d) else empty).append(os.path.basename(d))
 if empty:
-    names = [os.path.basename(os.path.dirname(os.path.dirname(f))) for f in empty[:3]]
-    print(f"  *** {len(empty)} ZERO-BYTE stdout (a run that wrote nothing): {names}")
+    print(f"  *** {len(empty)} ZERO-BYTE stdout (a run that wrote nothing): {empty[:3]}")
+if empty_live:
+    print(f"  ({len(empty_live)} empty stdout in a RUNNING job — output still buffered)")
 PYB
 echo
 echo "--- 2. RUNNING NOW (from /proc; pgrep -f matches itself)"
