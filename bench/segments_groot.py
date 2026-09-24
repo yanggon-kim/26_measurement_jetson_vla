@@ -34,7 +34,28 @@ anything was the point — assuming it would have been the same mistake as assum
 """
 from __future__ import annotations
 
+import importlib
+from contextlib import nullcontext
+
 import torch
+
+
+def _sdpa_ctx(block):
+    """The model's OWN SDPA context manager, taken from the block's own module.
+
+    `BasicTransformerBlock.forward` wraps `attn1` in `_sdpa_context()` (dit.py:197). On
+    this device that returns `nullcontext()` — the forced-math path is for sm121 — so it
+    changes nothing today. Using it anyway means the replay cannot silently diverge from
+    the model if that check ever changes, which is the whole discipline of replaying with
+    the model's own modules rather than an equivalent of them. Resolved through the
+    block's `__module__` so the three GR00T worktrees each get their own.
+    """
+    try:
+        mod = importlib.import_module(type(block).__module__)
+        return getattr(mod, "_sdpa_context", nullcontext)()
+    except Exception:                                          # noqa: BLE001
+        return nullcontext()
+
 
 SRC = "gr00t/model/modules/dit.py"
 
@@ -114,7 +135,8 @@ def intermediates(cap: DiTBlockCapture) -> dict:
             cond = scale = shift = None
         pos_out = b.pos_embed(normed1) if b.pos_embed is not None else normed1  # :194-195
 
-        attn_out = b.attn1(pos_out, encoder_hidden_states=ehs, attention_mask=mask)
+        with _sdpa_ctx(b):                                        # :197
+            attn_out = b.attn1(pos_out, encoder_hidden_states=ehs, attention_mask=mask)
         if getattr(b, "final_dropout", None) is not None:
             attn_out = b.final_dropout(attn_out)                # :204-205, eval no-op
         resid1 = attn_out + x                                   # :207, PLAIN add
@@ -129,6 +151,12 @@ def intermediates(cap: DiTBlockCapture) -> dict:
             "normed3": normed3, "ff_out": ff_out, "resid2": resid2,
             "encoder_hidden_states": ehs, "mask": mask, "temb": a["temb"],
             "block": b, "kind": cap.kind, "idx": cap.idx}
+
+
+def _attn_with_ctx(block, hidden, ehs, mask):
+    """attn1 under the model's own SDPA context, as BasicTransformerBlock.forward runs it."""
+    with _sdpa_ctx(block):
+        return block.attn1(hidden, encoder_hidden_states=ehs, attention_mask=mask)
 
 
 def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
@@ -188,7 +216,7 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
         source_ref=f"{SRC}:197-203 (diffusers Attention under _sdpa_context)",
         ops=f"{t['kind']}: q/k/v projections, scores, softmax and context in ONE fused "
             f"SDPA kernel",
-        fn=lambda: b.attn1(t["pos_out"], encoder_hidden_states=ehs, attention_mask=t["mask"]),
+        fn=lambda: _attn_with_ctx(b, t["pos_out"], ehs, t["mask"]),
         inputs=f"q_in:{tuple(t['pos_out'].shape)}"
                + (f";kv_in:{tuple(ehs.shape)}" if ehs is not None else ""),
         outputs=f"attn:{tuple(t['attn_out'].shape)}",
