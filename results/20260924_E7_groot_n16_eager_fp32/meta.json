@@ -1,0 +1,105 @@
+{
+ "experiment": "E7 (power and energy per phase)",
+ "task": "T009",
+ "model": "groot_n16",
+ "checkpoint": "nvidia/GR00T-N1.6-3B",
+ "precision": "bfloat16",
+ "matmul_precision": "highest",
+ "compile": "eager",
+ "rung": "eager_fp32",
+ "num_inference_timesteps": 4,
+ "n_warmup": 5,
+ "n_timed": "60.0 s loop per phase",
+ "sample_hz": 20,
+ "power_mode": "NV Power Mode: MAXN",
+ "sm_count": 16,
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "tpc_pg_mask": "0",
+  "gpu_cur_freq_hz": "1300500000",
+  "gpu_min_freq_hz": "1300500000",
+  "gpu_max_freq_hz": "1300500000",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "torch": "2.10.0",
+  "device": "Orin",
+  "capability": "(8, 7)"
+ },
+ "allow_capped": false,
+ "date_utc": "2026-09-24T08:38:43Z",
+ "command": "bench/groot_phases.py --power --seconds 60 --outdir results/20260924_E7_groot_n16_eager_fp32 --version n16 --rung eager_fp32 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T-n1d6 --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron --tf32 off",
+ "gr00t_root": "/home/yanggon/00_VLA/Isaac-GR00T-n1d6",
+ "observation_shapes": {
+  "video": {
+   "res256_image_side_0": [
+    1,
+    1,
+    256,
+    256,
+    3
+   ],
+   "res256_image_side_1": [
+    1,
+    1,
+    256,
+    256,
+    3
+   ],
+   "res256_image_wrist_0": [
+    1,
+    1,
+    256,
+    256,
+    3
+   ]
+  },
+  "state": {
+   "end_effector_position_relative": [
+    1,
+    1,
+    3
+   ],
+   "end_effector_rotation_relative": [
+    1,
+    1,
+    4
+   ],
+   "gripper_qpos": [
+    1,
+    1,
+    2
+   ],
+   "base_position": [
+    1,
+    1,
+    3
+   ],
+   "base_rotation": [
+    1,
+    1,
+    4
+   ]
+  }
+ },
+ "idle_baseline_mW": {
+  "VDD_GPU_SOC": 4787.9,
+  "VDD_CPU_CV": 1697.3,
+  "VIN_SYS_5V0": 4274.1,
+  "VDDQ_VDD2_1V8AO": 457.2
+ },
+ "phases": {
+  "prefix": "model.backbone(backbone_inputs) -- the whole VLM, vision INSIDE",
+  "ae": "model.action_head.get_action on a backbone output computed once; contains the num_inference_timesteps loop",
+  "full": "model.get_action(inputs) on already-collated inputs, i.e. the GPU path only -- prepare_input (CPU) is outside all three loops"
+ },
+ "notes": [
+  "The memory rail is measured at the regulator INPUT (~5.04 V) and is NOT rescaled to 1.8 V. It is an upper bound on DRAM power; quote its above-idle delta next to the absolute value, and never call it 'DRAM power' without those words (protocol \u00a74).",
+  "Each rail is reported separately, as module power (all four) and as the three-rail sum without the memory rail.",
+  "T005 checked the four rails for double-counting and found none: a load that raises VDD_GPU_SOC by 51.8 W raises VIN_SYS_5V0 by only 8.7 W. They may be summed.",
+  "An idle baseline was measured in this power mode, for this duration, before the loops.",
+  "tegrastats --logfile appends, so each log is deleted before its run (T001).",
+  "prefix and ae are driven BELOW model.get_action, so if a compile mode was applied to get_action itself they would not go through it. This run compiled: nothing (eager).",
+  "GR00T's prefix loop includes its vision encoder, as the LeRobot models' prefix loop does. Splitting vision out again would need a fourth loop driving .visual on inputs the backbone builds internally; it is not attempted here."
+ ]
+}
