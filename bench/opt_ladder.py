@@ -414,6 +414,27 @@ RUNGS = [
 ]
 
 
+# SmolVLA cannot stream-capture its vision tower until the data-dependent boolean index
+# in SmolVLMVisionEmbeddings is gone (see prep_smolvlm_static_posids). Every rung at or
+# after vis_static_pos therefore carries that prep FOR THIS MODEL ONLY. This used to live
+# inside main(), which meant apply_rung() -- factored out for E5 and E7 -- did not do it,
+# and SmolVLA's vlm_graphs died in the E7 matrix with
+#     torch.AcceleratorError: operation failed due to a previous error during capture
+# exactly as Part B had already documented. It belongs with the rung, not with one caller.
+_NEEDS_STATIC_POSIDS = {"vis_static_pos", "vis_graphs", "vlm_compile", "vlm_graphs",
+                        "whole_graphs", "whole_autotune"}
+
+
+def effective_prep(spec, key: str, prep):
+    """The prep a rung actually needs for this model, including the SmolVLA injection."""
+    if getattr(spec, "name", "") != "smolvla" or key not in _NEEDS_STATIC_POSIDS:
+        return prep
+    if prep is None:
+        return prep_smolvlm_static_posids
+    return lambda pol: "; ".join(
+        x for x in (prep_smolvlm_static_posids(pol), prep(pol)) if x)
+
+
 def apply_rung(policy, spec, key: str):
     """Put `policy` into the configuration a named rung describes, and say what was done.
 
@@ -430,6 +451,7 @@ def apply_rung(policy, spec, key: str):
     if rung is None:
         raise SystemExit(f"unknown rung {key!r}; have {[r[0] for r in RUNGS]}")
     _, _, prec, targets, _, _, prep = rung
+    prep = effective_prep(spec, key, prep)
     torch.set_float32_matmul_precision(prec)
     prep_note = prep(policy) if prep else ""
     compiled_desc, compile_s, fails = [], 0.0, []
@@ -612,28 +634,16 @@ def main() -> int:
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
     want = [r for r in RUNGS if r[0] in args.rungs.split(",")]
+    spec = MR.get(args.model)          # needed by effective_prep just below
 
-    # SmolVLA cannot stream-capture its vision tower until the data-dependent boolean
-    # index in SmolVLMVisionEmbeddings is gone (see prep_smolvlm_static_posids). Every
-    # rung at or after vis_static_pos therefore carries that prep for this model, and only
-    # for this model; the rung itself measures what the prep alone costs, so the graph
-    # rungs after it still isolate one factor each. For every other model the rung is
+    # The SmolVLA static-posids injection is effective_prep()'s, shared with apply_rung()
+    # so that E5's and E7's rungs get it too. For every other model vis_static_pos is
     # dropped rather than run, because the prep refuses a non-SmolVLA policy by design.
-    _NEEDS_STATIC_POSIDS = {"vis_static_pos", "vis_graphs", "vlm_compile", "vlm_graphs",
-                            "whole_graphs", "whole_autotune"}
     if args.model == "smolvla":
-        def _with_posids(prep):
-            if prep is None:
-                return prep_smolvlm_static_posids
-            return lambda pol: "; ".join(
-                x for x in (prep_smolvlm_static_posids(pol), prep(pol)) if x)
-        want = [(r[:6] + (_with_posids(r[6]),)) if r[0] in _NEEDS_STATIC_POSIDS else r
-                for r in want]
+        want = [r[:6] + (effective_prep(spec, r[0], r[6]),) for r in want]
     else:
         want = [r for r in want if r[0] != "vis_static_pos"]
     steps = [int(x) for x in args.steps.split(",") if x]
-
-    spec = MR.get(args.model)
     steps = steps or [spec.n_default]
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
