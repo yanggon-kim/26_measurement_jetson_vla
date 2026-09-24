@@ -10,12 +10,15 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.
 
-**Coverage: 5 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`.
+**Coverage: 6 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `groot_n17/eager_fp32`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`.
 
 ## Energy per inference
 
 | model | N | configuration | phase | median ms | module W | above idle W | mJ / inference | mJ above idle |
 |---|---:|---|---|---:|---:|---:|---:|---:|
+| GR00T N1.7 | 4 | `eager_fp32` | prefix | 161.75 | 42.34 | 31.23 | 6848.1 | 5052.0 |
+| GR00T N1.7 | 4 | `eager_fp32` | ae | 226.84 | 29.37 | 18.26 | 6661.2 | 4142.5 |
+| GR00T N1.7 | 4 | `eager_fp32` | full | 381.65 | 35.37 | 24.27 | 13498.8 | 9261.1 |
 | π0.5 | 10 | `bf16_both_graphs` | prefix | 291.85 | 48.22 | 37.16 | 14072.0 | 10846.2 |
 | π0.5 | 10 | `bf16_both_graphs` | ae | 184.27 | 32.81 | 21.75 | 6045.1 | 4008.4 |
 | π0.5 | 10 | `bf16_both_graphs` | full | 482.09 | 45.33 | 34.28 | 21854.6 | 16526.2 |
@@ -40,6 +43,7 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 
 | model | N | configuration | prefix mJ | ae mJ | prefix % of energy | ae % of energy | prefix % of time | ae % of time | **ae energy ÷ time** |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| GR00T N1.7 | 4 | `eager_fp32` | 5052.0 | 4142.5 | 54.9 | 45.1 | 41.6 | 58.4 | **0.77** |
 | π0.5 | 10 | `bf16_both_graphs` | 10846.2 | 4008.4 | 73.0 | 27.0 | 61.3 | 38.7 | **0.70** |
 | π0.5 | 10 | `eager` | 84253.7 | 13781.8 | 85.9 | 14.1 | 79.5 | 20.5 | **0.69** |
 | π0 | 10 | `eager` | 19460.0 | 5626.0 | 77.6 | 22.4 | 44.5 | 55.5 | **0.40** |
@@ -51,6 +55,29 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 ## Per-rail detail
 
 Every rail separately, as protocol §4 requires. `above idle` is this run's own 60 s baseline in the same power mode, subtracted.
+
+### GR00T N1.7 — `eager_fp32`, N=4, MAXN (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3224 | 459 | 2765 | 521.5 |  |
+| prefix | VDD_CPU_CV | 2901 | 1600 | 1300 | 469.2 |  |
+| prefix | VDD_GPU_SOC | 27673 | 4787 | 22886 | 4476.2 |  |
+| prefix | VIN_SYS_5V0 | 8538 | 4258 | 4281 | 1381.1 |  |
+| prefix | module | 42336 | 11104 | 31232 | 6848.1 |  |
+| prefix | module_without_memory_rail | 39112 | 10645 | 28467 | 6326.5 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2325 | 459 | 1866 | 527.3 | 131.8 |
+| ae | VDD_CPU_CV | 3227 | 1600 | 1626 | 732.0 | 183.0 |
+| ae | VDD_GPU_SOC | 16551 | 4787 | 11765 | 3754.5 | 938.6 |
+| ae | VIN_SYS_5V0 | 7263 | 4258 | 3005 | 1647.4 | 411.9 |
+| ae | module | 29366 | 11104 | 18262 | 6661.2 | 1665.3 |
+| ae | module_without_memory_rail | 27041 | 10645 | 16396 | 6133.9 | 1533.5 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2761 | 459 | 2302 | 1053.6 | 263.4 |
+| full | VDD_CPU_CV | 3063 | 1600 | 1463 | 1169.1 | 292.3 |
+| full | VDD_GPU_SOC | 21636 | 4787 | 16849 | 8257.2 | 2064.3 |
+| full | VIN_SYS_5V0 | 7910 | 4258 | 3652 | 3018.9 | 754.7 |
+| full | module | 35370 | 11104 | 24266 | 13498.8 | 3374.7 |
+| full | module_without_memory_rail | 32609 | 10645 | 21964 | 12445.2 | 3111.3 |
 
 ### π0.5 — `bf16_both_graphs`, N=10, MAXN (compiled_subpath)
 
@@ -178,6 +205,7 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 
 | model | N | configuration | E7 `full` loop median ms | Part B e2e median ms | ratio |
 |---|---:|---|---:|---:|---:|
+| GR00T N1.7 | 4 | `eager_fp32` | 381.65 | 372.48 | 1.02× |
 | π0.5 | 10 | `bf16_both_graphs` | 482.09 | 487.81 | 0.99× |
 | π0.5 | 10 | `eager` | 3041.59 | 3028.56 | 1.00× |
 | π0 | 10 | `eager` | 1083.19 | 1069.04 | 1.01× |
