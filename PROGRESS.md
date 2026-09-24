@@ -63,17 +63,17 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 17:38:13** · elapsed **23.05 h** of 26 (89 %) · 28.4 GiB free · 1.44 GiB swap
+**Updated 17:58:15** · elapsed **23.39 h** of 26 (90 %) · 36.8 GiB free · 1.44 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 287305 | `bench/libero_eval.py --model pi0 --prep bf16_both --suite libero_spatial --tasks 10 --epis` | 2 min | 22.5 GiB |
+| 287578 | `bench/libero_eval.py --model pi05 --prep none --suite libero_spatial --tasks 10 --episodes` | 5 min | 21.8 GiB |
 
 Latest log lines:
 
-- `queue_libero.log` · Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
-- `queue_libero.log` · Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your softwar
 - `queue_libero.log` · See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional informati
+- `queue_libero.log` · /home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new A
+- `queue_libero.log` · _C._set_float32_matmul_precision(precision)
 - `libero_smoke.log` · task 2 ep 1: fail    280 steps   running 1/6
 - `libero_smoke.log` · success 1/6 = 16.7%   inference 1157.37 ms x32, sim 36.68 ms
 - `libero_smoke.log` · wrote /tmp/claude-1001/-home-yanggon-00-VLA/12fafcae-396b-4192-9a5c-e6f36be46f1c/scratchpad/libero_smoke6
@@ -82,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 17:39** (58 configurations)
+**Re-derived from every result CSV on disk at 18:00** (58 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
