@@ -953,20 +953,48 @@ class DenoiseCapture:
 def build_extras(policy, batch, args, last_hidden):
     """The three per-step extras (`order_in_layer = -1`), as (name, callable, ref, ops)."""
     m = policy.model
-    with DenoiseCapture(policy) as dc, torch.no_grad():
-        policy.predict_action_chunk(batch)
-    if dc.args is None:
-        return [], "per-step extras: denoise_step was never called"
-    st, x_t, ts = dc.args["state"], dc.args["x_t"], dc.args["timestep"]
     import model_registry as MR                                       # noqa: PLC0415
     spec = MR.get(getattr(args, "model", "pi0"))
     ex_norm = spec.resolve(policy, spec.expert_norm_path)
+
+    # CAPTURE what the model passes the expert's final norm, rather than reconstruct it.
+    # pi_gemma.py:309 calls `self.norm(hidden_states, adarms_cond)` -- positionally, with
+    # a conditioning tensor for pi0.5 and None for pi0. Calling it with only the hidden
+    # states gave
+    #     AttributeError: 'PiGemmaRMSNorm' object has no attribute 'weight'
+    # because an AdaRMS norm's scale comes from that cond through a dense layer, and
+    # without it the module takes a branch that reads a parameter it does not have.
+    # Reconstructing the cond would mean re-deriving embed_suffix's fourth return value
+    # here; capturing it is both shorter and cannot drift from the model.
+    norm_args = {}
+    _orig_norm = ex_norm.forward
+
+    def _cap_norm(*a, **kw):
+        if not norm_args and a:
+            norm_args["a"] = tuple(
+                x.detach().clone() if torch.is_tensor(x) else x for x in a)
+            norm_args["kw"] = {k: (v.detach().clone() if torch.is_tensor(v) else v)
+                               for k, v in kw.items()}
+        return _orig_norm(*a, **kw)
+
+    ex_norm.forward = _cap_norm
+    try:
+        with DenoiseCapture(policy) as dc, torch.no_grad():
+            policy.predict_action_chunk(batch)
+    finally:
+        ex_norm.forward = _orig_norm
+    if dc.args is None:
+        return [], "per-step extras: denoise_step was never called"
+    if not norm_args:
+        return [], (f"per-step extras: {spec.expert_norm_path} was never called, so the "
+                    f"final-norm segment cannot be built from what the model passes it")
+    st, x_t, ts = dc.args["state"], dc.args["x_t"], dc.args["timestep"]
     chunk = m.config.chunk_size
     dt = -1.0 / args.steps
     v_t = torch.randn_like(x_t)
 
     def final_norm_out_proj():
-        r = ex_norm(last_hidden)
+        r = ex_norm(*norm_args["a"], **norm_args["kw"])
         h = r[0] if isinstance(r, tuple) else r
         return m.action_out_proj(h[:, -chunk:].to(dtype=torch.float32))
 
