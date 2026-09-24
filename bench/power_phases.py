@@ -154,6 +154,14 @@ def main() -> int:
 
         policy, cfg, shipped = MR.load_policy(
             spec, n=args.steps, compile_mode=None if args.rung else cm)
+        # Verify the checkpoint BEFORE any rung touches it. assert_real_weights diffs
+        # against the fp32 safetensors, and bf16_both deliberately casts 74 layernorm
+        # modules and the vision tower, so running it afterwards reported
+        # "325/400 tensors match ... Refusing to measure" -- a true statement about a
+        # cast that was the whole point of the rung. Verify, then modify.
+        real = P.assert_real_weights(policy) if args.model == "pi0" else {
+            "checked": False, "reason": "assert_real_weights carries pi0's expected "
+                                        "signature; not applicable to this checkpoint"}
         rung_note, compiled_desc = "", []
         if args.rung:
             import opt_ladder as OL
@@ -167,12 +175,9 @@ def main() -> int:
             if fails:
                 raise SystemExit(f"rung {args.rung!r} failed to compile: {fails}. A "
                                  f"partially-applied rung is not the rung.")
-            print(f"  rung {args.rung}: prep=[{rung_note}] compiled=[{';'.join(compiled_desc)}] "
-                  f"matmul={prec} in {comp_s:.1f} s", flush=True)
-        # pi0-only: the checksum it asserts is pi0's. Skipped rather than reinterpreted.
-        real = P.assert_real_weights(policy) if args.model == "pi0" else {
-            "checked": False, "reason": "assert_real_weights carries pi0's expected "
-                                        "signature; not applicable to this checkpoint"}
+            print(f"  rung {args.rung}: prep=[{rung_note}] "
+                  f"compiled=[{';'.join(compiled_desc)}] matmul={prec} in {comp_s:.1f} s",
+                  flush=True)
         fx = P.load_fixture()
         batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                     revision=spec.revision)
