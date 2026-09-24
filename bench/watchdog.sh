@@ -177,7 +177,11 @@ from pathlib import Path
 # contains the pattern, so the matcher finds itself; once it killed its own shell.
 JOBS = ("opt_ladder.py", "groot_phases.py", "paper_repro.py", "power_phases.py",
         "phase_loops.py", "host_segments.py", "nsys_target.py", "ncu_target.py",
-        "build_inst_inventory.py", "libero_eval.py")
+        "build_inst_inventory.py", "libero_eval.py",
+        # added 2026-09-24: the E11 scripts. Section 2 did not know about these and
+        # reported "NOTHING RUNNING" with pipelining.py live. One list, two readers.
+        "handover.py", "prefix_sweep.py", "mempressure.py", "pipelining.py",
+        "groot_segments.py", "consolidate_e11.py")
 me, n = os.getpid(), 0
 for d in sorted(Path('/proc').iterdir(), key=lambda p: p.name):
     if not d.name.isdigit() or int(d.name) == me:
@@ -247,9 +251,13 @@ until its run finishes. An audit that reports healthy work as broken gets ignore
 import glob, os
 from pathlib import Path
 
-JOBS = ("power_phases.py", "groot_phases.py", "host_segments.py", "handover.py",
-        "prefix_sweep.py", "mempressure.py", "pipelining.py", "nsys_target.py",
-        "ncu_target.py", "groot_segments.py", "opt_ladder.py")
+JOBS = ("opt_ladder.py", "groot_phases.py", "paper_repro.py", "power_phases.py",
+        "phase_loops.py", "host_segments.py", "nsys_target.py", "ncu_target.py",
+        "build_inst_inventory.py", "libero_eval.py",
+        # added 2026-09-24: the E11 scripts. Section 2 did not know about these and
+        # reported "NOTHING RUNNING" with pipelining.py live. One list, two readers.
+        "handover.py", "prefix_sweep.py", "mempressure.py", "pipelining.py",
+        "groot_segments.py", "consolidate_e11.py")
 live_dirs, running, hogs = set(), False, []
 me = os.getpid()
 for d in Path('/proc').iterdir():
