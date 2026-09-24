@@ -317,7 +317,7 @@ def main() -> int:
             w.writeheader()
             w.writerows(prows)
 
-        mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
+        mi = ModelInputs(spec.name, MR.resolved_commit(spec), sh_out(f"git -C {REPO} rev-parse HEAD"),
                          "MAXN+jetson_clocks", ps["P"], ps["S"], args.steps)
         style = "eager" if cm is None else "compiled"
         for r in rows:

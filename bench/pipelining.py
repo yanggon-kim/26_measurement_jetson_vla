@@ -184,7 +184,7 @@ def emit_model_inputs(out: Path, trows, crows, irows, steps: int,
     Shared by the measuring path and by --from-csv, so a re-emission cannot drift
     from what a fresh run would write.
     """
-    mi = ModelInputs(spec.name, spec.revision or "", bench_commit,
+    mi = ModelInputs(spec.name, MR.resolved_commit(spec), bench_commit,
                      "MAXN+jetson_clocks", ps.get("P", ""), ps.get("S", ""), steps)
     qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
     for r in trows:

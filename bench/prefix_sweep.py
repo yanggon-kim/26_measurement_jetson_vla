@@ -235,7 +235,7 @@ def main() -> int:
 
         # S from the run's own token counts, not the literal 51, which is pi0's.
         s_tokens = rows[0].get("S_processed") or rows[0].get("suffix_tokens_S") or ""
-        mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
+        mi = ModelInputs(spec.name, MR.resolved_commit(spec), sh_out(f"git -C {REPO} rev-parse HEAD"),
                          "MAXN+jetson_clocks", rows[0]["P_processed"], s_tokens,
                          args.steps)
         qmap = {"vision": "t_vision", "vlm_prefix": "t_vlm_prefix", "ae_step": "t_ae_step",

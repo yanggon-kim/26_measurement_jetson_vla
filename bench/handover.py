@@ -335,7 +335,7 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
 """)
 
     # --- model_inputs.csv
-    mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
+    mi = ModelInputs(spec.name, MR.resolved_commit(spec), sh_out(f"git -C {REPO} rev-parse HEAD"),
                      "MAXN+jetson_clocks", Pn, Sn, args.steps)
     mi.add("kv_bytes_per_layer", per_layer, "bytes", "value", 1, "handover.csv", key="padded")
     mi.add("kv_bytes_per_layer", per_layer * P_valid // Pn, "bytes", "value", 1,

@@ -671,7 +671,7 @@ def main() -> int:
     H = ex.config.num_attention_heads
     HD = ex.config.head_dim
     all_rows, seg_rows, layer_rows, samples = [], [], [], []
-    mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
+    mi = ModelInputs(spec.name, MR.resolved_commit(spec), sh_out(f"git -C {REPO} rev-parse HEAD"),
                      "MAXN+jetson_clocks", Pn, Sn, args.steps)
     notes_not_measured = []
 

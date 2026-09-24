@@ -183,6 +183,35 @@ GROOT_VERSIONS = {
 }
 
 
+def resolved_commit(spec) -> str:
+    """The checkpoint commit this run actually used, even when the spec pins no revision.
+
+    pi0 pins a revision; pi0.5 and SmolVLA do not, so `spec.revision` is None for them and
+    `model_commit` went into model_inputs.csv empty. The research side's checker rejects
+    that -- rightly, because model_commit is how a number is tied to the weights that
+    produced it, and "whatever main pointed at that day" is not a record.
+
+    huggingface_hub stores each snapshot under its commit sha, so the sha is already on
+    disk for whatever was downloaded. Read it from there rather than querying the hub:
+    the profiled runs are offline by design (protocol §3.5), and a network answer could
+    differ from the bytes actually loaded.
+    """
+    if getattr(spec, "revision", None):
+        return spec.revision
+    import glob
+    import os
+    repo = "models--" + spec.checkpoint.replace("/", "--")
+    root = os.path.expanduser(f"~/.cache/huggingface/hub/{repo}/snapshots/*")
+    snaps = sorted(glob.glob(root), key=os.path.getmtime)
+    if not snaps:
+        return ""
+    if len(snaps) > 1:
+        # more than one snapshot cached: say which was taken rather than pick silently
+        print(f"  NOTE: {len(snaps)} cached snapshots for {spec.checkpoint}; using the "
+              f"most recent, {os.path.basename(snaps[-1])[:12]}", flush=True)
+    return os.path.basename(snaps[-1])
+
+
 def get(name: str) -> ModelSpec:
     if name not in REGISTRY:
         raise SystemExit(f"unknown model {name!r}; have {sorted(REGISTRY)} "
