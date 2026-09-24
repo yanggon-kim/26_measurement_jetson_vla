@@ -33,6 +33,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import model_registry as MR  # noqa: E402
+import phase_builders as PB  # noqa: E402
 import pi0_common as P  # noqa: E402
 import phase_loops as PL  # noqa: E402
 from e11_summaries import e11e  # noqa: E402
@@ -174,6 +175,10 @@ def main() -> int:
         fx = P.load_fixture()
         batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
+        # P and S as THIS model builds them. The literals 816 and 51 that used to be
+        # written here are pi0's, and would have been written unchanged for pi0.5 and
+        # SmolVLA -- a wrong constant in the artefact the PIM model consumes.
+        ps = PB.measure_ps(policy, spec, batch)
         print(f"\n=== {mode} ===", flush=True)
         rows, base = [], {}
         for phase in [p for p in args.phases.split(",") if p]:
@@ -313,7 +318,7 @@ def main() -> int:
             w.writerows(prows)
 
         mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
-                         "MAXN+jetson_clocks", 816, 51, args.steps)
+                         "MAXN+jetson_clocks", ps["P"], ps["S"], args.steps)
         style = "eager" if cm is None else "compiled"
         for r in rows:
             if r["slowdown"] != "":
@@ -351,7 +356,8 @@ def main() -> int:
             "checkpoint": spec.checkpoint, "precision": "bfloat16",
             "compile_mode": cm, "batch": 1, "num_denoise_steps": args.steps,
             "action_horizon": getattr(cfg, "chunk_size", None),
-            "prefix_tokens": 816, "suffix_tokens": 51,
+            "prefix_tokens": ps["P"], "suffix_tokens": ps["S"],
+            "token_counts": ps,
             "n_warmup": 5, "n_timed": f"{args.seconds} s loop per condition",
             "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
             "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,

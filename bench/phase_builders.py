@@ -121,3 +121,16 @@ def make_ae(ctx, num_steps: int):
             return x_t
 
     return ae_once
+
+
+def measure_ps(policy, spec, batch) -> dict:
+    """P and S as THIS model builds them, with the short key names the callers use.
+
+    Delegates to pi0_common.token_counts, which now takes the descriptor -- one
+    definition of P and S, not two that could drift.
+    """
+    import pi0_common as _P
+    tok = _P.token_counts(policy, batch, spec)
+    return {"P": tok["prefix_tokens_P"], "P_valid": tok["prefix_tokens_valid"],
+            "S": tok["suffix_tokens_S"], "S_valid": tok["suffix_tokens_valid"],
+            "n_images": tok["n_images"], "state_in_prefix": tok["state_in_prefix"]}

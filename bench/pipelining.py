@@ -30,6 +30,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import model_registry as MR  # noqa: E402
+import phase_builders as PB  # noqa: E402
 import pi0_common as P  # noqa: E402
 import phase_loops as PL  # noqa: E402
 from e11_summaries import e11f  # noqa: E402
@@ -163,14 +164,14 @@ def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec):
 
 
 def emit_model_inputs(out: Path, trows, crows, irows, steps: int,
-                      bench_commit: str, spec) -> int:
+                      bench_commit: str, spec, ps: dict) -> int:
     """Every model_inputs.csv row E11f is responsible for, from the three CSVs.
 
     Shared by the measuring path and by --from-csv, so a re-emission cannot drift
     from what a fresh run would write.
     """
     mi = ModelInputs(spec.name, spec.revision or "", bench_commit,
-                     "MAXN+jetson_clocks", 816, 51, steps)
+                     "MAXN+jetson_clocks", ps.get("P", ""), ps.get("S", ""), steps)
     qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
     for r in trows:
         st = "eager" if r["mode"] == "eager" else "compiled"
@@ -230,7 +231,11 @@ def rebuild_from_csv(out: Path, args) -> int:
     # never from a default, which would relabel another model's rows as pi0.
     n_mi = emit_model_inputs(out, trows, crows, irows, int(meta.get("num_denoise_steps", 4)),
                              meta.get("bench_commit") or sh_out(f"git -C {REPO} rev-parse HEAD"),
-                             MR.get(meta.get("model", "pi0")))
+                             MR.get(meta.get("model", "pi0")),
+                             # the re-emit path has no model loaded, so P and S come from
+                             # the run's own meta.json -- never from pi0's literals
+                             {"P": meta.get("prefix_tokens", ""),
+                              "S": meta.get("suffix_tokens", "")})
     e11f(out)
     meta["model_inputs_rows"] = n_mi
     meta.setdefault("notes", []).append(
@@ -283,6 +288,10 @@ def main() -> int:
         fx = P.load_fixture()
         batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
+        # P and S as THIS model builds them. The literals 816 and 51 that used to be
+        # written here are pi0's, and would have been written unchanged for pi0.5 and
+        # SmolVLA -- a wrong constant in the artefact the PIM model consumes.
+        ps = PB.measure_ps(policy, spec, batch)
         print(f"\n=== {mode}: throughput ===", flush=True)
         for phase in ("prefix", "ae", "full"):
             fn = PL.make_phase(policy, batch, phase, args.steps, spec)
@@ -448,7 +457,7 @@ def main() -> int:
                 w.writerows([{k: r.get(k, "") for k in keys} for r in rows_])
 
     n_mi = emit_model_inputs(out, trows, crows, irows, args.steps,
-                             sh_out(f"git -C {REPO} rev-parse HEAD"), spec)
+                             sh_out(f"git -C {REPO} rev-parse HEAD"), spec, ps)
 
     sw = software_versions()
     write_json(out / "meta.json", {
@@ -458,7 +467,7 @@ def main() -> int:
         "model_commit": spec.revision, "model_revision": spec.revision,
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": args.modes, "batch": 1, "num_denoise_steps": args.steps,
-        "prefix_tokens": 816, "suffix_tokens": 51,
+        "prefix_tokens": ps["P"], "suffix_tokens": ps["S"], "token_counts": ps,
         "n_warmup": 5, "n_timed": f"{args.seconds} s loops; {args.conc_reps} concurrency reps",
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,

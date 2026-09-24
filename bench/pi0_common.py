@@ -193,20 +193,45 @@ def build_batch(policy, fixture: dict, fixtures: Path | None = None, device: str
     return batch, preprocess, postprocess
 
 
-def token_counts(policy, batch) -> dict:
-    """P (prefix) and S (suffix) as the model actually builds them — never assumed."""
+def token_counts(policy, batch, spec=None) -> dict:
+    """P (prefix) and S (suffix) as the model actually builds them — never assumed.
+
+    `spec` defaults to pi0's, so every caller written before T011 keeps its behaviour.
+    It is needed because the three models differ in two places that this function
+    touches, and getting either wrong does not raise — it returns a wrong constant:
+
+      * SmolVLA renamed `_preprocess_images` to `prepare_images` and passes `state=` into
+        `embed_prefix`, because its robot state goes in the PREFIX;
+      * `embed_suffix` takes `(state, noisy_actions, timestep)` for pi0 but
+        `(noisy_actions, timestep)` for pi0.5 and SmolVLA, whose state is already in the
+        prefix (model_registry.py). Calling pi0's form on either raises.
+
+    pi0's P = 816 follows from `empty_cameras=1` and `tokenizer_max_length=48`; pi0.5 has
+    0 and 200. P is measured here, for whichever model was passed, and never copied.
+    """
     from lerobot.utils.constants import OBS_LANGUAGE_ATTENTION_MASK, OBS_LANGUAGE_TOKENS
-    images, img_masks = policy._preprocess_images(batch)
+    name = getattr(spec, "name", "pi0")
+    prep = getattr(policy, "prepare_images", None) or policy._preprocess_images  # noqa: SLF001
+    images, img_masks = prep(batch)
     lang = batch[OBS_LANGUAGE_TOKENS]
     lang_mask = batch[OBS_LANGUAGE_ATTENTION_MASK]
-    state = policy.prepare_state(batch)
+    # pi0.5 has no prepare_state: its state is embedded as prefix tokens instead.
+    state = policy.prepare_state(batch) if hasattr(policy, "prepare_state") else None
+    m = policy.model
     with torch.no_grad():
-        prefix_embs, prefix_pad, _ = policy.model.embed_prefix(images, img_masks, lang, lang_mask)
-        noise = policy.model.sample_noise(
-            (state.shape[0], policy.config.chunk_size, policy.config.max_action_dim),
-            state.device)
-        t = torch.tensor(1.0, dtype=torch.float32, device=state.device).expand(state.shape[0])
-        suffix_embs, suffix_pad, _, _ = policy.model.embed_suffix(state, noise, t)
+        if name == "smolvla":
+            prefix_embs, prefix_pad, _ = m.embed_prefix(images, img_masks, lang,
+                                                        lang_mask, state=state)
+        else:
+            prefix_embs, prefix_pad, _ = m.embed_prefix(images, img_masks, lang, lang_mask)
+        bsize = prefix_embs.shape[0]
+        dev = prefix_embs.device
+        noise = m.sample_noise(
+            (bsize, policy.config.chunk_size, policy.config.max_action_dim), dev)
+        t = torch.tensor(1.0, dtype=torch.float32, device=dev).expand(bsize)
+        suffix = (m.embed_suffix(state, noise, t) if name == "pi0"
+                  else m.embed_suffix(noise, t))
+        suffix_embs, suffix_pad = suffix[0], suffix[1]
     return {
         "prefix_tokens_P": int(prefix_embs.shape[1]),
         "prefix_tokens_valid": int(prefix_pad.sum().item()),
@@ -214,10 +239,11 @@ def token_counts(policy, batch) -> dict:
         "suffix_tokens_valid": int(suffix_pad.sum().item()),
         "n_images": len(images),
         "image_shapes": [list(i.shape) for i in images],
-        "image_masks": [bool(m.all().item()) for m in img_masks],
+        "image_masks": [bool(m_.all().item()) for m_ in img_masks],
         "language_tokens": int(lang.shape[1]),
         "language_tokens_valid": int(lang_mask.sum().item()),
-        "state_dim_padded": int(state.shape[-1]),
+        "state_dim_padded": int(state.shape[-1]) if state is not None else None,
+        "state_in_prefix": name != "pi0",
         "chunk_size": int(policy.config.chunk_size),
     }
 

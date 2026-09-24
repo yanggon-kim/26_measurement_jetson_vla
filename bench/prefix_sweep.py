@@ -32,6 +32,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import model_registry as MR  # noqa: E402
+import phase_builders as PB  # noqa: E402
 import pi0_common as P  # noqa: E402
 import regions as R  # noqa: E402
 from e11_summaries import e11d  # noqa: E402
@@ -74,9 +75,9 @@ def make_fixture(base: dict, n_images: int, prompt: str | None) -> dict:
 def run_point(policy, fx, steps, warmup, timed, instrument, spec):
     batch, _, _ = P.build_batch(policy, fx, checkpoint=spec.checkpoint,
                                 revision=spec.revision)
-    tok = P.token_counts(policy, batch)
+    tok = P.token_counts(policy, batch, spec)
     rec = R.Recorder() if instrument else None
-    undo = R.instrument(policy, rec) if instrument else None
+    undo = R.instrument(policy, rec, spec.container) if instrument else None
     try:
         for _ in range(warmup):
             policy.predict_action_chunk(batch)
@@ -162,6 +163,9 @@ def main() -> int:
                     "image_tokens": tok["prefix_tokens_P"] - tok["language_tokens"],
                     "P_processed": tok["prefix_tokens_P"],
                     "P_valid": tok["prefix_tokens_valid"],
+                    # S carried per row so the summary never has to fall back on pi0's 51
+                    "S_processed": tok["suffix_tokens_S"],
+                    "S_valid": tok["suffix_tokens_valid"],
                     "n_image_slots_encoded": tok["n_images"],
                     "peak_mem_bytes": peak, "first_call_s": compile_s[label]}
                 for region, ms in list(reg.items()) + [("e2e", None)]:
@@ -228,8 +232,11 @@ def main() -> int:
             w.writeheader()
             w.writerows(fits)
 
+        # S from the run's own token counts, not the literal 51, which is pi0's.
+        s_tokens = rows[0].get("S_processed") or rows[0].get("suffix_tokens_S") or ""
         mi = ModelInputs(spec.name, spec.revision or "", sh_out(f"git -C {REPO} rev-parse HEAD"),
-                         "MAXN+jetson_clocks", rows[0]["P_processed"], 51, args.steps)
+                         "MAXN+jetson_clocks", rows[0]["P_processed"], s_tokens,
+                         args.steps)
         qmap = {"vision": "t_vision", "vlm_prefix": "t_vlm_prefix", "ae_step": "t_ae_step",
                 "ae_total": "t_ae_total", "e2e": "t_e2e", "preprocess": "t_preprocess",
                 "postprocess": "t_postprocess"}
@@ -266,7 +273,8 @@ def main() -> int:
             "checkpoint": spec.checkpoint, "precision": "bfloat16",
             "compile_mode": cm, "batch": 1, "num_denoise_steps": args.steps,
             "action_horizon": getattr(cfg, "chunk_size", None),
-            "prefix_tokens": rows[0]["P_processed"], "suffix_tokens": 51,
+            "prefix_tokens": rows[0]["P_processed"],
+            "suffix_tokens": rows[0].get("S_processed", ""),
             "n_warmup": args.warmup, "n_timed": args.timed,
             "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
             "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
