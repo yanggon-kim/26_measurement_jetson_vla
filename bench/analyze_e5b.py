@@ -20,6 +20,12 @@ Two rules from §7 that this file enforces rather than leaves to the writer:
 Thresholds, also §7: long scoreboard >= 60 % is the signature of a memory-latency-bound
 kernel; math pipe throttle > 10 % indicates compute-bound.
 
+**`best` here means C1's `best`** — `--compile-mode reduce-overhead` — and NOT Part B's
+best rung (π0 `bf16_both`, π0.5 `bf16_both_graphs`, SmolVLA `vlm_graphs`). The target
+kernels were selected from C1's per-kernel data, so the capture has to be of the
+configuration those kernels were ranked in. Anything comparing these numbers against
+Part B's latencies has to say which "best" it means.
+
     python bench/analyze_e5b.py --glob 'results/*_E5b_*' --md reports/E5b_summary.md
 """
 from __future__ import annotations

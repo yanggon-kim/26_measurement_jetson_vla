@@ -26,6 +26,12 @@ cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 mkdir -p "$OUT/ncu" "$OUT/raw/cubin"
 
 PY=$HOME/venvs/pi0/bin/python
+# `best` here means what it means in C1: --compile-mode reduce-overhead. That is NOT
+# Part B's best RUNG (pi0 bf16_both, pi0.5 bf16_both_graphs, SmolVLA vlm_graphs), and the
+# two must not be conflated in the write-up. It is deliberate: E5b's target kernels were
+# chosen from C1's per-kernel data, so the capture has to be of the same configuration
+# those kernels were measured in, or the instruction analysis would be of kernels that
+# are not the ones ranked.
 case "$MODE" in
   eager) TMODE=eager ;;
   best)  TMODE=reduce-overhead ;;
