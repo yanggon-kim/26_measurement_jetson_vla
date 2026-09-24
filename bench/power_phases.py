@@ -236,7 +236,8 @@ def main() -> int:
             "experiment": "E7", "task": "T004",
             "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "model": spec.name, "model_repo": spec.checkpoint,
-            "model_commit": spec.revision, "checkpoint": spec.checkpoint,
+            "model_commit": MR.resolved_commit(spec),
+            "checkpoint": spec.checkpoint,
             "precision": ("checkpoint default" if not args.rung
                           else f"rung {args.rung}: {rung_note}"),
             "compile_mode": None if args.rung else cm,

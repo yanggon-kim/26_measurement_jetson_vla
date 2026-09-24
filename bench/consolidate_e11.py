@@ -231,7 +231,7 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": spec.name,
         "model_repo": spec.checkpoint,
-        "model_commit": spec.revision,
+        "model_commit": MR.resolved_commit(spec),
         "checkpoint": spec.checkpoint,
         "precision": "bfloat16", "compile_mode": "eager and reduce-overhead",
         # P and S are READ from the parts' own rows, never asserted: pi0.5 has
