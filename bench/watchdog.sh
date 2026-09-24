@@ -32,6 +32,22 @@ GROOT = ["eager_fp32", "eager_tf32", "ae_compile", "ae_graphs", "vis_compile",
          "vlm_compile", "vlm_graphs"]
 EXPECTED = {"pi0": LEROBOT, "pi05": LEROBOT, "smolvla": LEROBOT + ["vis_static_pos"],
             "groot_n17": GROOT, "groot_n16": GROOT, "groot_n15": GROOT}
+
+# Failures that are ALREADY measured, explained and reported. They are still shown, as
+# KNOWN rather than FAILED, so the FAILED= alarm keeps meaning "something new".
+#
+# Without this the audit raised groot_n17 vis_compile every ten minutes forever, for a
+# defect written up months-deep in STATUS.md:214 and E4_PARTS_ABC_GUIDE.md:284. That is
+# the crying-wolf failure this file has now hit three times (the stale JOBS list, the
+# finished T004 queue logs, and this), and an alarm that always fires is one nobody reads.
+#
+# The bar for adding an entry is deliberately high: the failure must be explained IN a
+# committed report, and the reference goes in the value so it can be checked, not taken
+# on trust. A failure nobody has written up does not belong here.
+KNOWN_FAILED = {
+    ("groot_n17", "vis_compile"):
+        "GR00T ladder not cumulative; reported STATUS.md:214, E4_PARTS_ABC_GUIDE.md:284",
+}
 for name, pat in (("pi0",       "results/20260922_E4c_pi0_opt_ladder/raw/rows/*.json"),
                   ("pi05",      "results/20260922_E4c_pi05_opt_ladder/raw/rows/*.json"),
                   ("smolvla",   "results/20260922_E4c_smolvla_opt_ladder/raw/rows/*.json"),
@@ -52,9 +68,12 @@ for name, pat in (("pi0",       "results/20260922_E4c_pi0_opt_ladder/raw/rows/*.
         (na if (r.get("status") == "not applicable" or r.get("not_applicable_reason"))
          else ok if measured else bad).append(r["rung"])
     missing = [x for x in EXPECTED.get(name, []) if x not in set(ok) | set(na) | set(bad)]
-    print(f"  {name:10s} measured={len(ok):2d}  n/a={len(na)}  FAILED={len(bad)}"
-          f"  MISSING={len(missing)}"
-          + (f"  -> {sorted(set(bad))}" if bad else "")
+    known = sorted({r for r in set(bad) if (name, r) in KNOWN_FAILED})
+    new_bad = sorted(set(bad) - set(known))
+    print(f"  {name:10s} measured={len(ok):2d}  n/a={len(na)}  FAILED={len(new_bad)}"
+          f"  KNOWN={len(known)}  MISSING={len(missing)}"
+          + (f"  -> {new_bad}" if new_bad else "")
+          + (f"  known:{known}" if known else "")
           + (f"  MISSING:{missing}" if missing else ""))
 
 # C1: 36 captures, checked for having enough rows rather than for mere existence.
@@ -187,6 +206,18 @@ empty, empty_live = [], []
 for f in empty_all:
     d = os.path.dirname(os.path.dirname(f))
     (empty_live if _is_live(d) else empty).append(os.path.basename(d))
+# Same rule as KNOWN_FAILED in section 1a: a gap that is explained and already queued is
+# shown without the alarm marker, so "***" keeps meaning "new". The abandoned compiled E5
+# capture is the whole reason bench/queues/queue_e5.sh exists -- its header documents why
+# it looked impossible and why a --rung makes it measurable -- so raising it every ten
+# minutes until E5 runs tells me nothing I have not already written down and scheduled.
+KNOWN_EMPTY = {"20260922_E5_pi0_reduce-overhead_N4":
+               "abandoned compiled capture; Phase 3 re-measures it via "
+               "bench/queues/queue_e5.sh (--rung, not --compile-mode)"}
+known_empty = [d for d in empty if d in KNOWN_EMPTY]
+empty = [d for d in empty if d not in KNOWN_EMPTY]
+if known_empty:
+    print(f"  {len(known_empty)} zero-byte stdout, known and queued: {known_empty}")
 if empty:
     print(f"  *** {len(empty)} ZERO-BYTE stdout (a run that wrote nothing): {empty[:3]}")
 if empty_live:
