@@ -29,6 +29,7 @@ exact. `vision` is reported as "inside vlm_prefix" and the comparison table says
 from __future__ import annotations
 
 import argparse
+import collections.abc as _abc
 import csv
 import json
 import statistics
@@ -658,13 +659,44 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
     import inspect
     n_params = len(inspect.signature(model.action_head.get_action).parameters)
 
+    def _fresh(obj):
+        """A structurally identical object whose tensors are NEW allocations.
+
+        The ae loop calls a CUDA-graph-captured action head with a backbone output
+        computed once. Passing the SAME tensor objects on every replay is what the `full`
+        loop never does -- model.get_action() rebuilds them each call -- and it is what
+        cudagraph_trees objects to:
+
+            RuntimeError: accessing tensor output of CUDAGraphs that has been overwritten
+            by a subsequent run
+
+        raised while reading backbone_features inside process_backbone_output. Cloning
+        the cached output ONCE is not enough; it has to be fresh per invocation, because
+        the complaint is about a tensor carried across graph generations, not about where
+        it originally came from. The copy costs a few MB against a ~200 ms action head.
+        """
+        if torch.is_tensor(obj):
+            return obj.clone()
+        if isinstance(obj, (dict, _abc.MutableMapping)):
+            out = {k: _fresh(v) for k, v in obj.items()}
+            if type(obj) is dict:
+                return out
+            try:
+                return type(obj)(out)            # BatchFeature and friends take a dict
+            except Exception:                    # noqa: BLE001
+                return out
+        if isinstance(obj, (list, tuple)):
+            return type(obj)(_fresh(x) for x in obj)
+        return obj
+
     def ae_once():
         if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
             torch.compiler.cudagraph_mark_step_begin()
         with torch.no_grad():
+            bo = _fresh(backbone_outputs)
             if n_params >= 3:
-                return model.action_head.get_action(backbone_outputs, action_inputs, None)
-            return model.action_head.get_action(backbone_outputs, action_inputs)
+                return model.action_head.get_action(bo, action_inputs, None)
+            return model.action_head.get_action(bo, action_inputs)
 
     def prefix_once():
         if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
@@ -673,6 +705,8 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
             # cloned for the same reason, so a replay cannot invalidate the tensor the
             # previous iteration is still finishing with
             return clone_graph_outputs(model.backbone(backbone_inputs))
+
+    # the ae loop's input must be rebuilt per call; see _fresh above
 
     phases = {"prefix": prefix_once, "ae": ae_once, "full": step}
     rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
