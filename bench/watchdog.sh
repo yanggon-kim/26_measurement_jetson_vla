@@ -159,6 +159,11 @@ print(f"  E7 power    {done}/{len(E7)} usable, {bad} BROKEN, "
 for line in lines[:10]:
     print(line)
 
+# Live-aware, like the E7 check above. Without this the run that STARTED five minutes
+# ago is reported BROKEN, because its output file is written at the end -- which is what
+# happened to 20260924_E11f_pi0_pipelining at 13:31, five minutes into a fresh matrix.
+# The E7 rows got this treatment and the three rows beside them did not, which is the
+# same omission as bw_hog sitting un-fixed next to tegrastats.
 for tag, pat, need, target in (
         ("E11 hybrid",  "results/*_E11*_*",  "model_inputs.csv",       4),
         ("E5 timeline", "results/*_E5_*",    "timeline_summary.csv",  12),
@@ -166,8 +171,10 @@ for tag, pat, need, target in (
     rows = [(d, (Path(d) / need).exists() and (Path(d) / need).stat().st_size > 0)
             for d in sorted(glob.glob(pat))]
     ok = sum(1 for _, o in rows if o)
-    broken = [os.path.basename(d) for d, o in rows if not o]
+    live = [os.path.basename(d) for d, o in rows if not o and _is_live(d)]
+    broken = [os.path.basename(d) for d, o in rows if not o and not _is_live(d)]
     print(f"  {tag:11s} {ok} usable of {len(rows)} present (target ~{target})"
+          + (f"   RUNNING: {live}" if live else "")
           + (f"   BROKEN: {broken[:3]}" if broken else ""))
 
 # A 0-byte stdout is a run that produced nothing while leaving a directory behind.
