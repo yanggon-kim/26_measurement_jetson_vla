@@ -10,7 +10,7 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.
 
-**Coverage: 9 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `groot_n15/eager_fp32`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`.
+**Coverage: 11 of 14 planned runs.** **This is an interim report** — the remaining points are still measuring, and any cross-model claim below is provisional until they land. Present: `groot_n15/eager_fp32`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
 
 ## Energy per inference
 
@@ -31,6 +31,9 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | π0.5 | 10 | `eager` | prefix | 2424.98 | 45.59 | 34.74 | 110558.8 | 84253.7 |
 | π0.5 | 10 | `eager` | ae | 624.42 | 32.92 | 22.07 | 20555.2 | 13781.8 |
 | π0.5 | 10 | `eager` | full | 3041.59 | 43.72 | 32.88 | 132990.6 | 99996.9 |
+| π0 | 10 | `bf16_both` | prefix | 251.28 | 36.04 | 25.45 | 9057.2 | 6395.8 |
+| π0 | 10 | `bf16_both` | ae | 167.36 | 29.19 | 18.60 | 4885.1 | 3112.5 |
+| π0 | 10 | `bf16_both` | full | 424.68 | 42.77 | 32.18 | 18164.2 | 13666.2 |
 | π0 | 10 | `eager` | prefix | 477.93 | 51.88 | 40.72 | 24794.9 | 19460.0 |
 | π0 | 10 | `eager` | ae | 595.65 | 20.61 | 9.45 | 12275.0 | 5626.0 |
 | π0 | 10 | `eager` | full | 1083.19 | 34.24 | 23.08 | 37092.9 | 25001.8 |
@@ -43,6 +46,9 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | SmolVLA | 10 | `eager` | prefix | 102.92 | 31.81 | 20.64 | 3273.6 | 2124.0 |
 | SmolVLA | 10 | `eager` | ae | 641.35 | 19.37 | 8.20 | 12422.4 | 5259.0 |
 | SmolVLA | 10 | `eager` | full | 740.69 | 19.06 | 7.89 | 14119.6 | 5846.6 |
+| SmolVLA | 10 | `vlm_graphs` | prefix | 39.86 | 49.59 | 39.01 | 1976.6 | 1554.7 |
+| SmolVLA | 10 | `vlm_graphs` | ae | 41.89 | 35.06 | 24.48 | 1468.7 | 1025.2 |
+| SmolVLA | 10 | `vlm_graphs` | full | 88.20 | 42.78 | 32.20 | 3773.7 | 2840.0 |
 
 ## Energy per inference of the whole frame, eager against best
 
@@ -50,8 +56,10 @@ The `full` loop is the complete inference. This is the number a robot's battery 
 
 | model | N | eager J | best J | eager ms | best ms | energy saved | time saved | energy ÷ time saving |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
+| π0 | 10 | 37.09 | 18.16 | 1083.2 | 424.7 | 2.04× | 2.55× | 0.80 |
 | π0 | 4 | 29.75 | 15.12 | 722.6 | 323.1 | 1.97× | 2.24× | 0.88 |
 | π0.5 | 10 | 132.99 | 21.85 | 3041.6 | 482.1 | 6.09× | 6.31× | 0.96 |
+| SmolVLA | 10 | 14.12 | 3.77 | 740.7 | 88.2 | 3.74× | 8.40× | 0.45 |
 
 **The last column is the one to watch.** Above 1 means the optimised configuration saves proportionally MORE energy than time — it is removing work, not just running it sooner. Below 1 means it is buying speed with power, and the latency figure overstates the benefit. Either is possible and only measurement distinguishes them; this is why E7 exists alongside Part B.
 
@@ -70,10 +78,12 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 | GR00T N1.7 | 4 | `eager_fp32` | 5052.0 | 4142.5 | 54.9 | 45.1 | 41.6 | 58.4 | **0.77** |
 | π0.5 | 10 | `bf16_both_graphs` | 10846.2 | 4008.4 | 73.0 | 27.0 | 61.3 | 38.7 | **0.70** |
 | π0.5 | 10 | `eager` | 84253.7 | 13781.8 | 85.9 | 14.1 | 79.5 | 20.5 | **0.69** |
+| π0 | 10 | `bf16_both` | 6395.8 | 3112.5 | 67.3 | 32.7 | 60.0 | 40.0 | **0.82** |
 | π0 | 10 | `eager` | 19460.0 | 5626.0 | 77.6 | 22.4 | 44.5 | 55.5 | **0.40** |
 | π0 | 4 | `bf16_both` | 8087.0 | 1214.4 | 86.9 | 13.1 | 78.8 | 21.2 | **0.62** |
 | π0 | 4 | `eager` | 19580.5 | 2311.9 | 89.4 | 10.6 | 66.7 | 33.3 | **0.32** |
 | SmolVLA | 10 | `eager` | 2124.0 | 5259.0 | 28.8 | 71.2 | 13.8 | 86.2 | **0.83** |
+| SmolVLA | 10 | `vlm_graphs` | 1554.7 | 1025.2 | 60.3 | 39.7 | 48.8 | 51.2 | **0.78** |
 
 **Read the last four columns against each other.** If a phase's energy share and time share are equal it draws the average power of the frame; if its energy share is higher it is the power-hungry phase, and a memory-side accelerator aimed at it saves more energy than its latency share suggests. If lower, the opposite — and the latency argument overstates the energy case.
 
@@ -204,6 +214,29 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | module | 43724 | 10848 | 32876 | 132990.6 | 13299.1 |
 | full | module_without_memory_rail | 41297 | 10419 | 30878 | 125609.7 | 12561.0 |
 
+### π0 — `bf16_both`, N=10, MAXN (compiled_subpath)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2545 | 406 | 2139 | 639.5 |  |
+| prefix | VDD_CPU_CV | 1658 | 1225 | 433 | 416.5 |  |
+| prefix | VDD_GPU_SOC | 24355 | 4785 | 19570 | 6119.9 |  |
+| prefix | VIN_SYS_5V0 | 7486 | 4175 | 3311 | 1881.2 |  |
+| prefix | module | 36044 | 10592 | 25452 | 9057.2 |  |
+| prefix | module_without_memory_rail | 33499 | 10185 | 23314 | 8417.7 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2145 | 406 | 1739 | 359.0 | 35.9 |
+| ae | VDD_CPU_CV | 2052 | 1225 | 827 | 343.4 | 34.3 |
+| ae | VDD_GPU_SOC | 18028 | 4785 | 13243 | 3017.1 | 301.7 |
+| ae | VIN_SYS_5V0 | 6965 | 4175 | 2790 | 1165.6 | 116.6 |
+| ae | module | 29189 | 10592 | 18598 | 4885.1 | 488.5 |
+| ae | module_without_memory_rail | 27044 | 10185 | 16859 | 4526.1 | 452.6 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3144 | 406 | 2738 | 1335.2 | 133.5 |
+| full | VDD_CPU_CV | 1792 | 1225 | 567 | 760.9 | 76.1 |
+| full | VDD_GPU_SOC | 29339 | 4785 | 24554 | 12459.7 | 1246.0 |
+| full | VIN_SYS_5V0 | 8497 | 4175 | 4321 | 3608.5 | 360.8 |
+| full | module | 42771 | 10592 | 32180 | 18164.2 | 1816.4 |
+| full | module_without_memory_rail | 39627 | 10185 | 29442 | 16829.0 | 1682.9 |
+
 ### π0 — `eager`, N=10, MAXN (eager)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -296,6 +329,29 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | module | 19063 | 11169 | 7893 | 14119.6 | 1412.0 |
 | full | module_without_memory_rail | 17995 | 10711 | 7284 | 13328.8 | 1332.9 |
 
+### SmolVLA — `vlm_graphs`, N=10, MAXN (compiled_subpath)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3006 | 406 | 2600 | 119.8 |  |
+| prefix | VDD_CPU_CV | 1764 | 1227 | 537 | 70.3 |  |
+| prefix | VDD_GPU_SOC | 36630 | 4784 | 31847 | 1459.9 |  |
+| prefix | VIN_SYS_5V0 | 8193 | 4168 | 4024 | 326.5 |  |
+| prefix | module | 49594 | 10586 | 39008 | 1976.6 |  |
+| prefix | module_without_memory_rail | 46588 | 10179 | 36408 | 1856.8 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2812 | 406 | 2406 | 117.8 | 11.8 |
+| ae | VDD_CPU_CV | 1737 | 1227 | 510 | 72.8 | 7.3 |
+| ae | VDD_GPU_SOC | 22593 | 4784 | 17809 | 946.4 | 94.6 |
+| ae | VIN_SYS_5V0 | 7920 | 4168 | 3751 | 331.7 | 33.2 |
+| ae | module | 35061 | 10586 | 24476 | 1468.7 | 146.9 |
+| ae | module_without_memory_rail | 32249 | 10179 | 22070 | 1350.9 | 135.1 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2919 | 406 | 2513 | 257.5 | 25.8 |
+| full | VDD_CPU_CV | 1982 | 1227 | 755 | 174.8 | 17.5 |
+| full | VDD_GPU_SOC | 29799 | 4784 | 25015 | 2628.4 | 262.8 |
+| full | VIN_SYS_5V0 | 8083 | 4168 | 3915 | 713.0 | 71.3 |
+| full | module | 42783 | 10586 | 32198 | 3773.7 | 377.4 |
+| full | module_without_memory_rail | 39864 | 10179 | 29685 | 3516.2 | 351.6 |
+
 ## What these loops are, and what they are not
 
 **The `prefix` and `ae` loops are driven below the policy's own entry point.** `prefix` calls `embed_prefix` and the container's `forward` with `use_cache=True`; `ae` calls `denoise_step` N times on a KV cache computed once. For GR00T the equivalents are `model.backbone(...)` and `action_head.get_action(...)` on a backbone output computed once. That is the only way to isolate the action expert for a power measurement, and it has two consequences that are stated rather than buried:
@@ -312,10 +368,12 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | GR00T N1.7 | 4 | `eager_fp32` | 381.65 | 372.48 | 1.02× |
 | π0.5 | 10 | `bf16_both_graphs` | 482.09 | 487.81 | 0.99× |
 | π0.5 | 10 | `eager` | 3041.59 | 3028.56 | 1.00× |
+| π0 | 10 | `bf16_both` | 424.68 | 424.46 | 1.00× |
 | π0 | 10 | `eager` | 1083.19 | 1069.04 | 1.01× |
 | π0 | 4 | `bf16_both` | 323.11 | — | — |
 | π0 | 4 | `eager` | 722.55 | 711.75 | 1.02× |
 | SmolVLA | 10 | `eager` | 740.69 | 727.46 | 1.02× |
+| SmolVLA | 10 | `vlm_graphs` | 88.20 | 92.30 | 0.96× |
 
 A ratio near 1.00 means the sampler cost nothing measurable. A ratio above 1 is the cost of measuring, and the energy-per-inference figures above carry it: they are `mean power × this loop's median`, so a slowed loop inflates the joules proportionally. Where the ratio is large, treat the **power** columns as the trustworthy ones and the **energy** columns as an upper bound.
 
