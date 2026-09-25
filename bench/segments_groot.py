@@ -344,4 +344,28 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
         bytes_read=2 * S * D * B2, bytes_written=S * D * B2,
         flops=S * D, flops_formula="S*D",
         notes=""))
+
+    # EVERY segment closure must run under the same autocast the real forward runs under,
+    # not just the attention one.
+    #
+    # Wrapping only intermediates() got n1.5 past the reconstruction and then it died in the
+    # TIMING closures, at the same dtype error from a different call site
+    # (`block.attn1(hidden, ...)` in _attn_with_ctx rather than line 203). Patching
+    # _attn_with_ctx alone would have been the same mistake a third time: the other closures
+    # run Linears, LayerNorms and a FeedForward too. Those happen not to crash, because
+    # their captured inputs are already dtype-consistent -- but without autocast they time
+    # ops WITHOUT the cast the model inserts, which is a wrong per-segment time rather than
+    # a crash. A silently wrong number is the worse of the two outcomes.
+    #
+    # Wrapped here, once, over the whole list, so a segment added later cannot miss it.
+    ac, _ = model_autocast_ctx(_API[0])
+    if not isinstance(ac, nullcontext):
+        def _under_autocast(fn):
+            def wrapped():
+                with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                    return fn()
+            return wrapped
+        for sd in segs:
+            sd["fn"] = _under_autocast(sd["fn"])
+
     return segs
