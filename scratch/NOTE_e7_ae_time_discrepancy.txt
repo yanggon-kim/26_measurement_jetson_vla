@@ -1,0 +1,74 @@
+OPEN DISCREPANCY: my isolated expert is 33.7 % FASTER than E7's `ae` phase
+2026-09-25 05:05. Found by non-negotiable 3's reconciliation. NOT yet resolved.
+
+## The numbers
+
+Same model, same rung (bf16_both), same N (10), same MAXN + jetson_clocks, same checkpoint:
+
+    stage    mine (2-proc, isolated)   E7 reported   deviation
+    prefix        251.89 ms              251.28 ms     +0.24 %   <- matches
+    expert        111.01 ms              167.36 ms    -33.67 %   <- does NOT
+
+    ratio: 167.36 / 111.01 = 1.508
+
+The prefix agreeing to 0.24 % says the harness, the rung, the checkpoint and the gate are
+right. Only the expert disagrees, and my number is the FASTER one -- which normally means my
+measurement is doing less work, so it deserves suspicion first.
+
+Checked and ruled out: bench/phase_builders.make_ae's body is structurally IDENTICAL to
+bench/corun.py's expert_stage -- same bounded Python loop, same per-step
+`torch.tensor(t, device=...)`, same `x_t = x_t + dt * v_t`, same single cache built once by
+prefix_once, same single noise tensor. N is 10 in both. The code is not the difference.
+
+Corroboration that E7's figure is not a typo: E5's pi0 best ae_step region is 197.39 ms
+profiled at an inflation of about x1.17, i.e. roughly 168 ms unprofiled, which matches E7's
+167.36. So both of E7's own measurements agree with each other and disagree with mine.
+
+## Hypothesis: E7's own power sampler inflates it, because this phase is GIL-bound
+
+bench/power_core.py defines `class Rails(threading.Thread)` -- a daemon thread sampling four
+sysfs rails at 20 Hz -- and E7's `ae` numbers were measured with it running.
+
+E12 has now MEASURED that this workload is CPU-issue-bound: host issue/wall = 1.0000 over a
+99.5-second run, consistent with E5's 84.2 % GPU idle over 968 kernels/step. A workload whose
+wall clock is entirely Python issuing kernels is exactly the workload a 20 Hz Python sampler
+thread would slow, by taking the GIL away from the issue loop.
+
+E7 did check its sampler's cost and found 2 %: `full` 722.55 ms with it against Part B's
+711.75 ms without, at N = 4. But at N = 4 `full` is prefix-dominated (A = 249.92,
+B = 67.18), and the prefix is fewer, larger kernels. A sampler can cost 2 % on a
+prefix-dominated frame and much more on the expert alone. The 2 % check does not cover the
+`ae` phase, and nothing else does.
+
+## Why this matters beyond bookkeeping
+
+If the hypothesis holds, then E7's **`ae` phase times are inflated** and three things follow:
+
+1. **`r = A_iso / B_iso` is wrong.** E7 gives 1.50 at N = 10 (251.28 / 167.36). With
+   B_iso = 111.01 it is 2.27. `r` is the break-even the ENTIRE E12 question is compared
+   against -- "s < r means the expert is not the bottleneck" -- so the threshold itself moves.
+   E12's own reports use the in-session `r` (§3 requires it), so E12's conclusions are not
+   affected, but anyone quoting 1.50 from E7 would be using an inflated denominator.
+2. **E7's "the expert is the CHEAP phase" finding needs re-checking.** Its energy figures are
+   mean power x region time, so an inflated region time inflates the integrated energy too
+   and the energy-to-time RATIO may be largely unaffected -- but the absolute per-phase times
+   and the A:B split are what the PIM argument quotes.
+3. It would be a **third instance tonight of a measurement artefact that favours a
+   conclusion**: the expert looking slower makes the expert look more worth accelerating.
+
+## The decisive test, not yet run
+
+Add power_core's Rails sampler thread to bench/corun_2proc.py's expert role and re-measure.
+Same code, one difference. If 111 ms becomes ~167 ms, the hypothesis is confirmed and E7's
+`ae` numbers carry a sampler artefact. If it stays near 111, the hypothesis is wrong and the
+discrepancy is something else that still needs finding.
+
+Do NOT quote E7's 1.50 as the break-even, and do not "correct" E7's numbers, until this test
+has run. Right now there is a measured disagreement and a plausible mechanism, which is not
+the same as a confirmed cause.
+
+## Not affected
+
+E12's `s` is a ratio of MY OWN B_co and B_iso, measured through one harness, so a systematic
+offset in B_iso cancels. The reconciliation against E7 is a cross-check on absolute values,
+and it is that cross-check which failed -- not E12's internal arithmetic.
