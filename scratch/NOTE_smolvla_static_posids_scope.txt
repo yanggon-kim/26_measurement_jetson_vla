@@ -93,3 +93,52 @@ re-run anything for it.
   valid and must not be re-run -- wrong, for the reason in the section above.)
 * E11e smolvla EAGER: complete and untouched. mempressure writes per mode.
 * E11f smolvla: never ran under reduce-overhead before, and picks up the fix on import.
+
+
+=====================================================================================
+APPENDIX, 17:40: the GR00T autocast defect was the same pattern, and the repo already
+knew the fact
+=====================================================================================
+
+groot_n15 E11a died at 17:25 reconstructing its cross-attention:
+
+    RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16
+    at attn.to_k(encoder_hidden_states)        bench/segments_groot.py:139
+
+Cause: gr00t/model/policy.py:190 wraps n1.5's inference in
+torch.autocast(device_type="cuda", dtype=bfloat16). Its backbone hands the DiT fp32
+encoder states and autocast casts them at the op boundary; a reconstruction outside that
+context reads the raw fp32 tensor into a bf16 Linear. Confirmed across all three trees:
+n1.5's policy.py mentions autocast twice, n1.7's and n1.6's zero times -- which is exactly
+why only n1.5 failed.
+
+**The repository already knew this.** bench/groot_phases.py:347-352 has, in a comment
+written before today:
+
+    if args.api == "old":
+        # N1.5's own policy runs the model under inference_mode + autocast
+        # (policy.py:189-191); timing it any other way would not be its inference.
+        with torch.inference_mode(), torch.autocast(device_type="cuda",
+                                                    dtype=torch.bfloat16):
+            return model.get_action(inputs)
+
+So the fact was established, documented with a line reference, and correctly applied in
+the phase driver. bench/segments_groot.py was written later and did not inherit it. That
+is the same failure as the SmolVLA prep living in opt_ladder while three drivers called
+load_policy raw, and as the watchdog's per-check wolf-crying: knowledge fixed in one file
+does not reach the next file that needs it.
+
+Consequences checked rather than assumed:
+
+* n1.5's Part B and E7 latencies are CORRECT -- groot_phases.py ran them under autocast,
+  so they are its real inference.
+* n1.7's and n1.6's E11a bytes are CORRECT. A missing autocast would have meant fp32
+  accounting for a bf16 run, so this was worth checking: n1.7's adaln_cond bytes_read is
+  9440256, which is 1536*3072 weight elements at 2 bytes plus temb 1536 at 2 bytes exactly.
+  bf16 throughout.
+* Only n1.5's E11a needed re-running. queue_e11_groot_n15.sh does it, chained on
+  E11FIX_DONE, with the autocast context now detected from the installed source rather
+  than keyed on a version string (verified: n1d5 -> autocast, n1d6 -> nullcontext).
+
+The check to run before writing any new reconstruction: grep the OTHER drivers for the
+contexts they enter around the same model. _sdpa_ctx was carried across; autocast was not.
