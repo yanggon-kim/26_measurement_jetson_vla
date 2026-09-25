@@ -201,6 +201,28 @@ for tag, pat, need, target in (
     ok = sum(1 for _, o in rows if o)
     live = [os.path.basename(d) for d, o in rows if not o and _is_live(d)]
     broken_all = [os.path.basename(d) for d, o in rows if not o and not _is_live(d)]
+
+    # E5b's need file, stall_attribution.csv, is written by ONE analyse pass at the end of
+    # the whole queue (bench/queues/queue_e5b.sh line 89), not per capture. So a directory
+    # whose ncu captures are finished sits without it while the queue works on the NEXT
+    # model, and _is_live() cannot see that -- nothing is writing to it. At 21:22 this
+    # reported BROKEN: ['20260924_E5b_pi0_eager'] when that directory held three completed
+    # captures and was simply waiting its turn to be analysed.
+    #
+    # Same live-awareness class as the stale JOBS list and the buffered zero-byte stdout:
+    # the check was not wrong about the file, it was wrong about what its absence meant.
+    awaiting = []
+    if tag == "E5b instr" and not any(
+            "E5B_DONE" in open(f, errors="ignore").read()
+            for f in glob.glob("scratch/queues/queue_e5b.log")):
+        still = []
+        for b in broken_all:
+            if glob.glob(f"results/{b}/ncu/*_details.csv"):
+                awaiting.append(b)
+            else:
+                still.append(b)
+        broken_all = still
+
     superseded, broken = [], []
     for b in broken_all:
         rep = SUPERSEDED.get(b)
@@ -211,7 +233,8 @@ for tag, pat, need, target in (
     print(f"  {tag:11s} {ok} usable of {len(rows)} present (target ~{target})"
           + (f"   RUNNING: {live}" if live else "")
           + (f"   BROKEN: {broken[:3]}" if broken else "")
-          + (f"   superseded: {superseded}" if superseded else ""))
+          + (f"   superseded: {superseded}" if superseded else "")
+          + (f"   awaiting the final analyse pass: {awaiting}" if awaiting else ""))
 
 # A 0-byte stdout is a run that produced nothing while leaving a directory behind --
 # UNLESS that run is still going, in which case a capture whose output is still buffered
