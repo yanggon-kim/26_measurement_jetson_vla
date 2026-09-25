@@ -63,12 +63,12 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 13:06:18** · elapsed **66.52 h** of 26 (256 %) · 31.0 GiB free · 0.66 GiB swap
+**Updated 13:26:19** · elapsed **66.86 h** of 26 (257 %) · 39.9 GiB free · 0.86 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 523453 | `bench/opt_ladder.py --model pi05 --steps 1,2,4,6,8,10 --rungs eager_tf32,bf16_both_graphs` | 7 min | 0.4 GiB |
-| 523611 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260925_E3E4_pi05_Nsweep --single-rung` | 2 min | 20.2 GiB |
+| 523453 | `bench/opt_ladder.py --model pi05 --steps 1,2,4,6,8,10 --rungs eager_tf32,bf16_both_graphs` | 27 min | 0.2 GiB |
+| 524287 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260925_E3E4_pi05_Nsweep --single-rung` | 1 min | 11.5 GiB |
 
 Latest log lines:
 
@@ -83,7 +83,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 13:07** (59 configurations)
+**Re-derived from every result CSV on disk at 13:27** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
