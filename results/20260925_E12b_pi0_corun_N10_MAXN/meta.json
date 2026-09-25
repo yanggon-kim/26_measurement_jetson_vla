@@ -115,6 +115,11 @@
   "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
   "raw_files": [
     {
+      "path": "bandwidth.csv",
+      "bytes": 1169,
+      "sha256": "ef515dc1cc1b491255d1bad5915c23d3172825458b37a8c7922992675e86e8a5"
+    },
+    {
       "path": "corun_breakdown.csv",
       "bytes": 535,
       "sha256": "9c549af4f80ce0a506618504cd99c6a0dc795b67572596453c51e0597c4eeaeb"
@@ -150,6 +155,26 @@
       "sha256": "ae96cd03c9c35d4f119ca0245fe28589ce9a137dffc6359aaeef576179352102"
     },
     {
+      "path": "mechanisms/evidence/NOTE_e12_compiled_two_stream.txt",
+      "bytes": 3607,
+      "sha256": "458e3eb3033650d0e3ba0d188359aed57bed364115f0e51d48c4d5e3dc51defb"
+    },
+    {
+      "path": "mechanisms/evidence/NOTE_e12_two_process_oom.txt",
+      "bytes": 3814,
+      "sha256": "23ba3acc30176f26c4d820bcd9d4264dde3b37512aa692387cd4af51f47096bd"
+    },
+    {
+      "path": "mechanisms/evidence/mps_probe_control.log",
+      "bytes": 1403,
+      "sha256": "502fc8ff33a369dacb4814c49137fc31ba9796d6c7ea38d1694fb72bdb474d1b"
+    },
+    {
+      "path": "meta_rung.json",
+      "bytes": 1250,
+      "sha256": "3f065730c20b7bac9002943f692693efa331e64818b088945f5e03788be3d34f"
+    },
+    {
       "path": "nsys/m2_cuda_api_sum.csv",
       "bytes": 1187,
       "sha256": "d306ebd2163052c1c51955e5e795c42623a6060f513746a3b74d2dc7e96bca01"
@@ -170,6 +195,16 @@
       "sha256": "0d088f8682680363ac640b86bca5e2cfede107f734b09669de20ef370ce4c1bd"
     },
     {
+      "path": "owngraph_equivalence.csv",
+      "bytes": 633,
+      "sha256": "f731a45db07968c03088a6cb36aa3b51f59baa062c88a87bb1cef26da76bf5c0"
+    },
+    {
+      "path": "owngraph_equivalence.json",
+      "bytes": 44,
+      "sha256": "1e370d8343417121f397c7e3c8b3889935508a1c90dea03e99220df1d34dca63"
+    },
+    {
       "path": "prefix_grids.csv",
       "bytes": 3727,
       "sha256": "1548e12647756bb92fcb22a2f862b12ef414ad8da511d778445e0d21b0167f1b"
@@ -183,11 +218,32 @@
       "path": "raw/stdout_nsys.log",
       "bytes": 3037,
       "sha256": "2aa0091b4d37018779d4db45fd52328529988e534e153a3bb91036dc36ed27bf"
+    },
+    {
+      "path": "raw/teg_rung_full_gpu_expert_alone.log",
+      "bytes": 447476,
+      "sha256": "dca3493e904dffdce5c5624a9c1f359c6781d72396b562f5d8269afa62ca8be0"
+    },
+    {
+      "path": "raw/teg_rung_full_gpu_pipeline.log",
+      "bytes": 459495,
+      "sha256": "b99393613af73aee1510062a96b54043787e6f9b903fca9ce835aeb7a754ea9f"
+    },
+    {
+      "path": "raw/teg_rung_full_gpu_prefix_alone.log",
+      "bytes": 479614,
+      "sha256": "8fc1d816cbe0ddcecab8cb2a886c0ef9ae3ac4f92589ebb7ea63c774b09e747d"
+    },
+    {
+      "path": "raw/teg_rung_full_gpu_serial.log",
+      "bytes": 471217,
+      "sha256": "e6dce09fedfc8c9b56fe66280c5218e58716b39753cc9bad050990775ed2b25c"
     }
   ],
   "nsys": {
     "capture": "bench/e12b_nsys.py under nsys --capture-range=cudaProfilerApi --cuda-graph-trace=node -t cuda,nvtx; 5 pipeline + 5 prefix_alone + 5 expert_alone + 3 serial frames after warm-up of every condition; run under env -i",
     "committed": "CSV exports under nsys/ only; m2.nsys-rep and m2.sqlite stay in scratch/e12b/nsys/ (committed: false, protocol \u00a73.5 token exception)",
     "analysis": "bench/e12b_nsys_analyze.py -> corun_breakdown.csv, corun_decomposition.csv, prefix_grids.csv"
-  }
+  },
+  "m4_bandwidth": "bandwidth.csv: bench/e12b_m4.py, separate >= 30 s runs of each condition with tegrastats (20 ms) and the four rails (20 Hz), converted with results/20260925_E12b_pi0_emc_calibration_MAXN (GB/s = 2.005 x EMC% + 0.34, R^2 0.99987). Kept separate from the timing runs so the headline timings carry no sampler. Sources that worked: tegrastats EMC_FREQ, the memory rail, nsys kernel timeline. nsys --gpu-metrics-devices: not attempted on this Orin."
 }

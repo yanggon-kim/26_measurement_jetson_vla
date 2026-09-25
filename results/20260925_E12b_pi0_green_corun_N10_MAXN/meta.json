@@ -124,6 +124,11 @@
   "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
   "raw_files": [
     {
+      "path": "bandwidth.csv",
+      "bytes": 3107,
+      "sha256": "3c4fe3b5cb62e560b67a2374bf57e80a1cd77b28d12db6219eca2474fc7eb95a"
+    },
+    {
       "path": "corun_ratios.csv",
       "bytes": 5163,
       "sha256": "8eb915c266bcd5b64a444d8ad76789c8da397286459ace6fde9087569aea6e04"
@@ -144,6 +149,11 @@
       "sha256": "810e67057dbb12b0e6cf78b9cd30d41a7a29b87f0447d40a02c2e5bb9db6cf8f"
     },
     {
+      "path": "meta_graphs_both.json",
+      "bytes": 1283,
+      "sha256": "d80d4b58cfc85b8ea5402c6de994313269573c3fafb11f1711585a2ede553014"
+    },
+    {
       "path": "raw/m0_graph_confinement.json",
       "bytes": 2893,
       "sha256": "4af7777a0f74c1b0225be7e6e1b739601c7f8984ae10acb481d3a81ec8bea060"
@@ -152,6 +162,51 @@
       "path": "raw/stdout_m3.log",
       "bytes": 7063,
       "sha256": "e147fcf16b6d600f5145774c5b75792c3281034608cc0e1ac861168b3bbb89f5"
+    },
+    {
+      "path": "raw/teg_graphs_both_12-4_expert_alone.log",
+      "bytes": 459809,
+      "sha256": "ba4aee495240320d19e2c4151cef310456345c5e3b69845c25c0d9d3442fcab6"
+    },
+    {
+      "path": "raw/teg_graphs_both_12-4_pipeline.log",
+      "bytes": 472503,
+      "sha256": "7465e5dfb4b5e40b3f8861a41591397c9ff5d2ad0f858989bcd91ee8fa85e91e"
+    },
+    {
+      "path": "raw/teg_graphs_both_12-4_prefix_alone.log",
+      "bytes": 473305,
+      "sha256": "c5b10654fd3b40bbf843953756eb6c59329c1340d79fa112de3ab664eb7f474f"
+    },
+    {
+      "path": "raw/teg_graphs_both_12-4_serial.log",
+      "bytes": 468574,
+      "sha256": "8c855fce153278d803d9602990ab5ad3c495ae3b442228db64f8a1c7f64e3c5e"
+    },
+    {
+      "path": "raw/teg_graphs_both_full_gpu_expert_alone.log",
+      "bytes": 445975,
+      "sha256": "800935d58a99a363a851bc68e842c933937152c43b59c442ae669be2b273e0b6"
+    },
+    {
+      "path": "raw/teg_graphs_both_full_gpu_pipeline.log",
+      "bytes": 446739,
+      "sha256": "175ed5dc98106d560038a4e924e996ad4534c57b267a7ba0fac20c51c268cf81"
+    },
+    {
+      "path": "raw/teg_graphs_both_full_gpu_prefix_alone.log",
+      "bytes": 474384,
+      "sha256": "d4f1a6dab55d7517bf3f6d579ffd05423b8fcd2327621e32ab1a9675213baf91"
+    },
+    {
+      "path": "raw/teg_graphs_both_full_gpu_serial.log",
+      "bytes": 464008,
+      "sha256": "0df4c8644870fe789d3e2466dcc278ef07f89b00565031ac2bf4fb04326c192d"
+    },
+    {
+      "path": "raw/teg_hog_12-4.log",
+      "bytes": 697392,
+      "sha256": "720385ef7398c0c25e2574780ce2dcb70826800d8638c90bd4d0e78b88ee98f0"
     }
   ],
   "m0_graph_confinement": "raw/m0_graph_confinement.json (bench/e12b_m0.py): a graph captured on the primary context is NOT confined when replayed on a green stream (0.99x at 4 SMs); captured inside the green context it is (3.24x). Every graph of this run was captured inside its own green context.",
@@ -159,5 +214,6 @@
     "splits": "12/4 and 8/8 (required), 10/6, 6/10 (added because the confined compiled expert turned out SM-sensitive), 14/2; all granted as requested",
     "config": "graphs_both: the only configuration whose prefix can be confined (the rung's embed_image tree is recorded outside the partition)",
     "hog": "in-process copy graph captured inside the expert partition; 'max' = copies back to back, 'matched' = copies interleaved with torch.cuda._sleep bisected toward the fair expert's average demand (~63 GB/s); a small partition cannot drive DRAM hard, so in 12/4 and 14/2 max and matched coincide"
-  }
+  },
+  "m4_bandwidth": "bandwidth.csv: bench/e12b_m4.py, separate >= 30 s runs of each condition with tegrastats (20 ms) and the four rails (20 Hz), converted with results/20260925_E12b_pi0_emc_calibration_MAXN (GB/s = 2.005 x EMC% + 0.34, R^2 0.99987). Kept separate from the timing runs so the headline timings carry no sampler. Sources that worked: tegrastats EMC_FREQ, the memory rail, nsys kernel timeline. nsys --gpu-metrics-devices: not attempted on this Orin."
 }
