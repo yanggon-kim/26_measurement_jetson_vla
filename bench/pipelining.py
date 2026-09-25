@@ -350,6 +350,12 @@ def main() -> int:
     print("gate:", json.dumps(gate), flush=True)
 
     trows, crows, irows = [], [], []
+    # Collected here rather than appended to a `notes` variable inside the loop: this
+    # driver builds its meta["notes"] as a LITERAL after the loop, so no such name exists
+    # at that point. My first version of the fallback wrote notes.append(capture_note) and
+    # died with NameError AFTER the whole measurement had succeeded -- caught by ast.parse
+    # passing, which is exactly what a syntax check cannot see.
+    capture_notes: list[str] = []
     for mode in [m for m in args.modes.split(",") if m]:
         cm = None if mode == "eager" else mode
         policy, cfg, shipped = MR.load_policy(spec, n=args.steps, compile_mode=cm)
@@ -376,7 +382,7 @@ def main() -> int:
         seq_fn, n_segs, capture_note = host_sequence_fn(
             policy, batch, 18, args.pause_ms, spec, cm=cm, steps=args.steps)
         if capture_note:
-            notes.append(capture_note)
+            capture_notes.append(f"[{mode}] {capture_note}")
         prefix_fn = PL.make_phase(policy, batch, "prefix", args.steps, spec)
 
         # The mapping's 2 ms pause x 6 segments x 18 layers puts 216 ms of time.sleep inside
@@ -557,7 +563,7 @@ def main() -> int:
         "throttled": False,
         "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
         "model_inputs_rows": n_mi, "raw_files": [],
-        "notes": [
+        "notes": capture_notes + [
             "gpu_idle_ae_total is region time minus the UNION of kernel intervals inside the "
             "ae_step NVTX spans, so overlapping kernels are not double-counted. It is the GPU "
             "time already free for the next frame's prefix in the ordinary all-GPU run.",

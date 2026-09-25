@@ -106,47 +106,67 @@ class DiTBlockCapture:
         return False
 
 
-def model_autocast_ctx():
-    """The autocast context the GR00T policy runs inference under, or nullcontext.
+# Set once by the driver (bench/groot_segments.py) before any capture is
+# reconstructed, so intermediates() keeps its single-argument signature.
+_API = [None]
 
-    groot_n15 died reconstructing its cross-attention with
 
-        RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16
-        at attn.to_k(encoder_hidden_states)
+def model_autocast_ctx(api: str | None = None):
+    """The autocast context this GR00T policy runs inference under, and a note.
 
-    because `gr00t/model/policy.py:190` wraps n1.5's inference in
+    Returns (context, note). The decision is driven by `api`, the SAME condition
+    bench/groot_phases.py:347 uses to time n1.5 correctly:
 
-        with torch.inference_mode(), torch.autocast(device_type="cuda", dtype=COMPUTE_DTYPE)
+        if args.api == "old":
+            # N1.5's own policy runs the model under inference_mode + autocast
+            # (policy.py:189-191); timing it any other way would not be its inference.
 
-    so its backbone hands the DiT fp32 encoder states and autocast casts them at the op
-    boundary. Reconstructing without that context reads the raw fp32 tensor straight into a
-    bf16 Linear. n1.7 and n1.6 have NO autocast in their policy.py (checked: 0 mentions
-    against n1.5's 2), which is exactly why they reconstructed fine and n1.5 did not.
+    ## Why this is not source inspection any more
 
-    This is the same fidelity problem `_sdpa_ctx` above exists for: a reconstruction must
-    run under the contexts the real forward runs under, or it is measuring different code.
-    Detected from the installed source rather than keyed on a version string, and it
-    returns nullcontext when the source has no autocast, so a model that gains or loses one
-    does not silently get the wrong treatment.
+    The first version inspected `gr00t.model.policy` for the string "torch.autocast" and
+    returned nullcontext inside `except (ImportError, OSError)`. It verified correctly when
+    I tested it by hand, and then returned nullcontext in the real run and SAID NOTHING, so
+    n1.5 failed a second time with the same dtype error one Linear earlier
+    (`attn.to_q(hidden_states)` instead of `attn.to_k(encoder_hidden_states)`). A silent
+    except-and-degrade is the wrong shape for a decision that changes what gets measured:
+    whatever swallowed it, the run could not tell me.
+
+    So the caller passes the flag it already has, and the source check is kept only as a
+    CROSS-CHECK that raises on disagreement rather than as the mechanism. Both answers are
+    printed, so a run states what it did instead of leaving it to be inferred.
     """
-    import inspect
+    want = (api == "old")
+    seen = None
     try:
+        import inspect
         pol = importlib.import_module("gr00t.model.policy")
-    except ImportError:
+        seen = "torch.autocast" in inspect.getsource(pol)
+    except Exception as e:                      # noqa: BLE001 - reported, never swallowed
+        print(f"  autocast cross-check unavailable ({type(e).__name__}: {e}); "
+              f"relying on --api={api}", flush=True)
+
+    if seen is not None and seen != want:
+        raise SystemExit(
+            f"autocast disagreement: --api={api} implies autocast={want}, but "
+            f"gr00t.model.policy source says autocast={seen}. bench/groot_phases.py:347 "
+            f"keys this on api=='old' and produced the published n1.5 latencies, so one of "
+            f"the two premises has changed. Resolve it rather than guessing, because it "
+            f"decides the dtype -- and therefore the BYTES -- of every segment.")
+
+    if not want:
+        print(f"  autocast: none (--api={api}); this model's policy.py does not wrap "
+              f"inference in it", flush=True)
         return nullcontext(), ""
-    try:
-        src = inspect.getsource(pol)
-    except OSError:
-        return nullcontext(), ""
-    if "torch.autocast" not in src:
-        return nullcontext(), ""
-    dt = getattr(pol, "COMPUTE_DTYPE", torch.bfloat16)
+
+    dt = torch.bfloat16
     note = (f"Segments were reconstructed under torch.autocast(cuda, {dt}), because this "
-            f"model's own gr00t/model/policy.py wraps inference in it. The reported bytes "
-            f"are the traffic of the ops as autocast runs them; autocast's OWN cast of the "
-            f"fp32 encoder states to {dt} is additional traffic that the shared "
-            f"bytes_formula does not model, and it does not arise for n1.7/n1.6, whose "
-            f"policy.py has no autocast.")
+            f"model's own gr00t/model/policy.py:189-191 wraps inference in it (--api=old). "
+            f"The reported bytes are the traffic of the ops as autocast runs them; "
+            f"autocast's OWN cast of the fp32 encoder states to {dt} is additional traffic "
+            f"the shared bytes_formula does not model, and it does not arise for n1.7/n1.6, "
+            f"whose policy.py has no autocast.")
+    print(f"  autocast: torch.autocast(cuda, {dt}) (--api={api}, source cross-check "
+          f"{'agrees' if seen else 'unavailable'})", flush=True)
     return torch.autocast(device_type="cuda", dtype=dt), note
 
 
@@ -166,7 +186,7 @@ def intermediates(cap: DiTBlockCapture) -> dict:
     ehs = a["encoder_hidden_states"]
     mask = a["encoder_attention_mask"] if ehs is not None else a["attention_mask"]
 
-    ac, _ = model_autocast_ctx()
+    ac, _ = model_autocast_ctx(_API[0])
     with torch.no_grad(), ac:
         if getattr(b, "norm_type", "") == "ada_norm":
             normed1 = b.norm1(x, a["temb"])                     # :190, shift+scale

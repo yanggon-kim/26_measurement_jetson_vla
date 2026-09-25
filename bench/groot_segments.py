@@ -131,10 +131,14 @@ def main() -> int:
     # Record the autocast context the reconstruction ran under. n1.5 wraps inference in
     # torch.autocast and n1.7/n1.6 do not, so this differs across the three versions and a
     # reader comparing their segment dtypes has to be told which.
-    _ac_note = SG.model_autocast_ctx()[1]
+    # Tell segments_groot which API this model uses BEFORE any capture is reconstructed.
+    # bench/groot_phases.py:347 keys n1.5's autocast on exactly this flag, and that is the
+    # code path that produced the published n1.5 latencies, so the same condition is reused
+    # rather than a second mechanism invented beside it.
+    SG._API[0] = args.api
+    _ac_note = SG.model_autocast_ctx(args.api)[1]
     if _ac_note:
         notes.append(_ac_note)
-        print(f"\n  {_ac_note}\n", flush=True)
 
     for bi, cap in caps.items():
         t = SG.intermediates(cap)
