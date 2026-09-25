@@ -104,3 +104,23 @@ Disclosed inside each meta.json under `notes` rather than corrected silently (pr
 Root cause, for anything written from here on: resolved_commit() did not exist when those
 two runs executed, and pi0.5 pins no revision so spec.revision was None. Every driver that
 writes model_commit must call MR.resolved_commit(spec), not spec.revision.
+
+--- 2026-09-24 20:23, operational note on watchdog.sh + Monitor ---
+
+Editing bench/watchdog.sh does NOT affect a monitor that is already running it in
+`--every` mode. bash parses the whole `while true; do ... done` compound command before
+executing it and keeps that parse in memory, so the loop keeps running the code as it was
+when the loop started.
+
+Observed: the SUPERSEDED entry was committed at 20:12 and verified in a one-shot run, yet
+the 20:21 audit from the monitor armed at 20:03 still printed
+BROKEN: ['20260922_E5_pi0_reduce-overhead_N4'].
+
+RULE: after any edit to bench/watchdog.sh, TaskStop the monitor and re-arm it. A one-shot
+`bash bench/watchdog.sh 0` verifies the edit; it does not update the running loop.
+
+This is the same bash behaviour that makes editing a RUNNING script dangerous, seen from
+the other side. For a plain sequential script bash re-reads from a byte offset and resumes
+in the wrong place (that is how preflight pass 7 died); for a script whose body is one big
+loop, bash has already read it all and simply ignores the change. Both mean: do not expect
+an edit to reach a running bash process.
