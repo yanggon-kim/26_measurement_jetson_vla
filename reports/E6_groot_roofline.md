@@ -111,3 +111,19 @@ arithmetic", which is the error that kept π0's `vision` out of the roofline unt
   for N1.7 alone), so measuring them means switching branches. Outstanding for T009.
 * **A compiled-rung roofline**, and `source = ncu` off-chip-byte rows, which exist only for π0
   (`20260922_E4g_pi0_ncu_eager` is the single capture carrying the L2 sysmem-miss counters).
+
+## GR00T N1.5 and N1.6 (added 2026-09-25, `results/20260925_E6_groot_n1{5,6}`, `results/20260925_E6_rungs/groot_n1{5,6}_*`)
+
+Same method (bytes from the loaded model via `bench/floors_groot.py`, through each version's own
+worktree and the `groot16` venv; unprofiled ladder times; FLOPs deliberately not counted). The
+compiled rung is each version's best, `all_compile_autotune`.
+
+| `ae_step` | bytes / step | eager: ms · % peak BW · gap | compiled: ms · % peak BW · gap |
+|---|---:|---|---|
+| GR00T N1.5 | 2 137.6 MB | 24.02 · 47.5 % · 2.11× | 15.14 · **75.3 %** · **1.33×** |
+| GR00T N1.6 | 2 837.2 MB | 50.65 · 29.9 % · 3.35× | 18.21 · **83.1 %** · **1.20×** |
+| GR00T N1.7 | 3 241.0 MB | 52.13 · 33.2 % · 3.02× | 19.89–20.82 · **83–87 %** · **1.15–1.20×** |
+
+**The finding holds across all three GR00T versions:** once compiled, the action step runs at 75–87 %
+of the measured peak bandwidth within 1.15–1.33× of its memory floor, while π0, π0.5 and SmolVLA stay
+3–5× off theirs compiled (`reports/E5_E5b_models.md`).

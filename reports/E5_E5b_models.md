@@ -10,8 +10,8 @@
 | π0.5 | 50 | 61.142 (`eager_tf32`) | 18.56 (`bf16_both_graphs`) | 9.2539 / 5.8363 | 6.61 | 3.18 | 15.135 | 31.445 |
 | SmolVLA | 50 | 61.292 (`eager_tf32`) | 4.486 (`vlm_graphs`) | 1.0849 / 1.0849 | 56.5 | 4.13 | 1.77 | 24.186 |
 | GR00T N1.7 | 41 | 52.129 (`eager_tf32`) | 19.892 (`vlm_compile`) | 17.2883 / 17.2883 | 3.02 | 1.15 | 33.164 | 86.913 |
-| GR00T N1.6 | — | 50.65 (`eager_tf32`) | 18.208 (`all_compile_autotune`) | — / — | — | — | — | — |
-| GR00T N1.5 | — | 24.015 (`eager_tf32`) | 15.137 (`all_compile_autotune`) | — / — | — | — | — | — |
+| GR00T N1.6 | — | 50.65 (`eager_tf32`) | 18.208 (`all_compile_autotune`) | 15.1344 / 15.1344 | 3.35 | 1.2 | 29.881 | 83.118 |
+| GR00T N1.5 | — | 24.015 (`eager_tf32`) | 15.137 (`all_compile_autotune`) | 11.4024 / 11.4024 | 2.11 | 1.33 | 47.48 | 75.328 |
 
 ## Where the time goes inside the expert
 
@@ -35,20 +35,14 @@
 * **π0.5** — ladder eager: `results/20260922_E4c_pi05_opt_ladder/raw/rows/eager_tf32_N10.json`; ladder compiled: `results/20260922_E4c_pi05_opt_ladder/raw/rows/bf16_both_graphs_N10.json`; E6 eager: `results/20260925_E6_rungs/pi05_eager_tf32/roofline.csv`; E6 compiled: `results/20260925_E6_rungs/pi05_bf16_both_graphs/roofline.csv`; E5: `results/20260924_E5_pi05_eager_N10`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`; E5b eager: `results/20260924_E5b_pi05_eager/stall_attribution.csv`; E5b best: `results/20260924_E5b_pi05_best/stall_attribution.csv`; S: `E6 floor_inputs.json tokens`
 * **SmolVLA** — ladder eager: `results/20260922_E4c_smolvla_opt_ladder/raw/rows/eager_tf32_N10.json`; ladder compiled: `results/20260922_E4c_smolvla_opt_ladder/raw/rows/vlm_graphs_N10.json`; E6 eager: `results/20260925_E6_rungs/smolvla_eager_tf32/roofline.csv`; E6 compiled: `results/20260925_E6_rungs/smolvla_vlm_graphs/roofline.csv`; E5: `results/20260924_E5_smolvla_eager_N10`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`; E5b eager: `results/20260924_E5b_smolvla_eager/stall_attribution.csv`; E5b best: `results/20260924_E5b_smolvla_best/stall_attribution.csv`; S: `E6 floor_inputs.json tokens`
 * **GR00T N1.7** — ladder eager: `results/20260923_E4d_groot_n17_ladder/raw/rows/eager_tf32.json`; ladder compiled: `results/20260923_E4d_groot_n17_ladder/raw/rows/vlm_compile.json`; E6 eager: `results/20260925_E6_rungs/groot_n17_eager_tf32/roofline.csv`; E6 compiled: `results/20260925_E6_rungs/groot_n17_vlm_compile/roofline.csv`; E5: `results/20260924_E5_groot_n17_eager`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`; E5b eager: `results/20260925_E5b_groot_n17_eager/stall_attribution.csv`; E5b best: `results/20260925_E5b_groot_n17_best/stall_attribution.csv`; S: `T009 (loaded config action_horizon = 40; see report)`
-* **GR00T N1.6** — ladder eager: `results/20260923_E4d_groot_n16_ladder/raw/rows/eager_tf32.json`; ladder compiled: `results/20260923_E4d_groot_n16_ladder/raw/rows/all_compile_autotune.json`; E5: `results/20260924_E5_groot_n16_eager`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`
-* **GR00T N1.5** — ladder eager: `results/20260923_E4d_groot_n15_ladder/raw/rows/eager_tf32.json`; ladder compiled: `results/20260923_E4d_groot_n15_ladder/raw/rows/all_compile_autotune.json`; E5: `results/20260924_E5_groot_n15_eager`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`
+* **GR00T N1.6** — ladder eager: `results/20260923_E4d_groot_n16_ladder/raw/rows/eager_tf32.json`; ladder compiled: `results/20260923_E4d_groot_n16_ladder/raw/rows/all_compile_autotune.json`; E6 eager: `results/20260925_E6_rungs/groot_n16_eager_tf32/roofline.csv`; E6 compiled: `results/20260925_E6_rungs/groot_n16_all_compile_autotune/roofline.csv`; E5: `results/20260924_E5_groot_n16_eager`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`
+* **GR00T N1.5** — ladder eager: `results/20260923_E4d_groot_n15_ladder/raw/rows/eager_tf32.json`; ladder compiled: `results/20260923_E4d_groot_n15_ladder/raw/rows/all_compile_autotune.json`; E6 eager: `results/20260925_E6_rungs/groot_n15_eager_tf32/roofline.csv`; E6 compiled: `results/20260925_E6_rungs/groot_n15_all_compile_autotune/roofline.csv`; E5: `results/20260924_E5_groot_n15_eager`; C1: `results/20260923_E4g_c1_summary/c1_bounds.csv`
 
 ## Not measured
 
 * GR00T N1.7 · `gpu_idle_pct_eager` — N=4: Part B's unprofiled reference is N=10 only
 * GR00T N1.7 · `gpu_idle_pct_best` — N=4: Part B's unprofiled reference is N=10 only
 * GR00T N1.6 · `S` — no committed source
-* GR00T N1.6 · `floor_ms_eager_bytes` — no committed source
-* GR00T N1.6 · `floor_ms_compiled_bytes` — no committed source
-* GR00T N1.6 · `gap_eager` — no committed source
-* GR00T N1.6 · `gap_compiled` — no committed source
-* GR00T N1.6 · `pct_peak_bw_eager` — no committed source
-* GR00T N1.6 · `pct_peak_bw_compiled` — no committed source
 * GR00T N1.6 · `gpu_idle_pct_eager` — N=4: Part B's unprofiled reference is N=10 only
 * GR00T N1.6 · `gpu_idle_pct_best` — N=4: Part B's unprofiled reference is N=10 only
 * GR00T N1.6 · `top_stall_eager` — no committed source
@@ -58,12 +52,6 @@
 * GR00T N1.6 · `dominant_kernel_eager` — no committed source
 * GR00T N1.6 · `dominant_kernel_best` — no committed source
 * GR00T N1.5 · `S` — no committed source
-* GR00T N1.5 · `floor_ms_eager_bytes` — no committed source
-* GR00T N1.5 · `floor_ms_compiled_bytes` — no committed source
-* GR00T N1.5 · `gap_eager` — no committed source
-* GR00T N1.5 · `gap_compiled` — no committed source
-* GR00T N1.5 · `pct_peak_bw_eager` — no committed source
-* GR00T N1.5 · `pct_peak_bw_compiled` — no committed source
 * GR00T N1.5 · `gpu_idle_pct_eager` — N=4: Part B's unprofiled reference is N=10 only
 * GR00T N1.5 · `gpu_idle_pct_best` — N=4: Part B's unprofiled reference is N=10 only
 * GR00T N1.5 · `top_stall_eager` — no committed source

@@ -1,0 +1,40 @@
+{
+  "model": "groot_n16",
+  "checkpoint": "nvidia/GR00T-N1.6-3B",
+  "checkpoint_dir": "/home/yanggon/.cache/huggingface/hub/models--nvidia--GR00T-N1.6-3B/snapshots/d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+  "embodiment_tag": "robocasa_panda_omron",
+  "N": 4,
+  "region_parameter_bytes": {
+    "action_head_dit": 2837248000,
+    "backbone": 3735969664,
+    "backbone_vision": 855361408,
+    "backbone_language": 2853318656
+  },
+  "resolved_paths": {
+    "action_head_dit": "model.action_head",
+    "backbone": "model.backbone",
+    "backbone_vision": "model.backbone.model.vision_model",
+    "backbone_language": "model.backbone.model.language_model"
+  },
+  "observation_shapes": {
+    "video": [
+      "res256_image_side_0",
+      "res256_image_side_1",
+      "res256_image_wrist_0"
+    ],
+    "state": [
+      "end_effector_position_relative",
+      "end_effector_rotation_relative",
+      "gripper_qpos",
+      "base_position",
+      "base_rotation"
+    ]
+  },
+  "flops_counted": false,
+  "flops_not_counted_reason": "FLOPs NOT COUNTED: GR00T's action head is a DiT whose transformer_blocks alternate self- and cross-attention, so pi0's linear+self-attention formula does not apply and applying it would give an authoritative-looking wrong number. bytes are a sum over tensors and need no architectural assumption.",
+  "ae_step_bytes_is_lower_bound": true,
+  "peaks": {
+    "measured_GBps": 187.47,
+    "spec_GBps": 204.8
+  }
+}
