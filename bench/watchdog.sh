@@ -211,7 +211,12 @@ SUPERSEDED = {
 for tag, pat, need, target in (
         ("E11 hybrid",  "results/*_E11*_*",  "model_inputs.csv",       4),
         ("E5 timeline", "results/*_E5_*",    "timeline_summary.csv",  12),
-        ("E5b instr",   "results/*_E5b_*",   "stall_attribution.csv",  6)):
+        ("E5b instr",   "results/*_E5b_*",   "stall_attribution.csv",  6),
+        # E12 (T014). corun_ratios.csv is the file that carries s, p and r -- a directory
+        # with timings but no ratios has not answered the question the experiment exists
+        # for. Target 5 per docs/E12_corun/README.md §10 (corun N10, mechanisms, N4,
+        # energy, and MODE_30W which waits for the owner's reboot).
+        ("E12 corun",   "results/*_E12_*",   "corun_ratios.csv",       5)):
     rows = [(d, (Path(d) / need).exists() and (Path(d) / need).stat().st_size > 0)
             for d in sorted(glob.glob(pat))]
     ok = sum(1 for _, o in rows if o)
@@ -340,13 +345,38 @@ from pathlib import Path
 # Match the EXACT argv element, never a substring of the joined cmdline. Substring
 # matching has cost this project three incidents -- the shell that creates a heredoc
 # contains the pattern, so the matcher finds itself; once it killed its own shell.
-JOBS = ("opt_ladder.py", "groot_phases.py", "paper_repro.py", "power_phases.py",
-        "phase_loops.py", "host_segments.py", "nsys_target.py", "ncu_target.py",
-        "build_inst_inventory.py", "libero_eval.py",
-        # added 2026-09-24: the E11 scripts. Section 2 did not know about these and
-        # reported "NOTHING RUNNING" with pipelining.py live. One list, two readers.
-        "handover.py", "prefix_sweep.py", "mempressure.py", "pipelining.py",
-        "groot_segments.py", "consolidate_e11.py")
+# Any measuring script under bench/, discovered rather than listed.
+#
+# This was a hardcoded allowlist of filenames, in TWO copies that could drift. It went
+# stale twice for the same reason: on 2026-09-24 it reported "NOTHING RUNNING" with
+# pipelining.py live, I added the E11 names, and on 2026-09-25 it did it again with
+# corun.py live. Adding a name fixes the instance; the allowlist IS the defect, because
+# every new measuring script is invisible until someone remembers to register it -- and a
+# false "NOTHING RUNNING" is worse than crying wolf, since it hides a stalled queue.
+#
+# Now: a process counts as a job if any argv element is a .py file under this repo's
+# bench/ directory. bw_hog.py is excluded where it matters (it is a helper the load
+# generators spawn, handled separately below), and progress_monitor.py is a daemon, not
+# work. Nothing to keep in sync and no new script to remember.
+# REPO is not defined inside these heredocs -- only os and Path are imported -- so this
+# resolves bench/ from the cwd the audit is invoked in, which is always the repo root.
+_BENCH_DIR = Path("bench").resolve()
+_NOT_JOBS = {"bw_hog.py", "progress_monitor.py", "watchdog.py"}
+
+
+def _is_job_arg(a: str) -> bool:
+    """True if this argv element is a measuring script in bench/.
+
+    Basename lookup, so it matches both `bench/corun.py` and an absolute path. A script
+    elsewhere sharing a bench/ basename would count -- deliberately conservative, because a
+    false "NOTHING RUNNING" hides a stalled queue and a false positive only prints a line.
+    """
+    if not a.endswith(".py"):
+        return False
+    base = a.rsplit("/", 1)[-1]
+    if base in _NOT_JOBS:
+        return False
+    return (_BENCH_DIR / base).exists()
 
 me = os.getpid()
 ppid, argvs, hits = {}, {}, []
@@ -372,7 +402,7 @@ for d in Path('/proc').iterdir():
     exe = argv[0].rsplit('/', 1)[-1]
     is_py = exe.startswith('python')
     is_prof = exe in ('ncu', 'nsys')
-    named = any(a.rsplit('/', 1)[-1] in JOBS for a in argv[1:])
+    named = any(_is_job_arg(a) for a in argv[1:])
     # nsys' own helpers are not jobs: the agent daemonises (reparenting to init) and
     # nsys-tee is a pipe relay. Counting them as separate work is what produced
     # "MORE THAN ONE GPU JOB LIVE" for a single healthy capture.
@@ -478,13 +508,38 @@ until its run finishes. An audit that reports healthy work as broken gets ignore
 import glob, os
 from pathlib import Path
 
-JOBS = ("opt_ladder.py", "groot_phases.py", "paper_repro.py", "power_phases.py",
-        "phase_loops.py", "host_segments.py", "nsys_target.py", "ncu_target.py",
-        "build_inst_inventory.py", "libero_eval.py",
-        # added 2026-09-24: the E11 scripts. Section 2 did not know about these and
-        # reported "NOTHING RUNNING" with pipelining.py live. One list, two readers.
-        "handover.py", "prefix_sweep.py", "mempressure.py", "pipelining.py",
-        "groot_segments.py", "consolidate_e11.py")
+# Any measuring script under bench/, discovered rather than listed.
+#
+# This was a hardcoded allowlist of filenames, in TWO copies that could drift. It went
+# stale twice for the same reason: on 2026-09-24 it reported "NOTHING RUNNING" with
+# pipelining.py live, I added the E11 names, and on 2026-09-25 it did it again with
+# corun.py live. Adding a name fixes the instance; the allowlist IS the defect, because
+# every new measuring script is invisible until someone remembers to register it -- and a
+# false "NOTHING RUNNING" is worse than crying wolf, since it hides a stalled queue.
+#
+# Now: a process counts as a job if any argv element is a .py file under this repo's
+# bench/ directory. bw_hog.py is excluded where it matters (it is a helper the load
+# generators spawn, handled separately below), and progress_monitor.py is a daemon, not
+# work. Nothing to keep in sync and no new script to remember.
+# REPO is not defined inside these heredocs -- only os and Path are imported -- so this
+# resolves bench/ from the cwd the audit is invoked in, which is always the repo root.
+_BENCH_DIR = Path("bench").resolve()
+_NOT_JOBS = {"bw_hog.py", "progress_monitor.py", "watchdog.py"}
+
+
+def _is_job_arg(a: str) -> bool:
+    """True if this argv element is a measuring script in bench/.
+
+    Basename lookup, so it matches both `bench/corun.py` and an absolute path. A script
+    elsewhere sharing a bench/ basename would count -- deliberately conservative, because a
+    false "NOTHING RUNNING" hides a stalled queue and a false positive only prints a line.
+    """
+    if not a.endswith(".py"):
+        return False
+    base = a.rsplit("/", 1)[-1]
+    if base in _NOT_JOBS:
+        return False
+    return (_BENCH_DIR / base).exists()
 live_dirs, running, hogs = set(), False, []
 _all_argv = []
 me = os.getpid()
@@ -500,7 +555,7 @@ for d in Path('/proc').iterdir():
         continue
     _all_argv.append(argv)
     names = [a.rsplit('/', 1)[-1] for a in argv[1:]]
-    if any(n in JOBS for n in names):
+    if any(_is_job_arg(a) for a in argv[1:]):
         running = True
         live_dirs |= {a for a in argv[1:] if a.startswith(("results/", "scratch/"))}
     if any(n == "bw_hog.py" for n in names):
@@ -627,18 +682,35 @@ cat <<'ORD'
                                             E11a DiT segments for GR00T n1.7/n1.6/n1.5.
                                             reports/E11_models.md, commit 493c548.
       2b/2c. the fixup, groot_n15 re-runs and the pi0.5 meta.json back-fill are all DONE.
-      3. E5 nsys timeline, six models  <- RUNNING (preflighting nsys_target --rung first,
-         the one path E5 needs that has never run under nsys). The compiled half plus the
-         busy 16 %. Also tests the GPU-idle hypothesis registered in
-         reports/E7_power_energy.md -- and SmolVLA's E11f already gives a data point
-         against it: 84.0 % raw / 77.8 % corrected ae idle, nearly pi0's, yet SmolVLA had
-         the LOWEST energy-to-time ratio in E7 (0.45) and pi0 0.80.
-      4. E5b / T007 instruction level, six models
-      5. check_report_numbers.py extended to E4d/E4g/E4i  (CPU-only; run between GPU jobs)
-      6. E7 at MODE_50W, unattended -- decline any reboot prompt and record it
-      7. LAST, needs a human reboot: E7 at MODE_30W and MODE_15W. Never confirm the
-         prompt, never use nvpmodel --force; write "next: resume E7 at mode <id>" at the
-         top of STATUS.md and hand off with the exact commands.
+      3. E5 nsys timeline, six models          DONE 2026-09-24, 14/14. The compiled half
+                                                 exists: --rung keeps the NVTX regions.
+                                                 reports/E5_timeline.md
+      4. E5b / T007 instruction level            DONE 2026-09-25, 6/6 configurations, 24
+                                                 captures. reports/E5b_summary.md. NO
+                                                 configuration meets §7's 60 % memory-
+                                                 latency-bound threshold (19.5-47.6 %
+                                                 time-weighted).
+      5. check_report_numbers.py for E4d/E4g/E4i DONE, 39/39 values verified.
+      6. E7 at MODE_50W, unattended            DONE 2026-09-25 00:50, 18 runs, 0 failures.
+                                                 Device restored to MAXN and the gate is
+                                                 byte-identical to the pre-switch record.
+                                                 energy-delay WORSE at 50W in all 12
+                                                 pairable points (1.196-1.400x).
+      7. T014 / E12 co-run  <- RUNNING. prefix(k) || expert(k-1) on two streams, one GPU.
+         The decisive number is s = B_co/B_iso against r = A_iso/B_iso = 1.50.
+         Phase 0 DONE: bench/fixtures/e12, five real episode-0 frames, so the fresh-KV
+         check has power (one observation would make a stale-KV bug invisible).
+         Next: bench/corun.py harness -> equivalence (eager + compiled, with a negative
+         control that MUST fail) -> Step 1 timings -> nsys -> mechanisms -> energy.
+         NOTHING E12 reports is valid until the equivalence check passes: non-negotiable 1.
+      8. LAST, needs a human reboot: E7 at MODE_30W and MODE_15W, and E12 Step 4 rides the
+         MODE_30W session (no extra reboot). Never confirm the prompt, never use
+         nvpmodel --force. The handoff and exact commands are at the top of STATUS.md and
+         bench/queues/queue_e7_capped.sh is written and tested.
+      Also open, unclaimed: T006 (E8 LIBERO closed loop -- no accuracy validation exists
+         yet for pi0), T008/T009 (floor.csv, E5 ncu per region, E6 roofline; both still
+         at `claimed` and part-done under other tasks -- they need auditing against their
+         own acceptance criteria).
 ORD
 }
 
