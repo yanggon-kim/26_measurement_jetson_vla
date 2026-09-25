@@ -1,0 +1,41 @@
+{
+  "_purpose": "analytic FLOPs for the vision region, completing floor.csv's zero",
+  "_shapes_from": "/home/yanggon/.cache/huggingface/hub/models--lerobot--pi05_libero_base/snapshots/a217bfd3b14673cf2ce597e69997ab21866438dd/model.safetensors",
+  "_tensors_used": {
+    "patch_embedding": "paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight",
+    "position_embedding": "paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.position_embedding.weight",
+    "q_proj": "paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.self_attn.q_proj.weight",
+    "mlp_fc1": "paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.mlp.fc1.weight",
+    "projector": "paligemma_with_expert.paligemma.model.multi_modal_projector.linear.weight"
+  },
+  "_convention": "one multiply-accumulate = 2 FLOPs; matrix work only, as in bench/run_e3.py's floor rows (norms/softmax/activations excluded)",
+  "encoder_layers": 27,
+  "hidden": 1152,
+  "tokens_per_image": 256,
+  "mlp_intermediate": 4304,
+  "patch": [
+    3,
+    14,
+    14
+  ],
+  "projector_out": 2048,
+  "images_encoded_per_inference": 3,
+  "flops_per_component_per_image": {
+    "patch_embedding": 346816512,
+    "qkv_proj": 2038431744,
+    "attn_scores": 150994944,
+    "attn_apply": 150994944,
+    "o_proj": 679477248,
+    "mlp_fc1": 2538602496,
+    "mlp_fc2": 2538602496
+  },
+  "flops_per_layer": 8097103872,
+  "flops_one_image": 220176580608,
+  "flops_vision_region": 660529741824,
+  "bytes_as_stored_in_checkpoint": 1659214784,
+  "bytes_as_loaded_fp32": 1659214784,
+  "_dtype_note": "patch_embedding is F32 and the encoder linears are F32 IN THE CHECKPOINT; modeling_pi0.py:410-417 upcasts the whole vision path to fp32 at load time via params_to_keep_float32, for a stated TRAINING reason (optimizer dtype toggling). Running it in bf16 restores the stored precision rather than discarding any.",
+  "operational_intensity_FLOP_per_byte_fp32": 398.1,
+  "operational_intensity_FLOP_per_byte_bf16": 398.1,
+  "measured_ridge_point_FLOP_per_byte": 180.57
+}

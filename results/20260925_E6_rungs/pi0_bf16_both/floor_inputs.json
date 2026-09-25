@@ -1,0 +1,74 @@
+{
+  "model": "pi0",
+  "rung": "bf16_both",
+  "rung_note": "bf16_both: prep=[vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)] compiled=['model.denoise_step@reduce-overhead', 'pg.embed_image@reduce-overhead+clone', 'pg.forward@max-autotune-no-cudagraphs'] matmul=high",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "tokens": {
+    "prefix_tokens_P": 816,
+    "prefix_tokens_valid": 533,
+    "suffix_tokens_S": 51,
+    "suffix_tokens_valid": 51,
+    "n_images": 3,
+    "image_shapes": [
+      [
+        1,
+        3,
+        224,
+        224
+      ],
+      [
+        1,
+        3,
+        224,
+        224
+      ],
+      [
+        1,
+        3,
+        224,
+        224
+      ]
+    ],
+    "image_masks": [
+      true,
+      true,
+      false
+    ],
+    "language_tokens": 48,
+    "language_tokens_valid": 21,
+    "state_dim_padded": 32,
+    "state_in_prefix": false,
+    "chunk_size": 50
+  },
+  "architecture_from_config": {
+    "layers": 18,
+    "config_layers": 18,
+    "layers_source": "counted from the loaded module list",
+    "layers_note": "",
+    "heads": 8,
+    "kv_heads": 1,
+    "head_dim": 256,
+    "expert_layers": 18
+  },
+  "element_size_bytes": 2,
+  "resolved_region_paths": {
+    "vision": "vision_tower",
+    "projector": "multi_modal_projector",
+    "vlm_language_model": "language_model",
+    "action_expert_layers": "gemma_expert.model.layers"
+  },
+  "region_parameter_bytes": {
+    "vision_plus_projector": 829607392,
+    "vlm_language_model": 5017063424,
+    "action_expert_layers": 622927872,
+    "kv_cache_per_step": 15040512
+  },
+  "peaks": {
+    "measured_GBps": 187.47,
+    "measured_TFLOPps": 33.8506,
+    "spec_GBps": 204.8,
+    "spec_TFLOPps": 42.0
+  },
+  "torch": "2.8.0"
+}
