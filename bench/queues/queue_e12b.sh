@@ -40,7 +40,7 @@ st() {
             --nvtx "$d/m2_nvtx_pushpop_trace.csv" --out results/${D}_E12b_pi0_corun_N10_MAXN
           echo "EXIT=$? nsys analysis" ;;
     m3)   run "E12b M3 green co-run + hog" $PY -u bench/e12b_m3.py \
-            --outdir results/${D}_E12b_pi0_green_corun_N10_MAXN ;;
+            --outdir results/${D}_E12b_pi0_green_corun_N10_MAXN --splits "${SPLITS:-12/4,10/6,8/8,6/10,14/2}" ;;
     m4calib) run "E12b M4 EMC calibration" $PY -u bench/e12b_m4.py --mode calib \
             --outdir results/${D}_E12b_pi0_emc_calibration_MAXN ;;
     m4rung)  run "E12b M4 bandwidth, M2 config" $PY -u bench/e12b_m4.py --mode rung \
@@ -51,6 +51,11 @@ st() {
             --calib results/${D}_E12b_pi0_emc_calibration_MAXN/emc_calibration.json ;;
     m5)   run "E12b M5 energy" $PY -u bench/e12b_m5.py --outdir results/${D}_E12b_pi0_energy_N10_MAXN \
             --corun-config "${M5_CONFIG:-rung_prefix}" ${M5_SPLIT:+--corun-split $M5_SPLIT} ;;
+    mech) d=results/${D}_E12b_pi0_corun_N10_MAXN/mechanisms
+          run "E12b mechanism prio_prefix" $PY -u bench/e12b_mech.py --variant prio_prefix --outdir $d
+          run "E12b mechanism prio_expert" $PY -u bench/e12b_mech.py --variant prio_expert --outdir $d
+          run "E12b mechanism maxconn1" env CUDA_DEVICE_MAX_CONNECTIONS=1 $PY -u bench/e12b_mech.py \
+              --variant maxconn1 --outdir $d ;;
     *) echo "unknown stage $1"; exit 2 ;;
   esac
 }

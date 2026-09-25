@@ -117,13 +117,19 @@ class Harness:
     """One process, two stages, their graphs and buffers; full GPU or one green split."""
 
     def __init__(self, policy, spec, frames, N=10, config="rung_prefix", split=None,
-                 order="prefix_first"):
+                 order="prefix_first", prio=(0, 0)):
         self.policy, self.spec, self.frames, self.N = policy, spec, frames, N
         self.config, self.split, self.order = config, split, order
         self.m = policy.model
+        self.prio = prio
         if split is None:
             self.gp = self.ge = None
-            self.sp, self.se = torch.cuda.Stream(), torch.cuda.Stream()
+            # priority: lower number = higher priority; torch.cuda.Stream.priority_range() on this
+            # device is (0, -3). Read back after creation -- E11f's first version asked for a
+            # priority and never checked it was granted.
+            self.sp = torch.cuda.Stream(priority=prio[0])
+            self.se = torch.cuda.Stream(priority=prio[1])
+            self.prio_granted = (self.sp.priority, self.se.priority)
         else:
             import green_ctx as G                                      # noqa: PLC0415
             if config != "graphs_both":
@@ -152,6 +158,13 @@ class Harness:
             t += ["owngraph_prefix", "memo_681"]
         if self.split:
             t.append(f"green_{self.granted[0]}_{self.granted[1]}")
+        if not self.split and self.prio[0]:
+            t.append(f"prio_prefix_{self.prio_granted[0]}")
+        if not self.split and self.prio[1]:
+            t.append(f"prio_expert_{self.prio_granted[1]}")
+        import os                                                      # noqa: PLC0415
+        if os.environ.get("CUDA_DEVICE_MAX_CONNECTIONS"):
+            t.append(f"maxconn_{os.environ['CUDA_DEVICE_MAX_CONNECTIONS']}")
         t.append(self.order)
         return "+".join(t)
 
