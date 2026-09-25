@@ -80,3 +80,27 @@ to 20260924 and every other part keeps its existing source.
 
 Worth remembering as a pattern: a re-measured PART does not update a consolidated FILE.
 Any future re-run of one part must be followed by re-consolidating that model.
+
+
+--- 2026-09-24 17:20, DONE: the deferred meta.json regeneration ---
+
+model_commit back-filled in results/20260924_E11a_pi05_hostseg/meta.json and
+results/20260924_E11c_pi05_handover/meta.json, from None to
+a217bfd3b14673cf2ce597e69997ab21866438dd.
+
+Safe to do now because queue_e11.sh has left pi0.5 behind -- it is in the smolvla loop,
+then groot -- so nothing will rewrite those directories. That was the only reason it was
+deferred.
+
+Verified rather than copied from the consolidation: the local HF cache holds exactly ONE
+snapshot for lerobot/pi05_libero_base, created 2026-09-22T19:49, and refs/main points at
+it. Both runs executed 2026-09-24 with no other snapshot on disk, so those are the only
+weights they could have loaded. The consolidation at 16:15 recorded the same sha
+independently.
+
+Disclosed inside each meta.json under `notes` rather than corrected silently (protocol
+§5). pi0.5's consolidated model_inputs.csv still passes the checker (OK).
+
+Root cause, for anything written from here on: resolved_commit() did not exist when those
+two runs executed, and pi0.5 pins no revision so spec.revision was None. Every driver that
+writes model_commit must call MR.resolved_commit(spec), not spec.revision.
