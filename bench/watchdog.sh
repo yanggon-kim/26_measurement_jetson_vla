@@ -183,6 +183,15 @@ for line in lines[:10]:
 # happened to 20260924_E11f_pi0_pipelining at 13:31, five minutes into a fresh matrix.
 # The E7 rows got this treatment and the three rows beside them did not, which is the
 # same omission as bw_hog sitting un-fixed next to tegrastats.
+# A directory whose measurement has since been taken SOMEWHERE ELSE is not an outstanding
+# defect, and reporting it as BROKEN every ten minutes is the crying-wolf failure this file
+# has now hit four times. The entry names its replacement so the claim can be checked, and
+# the replacement must actually exist -- a superseded-by that is itself missing is reported
+# as a normal breakage rather than quietly forgiven.
+SUPERSEDED = {
+    "20260922_E5_pi0_reduce-overhead_N4": "20260924_E5_pi0_best_N4",
+}
+
 for tag, pat, need, target in (
         ("E11 hybrid",  "results/*_E11*_*",  "model_inputs.csv",       4),
         ("E5 timeline", "results/*_E5_*",    "timeline_summary.csv",  12),
@@ -191,10 +200,18 @@ for tag, pat, need, target in (
             for d in sorted(glob.glob(pat))]
     ok = sum(1 for _, o in rows if o)
     live = [os.path.basename(d) for d, o in rows if not o and _is_live(d)]
-    broken = [os.path.basename(d) for d, o in rows if not o and not _is_live(d)]
+    broken_all = [os.path.basename(d) for d, o in rows if not o and not _is_live(d)]
+    superseded, broken = [], []
+    for b in broken_all:
+        rep = SUPERSEDED.get(b)
+        if rep and (Path("results") / rep / need).exists():
+            superseded.append(f"{b}->{rep}")
+        else:
+            broken.append(b)
     print(f"  {tag:11s} {ok} usable of {len(rows)} present (target ~{target})"
           + (f"   RUNNING: {live}" if live else "")
-          + (f"   BROKEN: {broken[:3]}" if broken else ""))
+          + (f"   BROKEN: {broken[:3]}" if broken else "")
+          + (f"   superseded: {superseded}" if superseded else ""))
 
 # A 0-byte stdout is a run that produced nothing while leaving a directory behind --
 # UNLESS that run is still going, in which case a capture whose output is still buffered
