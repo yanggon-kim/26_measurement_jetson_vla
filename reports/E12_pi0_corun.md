@@ -7,6 +7,14 @@
 
 **On one Orin GPU, π0's two stages do not overlap — and the reason is the host, not the GPU.**
 
+**And the GPU is not the obstacle even in principle.** §5 partitions Orin's 16 SMs with CUDA
+green contexts and finds the **action expert is SM-independent**: taking away three quarters of
+the SMs costs it 1.3 % (eager) / 4.9 % (`bf16_both`), while the prefix slows 2.98×. A stage that
+does not occupy the SM array can neither block nor be blocked at the CTA dispatcher, so
+**KerColle's contention mechanism cannot be what limits co-running these two stages on this
+device**. That is the answer to the question E12 was commissioned to settle, and it is a
+*measurement*, not an inference from the no-overlap result above.
+
 `results/20260925_E12_pi0_corun_N10_MAXN_eager_nosync/`, π0 eager, N = 10, MAXN +
 `jetson_clocks`, n = 100 frames per condition, bench commit `5dc228ee4b03`:
 
@@ -222,6 +230,112 @@ a repeated last frame.
 
 **No compiled co-run number is reported.** Timing that path would produce plausible
 milliseconds for a pipeline computing NaN, which is worse than reporting nothing.
+
+## 5. Step 3 answered with green contexts: **neither stage saturates Orin's 16 SMs**
+
+The sections above establish that π0's two stages do not overlap and that the **host** is why.
+They do not answer the research question, because KerColle's mechanism is GPU contention and a
+configuration that never fills the GPU cannot exhibit it. Every direct route to filling it is
+closed: one Python thread cannot feed two streams (§13.7), the compiled rung corrupts across
+streams (§4), and two processes are OOM-killed (Orin's 62 GB is shared CPU+GPU; one π0 at
+`bf16_both` is ~15 GB).
+
+**CUDA green contexts partition the SMs inside one process**, which dodges the memory limit and
+lets the question be asked from the other side:
+
+> How much slower is ONE stage when it is given 4 SMs instead of 16?
+
+This is a *necessary condition* argument. Contention between two stages requires that each can
+actually use the SMs the other would take. A stage that runs at the same speed on a quarter of
+the array was not using the array, and a co-runner could have had the rest.
+
+`results/20260925_E12_pi0_green_N10_MAXN_{eager,bf16both}/sm_sensitivity.csv`, π0, N = 10,
+MAXN + `jetson_clocks`, medians over n = 30–180 per point:
+
+| SMs | eager prefix | eager expert | `bf16_both` prefix | `bf16_both` expert |
+|---:|---:|---:|---:|---:|
+| 4 | 1425.07 ms (2.981×) | **588.64 ms (1.013×)** | 491.60 ms (1.958×) | **117.05 ms (1.049×)** |
+| 6 | 993.87 (2.079×) | 584.07 (1.006×) | 378.06 (1.505×) | 114.69 (1.028×) |
+| 8 | 779.79 (1.631×) | 587.56 (1.012×) | 320.71 (1.277×) | 113.70 (1.019×) |
+| 10 | 662.12 (1.385×) | 583.35 (1.004×) | 290.56 (1.157×) | 113.30 (1.015×) |
+| 12 | 576.50 (1.206×) | 582.99 (1.004×) | 271.26 (1.080×) | 112.30 (1.006×) |
+| **16** | **478.08** | **580.79** | **251.10** | **111.61** |
+
+**The action expert is SM-independent. Removing three quarters of the GPU's SMs costs it 1.3 %
+(eager) and 4.9 % (`bf16_both`).** The prefix does scale — 2.98× on 4 SMs in eager — so the
+measurement has power: the same apparatus that shows the expert flat shows the prefix moving.
+
+### Consequence for the research question
+
+**CTA-level contention cannot be what limits co-running π0's two stages on Orin.** The expert
+does not occupy the SM array, so it can neither be blocked at the CTA dispatcher nor block
+anything else there. The binding constraint is host kernel issue (`issue/wall` = 1.0000, §1).
+
+**This is not a refutation of KerColle**, and the distinction matters. They modelled 128–170 SM
+desktop GPUs. What is measured here is that *π0's kernels, on Orin's 16 SMs*, do not produce
+grids that compete. The grid sizes from E5b's ncu captures show why:
+
+| expert kernel | CTAs | block | can it even fill 16 SMs? |
+|---|---:|---:|---|
+| `ampere_bf16_s16816gemm_bf16_64x64_sliced1x2…` | 16 | 128 | exactly 1 CTA per SM |
+| `ampere_bf16_s16816gemm_bf16_128x64…`, `ampere_sgemm_128x64_tn` | 32 | 128 | 2 per SM |
+| `Kernel2` | 128 | 128 | 8 per SM |
+| `elementwise_kernel`, `vectorized_elementwise_kernel` | **1** | 128 | **one SM, by construction** |
+
+**Derived, not measured:** at 128 threads per CTA and Orin's 1536 threads per SM, the ceiling is
+12 CTAs/SM, so 4 SMs offer ~48 CTA slots. Every kernel above except `Kernel2` therefore has its
+**entire grid resident even on 4 SMs**, and runs in one wave whether it has 4 SMs or 16. That is
+the mechanism behind the flat curve, and it predicts the small residual: only `Kernel2` (128
+CTAs) needs extra waves on 4 SMs, which is consistent with the 4.9 % rather than 0 %. This
+argument uses the device's spec occupancy ceiling, **not** a measured achieved occupancy — the
+E5b exports do not carry the `launch__occupancy_limit_*` columns — so it is offered as the
+explanation for a measured curve, not as an independent measurement.
+
+### What a working co-run would buy, if the host were fixed
+
+**Derived arithmetic, explicitly not a measurement.** Taking each stage's time at its best
+partition and pairing them to 16 SMs:
+
+| rung | expert @ 4 SMs | prefix @ 12 SMs | period = max | serial at 16 SMs | ratio |
+|---|---:|---:|---:|---:|---:|
+| eager | 588.64 | 576.50 | **588.64 ms** | 1058.87 | **1.799×** |
+| `bf16_both` | 117.05 | 271.26 | **271.26 ms** | 362.71 | **1.337×** |
+
+This is the upper bound on what fixing the host issue bottleneck could buy *on the GPU alone*,
+conditional on two green contexts actually running concurrently — which **was not measured**,
+because one Python thread still issues both and §13.7 forbids a second. It is arithmetic over
+six measured numbers, and it is in this report as a bound, not a result. No `T_pipe` is claimed
+for it.
+
+### Controls, both of which had to pass before any number above was recorded
+
+1. **Is the partition real?** A green context that does not actually confine work would return
+   plausible milliseconds measuring nothing — the failure mode that made §4's compiled pipeline
+   emit NaN behind sensible timings. A compute-bound bf16 GEMM was timed per SM count:
+   **3.245× slower on 4 SMs, 1.637× on 8** (ideal 4.0 / 2.0). Confinement confirmed. The
+   harness refuses to time and writes `REFUSED.md` if the curve is flat.
+2. **Are the numerics unchanged?** Green contexts share the device address space with torch's
+   primary context, so the caching allocator's tensors *should* be reachable — and *should* is
+   not *is*. Actions computed on an 8-SM green stream against the default stream:
+   **max |Δ| = 0.000e+00, no NaN, bitwise identical.**
+
+**Cross-validation of the whole apparatus.** The 16-SM points are the full GPU, so they must
+reproduce numbers measured by unrelated harnesses. `bf16_both` prefix **251.10 ms** against E7's
+**251.28** (0.07 %); `bf16_both` expert **111.61** against §3's reconciled **111.02** (0.5 %);
+eager prefix **478.08** against §1's `A_iso` **474.08** (0.8 %). The eager expert is 580.79 here
+against §1's `B_iso` 523.76 — an 10.9 % gap that is **expected and accounted for**: §1's run is
+the labelled `pi0_nosync` variant, which removes `1 + N` host syncs per frame, and this run is
+stock π0. Four independent agreements and one difference with a known cause.
+
+### An engineering limitation worth recording
+
+Wrapping a green-context stream in `torch.cuda.ExternalStream` is **not sufficient**. A plain
+`a @ b` runs on it, but `nn.Linear` fails: it takes cuBLASLt's fused `gemm_and_bias` path, which
+returns `CUBLAS_STATUS_EXECUTION_FAILED`, after which torch's "recover by calling unfused cublas
+path" raises `CUDA error: invalid device context`. `DISABLE_ADDMM_CUDA_LT=1` does **not** fix it.
+What works is making the green context *current* on the thread — `cuCtxFromGreenCtx` +
+`cuCtxSetCurrent` — so cuBLAS binds its handle to the context that owns the stream
+(`bench/green_ctx.py::GreenCtxStream.activate`). Anyone repeating this on Jetson will hit it.
 
 ## 5. Measured / derived / not measured
 

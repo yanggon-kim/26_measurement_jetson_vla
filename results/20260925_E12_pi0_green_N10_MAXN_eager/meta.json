@@ -1,0 +1,62 @@
+{
+  "experiment": "E12 Step 3 -- SM partitioning via CUDA green contexts",
+  "mechanism": "green_contexts_one_process",
+  "model": "pi0",
+  "rung": "eager",
+  "rung_note": "eager",
+  "N": 10,
+  "gate": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600"
+  },
+  "device_sm_count": 16,
+  "sm_points": [
+    4,
+    6,
+    8,
+    10,
+    12,
+    16
+  ],
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/corun_green.py --rung eager --steps 10 --sms 4,6,8,10,12,16 --seconds 20 --outdir results/20260925_E12_pi0_green_N10_MAXN_eager",
+  "code_commit": "79bae9b8995797d89bbaa9747b0266388ccfc5e5",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "torch": "2.8.0",
+  "cuda": "12.6",
+  "driver_green_ctx": "cuGreenCtxCreate + cuGreenCtxStreamCreate via ctypes, driver 12.6",
+  "controls": {
+    "partition_verification": "largest slowdown from a reduced partition is 3.245x. Work IS confined to the partition, so per-SM-count timings are meaningful.",
+    "equivalence": {
+      "max_abs_diff": 0.0,
+      "bitwise_identical": true,
+      "any_nan": false,
+      "granted_sm": 8,
+      "requirement": "eager on a partitioned GPU must be bitwise identical: the same kernels run, only on fewer SMs. A non-zero difference means the green stream is not computing what the default stream computes, and no timing from it would describe pi0.",
+      "passed": true
+    }
+  },
+  "measured": [
+    "per-stage wall time per SM count (host-side, with a full sync per iteration, matching the rest of E12)"
+  ],
+  "derived": [
+    "slowdown_vs_16sm = median / this session's 16-SM median, per stage",
+    "ideal_slowdown = 16 / granted_sm",
+    "sm_efficiency = (slowdown-1)/(ideal_slowdown-1): 1.0 means the stage scales exactly with SM count, 0.0 means it is completely insensitive"
+  ],
+  "not_measured": [
+    "Two stages running CONCURRENTLY in separate partitions. This run establishes each stage's own SM demand, which is the necessary condition for contention; it does not exhibit interference. Running both at once in two green contexts is the natural next step and needs the host-issue problem solved first, since one Python thread still issues both (\u00a713.7 forbids a second).",
+    "nsys timeline per partition.",
+    "Whether the driver's SM partition is spatially contiguous (TPC-aligned) -- the split granted (4,4,4,4)/(6,6)/(8,8) suggests TPC pairs, but this was not verified against hardware IDs."
+  ],
+  "caveat": "sm_efficiency below ~0.3 for a stage means that stage cannot be the victim OR the cause of CTA-level contention on this device, because it does not use the SMs it already has. That is a statement about Orin's 16 SMs and pi0's kernel shapes, NOT a refutation of KerColle, which modelled 128-170 SM GPUs where the same model's grids may well exceed capacity."
+}

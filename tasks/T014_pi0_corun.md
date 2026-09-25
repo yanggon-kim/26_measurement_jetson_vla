@@ -82,3 +82,62 @@ contexts and MPS both probed as present on CUDA 12.6, so testable); Step 4 at MO
 the owner's capped-mode reboot, as §11 permits); Step 5 energy and an N = 4 result directory;
 and the nsys timeline, which is unnecessary while `B_co − B_iso` is −2.3 ms because there is no
 slowdown to decompose.
+
+status: updated 2026-09-25 — Step 3 ANSWERED with green contexts; the co-run question is settled for Orin
+
+**The question T014 exists to settle now has a measured answer: on Orin's 16 SMs, CTA-level
+contention cannot be what limits co-running π0's prefix and expert, because the expert does
+not occupy the SM array at all.**
+
+`results/20260925_E12_pi0_green_N10_MAXN_eager` and `..._bf16both`, π0, N = 10, MAXN, medians
+over n = 30–180 per point. Time at 4 SMs relative to 16:
+
+| stage | eager | `bf16_both` |
+|---|---:|---:|
+| prefix | 1425.07 ms, **2.981×** | 491.60 ms, **1.958×** |
+| expert | 588.64 ms, **1.013×** | 117.05 ms, **1.049×** |
+
+The expert is flat across a 4× reduction in SMs; the prefix is not, so the apparatus has power.
+
+**Why this was the route left.** Every direct co-run route is closed and each closure is itself
+a recorded result: one Python thread cannot feed two streams (§13.7 forbids a second; T010's
+numbers were GIL artefacts), the compiled rung corrupts across two streams (max |Δ| 1.273 /
+all-NaN, silently), and two processes are OOM-killed because Orin's 62 GB is shared CPU+GPU and
+one π0 at `bf16_both` is ~15 GB. Green contexts partition SMs *within* one process, so they
+dodge the memory limit and invert the question: instead of "do the stages slow each other
+down", ask "does either stage use the SMs the other would take". Necessary-condition logic —
+weaker than exhibiting interference, and not confounded by the host bottleneck that defeated
+every direct attempt.
+
+**Mechanism, from E5b's grid sizes.** The expert's kernels launch 1–128 CTAs of 128 threads;
+two elementwise kernels launch a **single** CTA and so occupy one SM by construction. At Orin's
+1536 threads/SM every kernel but `Kernel2` has its whole grid resident even on 4 SMs, running
+in one wave regardless of partition size. (Derived from the spec occupancy ceiling — the E5b
+exports lack `launch__occupancy_limit_*` — so it explains the measured curve rather than
+standing as its own measurement.)
+
+**Controls, both required to pass before any timing was kept.** A compute-bound GEMM slowed
+3.245× on 4 SMs and 1.637× on 8 (ideal 4.0/2.0), confirming the partition actually confines
+work — the harness writes `REFUSED.md` and takes no timings if that curve is flat. Actions on
+an 8-SM green stream matched the default stream **bitwise (max |Δ| = 0.000e+00)**.
+
+**Cross-validation.** The 16-SM points are the full GPU and reproduce unrelated harnesses:
+`bf16_both` prefix 251.10 vs E7's 251.28 (0.07 %), expert 111.61 vs the reconciled 111.02
+(0.5 %), eager prefix 478.08 vs `A_iso` 474.08 (0.8 %). The eager expert differs by 10.9 % for
+a known reason — the §1 run is the labelled `pi0_nosync` variant, this one is stock π0.
+
+**Derived bound, not a measurement:** pairing each stage at its best partition (expert 4 SMs,
+prefix 12) gives a period of 588.64 ms eager / 271.26 ms `bf16_both` against serial 1058.87 /
+362.71 — **1.799× / 1.337×**. That is the ceiling on what fixing the host issue bottleneck
+could buy, conditional on two green contexts running concurrently, which was NOT measured. No
+`T_pipe` is claimed from it.
+
+**Engineering limitation recorded for anyone repeating this:** wrapping a green-context stream
+in `torch.cuda.ExternalStream` is not enough. `nn.Linear` takes cuBLASLt's fused `gemm_and_bias`
+path, which returns `CUBLAS_STATUS_EXECUTION_FAILED` on such a stream, and torch's fallback then
+raises `CUDA error: invalid device context`. `DISABLE_ADDMM_CUDA_LT=1` does not help; making the
+green context current via `cuCtxFromGreenCtx` + `cuCtxSetCurrent` does.
+
+**Still open:** MPS and `CUDA_DEVICE_MAX_CONNECTIONS`; two green contexts running concurrently
+(needs the host-issue problem solved); the own-`CUDAGraph` compiled pipeline; Step 4 at
+MODE_30W (owner's reboot); Step 5 energy and an N = 4 result directory.
