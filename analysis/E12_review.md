@@ -6,6 +6,24 @@ lines and every committed row under `results/20260925_E12_pi0_*` against the spe
 disagree, the rows are taken. **Measured** = a committed row; **derived** = arithmetic on committed rows,
 never measured as such. This file is analysis, not an instruction to the device.*
 
+> **⚠ CORRECTION 2026-09-25 (later the same day), from E12b / T015 — see `analysis/E12b_review.md` §5.**
+> T014's **compiled (`bf16_both`) green-context rows were not confined to their partitions.** E12b M0
+> (`results/20260925_E12b_pi0_green_corun_N10_MAXN/raw/m0_graph_confinement.json`) measured that a CUDA graph
+> obeys the partition it was *captured* in, not the green stream it is replayed on (primary-captured graph on a
+> 4-SM stream 0.99×; captured in-partition 3.24×), and T014's harness (`bench/corun_green.py` @ `de6afa3`)
+> recorded the rung's CUDA-graph trees on the primary context before timing on green streams. Device
+> correction: `592e2da` (`STATUS.md` top; `reports/E12_pi0_corun.md` §5). Confined properly, the compiled
+> expert on 4 SMs is **254.79 ms, 2.51× its 16-SM time**, not 1.049×.
+> **Withdrawn in this review:** the `bf16 prefix` / `bf16 expert` columns of the SM-sensitivity table (§1);
+> "numerics on an 8-SM green stream bitwise identical" for `bf16_both` (a whole-GPU replay compared with
+> itself); the derived 12/4 period **271.26 ms = 1.080 × A_iso** and everything built on it in §6 (framing I
+> "nearly", ≤ 1.08× PIM frame-rate gain, "the expert's SM demand is tiny", "freed GPU ≈ 8 %"). **Reversed:** §6's
+> lean toward framing I — the measured best GPU co-run is `O` = **1.247** (green 12/4, 307.15 ms), whole GPU
+> 1.29–1.40, with head-of-line blocking observed unpartitioned and coupling with the SMs partitioned; the
+> evidence now sits in case 001's framing II, measured on Orin. **Still valid:** everything eager (eager launches
+> are confined), §3, §4, §7, and the latency arithmetic of §6 (now superseded by measured values:
+> fair expert 110.95 ms, fair serial frame 354.74 ms).
+
 ## 1. Numbers (all MAXN + `jetson_clocks`, 16 SM, π0 LeRobot `f0d2b37` / ckpt `45dcc8f`)
 
 Recomputed from `latency_samples.csv` (median per condition; isolated = mean of the two bracket medians).
@@ -28,7 +46,10 @@ They reproduce the device's `corun_ratios.csv` to the last printed digit.
 | reconciliation (`scratch/NOTE_e7_ae_time_discrepancy.txt`) | — | 167.09 stock / 111.02 hoisted | — | n = 270 / 406; 56.07 ms = **33.6 %** of B |
 | `green_N10_MAXN_bf16both`, 16 SM | 251.10 | 111.61 | 2.25 | timestep hoisted, unlabelled in the rows |
 
-Green-context SM sensitivity (`sm_sensitivity.csv`, each stage **alone** in a partition; medians, n = 30–180):
+Green-context SM sensitivity (`sm_sensitivity.csv`, each stage **alone** in a partition; medians, n = 30–180).
+**The two `bf16` columns are WITHDRAWN (correction above): the compiled graphs ran unconfined. Confined
+values (E12b M3, `graphs_both` prefix / `owngraph_expert`): 4 SM expert 254.79; 8 SM 326.94 / 149.05;
+12 SM prefix 267.71; 16 SM 246.28 / 101.36.** The eager columns stand.
 
 | SMs | eager prefix | eager expert | bf16 prefix | bf16 expert |
 |---:|---:|---:|---:|---:|
@@ -38,7 +59,8 @@ Green-context SM sensitivity (`sm_sensitivity.csv`, each stage **alone** in a pa
 | 16 | 478.08 | 580.79 | 251.10 | 111.61 |
 
 Partition control: 2048² bf16 GEMM 3.245× / 1.637× slower at 4 / 8 SM (ideal 4 / 2). Numerics on an 8-SM
-green stream: bitwise identical to the default stream.
+green stream: bitwise identical to the default stream (*eager only* — for `bf16_both` the replay was unconfined
+and compared with itself; withdrawn, see the correction above).
 
 Energy (`energy_N10_MAXN_eager_nosync`, eager only, 60 s idle + 60 s per arm, 20 Hz rails, n ≈ 2270 samples/arm,
 idle subtracted as each rail's in-session 60-s idle mean): pipelined 1031.86 ms, 35 546 mW, **36 678.7 mJ/frame**;
@@ -127,11 +149,20 @@ Step 5's "overlap should be easy here" at N = 4, and §2.3's "their diagnosis �
 
 ## 6. What it means for case 001 (§4.3 framings)
 
+> **⚠ Superseded 2026-09-25 by `analysis/E12b_review.md` §6.** The "Derived" bullet below rests on the withdrawn
+> unconfined `bf16` curve: the 271.26 ms bound, "framing I, nearly", "≤ 1.08×", "nothing measured points toward
+> framing II" and "the expert's SM demand is tiny" are **withdrawn**. Measured since: best GPU co-run `O` =
+> 1.247 (green 12/4), whole GPU 1.29–1.40; the PIM's frame-rate increment over the best GPU co-run is ≤ 1.247×
+> `[derived]`, before any prefix slowdown from sharing LPDDR with the PIM (P1, unmeasured). The "Freed GPU"
+> bullet is withdrawn with it (the confined compiled expert needs ≈ 2.5× its time on 4 SMs). The latency bullet's
+> direction holds and is now measured: fair expert 110.95 ms, fair serial frame 354.74 ms, PIM latency gain
+> 1.036× (16 ch) / 1.152× (32 ch) `[derived]`.
+
 - **Measured:** GPU-side overlap on Orin at MAXN is **not achieved** with shipping software: eager from one Python
   thread gives `T_pipe = A + B`; `bf16_both` cannot be pipelined on the stock torch 2.8 CUDA-graph-tree path
   (silent corruption), and two full-policy processes do not load side by side. Neither framing I nor II is
   measured; the cell of case 001 that E12 was meant to fill is still empty for `bf16_both`.
-- **Derived (not measured), from the green-context curve:** a static 12 / 4 split at `bf16_both` bounds the period
+- **[WITHDRAWN 2026-09-25 — unconfined compiled graphs; see the correction at the top]** **Derived (not measured), from the green-context curve:** a static 12 / 4 split at `bf16_both` bounds the period
   at max(271.26, 117.05) = **271.26 ms = 1.080 × A_iso**, i.e. 1.337× over the hoisted serial 362.71 ms. If a
   working concurrent issue path realises it and memory coupling is small (the expert uses 6.45 % of peak bandwidth,
   E6), a shipping driver API gets within 8 % of `max(A, B)`: **framing I, nearly** — the PIM would add ≤ 1.08×
@@ -149,7 +180,7 @@ Step 5's "overlap should be easy here" at N = 4, and §2.3's "their diagnosis �
   the measurement that decides whether the latency claim survives.
 - **Energy:** E12 adds nothing either way (eager, no overlap; 0.9975). The E7 30 % residual remains open, so GPU-vs-PIM
   energy is still not quotable.
-- **Freed GPU:** qualified. At `bf16_both` the expert needs ~4 SMs; taking it off the GPU buys the prefix ≈ 8 %
+- **[WITHDRAWN 2026-09-25 — same reason]** **Freed GPU:** qualified. At `bf16_both` the expert needs ~4 SMs; taking it off the GPU buys the prefix ≈ 8 %
   (271.26 → 251.10 ms under partition, derived), not "167 ms of GPU".
 
 ## 7. OD-1 — which side does the 33.6 % look like? (not decided here)
@@ -163,6 +194,10 @@ it. Before it enters any baseline it needs its own equivalence check on the comp
 whole-frame `full` measurement — neither exists.
 
 ## 8. Open
+
+> *2026-09-25, later:* the decisive co-run and the missing deliverables below were taken over by T015 / E12b
+> and delivered (`analysis/E12b_review.md` §2); the Step-4 note was acted on by the device (`ed73f56`), but its
+> restated compiled references are the withdrawn unconfined values (`E12b_review.md` §8).
 
 - **Step 4** (MODE_30W, 8 SM): queued as `bench/queues/queue_e12_capped.sh`, waits for the capped-mode session
   (the device's business). The device's pre-registered Step-4 prediction scales the **eager** expert by the GPU

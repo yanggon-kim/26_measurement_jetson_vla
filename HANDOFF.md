@@ -1,8 +1,49 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-25 (T015 / E12b issued) by jetson-owner*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-25 (T015 / E12b reviewed) by jetson-owner*
 
 ## Current status
+
+### 2026-09-25, evening: T015 / E12b returned and reviewed — `analysis/E12b_review.md`; E12 review corrected
+
+Pulled to device `55e41fa` (T015 done at `e4b2725`). Committed, **not pushed** (push not approved this time).
+All MAXN, π0 `bf16_both`, N = 10; `raw_files` 76/76 sha256 OK, no null in any E12b `meta.json`.
+
+- **Best GPU co-run `O` = 1.247** (green 12/4, `T_pipe` 307.15 ms vs same-session `A_iso` 246.28, `T_serial`
+  348.67; n = 100); whole GPU 1.29–1.40 across every mechanism (M2 prefix-first **1.391**, `p` 1.040, `s` 2.676,
+  `r` 2.455, n = 120; priority −3 on the expert 1.287). 12/4: `p_part` **1.075**, `s_part` **1.197**, `p_hog`
+  **1.043** (one effective rate, 65 GB/s). Whole GPU: 3.1 % of the frame has both streams executing — head-of-line
+  blocking observed. Best split's excess: 35 % SM-partition cost, 65 % coupling `[derived]`.
+- **Fair expert** (hoist, bitwise = stock, compiled): **110.95 ms**; fair serial frame 354.74. `owngraph_expert`
+  (loop as one graph, bitwise) 101.21 — the device asks whether it joins the baseline (looks baseline-side by the
+  hoist test; user's call).
+- **Rows (as committed at `5cf1129`):** 2 lands on its condition (s_part ≥ 1.10 + hog passing) but its reading
+  must narrow — coupling at 53 % bus occupancy, expert slows the prefix 2–3× more per GB/s than a streaming hog,
+  in-partition harness not excluded by a timeline; 4 in part; 5 yes; 1, 3, 6, 7, 9, 10 no; 8 no for the fair
+  expert, yes for `owngraph_expert`. Nothing falsified (no prediction held).
+- **Compliance:** §12 met item by item, except: M2 diagnosis is a two-suspect list, not isolated (cited evidence
+  script `e12b_diagnose.py` uncommitted); hog has one effective rate at 12/4 and 14/2, fails at 14/2 (1.024);
+  `variant_tokens` misses `dbuf_kv`/`owngraph_prefix`/`hog_*`, and its `kv_copy` contradicts the code; no
+  `graphs_both`-prefix vs rung equivalence. Time box not needed.
+- **T014 correction verified** (M0: a graph obeys the partition it was captured in; T014's harness captured the
+  graph trees on the primary context). `analysis/E12_review.md` now carries a correction block: `bf16` SM columns,
+  271.26 ms bound, "framing I nearly", "freed GPU ≈ 8 %" withdrawn; §6 lean reversed to framing II measured.
+- **Verdict (case 001):** framing I did not happen on Orin; PIM frame-rate increment over the best GPU co-run
+  ≤ **1.247×** `[derived]`, only if the prefix loses nothing to the PIM — **P1 is the natural next question**
+  (break-even: prefix slowdown < 1.247×; prefix keeps EMC 42 % busy → ≈ 95 % of half the channels `[derived]`,
+  vs hog tolerance 1.04–1.12×; unbounded). Latency: PIM gain 1.036× (16 ch) / 1.152× (32 ch) on the fair
+  frame; a GPU co-run frame's latency ≥ 592.9 ms = 1.70× serial. Energy: co-run +2.0 % per frame (row 10 no) —
+  GPU overlap saves no energy; the baseline to beat is the fair serial frame 17 552 mJ.
+- **Step-4 restatement:** method sound (GPU-bound quantities, CPU clocks, GEMM control queued first), but its
+  compiled rows (113.70 / 320.71 ms at 8 SMs) are the withdrawn unconfined values (written 24 min before M0);
+  confined references 149.05 / 326.94; memory-bound stages should not scale by GPU clock alone. **Owed as a note
+  to the device, not written** (no device task this round).
+
+**For main to route (evaluation-owner / microarch-owner / brainstorm-owner case 001):** `O`, `p_part`, `s_part`,
+`p_hog`, fair `B`, M5 — dirs `results/20260925_E12b_pi0_{fairexpert,corun,green_corun,emc_calibration,energy}_*`,
+device commits `2c0912b`/`80bf710`/`0558963`/`bc9a001`/`714e395` (bench) and `e4b2725` (done), MAXN, n in the
+review §1. **Still unapproved:** P1, P2 (cropcache), `check_model_inputs.py` MODELS; `owngraph_expert` baseline
+question open.
 
 ### 2026-09-25, later: T015 / E12b issued and pushed — the follow-up that should give E12 a clear conclusion
 
