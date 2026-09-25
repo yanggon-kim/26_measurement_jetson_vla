@@ -535,18 +535,18 @@ cat <<'ORD'
 
       1. E7 energy at MAXN, six models, eager + best     DONE 2026-09-24, 14/14 points,
                                                             reports/E7_power_energy.md
-      2. E11 hybrid inputs T011/T012 (pi05, smolvla, groot)  <- RUNNING. The PIM model's
-                                                            direct input; needs per-model
-                                                            segment code, not a --model flag
-      2b. queue_e11_fixup.sh -- CHAINED on E11_DONE. Re-runs the SmolVLA compiled-mode
-          points lost to the static-posids bug (fixed in load_policy, f7b91a9) and
-          re-consolidates smolvla. Do NOT re-run queue_e11.sh instead: its have() guard
-          keys on the eager directory and would skip exactly what is missing.
-      2c. Then, with nothing executing them: fix that have() guard, and regenerate
-          meta.json for 20260924_E11a_pi05_hostseg and _E11c_pi05_handover (empty
-          model_commit). Both recorded in scratch/FIXME_sweep_selfmatch.txt.
-      3. E5 nsys timeline, six models (the compiled half + the busy 16 %). Also tests the
-         GPU-idle hypothesis registered in reports/E7_power_energy.md.
+      2. E11 hybrid inputs T011/T012      DONE 2026-09-24 18:58, all SIX models, every
+                                            consolidated file parts_missing=[]:
+                                            pi0 1564, pi0.5 1159, SmolVLA 860 rows, and
+                                            E11a DiT segments for GR00T n1.7/n1.6/n1.5.
+                                            reports/E11_models.md, commit 493c548.
+      2b/2c. the fixup, groot_n15 re-runs and the pi0.5 meta.json back-fill are all DONE.
+      3. E5 nsys timeline, six models  <- RUNNING (preflighting nsys_target --rung first,
+         the one path E5 needs that has never run under nsys). The compiled half plus the
+         busy 16 %. Also tests the GPU-idle hypothesis registered in
+         reports/E7_power_energy.md -- and SmolVLA's E11f already gives a data point
+         against it: 84.0 % raw / 77.8 % corrected ae idle, nearly pi0's, yet SmolVLA had
+         the LOWEST energy-to-time ratio in E7 (0.45) and pi0 0.80.
       4. E5b / T007 instruction level, six models
       5. check_report_numbers.py extended to E4d/E4g/E4i  (CPU-only; run between GPU jobs)
       6. E7 at MODE_50W, unattended -- decline any reboot prompt and record it
