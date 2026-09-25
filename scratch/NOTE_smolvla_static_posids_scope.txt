@@ -14,27 +14,53 @@ Since f7b91a9 it is applied by MR.load_policy whenever spec.name == "smolvla" an
 compile_mode is set, and recorded in meta.json as
 shipped_config.smolvla_static_posids_prep.
 
-## Which E11 parts actually exercise it -- MEASURED, not assumed
+## Which E11 parts exercise it -- MEASURED. Corrected at 17:07; read the whole section.
+
+ALL THREE are affected. An earlier version of this note said mempressure was not, and
+that was wrong. The record of both claims is kept deliberately, because the way I got it
+wrong is the reusable part.
 
   prefix_sweep (E11d)   AFFECTED. Sweeps shapes (n_img 1/2/3 x prompt lengths) and calls
                         policy.predict_action_chunk, the compiled entry point, so each new
                         shape records a fresh CUDA graph with the vision tower inside it.
-                        This is what died at 16:24 with cudaErrorStreamCaptureInvalidated.
+                        Died 16:24, cudaErrorStreamCaptureInvalidated.
 
-  pipelining (E11f)     AFFECTED. Runs phases ("prefix", "ae", "full"); `full` is
-                        policy.predict_action_chunk, i.e. the compiled entry point.
+  pipelining (E11f)     AFFECTED. Phases ("prefix", "ae", "full"); `full` is
+                        policy.predict_action_chunk.
 
-  mempressure (E11e)    NOT AFFECTED. --phases defaults to "prefix" only, and
-                        phase_loops.effective_exec_style returns "eager_subpath" for
-                        every phase except "full" -- prefix and ae call BELOW
-                        sample_actions, so they stay eager whatever the compile mode and
-                        the vision tower is never captured. The reduce-overhead point ran
-                        clean at 16:47 with the UNPATCHED module imported, which is the
-                        direct evidence: 95.93 ms prefix/none, no capture error.
+  mempressure (E11e)    AFFECTED, at bench/mempressure.py:246 -- the CPU-utilisation
+                        section (protocol §13.6), which hardcodes
+                            for phase in ("prefix", "ae", "full")
+                        REGARDLESS of --phases, and so reaches predict_action_chunk
+                        (phase_loops.py:113) even though --phases defaults to "prefix".
+                        Died 17:04 with the same error.
 
-I predicted mempressure would fail and it did not. The code fact -- all three drivers
-called load_policy(compile_mode=...) without the prep -- was right; the consequence was
-not, because two of the three reach a compiled entry point and one does not.
+                        What survived: mempressure writes per MODE, so
+                        ..._eager_mempressure is complete (model_inputs.csv, cpu_util.csv,
+                        meta.json). ..._reduce-overhead_mempressure has mempressure.csv --
+                        the whole contention sweep, all ten load points -- and NO
+                        cpu_util.csv, model_inputs.csv or meta.json. It is not usable and
+                        queue_e11_fixup.sh re-runs it, correctly, because its have() guard
+                        keys on model_inputs.csv rather than on the directory existing.
+
+## How I got this wrong, which is the part worth keeping
+
+The first diagnosis -- all three drivers call MR.load_policy(compile_mode=...) without the
+prep, so all three carry the bug -- was RIGHT. I then talked myself out of it: I saw the
+reduce-overhead contention sweep running clean at 16:47, checked that --phases defaults to
+"prefix", confirmed phase_loops keeps prefix and ae eager, and concluded mempressure was
+unaffected. Two errors compounded:
+
+  1. I inferred the driver's scope from an ARGUMENT DEFAULT instead of reading the whole
+     driver. A later section hardcoded the phase list and ignored --phases entirely.
+  2. I treated "it is still running" as "it will finish". The sweep had passed; the driver
+     had another 30 s x 3 phases to go.
+
+So a correct claim was replaced with a wrong one, and the wrong one was committed. The
+rule this earns: when the question is "does this code path run", read the file to its end
+and grep for the callable by NAME -- `predict_action_chunk` appears at mempressure.py:246
+through a lambda in another module, which no amount of reasoning about --phases would
+have revealed.
 
 ## The confound this raises, and the bound on it
 
@@ -61,7 +87,9 @@ re-run anything for it.
 ## Consequences for the queue
 
 * E11d smolvla reduce-overhead: re-run WITH the prep. queue_e11_fixup.sh does this.
-* E11e smolvla reduce-overhead: measured at 16:47 without the prep and VALID, because the
-  prep is irrelevant to an eager sub-path. Do not re-run: the fixup's have() guard skips
-  it, and a second measurement of an already-measured point invites averaging.
+* E11e smolvla reduce-overhead: NOT valid. The contention sweep completed but the run died
+  in the CPU-utilisation section before writing cpu_util.csv, model_inputs.csv or
+  meta.json. queue_e11_fixup.sh re-runs it. (An earlier version of this note said it was
+  valid and must not be re-run -- wrong, for the reason in the section above.)
+* E11e smolvla EAGER: complete and untouched. mempressure writes per mode.
 * E11f smolvla: never ran under reduce-overhead before, and picks up the fix on import.
