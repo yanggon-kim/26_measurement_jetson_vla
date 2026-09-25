@@ -94,7 +94,7 @@ the ratio is self-consistent). A first M5 run whose arm (b) went through the par
 | NN3 same session, bracketed | **met**. The one > 3 % difference (`B_iso` 101.21 vs 111.02) is the labelled `owngraph_expert` harness change, explained |
 | §12.8 / NN4 provenance, labels | **met in substance**; no nulls, raw hashes verified, every row carries a `+`-joined label. Minor defect: `variant_tokens` (identical in all three co-run `meta.json`) does **not define** `dbuf_kv`, `owngraph_prefix`, `hog_max` / `hog_matched`, `serial_full_gpu`; it defines `kv_copy` as "copied on the EXPERT stream (counted in the expert stage)", which no row uses and which contradicts the code (`dbuf_kv`: the copy is on the prefix stream, counted in the prefix stage — `bench/e12b_corun.py`). `memo_681` is defined under `rung_note`/`memo`, not `variant_tokens`. `graphs_both`'s prefix (`embed_image` compiled `default`, own capture) has a pipeline check but **no equivalence check against the rung prefix** (the expert has one) |
 | §12.9 self-review, sizes, partition, T014 line | **met** — largest file 9.0 MB; repo size in `STATUS.md`; only status lines appended to `tasks/T014`, `tasks/T015`; research-side files untouched |
-| NN5 MAXN only, nothing unapproved | **met** — no `cropcache` token anywhere; P1 not attempted; no power-mode change |
+| NN5 MAXN only, nothing unapproved | **met** — no `cropcache` token anywhere; the channel-partition measurement (EV-02) not attempted; no power-mode change |
 | §9 time box | **not needed** — claimed 10:16, M2's fixed co-run committed 10:46–11:06 PDT the same morning |
 
 The device's status line says "every acceptance item of spec §12 holds". Against the rows: yes for §12's list as
@@ -121,7 +121,7 @@ the unexcluded in-partition harness, and the token definitions.
    The calibration maps EMC busy % onto a *streaming* copy's GB/s; a less regular access pattern (row misses,
    read–write turnarounds) keeps the controller busier per byte. The device quotes these as "GB/s drawn".
    Either the prefix moves ~3.6× more DRAM traffic than E6 counts (activations spilling L2), or EMC busy % over-
-   states it. Unresolved; it matters for P1 (§6).
+   states it. Unresolved; it matters for the channel-partition measurement (EV-02, §6).
 4. **Host issue.** The report's "host issue is not the bottleneck" is right for the whole GPU, on the nsys
    union — not on the `host_issue` column it cites alongside it (§2). One harness effect it does not mention:
    in M2 `prefix_first` with the rung prefix, `issue_prefix(k)` hits the `modeling_pi0.py:681` host sync after
@@ -193,7 +193,7 @@ happen**. Row 2 ("partitioning SMs does not partition bandwidth → the memory-s
 system at ≈ 53 % bus occupancy, not by exhausting bandwidth, and the in-partition harness is not excluded.
 
 **Derived comparison** `[derived]` (same-session M3 references; the in-memory pipeline's period is taken as the
-GPU prefix alone, i.e. **assuming the in-memory expert does not slow the prefix** — exactly what P1 would test):
+GPU prefix alone, i.e. **assuming the in-memory expert does not slow the prefix** — exactly what the channel-partition measurement (EV-02) would test):
 
 | configuration, N = 10 | period (ms) | vs fair serial 348.67 |
 |---|---:|---:|
@@ -207,22 +207,22 @@ So under case 001 §5.2's amended falsifier, "the PIM's increment is the measure
 cross-device inference from KerColle) is **replaced by a measurement**, and lands inside that range.
 
 **The symmetric caveat, plainly.** If memory couples the two GPU stages, an in-memory expert that takes LPDDR
-channels away from the GPU may couple too. That is jetson **P1** — the prefix on 8 of 16 channels — still **not
+channels away from the GPU may couple too. That is jetson **the channel-partition measurement (EV-02)** — the prefix on 8 of 16 channels — still **not
 approved**, and it is now the natural next question: the 1.247× above is an upper bound that holds only if the
 prefix loses nothing to the PIM. **Does this data bound it?** No — it sets the break-even and gives two
 indications that point opposite ways:
 - **Break-even `[derived]`:** the in-memory pipeline keeps a frame-rate advantage over the best GPU co-run only if
   the prefix, sharing LPDDR with the PIM, slows by **less than 1.247×** (307.15 / 246.28).
-- **Against (sharper P1 risk) `[derived]`:** the prefix alone keeps the EMC 42 % busy (84.6 GB/s streaming-
+- **Against (sharper channel-partition risk) `[derived]`:** the prefix alone keeps the EMC 42 % busy (84.6 GB/s streaming-
   equivalent, 47 % of the 178.5 GB/s the hog reached). Halving the channels at the same traffic would put it near
   **95 % of the remaining capacity** — the contention regime. The 3.6× gap between EMC occupancy and E6's bytes
   (§3.3) is the uncertainty in that estimate.
 - **For (tolerance) `[measured, partitioned]`:** the prefix slowed only **1.043–1.116×** beside an in-process hog
-  that alone drew 65–142.7 GB/s. But a hog *shares* all 16 channels by arbitration; P1 *removes* half of them
+  that alone drew 65–142.7 GB/s. But a hog *shares* all 16 channels by arbitration; EV-02 *removes* half of them
   outright, and the 16-SM prefix was never measured against either.
 - **Mechanism:** the coupling found here looks controller / L2 / row-conflict rather than bandwidth (§3.2). A PIM
   expert streams its weights inside the DRAM and never through the GPU's L2 or the controller's read path, so the
-  L2 part would not transfer; channel loss and all-bank PIM commands blocking host access would. Only P1 measures it.
+  L2 part would not transfer; channel loss and all-bank PIM commands blocking host access would. Only the channel-partition measurement (EV-02) measures it.
 
 ## 7. Latency and energy
 
@@ -267,7 +267,7 @@ that residual.
 - **Owed questions, not tasks:** the diagnosis evidence (`e12b_diagnose.py`, cited, uncommitted); the EMC-vs-bytes
   3.6× gap for the prefix; the `variant_tokens` definitions (`dbuf_kv`, `owngraph_prefix`, `hog_*`,
   `serial_full_gpu`, and the stale `kv_copy`); a `graphs_both`-prefix vs rung-prefix equivalence check.
-- **Would decide what is left:** a partitioned co-run timeline (harness vs memory); P1 (unapproved) for the
+- **Would decide what is left:** a partitioned co-run timeline (harness vs memory); the channel-partition measurement (EV-02, unapproved) for the
   PIM side of the coupling; P2 `bf16_both + cropcache` (unapproved) for the latency claim.
-- **Unapproved, unchanged:** P1, P2, `check_model_inputs.py` `MODELS`. The capped-mode session is the device's
+- **Unapproved, unchanged:** the channel-partition measurement (EV-02), P2, `check_model_inputs.py` `MODELS`. The capped-mode session is the device's
   business (T004 4b, T014 Step 4).

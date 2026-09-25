@@ -396,7 +396,8 @@ then the self-review of protocol §11.
 
 ## 12. Not part of this experiment
 
-- **P1** (the VLM prefix with the GPU restricted to 8 of 16 LPDDR channels), **P2** (`bf16_both + cropcache`)
+- **The channel-partition measurement (EV-02)** (formerly "P1": the VLM prefix with the GPU restricted to 8 of 16
+  LPDDR channels), **P2** (`bf16_both + cropcache`)
   and the `check_model_inputs.py` `MODELS` change are recorded on the research side and **not approved**.
   Do not run or implement them as part of E12.
 - Other models. This is π0 only; if it is informative the research side will ask for others by task.

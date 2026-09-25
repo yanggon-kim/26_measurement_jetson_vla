@@ -770,5 +770,5 @@ The rules below are binding; the specification elaborates them and leaves everyt
   `power_mode`, `sm_count`, granted partition sizes, clocks or `throttled`.
 - **Completion.** A task is marked done only when every acceptance item of the specification holds, or the status
   line names the item that does not and why.
-- **Power modes.** MAXN only; E12b adds nothing to the capped-mode sessions. P1, P2 (`bf16_both + cropcache`) and
-  the `check_model_inputs.py` `MODELS` change are not approved.
+- **Power modes.** MAXN only; E12b adds nothing to the capped-mode sessions. The channel-partition measurement
+  (EV-02; formerly "P1"), P2 (`bf16_both + cropcache`) and the `check_model_inputs.py` `MODELS` change are not approved.

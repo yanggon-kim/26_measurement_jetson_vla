@@ -41,7 +41,7 @@ Measurements (details, latitude and hazards in the specification):
 Non-negotiables (spec §5): fresh KV verified in the compiled path that is timed, stale control must fail; no
 silent NaN — a finite check on every action tensor, a non-finite run is invalid and reported; same-session
 bracketed baselines through the same harness; complete provenance with every harness change in the row label and
-no null in `meta.json`; MAXN only, nothing unapproved (P1, P2 = `bf16_both + cropcache`, the
+no null in `meta.json`; MAXN only, nothing unapproved (the channel-partition measurement (EV-02), P2 = `bf16_both + cropcache`, the
 `check_model_inputs.py` `MODELS` change stay **not approved**).
 
 Result directories `results/<date>_E12b_pi0_*` (names in spec §11); report `reports/E12b_pi0_compiled_corun.md`.

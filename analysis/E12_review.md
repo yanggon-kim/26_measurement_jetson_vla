@@ -153,7 +153,7 @@ Step 5's "overlap should be easy here" at N = 4, and §2.3's "their diagnosis �
 > unconfined `bf16` curve: the 271.26 ms bound, "framing I, nearly", "≤ 1.08×", "nothing measured points toward
 > framing II" and "the expert's SM demand is tiny" are **withdrawn**. Measured since: best GPU co-run `O` =
 > 1.247 (green 12/4), whole GPU 1.29–1.40; the PIM's frame-rate increment over the best GPU co-run is ≤ 1.247×
-> `[derived]`, before any prefix slowdown from sharing LPDDR with the PIM (P1, unmeasured). The "Freed GPU"
+> `[derived]`, before any prefix slowdown from sharing LPDDR with the PIM (the channel-partition measurement, EV-02, unmeasured). The "Freed GPU"
 > bullet is withdrawn with it (the confined compiled expert needs ≈ 2.5× its time on 4 SMs). The latency bullet's
 > direction holds and is now measured: fair expert 110.95 ms, fair serial frame 354.74 ms, PIM latency gain
 > 1.036× (16 ch) / 1.152× (32 ch) `[derived]`.

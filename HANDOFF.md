@@ -1,8 +1,20 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-25 (T015 / E12b reviewed) by jetson-owner*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-25 (P1 relabelled: EV-02 / CoRe) by jetson-owner*
 
 ## Current status
+
+### 2026-09-25, night: "P1" relabelled by meaning in owner-side files (committed, not pushed)
+
+Two decisions (brainstorm `DECISIONS.md`): the research side's ISA mechanism once called P1 (`MAC_ABK_MV`) is
+now **CoRe — Column Reuse** (user, 2026-09-25); the Jetson measurement once called "P1" (VLM prefix with the GPU
+on 8 of 16 LPDDR channels) is now **the channel-partition measurement (EV-02)** (D-15). P2 (`bf16_both +
+cropcache`) keeps its label. In this repo every "P1" of the second meaning was relabelled (E12 / E12b specs,
+protocol §15, T015, both reviews, this file); no ISA-meaning "P1" existed here. Left as written: **task priority
+tier "P1"** (task headers, order table, HANDOFF task table, T004 "P1 deliverable"), SASS predicate `@P1` in
+`docs/03_instruction_level_analysis.md`, and every device path. The specs and protocol say `formerly "P1"` at the
+definition so the device can map its own STATUS / report mentions. Nothing a task asks the device to do changed;
+T014 had no mention.
 
 ### 2026-09-25, evening: T015 / E12b returned and reviewed — `analysis/E12b_review.md`; E12 review corrected
 
@@ -29,7 +41,7 @@ All MAXN, π0 `bf16_both`, N = 10; `raw_files` 76/76 sha256 OK, no null in any E
   graph trees on the primary context). `analysis/E12_review.md` now carries a correction block: `bf16` SM columns,
   271.26 ms bound, "framing I nearly", "freed GPU ≈ 8 %" withdrawn; §6 lean reversed to framing II measured.
 - **Verdict (case 001):** framing I did not happen on Orin; PIM frame-rate increment over the best GPU co-run
-  ≤ **1.247×** `[derived]`, only if the prefix loses nothing to the PIM — **P1 is the natural next question**
+  ≤ **1.247×** `[derived]`, only if the prefix loses nothing to the PIM — **the channel-partition measurement (EV-02) is the natural next question**
   (break-even: prefix slowdown < 1.247×; prefix keeps EMC 42 % busy → ≈ 95 % of half the channels `[derived]`,
   vs hog tolerance 1.04–1.12×; unbounded). Latency: PIM gain 1.036× (16 ch) / 1.152× (32 ch) on the fair
   frame; a GPU co-run frame's latency ≥ 592.9 ms = 1.70× serial. Energy: co-run +2.0 % per frame (row 10 no) —
@@ -42,7 +54,7 @@ All MAXN, π0 `bf16_both`, N = 10; `raw_files` 76/76 sha256 OK, no null in any E
 **For main to route (evaluation-owner / microarch-owner / brainstorm-owner case 001):** `O`, `p_part`, `s_part`,
 `p_hog`, fair `B`, M5 — dirs `results/20260925_E12b_pi0_{fairexpert,corun,green_corun,emc_calibration,energy}_*`,
 device commits `2c0912b`/`80bf710`/`0558963`/`bc9a001`/`714e395` (bench) and `e4b2725` (done), MAXN, n in the
-review §1. **Still unapproved:** P1, P2 (cropcache), `check_model_inputs.py` MODELS; `owngraph_expert` baseline
+review §1. **Still unapproved:** the channel-partition measurement (EV-02), P2 (cropcache), `check_model_inputs.py` MODELS; `owngraph_expert` baseline
 question open.
 
 ### 2026-09-25, later: T015 / E12b issued and pushed — the follow-up that should give E12 a clear conclusion
@@ -71,7 +83,7 @@ beats the 16-ch in-memory expert** (≤ 58.7 also 32 ch); 93.1–102.4 < 1.10×;
 **Next:** on each pull look for `results/*_E12b_pi0_*`, `reports/E12b_pi0_compiled_corun.md`, T015 status lines,
 and the restated Step-4 prediction in `STATUS.md`. Check against spec §12 item by item; hand `O`, `p_part`,
 `s_part`, `p_hog`, fair `B` to main as "for microarch-owner / brainstorm-owner (case 001) / evaluation-owner" with
-dir, device commit, power mode, n. Still unapproved: P1, P2 (cropcache), `check_model_inputs.py` MODELS.
+dir, device commit, power mode, n. Still unapproved: the channel-partition measurement (EV-02), P2 (cropcache), `check_model_inputs.py` MODELS.
 
 ### 2026-09-25: E12 / T014 MAXN results reviewed — `analysis/E12_review.md`, commit `c2e45db` (`049f569` before rebasing onto device commits; pushed with T015)
 
@@ -252,7 +264,7 @@ write it as a question in `docs/04`, not a new task, unless the loops themselves
 From microarch-owner's design memo, priority order (2026-09-24). Recorded here so they survive;
 the user has not approved either, so no task file exists and none is to be written.
 
-- **P1, highest value: `vlm_prefix` with the GPU restricted to 8 of 16 LPDDR channels.** A PIM
+- **The channel-partition measurement (EV-02; the memo's "P1"), highest value: `vlm_prefix` with the GPU restricted to 8 of 16 LPDDR channels.** A PIM
   channel is *unavailable* to the GPU, not merely slower, so this decides whether a two-stage
   GPU-prefix / PIM-expert pipeline is implementable at all. If the prefix degrades materially the
   whole design collapses. Note the device already has the relevant lever characterised in one

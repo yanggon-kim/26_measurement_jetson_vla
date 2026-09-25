@@ -99,7 +99,7 @@ The obvious reviewer question is **"why not run both stages on the GPU, on two s
   "partitioning SMs does not partition bandwidth" — the GPU cannot isolate the two stages on a shared LPDDR5, and
   the memory-side design becomes the argument. (For honesty: a PIM inside the same LPDDR5 also occupies memory
   channels, so a contention finding does not automatically favour the PIM either; that is a separate,
-  unapproved measurement, P1, and not yours here.)
+  unapproved measurement — the channel-partition measurement (EV-02) — and not yours here.)
 
 **What changed since E12, and why the decisive number moved.** With the stock expert, `r = A / B` ≈ 1.50, so the
 question was whether contention stretches the expert past the prefix (`s > r`). With the fair (hoisted) expert,
@@ -165,7 +165,8 @@ These five are the whole of the rules. Everything else is guidance, and §9 says
    §11 naming **every** harness change behind it (T014's rows said `baseline_eager` over two modifications).
 5. **MAXN only, and nothing unapproved.** Everything here runs at MAXN + `jetson_clocks` (protocol §1 gate). No
    power-mode change, no reboot request. T014 Step 4 stays its own capped-mode item (§14 below has a note on it).
-   P1, P2 (`bf16_both + cropcache`) and the `check_model_inputs.py` `MODELS` change are **not approved** (§13).
+   The channel-partition measurement (EV-02), P2 (`bf16_both + cropcache`) and the `check_model_inputs.py` `MODELS`
+   change are **not approved** (§13).
 
 ## 6. The measurements
 
@@ -444,7 +445,8 @@ Do not mark T015 done until every item holds, or the status line names the item 
 
 ## 13. Not part of this experiment
 
-- **P1** (the VLM prefix with the GPU restricted to 8 of 16 LPDDR channels), **P2** (`bf16_both + cropcache`) and
+- **The channel-partition measurement (EV-02)** (formerly "P1": the VLM prefix with the GPU restricted to 8 of 16
+  LPDDR channels), **P2** (`bf16_both + cropcache`) and
   the `check_model_inputs.py` `MODELS` change are recorded on the research side and **not approved**. Do not run
   or implement them here. (`cropcache` was measured in E4 and exists in `bench/run_e4.py`; it is **not** part of the
   fair expert and must not appear in any E12b run.)
