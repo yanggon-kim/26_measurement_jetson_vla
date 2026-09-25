@@ -92,6 +92,35 @@ confirms it — two for two is enough to make that the default rather than a cav
 
 ---
 
+## ⚠ CORRECTION — E11f's "high priority stream" was the DEFAULT priority
+
+`bench/pipelining.py` read `lo, hi = priority_range()` and created its contender stream with
+`priority=lo`, under a comment asserting `lo` was the highest. torch returns
+**`(least_priority, greatest_priority)`** and in CUDA a **lower number is a higher
+priority**, so on this device `(0, −3)` means `0` is the default and `−3` is the genuinely
+high-priority stream. Verified:
+
+```
+Stream(priority= 0) -> priority= 0    [least]   == default Stream() -> 0
+Stream(priority=-3) -> priority=-3    [greatest]
+```
+
+So every committed E11f two-stream number — π0.5 `two_streams` 2.75×, SmolVLA 1.79–1.80× —
+was measured with **no priority differentiation between the streams**. The field
+`high_priority_stream_accepted: true` is literally true and substantively empty: it accepted
+the default. **No high-priority stream has been measured on this device yet.**
+
+The numbers are not wrong for what they are — a two-stream contention measurement at equal
+priority — they were mislabelled. `pipelining.py` now records
+`contender_stream_priority` and `contender_stream_is_elevated` instead of a boolean that
+reads as a claim, and its behaviour is deliberately unchanged so it keeps measuring what its
+committed results measured. A genuinely elevated stream is measured in **E12 Step 3**, as
+its own labelled mechanism.
+
+Flagged by `docs/E12_corun/README.md` §5, which caught it before I built on it.
+
+---
+
 ## ▶ NEXT, needs you: resume E7 at MODE_30W (id 2), then MODE_15W (id 1)
 
 **Everything that can be done without a reboot is done.** MODE_50W ran unattended tonight

@@ -420,11 +420,25 @@ def main() -> int:
         # stream and the 1.9x it measured was largely GIL contention. Here the contender is
         # issued onto s_hi from this thread, between chunks of the measured sequence, so the
         # two really do share the GPU through two streams.
-        lo, hi = torch.cuda.current_stream().priority_range()
-        s_hi = torch.cuda.Stream(priority=lo)          # lo is the HIGHEST priority value
-        prio_ok = (s_hi.priority == lo)
-        print(f"  stream priority range {(lo, hi)}; requested {lo}, got {s_hi.priority} "
-              f"-> accepted={prio_ok}", flush=True)
+        # torch returns (least_priority, greatest_priority) and in CUDA a LOWER number is a
+        # HIGHER priority, so on this device (0, -3) means 0 is the DEFAULT and -3 is the
+        # genuinely high-priority stream. The previous line requested `least` while a comment
+        # asserted it was the highest, and reported high_priority_stream_accepted: true --
+        # true, but it had accepted the default. Every committed E11f two-stream number was
+        # therefore measured with NO priority differentiation between the streams.
+        #
+        # The behaviour is deliberately left as the default here, so this file keeps
+        # measuring what its committed results measured. What changes is that it now says so:
+        # the recorded field is the actual priority, not a boolean that reads as a claim.
+        # E12 (docs/E12_corun/README.md §5 Step 3) is where a genuinely high-priority stream
+        # is measured, as its own labelled mechanism.
+        least, greatest = torch.cuda.current_stream().priority_range()
+        s_hi = torch.cuda.Stream(priority=least)
+        prio_ok = (s_hi.priority == least)
+        print(f"  stream priority range (least={least}, greatest={greatest}); "
+              f"contender stream priority={s_hi.priority} "
+              f"({'DEFAULT, not elevated' if s_hi.priority == least else 'elevated'})",
+              flush=True)
 
         def seq_with_contender():
             with torch.cuda.stream(s_hi):
@@ -568,7 +582,11 @@ def main() -> int:
         "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
         "bench_files_sha256": sw.get("bench_files_sha256"),
         "command": f"python bench/pipelining.py --outdir {args.outdir}",
-        "high_priority_stream_accepted": prio_ok,
+        # Renamed from high_priority_stream_accepted, which read as "a high-priority stream
+        # was used" when it recorded only that the DEFAULT priority was accepted.
+        "contender_stream_priority": s_hi.priority,
+        "contender_stream_is_elevated": s_hi.priority != least,
+        "high_priority_stream_accepted": prio_ok,   # kept so older readers still resolve
         "throttled": False,
         "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
         "model_inputs_rows": n_mi, "raw_files": [],
