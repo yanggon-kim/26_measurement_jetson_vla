@@ -1,0 +1,67 @@
+VERDICT on the E7 GPU-idle hypothesis: holds within LeRobot, fails across architectures
+2026-09-24 21:15, from the complete E5 set. For reports/E5_timeline.md and E7's registered
+hypothesis. This is the falsification, stated as a falsification.
+
+## The hypothesis as registered
+
+reports/E7_power_energy.md: the action expert's energy-to-time ratio (eager->best energy
+factor divided by the latency factor) tracks its GPU-idle fraction. Registered as
+falsifiable, with E5 named as the test.
+
+## The test
+
+Idle is the expert region's GPU-idle fraction from E5 (ae_step for the LeRobot family,
+ae_total for GR00T, which invokes its action head as one unit and has no per-step range).
+Ratio is E7's eager->best energy-to-time ratio.
+
+    model         idle eager   idle best   drop     E7 ratio
+    pi0.5            0.6429      0.4453    0.198      0.96
+    pi0   N=10       0.8417      0.4714    0.370      0.80
+    SmolVLA          0.9273      0.3795    0.548      0.45
+    GR00T N1.5       0.5258      0.0008    0.525      1.05
+    GR00T N1.7       0.7153      0.0008    0.715      0.88
+    GR00T N1.6       0.7224      0.0010    0.721      0.66
+
+Within the three LeRobot models the relationship is monotonic in both eager idle and drop,
+which is why two points looked like support earlier this evening.
+
+It does not survive GR00T. SmolVLA and N1.5 have almost the same drop, 0.548 against 0.525,
+and ratios of 0.45 against 1.05 -- the widest separation in the whole table. N1.6 and N1.7
+have nearly identical idle at both ends (0.72 -> 0.001) and ratios of 0.66 and 0.88.
+
+VERDICT: the hypothesis is FALSIFIED as a general claim. It describes the LeRobot
+flow-matching family and does not extend to the DiT action head. Do not write it up as
+confirmed; write up the family-specific version with the counter-examples named.
+
+## The finding that replaces it, and it is the stronger one
+
+GR00T's compiled DiT action head has essentially NO GPU idle:
+
+    N1.5 best  ae_total  wall 60.1 ms  kernel_union 60.0 ms  idle 0.0008  gap median 0.0 us
+    N1.6 best            wall 73.1     kernel_union 73.0     idle 0.0010  gap median 0.0
+    N1.7 best            wall 80.2     kernel_union 80.2     idle 0.0008  gap median 0.0
+
+kernel_union equals wall to 0.1 ms: the kernels run back to back. The LeRobot experts retain
+38-47 % idle after the same class of optimisation (pi0 0.4714, pi0.5 0.4453, SmolVLA 0.3795).
+
+So CUDA graphs remove launch starvation COMPLETELY in a DiT head and only PARTLY in a
+flow-matching expert. That is an architectural statement with direct bearing on the PIM
+argument, and it is measured rather than inferred:
+
+  * For GR00T's compiled head the GPU is genuinely saturated. Its bound is real work, so a
+    latency win has to come from doing less work or moving data faster -- which is the
+    regime a memory-side accelerator is FOR.
+  * For the LeRobot experts, 38-47 % of the compiled expert region is still gap. Amdahl
+    bounds what any faster memory can do there until the launches are dealt with, and
+    E4i already showed the idle-time ceiling bounds faster kernels rather than fewer.
+
+## Caveats a reader must have
+
+* ae_step vs ae_total are not the same region. The LeRobot rows are per denoising step, the
+  GR00T rows per inference. The idle FRACTION is comparable as a fraction; the wall times
+  are not.
+* All idle figures here are RAW. Corrected figures need each run's own profiling inflation
+  factor, and reports/E5_timeline.md currently prints "—" in its corrected column for every
+  row, which is a gap in the generator and not a property of the data.
+* E7's ratios are eager->best over the whole action-expert sub-phase; E5's idle is the
+  expert REGION. They are the same phase but measured by different tools in different runs.
