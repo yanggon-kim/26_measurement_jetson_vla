@@ -51,3 +51,51 @@ lines in `STATUS.md` after each model (§6f). Self-review (§11). A part that ca
 "not measured" with the exact error; it does not block the rest.
 
 status: claimed 2026-09-24
+
+status: done 2026-09-24
+
+**Results.** `model_inputs.csv` exists for both models and passes
+`docs/reference_scripts/check_model_inputs.py` run in place:
+
+| model | consolidated run | rows | parts_missing |
+|---|---|---:|---|
+| π0.5 | `results/20260924_E11_pi05_inputs` | 1159 | `[]` |
+| SmolVLA | `results/20260924_E11_smolvla_inputs` | 860 | `[]` |
+
+Parts: E11a host segments, E11c handover, E11d prefix sweep (eager + reduce-overhead),
+E11e memory pressure (eager + reduce-overhead), E11f pipelining. E11b is dropped per this
+task; the transfer figure each model needs comes from its own E11c.
+
+π0's E11f was re-measured (`results/20260924_E11f_pi0_pipelining`) because both committed
+runs predated the two-stream fix `773d2a9`, and `results/20260924_E11_pi0_inputs` (1564
+rows) re-consolidates π0 so its table no longer cites the confounded run. Report:
+`reports/E11_models.md`. bench commit `3a7f5ed64013`.
+
+**Measured, not assumed.** P differs per model — π0 816, π0.5 968, SmolVLA 177. Reusing
+π0's literal 816 would have been wrong by 5.5× on SmolVLA's prefix. S is 51 / 50 / 50.
+
+**Deviations and defects, all disclosed.**
+
+1. **Two quantities were WRONG in a pushed commit.** `bench/pipelining.py` called
+   `nsys_target.py` without `--model`, and that flag defaults to `pi0`, so E11f's
+   `gpu_idle_ae_total` and `gpu_idle_frac_ae_total` were π0's numbers under each model's
+   name. Commit `493c548` carrying them reached `origin/main`. Fixed in `a49e7e9`, both
+   models re-run and re-consolidated, and a correction notice is at the top of
+   `STATUS.md`. Proven by exact identity: the bad rows gave kernels/step 968.25 and
+   968.70, which are π0's own E5 values; π0.5's real value is 1102.70 and SmolVLA's
+   1183.70. Each re-run now verifies its own identity against its own E5 capture.
+2. **SmolVLA's compiled `host_sequence` segments were captured from a second eager
+   instance.** Its compiled frame replays as one CUDA graph, so a Python layer capture
+   records nothing. The capture is setup rather than measurement, but it means SmolVLA's
+   eager-vs-compiled `host_sequence` comparison is **not** like-for-like while π0.5's is
+   (π0.5's compiled frame is not graphed as a unit and captured 6/6 segments). Recorded
+   per run in `meta.json`.
+3. **`gpu_idle_*_ae_total` is absent under compiled modes**, because the sub-capture uses
+   `--compile-mode --no-regions`. This is NOT unobtainable as previously believed: E5
+   measures the same quantity per region via `--rung`
+   (`results/20260924_E5_pi0_best_N4`, `gpu_idle_frac` 0.4720). Closing it is a
+   consolidation change, recorded in `scratch/NOTE_e11f_compiled_idle_is_obtainable.txt`
+   and not applied.
+4. `model_commit` was back-filled for `20260924_E11a_pi05_hostseg` and
+   `20260924_E11c_pi05_handover`, disclosed inside each `meta.json`. It was empty because
+   `resolved_commit()` postdated those runs and π0.5 pins no revision.
