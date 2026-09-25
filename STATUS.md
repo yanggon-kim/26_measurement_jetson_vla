@@ -2,6 +2,34 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ▶ NOW: T015 / E12b (claimed 2026-09-25 ~10:20) — where it sits in the queue
+
+**The owner directed it directly**: T015 was taken immediately, and the pre-reboot queue the owner had
+started earlier (`bench/queues/queue_prereboot.sh`: E3/E4 N sweep → GR00T N1.5/N1.6 E6 → E8 LIBERO) is
+**paused**, to resume after T015. Its four completed N-sweep points are kept in
+`scratch/paused_runs/20260925_E3E4_pi05_Nsweep/` (not deleted). The capped-mode session (T004 step 4b,
+T014 Step 4) still waits for the owner's reboot and comes after both.
+
+### T014 Step-4 prediction — RESTATED per E12b spec §14 (the earlier one was wrong)
+
+The earlier prediction scaled the **eager** expert (587.56 ms at 8 green SMs) by the GPU-clock ratio. That was
+the wrong quantity: the eager expert is **host-issue-bound** (flat SM curve; E5 84 % idle), and `MODE_30W`
+slows the **CPU** too (8 cores at ≤ 1.73 GHz vs 12 at 2.2016 GHz, recorded 2026-09-25 10:17 at MAXN: all 12
+cores at 2 201 600 kHz, GPU 1 300 500 000 Hz). A deviation from it would not have shown the green-context
+result wrong. **The fair cross-check uses GPU-bound quantities, scaled by the GPU clock only:**
+
+| quantity (GPU-bound) | MAXN, green 8 SMs @ 1300.5 MHz | MODE_30W prediction (8 hardware SMs) |
+|---|---:|---:|
+| 2048² bf16 GEMM control | 0.8909–0.8921 ms/GEMM | ≈ 0.89 × (1300.5 / f_GPU,30W) ms |
+| compiled `bf16_both` prefix | 320.71 ms | ≈ 320.71 × (1300.5 / f_GPU,30W) |
+| compiled `bf16_both` expert (graph replay) | 113.70 ms | ≈ 113.70 × (1300.5 / f_GPU,30W) |
+
+with the CPU clocks recorded in both modes (`/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq`). The
+eager-expert comparison stays in the queue as a CPU+GPU observation, **not** as a test of the green-context
+method. `bench/queues/queue_e12_capped.sh` now records the CPU clocks and runs the GEMM control first.
+
+---
+
 ## ⚠ CORRECTION (2026-09-25, same day) to the GR00T E6 block just below: it compared mismatched rungs
 
 **The GR00T row was a CUDA-graphed action head; the π0/π0.5/SmolVLA rows were eager.** GR00T's

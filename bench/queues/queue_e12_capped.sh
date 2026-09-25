@@ -61,6 +61,11 @@ mkdir -p scratch/queues
   echo "expected_sm_count: $SMS"
   echo "gpu_cur_freq_Hz: $(cat /sys/devices/gpu.0/devfreq/17000000.gpu/cur_freq 2>/dev/null)"
   echo "gpu_max_freq_Hz: $(cat /sys/devices/gpu.0/devfreq/17000000.gpu/max_freq 2>/dev/null)"
+  # E12b spec §14: the eager expert is host-bound and MODE_30W slows the CPU too, so the CPU
+  # clocks must be recorded for the MAXN comparison to be interpretable (MAXN reference: 12
+  # cores at 2201600 kHz, 2026-09-25).
+  for c in /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq; do
+    echo "cpu_cur_freq_kHz $(basename $(dirname $(dirname $c))): $(cat $c)"; done
   echo "maxn_reference_gpu_Hz: 1300500000"
   echo "date: $(date -Is)"
 } | tee "scratch/queues/e12_${TAG}_device_state.txt"
@@ -71,6 +76,11 @@ sweep() {
   sudo -n /bin/sh -c 'pkill -f "[n]cu --profile-from-start"; tegrastats --stop; pkill -9 -x tegrastats; sleep 2; true' 2>/dev/null
 }
 run() { local l="$1"; shift; echo "########## $(date +%H:%M) $l"; sweep; "$@"; echo "EXIT=$? $l"; }
+
+# 0b. The GPU-BOUND cross-check first (E12b spec §14): the GEMM control, whose MAXN 8-SM green
+#     value is 0.891 ms/GEMM. This, not the eager expert, is the fair test of whether a software
+#     8-SM partition behaves like 8 hardware SMs, after scaling by the GPU clock alone.
+run "GEMM control $TAG (GPU-bound cross-check)" $PY bench/green_ctx.py
 
 # 1. Step 4 proper: the same pipeline measured at MAXN, so s / p / r / T_pipe are comparable.
 #    --nosync and eager match results/20260925_E12_pi0_corun_N10_MAXN_eager_nosync exactly;

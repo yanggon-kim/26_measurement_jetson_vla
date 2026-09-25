@@ -49,3 +49,5 @@ Acceptance: spec §12 — **do not mark this task done until every item holds or
 does not and why.** When done, also append to T014 the status line given in spec §14. Spec §14 also carries a
 correction owed to your T014 Step-4 prediction in `STATUS.md` (the eager expert is host-bound and `MODE_30W` slows
 the CPU too); please restate that prediction before the `MODE_30W` session.
+
+status: claimed 2026-09-25 (owner directed: taken ahead of the pre-reboot queue, which is paused)
