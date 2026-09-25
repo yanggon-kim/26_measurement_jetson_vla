@@ -12,14 +12,22 @@ against eager LeRobot numbers without checking the rung. Matched, from GR00T's o
 | | eager | action head compiled |
 |---|---:|---:|
 | GR00T N1.7 `ae_step` | 52.13 ms · **33.2 %** peak BW · **3.02×** floor | 20.82 ms · **83.0 %** · **1.20×** (`ae_compile`) |
-| π0 `ae_step` | 52.79 ms · **6.45 %** · **15.51×** | pending — per-rung bytes being measured |
+| π0 `ae_step` | 57.35 ms · **5.9 %** · **16.85×** | 16.87 ms · **20.2 %** · **4.96×** (`bf16_both`) |
+| π0.5 `ae_step` | 61.14 ms · 15.1 % · 6.61× | 18.56 ms · 31.4 % · 3.18× (`bf16_both_graphs`) |
+| SmolVLA `ae_step` | 61.29 ms · 1.8 % · 56.50× | 4.49 ms · 24.2 % · 4.14× (`vlm_graphs`) |
+
+**Matched-rung E6 landed** (`results/20260925_E6_rungs/`, `reports/E5_E5b_models.md`): every row
+above uses Part B's unprofiled ladder time and bytes counted after that rung's casts. Compiling
+brings every model 2–14× closer to its floor; **only GR00T becomes bandwidth-bound**. The
+compiled-vs-compiled comparison is the fair one, and it supports the GR00T framing: remove launch
+overhead and GR00T's DiT sits at the bus, while the LeRobot experts stay 3–5× off theirs.
 
 **What changes:** "GR00T is bandwidth-bound and near-optimal" is true only once its head is
 compiled; eager, it is launch-limited too (3.0× floor). **What survives, and is sharper:** at
 matched eager rungs GR00T is still ~5× closer to its roof than π0, and **compiling GR00T's head
 alone removes almost all of its launch overhead** (3.02× → 1.20×). The fair test of the PIM
 framing is therefore compiled-vs-compiled, which the matched-rung E6 now being built will give
-for every model. Please do not quote the block below until that lands.
+for every model — now landed (table above). The block below stays superseded.
 
 ---
 
