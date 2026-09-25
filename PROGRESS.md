@@ -63,9 +63,12 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 09:26:08** · elapsed **62.85 h** of 26 (242 %) · 51.1 GiB free · 0.62 GiB swap
+**Updated 09:46:09** · elapsed **63.19 h** of 26 (243 %) · 27.1 GiB free · 0.66 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 513586 | `bench/opt_ladder.py --model pi05 --steps 1,2,4,6,8,10 --rungs eager_tf32,bf16_both_graphs` | 2 min | 0.4 GiB |
+| 513639 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260925_E3E4_pi05_Nsweep --single-rung` | 2 min | 31.7 GiB |
 
 Latest log lines:
 
@@ -80,7 +83,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 09:26** (59 configurations)
+**Re-derived from every result CSV on disk at 09:46** (59 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
