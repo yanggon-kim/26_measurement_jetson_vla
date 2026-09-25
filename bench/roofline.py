@@ -43,6 +43,12 @@ def main() -> int:
     ap.add_argument("--ncu", action="append", default=[],
                     help="an E5 run dir with ncu/kernels.csv (repeatable)")
     ap.add_argument("--model", default="pi0")
+    ap.add_argument("--ae-total-steps", type=int, default=0,
+                    help="If the measured summary gives `ae_total` but no per-step region "
+                         "(pi0.5 and SmolVLA record only the total), derive the ae_step time "
+                         "as ae_total / N with N given here. Requires the flag: deriving it "
+                         "implicitly from a filename would put a divisor nobody checked "
+                         "underneath the study's central region.")
     ap.add_argument("--vision-flops", default="",
                     help="JSON from bench/vision_flops.py. floor.csv carries flops=0 for the "
                          "`vision` region with the note 'FLOPs not counted analytically', "
@@ -82,6 +88,13 @@ def main() -> int:
                 # the whole PIM study is about.
                 if re.fullmatch(r"ae_step\[\d+\]", reg):
                     step_times.append((reg, float(r["median_ms"])))
+    if "ae_step" not in times and args.ae_total_steps and "ae_total" in times:
+        times["ae_step"] = times["ae_total"] / args.ae_total_steps
+        print(f"  ae_step: derived as ae_total {times['ae_total']:.4f} ms / "
+              f"{args.ae_total_steps} steps = {times['ae_step']:.4f} ms (--ae-total-steps). "
+              f"This assumes the steps are equal; pi0's own per-step measurements show step 0 "
+              f"about 6 % above the rest, so a derived per-step time is an average and not a "
+              f"steady-state step.")
     if step_times and "ae_step" not in times:
         vals = sorted(v for _, v in step_times)
         med = vals[len(vals) // 2] if len(vals) % 2 else (
@@ -118,16 +131,24 @@ def main() -> int:
         if not ms:
             return
         sec = ms / 1e3
-        tf = flops / sec / 1e12 if flops else 0.0
         gb = nbytes / sec / 1e9 if nbytes else 0.0
+        # flops == 0 means NOT COUNTED, not "no arithmetic": floor.csv records exactly that
+        # for `vision` on the models where vision_flops.py has not been run. Emitting 0.0
+        # TFLOP/s and 0.0 % of peak for it would assert a measurement nobody made, and it is
+        # how vision came to sit in earlier tables looking like a region that does no maths.
+        # Those columns are left EMPTY instead, the same rule §3.3(3) forces on the ncu rows.
+        counted = bool(flops)
+        tf = flops / sec / 1e12 if counted else None
         rows.append({
             "model": args.model, "region_or_kernel": name,
-            "flops": int(flops), "bytes": int(nbytes), "ms": round(ms, 6),
-            "intensity": round(flops / nbytes, 4) if nbytes else "",
-            "achieved_TFLOPps": round(tf, 5), "achieved_GBps": round(gb, 3),
-            "pct_peak_compute": round(100 * tf / peak_tf, 3),
+            "flops": int(flops) if counted else "",
+            "bytes": int(nbytes), "ms": round(ms, 6),
+            "intensity": round(flops / nbytes, 4) if (counted and nbytes) else "",
+            "achieved_TFLOPps": round(tf, 5) if counted else "",
+            "achieved_GBps": round(gb, 3),
+            "pct_peak_compute": round(100 * tf / peak_tf, 3) if counted else "",
             "pct_peak_bw": round(100 * gb / peak_bw, 3),
-            "pct_spec_compute": round(100 * tf / SPEC_TF, 3),
+            "pct_spec_compute": round(100 * tf / SPEC_TF, 3) if counted else "",
             "pct_spec_bw": round(100 * gb / SPEC_BW, 3),
             "floor_ms": round(floor_ms, 6) if floor_ms else "",
             "gap_ratio": round(ms / floor_ms, 3) if floor_ms else "",
@@ -136,8 +157,12 @@ def main() -> int:
     for reg, a in analytic.items():
         ms = times.get(reg) or times.get(f"{reg}_wall")
         add(reg, a["flops"], a["bytes"], ms, "analytic",
-            note=f"analytic bytes and FLOPs from floor.csv; ms is the §2 region time. "
-                 f"floor bound={a['bound']}", floor_ms=a["floor_ms"])
+            note=(f"analytic bytes and FLOPs from floor.csv; ms is the §2 region time. "
+                  f"floor bound={a['bound']}"
+                  + ("" if a["flops"] else
+                     ". FLOPs NOT COUNTED analytically for this region, so the compute "
+                     "columns are empty rather than 0 -- do not read this as a region that "
+                     "does no arithmetic")), floor_ms=a["floor_ms"])
 
     for nd in args.ncu:
         kf = Path(nd) / "ncu" / "kernels.csv"

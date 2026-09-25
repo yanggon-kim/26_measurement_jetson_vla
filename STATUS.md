@@ -2,6 +2,67 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## 🔬 FOR THE PAPER — E6 now exists, and it changes which argument the PIM case can make
+
+**Every action expert measured is on the memory side of Orin's roofline, and none is anywhere
+near it.** E6 (roofline) had never been run for any model; `bench/roofline.py` was written for
+it and never invoked, and `floor.csv` existed only for π0. Both gaps are closed for π0, π0.5 and
+SmolVLA.
+
+| model | `ae_step` ms | intensity | side of ridge (180.57 FLOP/B) | % peak BW | % peak compute | gap × floor |
+|---|---:|---:|---|---:|---:|---:|
+| π0 | 52.79 | 60.0 | memory | **6.45 %** | **2.14 %** | **15.51×** |
+| π0.5 | 62.69 | 28.8 | memory | **14.76 %** | **2.36 %** | **6.77×** |
+| SmolVLA | 60.80 | 52.5 | memory | **1.78 %** | **0.52 %** | **56.04×** |
+
+Roof = this Orin's own measured peaks (E1/T005: 187.47 GB/s, 33.85 TFLOP/s bf16). Protocol §9
+reads a gap above 10× as *a structural problem — launch-bound, idle GPU, too little
+parallelism*.
+
+**The premise holds analytically and fails operationally.** Intensity below the ridge means a
+memory-side accelerator aims at the right half of the chart — that part of the thesis survives,
+and our analytic intensities (VLM 816.0, expert 60.0 FLOP/B) match arXiv:2604.24447's 840 and
+64.5, so both derivations describe the same model. But no expert reaches even 15 % of peak
+bandwidth or 3 % of peak compute. **Memory is the nearer of two distant roofs, not a limit any
+of these models hits.**
+
+**Five independent measurements now agree on what actually limits the expert**, which is why
+this is stated as a conclusion:
+
+| evidence | experiment | figure |
+|---|---|---|
+| GPU idle during the expert | E5 | 84.2 % over 968 kernels/step (π0 eager) |
+| no configuration is memory-latency-bound | E5b | long-scoreboard 19.5–47.6 %, none meets §7's ≥ 60 % |
+| the expert does not use the SMs | E12 §5 | 4× fewer SMs costs it **1.3 %** |
+| the host issues for the whole wall clock | E12 §1 | `issue/wall` = 1.0000 |
+| distance from the physical floor | **E6** | **6.8–56×** |
+
+**What we suggest this means for the paper.** If the argument is *bandwidth* — the expert is
+memory-bound, so put compute in memory — these tables contradict it: the expert uses 1.8–14.8 %
+of the bandwidth it already has. If the argument is *launch and dispatch overhead* — hundreds to
+a thousand small kernels per denoising step, a GPU idle 84 % of the phase, a stage that runs the
+same on 4 SMs as on 16 — every measurement here supports it, and the ceiling on the win is what
+that overhead costs. **That is a change of reason, not a verdict against the design.** It also
+implies the win should be largest for SmolVLA (56× floor, 1183.7 kernels/step) and smallest for
+π0.5 (6.8×), which is a prediction the design can be tested against.
+
+**Also worth having:** π0's `vlm_prefix` is the one efficient region anywhere — 1.93× its floor
+at 51.92 % of peak compute. There is little to win there by any means.
+
+**One error found and fixed in our own derivation, disclosed because it would have been
+invisible:** SmolVLA's config declares `num_hidden_layers = 32` while the loaded model has
+**16** (it truncates at load and prints so). Reading the config doubled its KV-cache bytes and
+attention FLOPs — a floor wrong by 2× that looked entirely plausible. `bench/floors_models.py`
+now counts layers from the loaded module list and refuses to fall back to the config. The
+superseded run is in `scratch/superseded/`, not deleted.
+
+**Still missing:** E6 for the three GR00T variants. GR00T is a different family (a DiT action
+head, not a Gemma expert behind PaliGemma) with differently named regions
+(`vlm_backbone`, `vlm_prefix_excl_vision`), and one function covering both would produce a floor
+that looks authoritative and is wrong. T009 needs its own pass.
+
+---
+
 ## 🛑 FOR THE RESEARCH SIDE — E5b's raw data reached the repository only on 2026-09-25
 
 **If you pulled before commit `ffccd18` (2026-09-25 06:40) and looked for E5b's per-kernel raw

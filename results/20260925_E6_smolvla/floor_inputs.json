@@ -1,0 +1,65 @@
+{
+  "model": "smolvla",
+  "checkpoint": "lerobot/smolvla_base",
+  "revision": null,
+  "tokens": {
+    "prefix_tokens_P": 177,
+    "prefix_tokens_valid": 151,
+    "suffix_tokens_S": 50,
+    "suffix_tokens_valid": 50,
+    "n_images": 2,
+    "image_shapes": [
+      [
+        1,
+        3,
+        512,
+        512
+      ],
+      [
+        1,
+        3,
+        512,
+        512
+      ]
+    ],
+    "image_masks": [
+      true,
+      true
+    ],
+    "language_tokens": 48,
+    "language_tokens_valid": 22,
+    "state_dim_padded": 32,
+    "state_in_prefix": true,
+    "chunk_size": 50
+  },
+  "architecture_from_config": {
+    "layers": 16,
+    "config_layers": 32,
+    "layers_source": "counted from the loaded module list",
+    "layers_note": "config says num_hidden_layers=32 but the LOADED model has 16 -- using 16. SmolVLA truncates its VLM at load time.",
+    "heads": 15,
+    "kv_heads": 5,
+    "head_dim": 64,
+    "expert_layers": 16
+  },
+  "element_size_bytes": 2,
+  "resolved_region_paths": {
+    "vision": "vision_model",
+    "projector": "multi_modal_projector",
+    "vlm_language_model": "text_model",
+    "action_expert_layers": "lm_expert.layers"
+  },
+  "region_parameter_bytes": {
+    "vision_plus_projector": 196459008,
+    "vlm_language_model": 409253760,
+    "action_expert_layers": 199767040,
+    "kv_cache_per_step": 3624960
+  },
+  "peaks": {
+    "measured_GBps": 187.47,
+    "measured_TFLOPps": 33.8506,
+    "spec_GBps": 204.8,
+    "spec_TFLOPps": 42.0
+  },
+  "torch": "2.8.0"
+}
