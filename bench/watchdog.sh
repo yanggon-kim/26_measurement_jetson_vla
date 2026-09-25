@@ -244,7 +244,11 @@ for tag, pat, need, target in (
          ("opt_ladder.csv", "phase_split.csv", "raw/benchmark_inference.log"), 15),
         # E8 writes summary.json and episodes.csv together at the END of a run, so a directory
         # with neither is either live or failed; _is_live() tells which.
-        ("E8 LIBERO",   "results/*_E8_*",     ("summary.json",),         10)):
+        ("E8 LIBERO",   "results/*_E8_*",     ("summary.json",),         10),
+        # T015 / E12b: M1 writes summary.json, M2/M3 corun_ratios.csv, M4 bandwidth.csv, M5
+        # power.csv. Target 5 directories per spec §11.
+        ("E12b",        "results/*_E12b_*",
+         ("summary.json", "corun_ratios.csv", "bandwidth.csv", "power.csv"), 5)):
     def _has(d, need):
         names = (need,) if isinstance(need, str) else need
         return any((Path(d) / n).exists() and (Path(d) / n).stat().st_size > 0

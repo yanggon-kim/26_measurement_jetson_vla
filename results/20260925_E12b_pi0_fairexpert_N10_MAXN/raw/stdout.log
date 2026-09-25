@@ -1,0 +1,42 @@
+  gate: NV Power Mode: MAXN GPU 1300500000 EMC 3199000000
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+All keys loaded successfully!
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  _C._set_float32_matmul_precision(precision)
+  rung matches E7: model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs
+  hoist equivalence: PASS (stock run-to-run bitwise); frame scale 5.408
+  pre   stock prefix       median   251.29 ms n=239 nonfinite=0
+  pre   stock ae           median   168.14 ms n=357 nonfinite=0
+  pre   stock full_ship    median   425.04 ms n=142 nonfinite=0
+  pre   stock full_stages  median   417.85 ms n=144 nonfinite=0
+  hoist hoist prefix       median   249.19 ms n=241 nonfinite=0
+  hoist hoist ae           median   110.95 ms n=541 nonfinite=0
+  hoist hoist full_stages  median   354.74 ms n=170 nonfinite=0
+  post  stock prefix       median   249.25 ms n=241 nonfinite=0
+  post  stock ae           median   167.40 ms n=359 nonfinite=0
+  post  stock full_ship    median   421.36 ms n=143 nonfinite=0
+  post  stock full_stages  median   416.70 ms n=144 nonfinite=0
+{
+  "B_stock_ms": 167.76760000000002,
+  "B_hoist_ms": 110.9453,
+  "A_ms": 250.26995,
+  "full_ship_stock_ms": 423.20015,
+  "full_stages_stock_ms": 417.27545,
+  "full_stages_hoist_ms": 354.7434,
+  "hoist_saves_ms_per_frame": 62.53204999999997,
+  "reference_E7": {
+    "A": 251.28,
+    "B": 167.36,
+    "full": 424.68
+  },
+  "reference_reconciliation_B_hoist": 111.02,
+  "outcome_7_fair_B_le_93.1ms": false,
+  "outcome_8_93.1_lt_B_le_102.4": false,
+  "outcome_9_hoist_fails_equivalence": false
+}

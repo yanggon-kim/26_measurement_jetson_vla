@@ -83,7 +83,8 @@ class GreenCtxStream:
     callers label their results with `granted_sm`.
     """
 
-    def __init__(self, want_sm: int, dev_ordinal: int = 0):
+    def __init__(self, want_sm: int, dev_ordinal: int = 0, _resource=None,
+                 _meta: dict | None = None):
         import torch                                                   # noqa: PLC0415
         _chk(_lib.cuInit(0), "cuInit")
         self._dev = ctypes.c_int()
@@ -95,21 +96,32 @@ class GreenCtxStream:
              "cuDeviceGetDevResource")
         self.device_sm = inp.sm.smCount
 
-        groups = (CUdevResource * 32)()
-        nb = ctypes.c_uint(32)
-        remaining = CUdevResource()
-        _chk(_lib.cuDevSmResourceSplitByCount(
-            groups, ctypes.byref(nb), ctypes.byref(inp), ctypes.byref(remaining),
-            ctypes.c_uint(0), ctypes.c_uint(want_sm)), "cuDevSmResourceSplitByCount")
-        if nb.value < 1:
-            raise RuntimeError(f"split for {want_sm} SMs produced no groups")
-        self.want_sm = want_sm
-        self.granted_sm = groups[0].sm.smCount
-        self.n_groups = nb.value
-        self.remaining_sm = remaining.sm.smCount
+        if _resource is not None:
+            # Built by split_pair() from a group or from a split's REMAINDER, so the two
+            # partitions of one split are disjoint by construction.
+            res = _resource
+            self.want_sm = want_sm
+            self.granted_sm = res.sm.smCount
+            self.n_groups = (_meta or {}).get("n_groups", 1)
+            self.remaining_sm = (_meta or {}).get("remaining_sm", 0)
+        else:
+            groups = (CUdevResource * 32)()
+            nb = ctypes.c_uint(32)
+            remaining = CUdevResource()
+            _chk(_lib.cuDevSmResourceSplitByCount(
+                groups, ctypes.byref(nb), ctypes.byref(inp), ctypes.byref(remaining),
+                ctypes.c_uint(0), ctypes.c_uint(want_sm)), "cuDevSmResourceSplitByCount")
+            if nb.value < 1:
+                raise RuntimeError(f"split for {want_sm} SMs produced no groups")
+            self.want_sm = want_sm
+            self.granted_sm = groups[0].sm.smCount
+            self.n_groups = nb.value
+            self.remaining_sm = remaining.sm.smCount
+            res = groups[0]
+        self._res = res            # keep the struct alive for the descriptor
 
         self._desc = ctypes.c_void_p()
-        _chk(_lib.cuDevResourceGenerateDesc(ctypes.byref(self._desc), groups,
+        _chk(_lib.cuDevResourceGenerateDesc(ctypes.byref(self._desc), ctypes.byref(res),
                                             ctypes.c_uint(1)),
              "cuDevResourceGenerateDesc")
         self._gctx = ctypes.c_void_p()
@@ -142,6 +154,24 @@ class GreenCtxStream:
         self.stream = torch.cuda.ExternalStream(raw.value)
 
     @contextlib.contextmanager
+    def switch(self):
+        """Make this green context current and select its stream, WITHOUT any synchronisation.
+
+        For issuing work inside a pipeline (E12b). activate() below drains the device on exit,
+        which is right for a one-stage measurement but, called around every stage of a co-run,
+        would serialise the two streams and manufacture exactly the no-overlap result the
+        co-run exists to test. The primary context is restored on exit; queued work keeps
+        running in this green context.
+        """
+        import torch                                                   # noqa: PLC0415
+        _chk(_lib.cuCtxSetCurrent(self._ctx), "cuCtxSetCurrent(green)")
+        try:
+            with torch.cuda.stream(self.stream):
+                yield self.stream
+        finally:
+            _chk(_lib.cuCtxSetCurrent(self._primary), "cuCtxSetCurrent(primary)")
+
+    @contextlib.contextmanager
     def activate(self):
         """Make this green context current for the duration, then restore the primary one.
 
@@ -169,6 +199,47 @@ class GreenCtxStream:
         if getattr(self, "_gctx", None) is not None:
             _lib.cuGreenCtxDestroy(self._gctx)
             self._gctx = None
+
+
+def split_pair(prefix_sms: int, expert_sms: int):
+    """Two DISJOINT green contexts for one split (E12b M3), prefix first, expert second.
+
+    Equal halves come from one split's two groups; an unequal split takes the larger side
+    as group 0 of a split at that size and the smaller side as that split's REMAINDER, so the
+    two never share an SM. What the driver granted is returned on each object
+    (`granted_sm`) and must be what the caller reports -- a requested 14/2 may come back as
+    something else, and the granularity is itself part of the result.
+    """
+    _chk(_lib.cuInit(0), "cuInit")
+    dev = ctypes.c_int()
+    _chk(_lib.cuDeviceGet(ctypes.byref(dev), 0), "cuDeviceGet")
+    inp = CUdevResource()
+    _chk(_lib.cuDeviceGetDevResource(dev, ctypes.byref(inp), CU_DEV_RESOURCE_TYPE_SM),
+         "cuDeviceGetDevResource")
+    big, small = max(prefix_sms, expert_sms), min(prefix_sms, expert_sms)
+    groups = (CUdevResource * 32)()
+    nb = ctypes.c_uint(32)
+    rem = CUdevResource()
+    _chk(_lib.cuDevSmResourceSplitByCount(groups, ctypes.byref(nb), ctypes.byref(inp),
+                                          ctypes.byref(rem), ctypes.c_uint(0),
+                                          ctypes.c_uint(big)), "split")
+    meta = {"n_groups": nb.value, "remaining_sm": rem.sm.smCount}
+    if prefix_sms == expert_sms:
+        if nb.value < 2:
+            raise RuntimeError(f"{big}/{big}: driver gave {nb.value} group(s), need 2")
+        a, b = groups[0], groups[1]
+    else:
+        if nb.value < 1 or rem.sm.smCount == 0:
+            raise RuntimeError(f"{prefix_sms}/{expert_sms}: no remainder to use "
+                               f"(groups {nb.value}, remaining {rem.sm.smCount})")
+        big_res, small_res = groups[0], rem
+        a, b = (big_res, small_res) if prefix_sms >= expert_sms else (small_res, big_res)
+    # copy the structs: the arrays above go out of scope
+    ra, rb = CUdevResource(), CUdevResource()
+    ctypes.memmove(ctypes.byref(ra), ctypes.byref(a), ctypes.sizeof(CUdevResource))
+    ctypes.memmove(ctypes.byref(rb), ctypes.byref(b), ctypes.sizeof(CUdevResource))
+    return (GreenCtxStream(prefix_sms, _resource=ra, _meta=meta),
+            GreenCtxStream(expert_sms, _resource=rb, _meta=meta))
 
 
 def verify_partition_is_real(sm_counts=(4, 8, 16), iters: int = 30,

@@ -1,0 +1,162 @@
+{
+  "experiment": "E12b M1 -- the fair GPU expert (T015)",
+  "bench_commit": "2c0912bdad48faab45677328bf3d2810f5bdc47f",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "bf16_both",
+  "rung_note": {
+    "rung": "bf16_both",
+    "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
+    "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
+    "matmul_precision": "high",
+    "matches_E7": true
+  },
+  "variant": "bf16_both+stock | bf16_both+hoist (per row)",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (full GPU, 16 SMs)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "gate_start": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600",
+    "emc_rate_hz": 3199000000,
+    "temps_mC": {
+      "cpu-thermal": 41437,
+      "gpu-thermal": 36968,
+      "soc0-thermal": 37906,
+      "soc1-thermal": 37625,
+      "soc2-thermal": 37781,
+      "tj-thermal": 41437
+    },
+    "t_utc": "2026-09-25T17:22:53Z"
+  },
+  "throttled": false,
+  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 54.5 C (trip threshold used 95 C); temps at end {'cpu-thermal': 54406, 'gpu-thermal': 50187, 'soc0-thermal': 50500, 'soc1-thermal': 49500, 'soc2-thermal': 50531, 'tj-thermal': 54468}",
+  "N": 10,
+  "batch": 1,
+  "loops": "bracketed stock -> hoist -> stock; each >= 100 frames and >= 60 s after 20 warm-up; per-iteration sync (E7 run_loop semantics)",
+  "frames_manifest": {
+    "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
+    "dataset": "HuggingFaceVLA/libero",
+    "split": "train",
+    "source_api": "https://datasets-server.huggingface.co/rows",
+    "episode_index": 0,
+    "task_index": 0,
+    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+    "frames": [
+      {
+        "file": "obs_0.json",
+        "row_offset": 0,
+        "frame_index": 0
+      },
+      {
+        "file": "obs_1.json",
+        "row_offset": 25,
+        "frame_index": 25
+      },
+      {
+        "file": "obs_2.json",
+        "row_offset": 50,
+        "frame_index": 50
+      },
+      {
+        "file": "obs_3.json",
+        "row_offset": 75,
+        "frame_index": 75
+      },
+      {
+        "file": "obs_4.json",
+        "row_offset": 99,
+        "frame_index": 99
+      }
+    ]
+  },
+  "results": {
+    "B_stock_ms": 167.76760000000002,
+    "B_hoist_ms": 110.9453,
+    "A_ms": 250.26995,
+    "full_ship_stock_ms": 423.20015,
+    "full_stages_stock_ms": 417.27545,
+    "full_stages_hoist_ms": 354.7434,
+    "hoist_saves_ms_per_frame": 62.53204999999997,
+    "reference_E7": {
+      "A": 251.28,
+      "B": 167.36,
+      "full": 424.68
+    },
+    "reference_reconciliation_B_hoist": 111.02,
+    "outcome_7_fair_B_le_93.1ms": false,
+    "outcome_8_93.1_lt_B_le_102.4": false,
+    "outcome_9_hoist_fails_equivalence": false
+  },
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/e12b_m1.py --outdir results/20260925_E12b_pi0_fairexpert_N10_MAXN",
+  "torch": "2.8.0",
+  "cuda": "12.6",
+  "date_utc": "2026-09-25T17:39:25Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "each frame's KV / pad / noise copied into the expert graph's static input buffers ON THE EXPERT STREAM (counted in the expert stage time)",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "equivalence.csv",
+      "bytes": 873,
+      "sha256": "59f3768df68b796295d823c39e0a06275c6a7ad55826e1ba169682ff0cd211ce"
+    },
+    {
+      "path": "equivalence.md",
+      "bytes": 643,
+      "sha256": "aa962eb5d3d0d5c72f2661633475f47124eb24b2e27251a37ad644c671d979ef"
+    },
+    {
+      "path": "latency_samples.csv",
+      "bytes": 180930,
+      "sha256": "72ba9d70ec86eb2db0a6ed4c9b9b3f729129821fca73ed09f808d08cfe8e1402"
+    },
+    {
+      "path": "loops_summary.csv",
+      "bytes": 999,
+      "sha256": "d730ddf07ded3ee1b1f4eda989c1e051511f521466456ef03c5d0da5d87f09b8"
+    },
+    {
+      "path": "raw/m0_graph_confinement.json",
+      "bytes": 2893,
+      "sha256": "4af7777a0f74c1b0225be7e6e1b739601c7f8984ae10acb481d3a81ec8bea060"
+    },
+    {
+      "path": "raw/stdout.log",
+      "bytes": 2777,
+      "sha256": "3aca365aa99de7fe34ee63f37ede470587c25ee007af66bfdc1975e7e0ce5db4"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 493,
+      "sha256": "91a901923830892d308d3c40e94ac8d2bf9d4341aa3f1ae23b7144adb8b9cca0"
+    }
+  ],
+  "deviations": [
+    "A tegrastats process was started by hand for under one second during the `pre stock prefix` loop (the operator checking the fastest interval). E7 measured tegrastats' cost at ~0.19 %; that loop's median (251.29 ms) matches E7 (251.28) to 0.004 %, so no effect is visible, but it is recorded.",
+    "M0 (graph-replay confinement) was run in this session before M1 and its JSON is kept here under raw/ (spec \u00a711 places it with M3; it is copied there too)."
+  ]
+}
