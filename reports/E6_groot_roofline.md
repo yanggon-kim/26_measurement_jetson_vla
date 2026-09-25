@@ -4,7 +4,32 @@
 `results/20260925_E6_groot_n17/roofline.csv`, with `floor.csv` and `floor_inputs.json` beside
 it.**
 
-## The answer, and it is the opposite of every other model measured
+> **⚠ CORRECTION 2026-09-25 — the first version of this report compared rungs that do not
+> match.** GR00T's region times came from `20260923_E4d_groot_n17_ladder/phase_split.csv`,
+> which is the `vlm_graphs` run with a **CUDA-graphed action head** (`--head-mode
+> reduce-overhead`). The π0, π0.5 and SmolVLA rows it was set against are **eager**
+> (`compile_mode: None`). "86 % of peak bandwidth, 1.16× floor" is true of the compiled head
+> only, and was presented as a contrast with eager LeRobot models. Matched rungs, GR00T N1.7,
+> from its own ladder rows (the weights and therefore the bytes are identical across these
+> rungs; they change tf32 and compilation only):
+>
+> | GR00T N1.7 rung | `ae_step` ms | GB/s | % peak BW | gap × floor |
+> |---|---:|---:|---:|---:|
+> | `eager_tf32` | 52.13 | 62.2 | **33.2 %** | **3.02×** |
+> | `eager_fp32` | 52.78 | 61.4 | 32.8 % | 3.05× |
+> | `ae_compile` (head compiled only) | 20.82 | 155.7 | **83.0 %** | **1.20×** |
+> | `ae_graphs` | 19.87 | 163.1 | 87.0 % | 1.15× |
+> | `vlm_graphs` (the row first reported) | 20.06 | 161.5 | 86.2 % | 1.16× |
+>
+> **What survives, and it is a cleaner result than the original:** eager-to-eager, GR00T's
+> action step is 33.2 % of peak bandwidth at 3.0× floor against π0's 6.45 % at 15.5× — still
+> about five times closer to its roof, because it moves 5× the bytes per step through fewer,
+> larger kernels. And **compiling the action head alone takes GR00T from 3.0× to 1.20× its
+> floor**: once launch overhead is removed its DiT is bandwidth-bound. Whether π0's expert does
+> the same when compiled is measured in the matched-rung E6 (`results/*_E6_*_rungs`), which
+> replaces the mixed table.
+
+## The answer as first written (see the correction above)
 
 GR00T N1.7, N = 4, MAXN. Roof = this Orin's measured peaks (E1/T005: 187.47 GB/s,
 33.85 TFLOP/s; spec alongside in the CSV).

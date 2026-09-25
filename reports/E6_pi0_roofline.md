@@ -10,6 +10,8 @@ reading of it.**
 > existed for any model. `bench/roofline.py` had been written for it and never run. T004 is
 > re-opened; the correction is in its status block and in `STATUS.md`.
 
+> **⚠ CORRECTION 2026-09-25:** any cross-model comparison with GR00T in this report set an EAGER LeRobot `ae_step` against a CUDA-graphed GR00T one. Matched rungs are in `reports/E6_groot_roofline.md`'s correction block: eager GR00T is 33.2 % of peak bandwidth at 3.0× floor, and compiling its head takes it to 1.20×. The numbers for THIS model below are unaffected; they are eager and labelled so.
+
 ## The answer
 
 π0, eager, N = 10, MAXN, `results/20260921_E3_pi0_eager_N10`. Roof = **this Orin's measured

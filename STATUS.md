@@ -2,7 +2,28 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
-## 🔬🔬 FOR THE PAPER — GR00T N1.7's action step runs at 86 % of peak bandwidth, 1.16× its floor
+## ⚠ CORRECTION (2026-09-25, same day) to the GR00T E6 block just below: it compared mismatched rungs
+
+**The GR00T row was a CUDA-graphed action head; the π0/π0.5/SmolVLA rows were eager.** GR00T's
+region time came from the `vlm_graphs` ladder run (`--head-mode reduce-overhead`), and I set it
+against eager LeRobot numbers without checking the rung. Matched, from GR00T's own ladder rows
+(bytes identical across rungs):
+
+| | eager | action head compiled |
+|---|---:|---:|
+| GR00T N1.7 `ae_step` | 52.13 ms · **33.2 %** peak BW · **3.02×** floor | 20.82 ms · **83.0 %** · **1.20×** (`ae_compile`) |
+| π0 `ae_step` | 52.79 ms · **6.45 %** · **15.51×** | pending — per-rung bytes being measured |
+
+**What changes:** "GR00T is bandwidth-bound and near-optimal" is true only once its head is
+compiled; eager, it is launch-limited too (3.0× floor). **What survives, and is sharper:** at
+matched eager rungs GR00T is still ~5× closer to its roof than π0, and **compiling GR00T's head
+alone removes almost all of its launch overhead** (3.02× → 1.20×). The fair test of the PIM
+framing is therefore compiled-vs-compiled, which the matched-rung E6 now being built will give
+for every model. Please do not quote the block below until that lands.
+
+---
+
+## 🔬🔬 (SUPERSEDED — see the correction above) GR00T N1.7's action step runs at 86 % of peak bandwidth, 1.16× its floor
 
 **This is the strongest measured support in the whole campaign for a memory-side accelerator,
 and it points at a different model than the study started from.**

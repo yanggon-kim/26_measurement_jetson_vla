@@ -9,6 +9,8 @@ analytic inputs in `floor.csv` and `floor_inputs.json` beside it.**
 > for π0, because `run_e3.py`'s `floor_rows()` hardcodes π0's architecture and module paths.
 > `bench/floors_models.py` was written to derive them per model from the **loaded** model.
 
+> **⚠ CORRECTION 2026-09-25:** any cross-model comparison with GR00T in this report set an EAGER LeRobot `ae_step` against a CUDA-graphed GR00T one. Matched rungs are in `reports/E6_groot_roofline.md`'s correction block: eager GR00T is 33.2 % of peak bandwidth at 3.0× floor, and compiling its head takes it to 1.20×. The numbers for THIS model below are unaffected; they are eager and labelled so.
+
 ## The answer
 
 SmolVLA, N = 10, MAXN. Roof = **this Orin's measured peaks** (E1/T005: 187.47 GB/s,
