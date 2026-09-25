@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -42,6 +43,16 @@ def main() -> int:
     ap.add_argument("--ncu", action="append", default=[],
                     help="an E5 run dir with ncu/kernels.csv (repeatable)")
     ap.add_argument("--model", default="pi0")
+    ap.add_argument("--vision-flops", default="",
+                    help="JSON from bench/vision_flops.py. floor.csv carries flops=0 for the "
+                         "`vision` region with the note 'FLOPs not counted analytically', "
+                         "which leaves vision without an operational intensity and therefore "
+                         "out of the roofline entirely -- the gap vision_flops.py was written "
+                         "to close. Its `bytes_as_loaded_fp32` is cross-checked against "
+                         "floor.csv's bytes_read and the run refuses if they disagree, since "
+                         "two independent derivations of the same quantity agreeing is what "
+                         "makes it safe to take the FLOPs from one and the bytes from the "
+                         "other.")
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
@@ -59,13 +70,47 @@ def main() -> int:
                                  "flops": float(r["flops"] or 0),
                                  "floor_ms": float(r["floor_ms"] or 0),
                                  "bound": r.get("bound", "")}
-    times = {}
+    times, step_times = {}, []
     for f in args.regions:
         for r in csv.DictReader(Path(f).open()):
             reg = r.get("region")
             if reg and r.get("median_ms"):
                 times.setdefault(reg, float(r["median_ms"]))
-    print(f"  analytic regions: {sorted(analytic)}; measured regions: {sorted(times)}")
+                # floor.csv names the region `ae_step` (ONE denoising step); the measured
+                # summary names them `ae_step[0]`..`ae_step[N-1]`. Without this the ae_step
+                # row silently got no `ms` and was dropped from the roofline -- the region
+                # the whole PIM study is about.
+                if re.fullmatch(r"ae_step\[\d+\]", reg):
+                    step_times.append((reg, float(r["median_ms"])))
+    if step_times and "ae_step" not in times:
+        vals = sorted(v for _, v in step_times)
+        med = vals[len(vals) // 2] if len(vals) % 2 else (
+            (vals[len(vals) // 2 - 1] + vals[len(vals) // 2]) / 2)
+        times["ae_step"] = med
+        first = dict(step_times).get("ae_step[0]")
+        print(f"  ae_step: median over {len(vals)} measured steps = {med:.4f} ms"
+              + (f"  (step 0 alone is {first:.4f} ms, {100*(first/med-1):+.1f} % -- a "
+                 f"first-step effect, which is why the MEDIAN across steps is used rather "
+                 f"than step 0)" if first else ""))
+    if args.vision_flops:
+        vf = json.loads(Path(args.vision_flops).read_text())
+        v = analytic.get("vision")
+        if v is not None:
+            declared = float(vf["bytes_as_loaded_fp32"])
+            if abs(declared - v["bytes"]) > 1:
+                raise SystemExit(
+                    f"vision bytes disagree: floor.csv {v['bytes']:.0f} vs "
+                    f"vision_flops.py {declared:.0f}. Refusing to combine FLOPs from one "
+                    f"derivation with bytes from another that does not agree with it.")
+            v["flops"] = float(vf["flops_vision_region"])
+            print(f"  vision FLOPs {v['flops']:.0f} from {args.vision_flops}; bytes agree "
+                  f"with floor.csv at {v['bytes']:.0f} B")
+
+    missing = [r for r in analytic if r not in times]
+    if missing:
+        print(f"  *** analytic regions with NO measured time, dropped from the roofline: "
+              f"{missing}")
+    print(f"  analytic regions: {sorted(analytic)}; measured regions: {len(times)}")
 
     rows = []
 
