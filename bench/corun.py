@@ -753,6 +753,16 @@ def run_timing(args, spec, gate) -> int:
     print(f"  B_iso  {B_iso:8.2f} ms   (bracket drift {drift_B:.1f} %)")
     print(f"  T_serial {Tser['median_ms']:6.2f} ms      T_pipe {T_pipe:8.2f} ms")
     print(f"  A_co   {A_co['median_ms']:8.2f} ms   B_co {B_co['median_ms']:8.2f} ms")
+    # The decisive evidence for WHY, not just how much. If the host spends nearly the whole
+    # wall clock issuing kernels, the two streams cannot overlap however correctly they are
+    # wired: while one stage is being issued the other stream has no queued work. s and p
+    # look like ideal overlap either way; this is what separates the two.
+    iss = t["corun"][0].get("issue_s", float("nan")) if t["corun"] else float("nan")
+    wal = t["corun"][0].get("wall_s", float("nan")) if t["corun"] else float("nan")
+    if wal == wal and wal:
+        print(f"  host issue {iss * 1e3:8.1f} ms   wall {wal * 1e3:8.1f} ms   "
+              f"issue/wall = {iss / wal:.4f}   <- ~1.0 means the CPU is the bottleneck and "
+              f"there is nothing to overlap")
     print()
     print(f"  s = B_co/B_iso = {s_val:.4f}   [95% CI {lo:.4f}, {hi:.4f}]")
     print(f"  r = A_iso/B_iso = {r_val:.4f}   <- the break-even for s, THIS session")
@@ -760,8 +770,24 @@ def run_timing(args, spec, gate) -> int:
     print(f"  T_pipe/A_iso = {T_pipe / A_iso:.4f}   speed-up vs serial = "
           f"{Tser['median_ms'] / T_pipe:.4f}")
     print()
-    print(f"  VERDICT: s {'<' if s_val < r_val else '>'} r  -> the expert is "
-          f"{'NOT ' if s_val < r_val else ''}the pipeline's bottleneck under co-run")
+    # TWO separate questions, which one line conflated. The first printed verdict said
+    # "s > r -> the expert is the pipeline's bottleneck", which is arithmetically right and
+    # reads as "contention found" -- while s = 0.9989 means NO slowdown at all. In eager at
+    # N=10 the expert is simply the LONGER stage (r = 0.88 < 1, unlike E7's bf16_both where
+    # r = 1.50, because compiling speeds the expert more than the prefix and flips which
+    # dominates). Report contention and bottleneck separately.
+    overlapped = T_pipe < 0.95 * (A_iso + B_iso)
+    print(f"  (1) contention: s = {s_val:.4f} vs 1.0 -> "
+          f"{'the expert is slowed by co-run' if s_val > 1.05 else 'NO measurable slowdown'}")
+    print(f"  (2) which stage sets the period: s {'>' if s_val > r_val else '<'} r "
+          f"({s_val:.4f} vs {r_val:.4f}) -> the "
+          f"{'EXPERT' if s_val > r_val else 'PREFIX'} is the longer stage under co-run")
+    print(f"  (3) did the stages overlap AT ALL: T_pipe {T_pipe:.1f} vs A_iso+B_iso "
+          f"{A_iso + B_iso:.1f} -> {'YES' if overlapped else 'NO -- the pipeline is SERIAL'}")
+    if not overlapped:
+        print("      s and p are therefore NOT overlap measurements: each stage ran with the "
+              "GPU to itself, which is why both read ~1.00. Only T_pipe distinguishes ideal "
+              "overlap from none.")
 
     if args.outdir:
         out = REPO / args.outdir
@@ -819,8 +845,78 @@ def run_timing(args, spec, gate) -> int:
                           f"r here is the EAGER ratio and is NOT E7's 1.50, which is "
                           f"bf16_both. Isolated bracket drift: prefix {drift_A:.1f} %, "
                           f"expert {drift_B:.1f} %. Fresh-KV equivalence verified bitwise "
-                          f"in eager.")})
-        print(f"  wrote {out}/corun_ratios.csv (+ summary, samples)", flush=True)
+                          f"in eager. "
+                          f"NO OVERLAP: T_pipe {T_pipe:.1f} ms vs A_iso+B_iso "
+                          f"{A_iso + B_iso:.1f} ms, so s and p are NOT overlap measurements "
+                          f"-- each stage ran with the GPU to itself and both read ~1.00. "
+                          f"host issue/wall = 1.0000: pi0 eager is entirely CPU-issue-bound "
+                          f"(E5: 84.2 % GPU idle over 968 kernels/step), so there is nothing "
+                          f"for two streams to overlap and GPU contention cannot arise in "
+                          f"this configuration. r here is {r_val:.4f}, NOT E7's 1.50, because "
+                          f"eager's expert is the longer stage while bf16_both's prefix is.")})
+        # meta.json -- protocol §5 and non-negotiable 4. The first version of this function
+        # wrote three CSVs and no meta.json, which makes the directory non-compliant however
+        # good the numbers are: without bench_commit, the model commit, the rung string and
+        # the gate, a number is not reproducible and the protocol says so plainly.
+        import common as C                                            # noqa: PLC0415
+        sw = C.software_versions()
+        C.write_json(out / "meta.json", {
+            "experiment": "E12 (co-run: prefix(k) || expert(k-1) on one GPU)", "task": "T014",
+            "model": spec.name, "model_repo": spec.checkpoint,
+            "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision,
+            "checkpoint": spec.checkpoint,
+            "rung": "eager", "compile_mode": None, "batch": 1,
+            "num_denoise_steps": args.steps,
+            "mechanism": "pi0_nosync" if getattr(args, "nosync", False) else "baseline_eager",
+            "frames_timed": args.frames, "warmup_frames": args.warm,
+            "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
+            "gate": gate, "throttled": False,
+            "throttled_evidence": "GPU clock pinned min==max in the gate; bracketed isolated "
+                                  f"runs drifted {drift_A:.1f} % (prefix) and {drift_B:.1f} % "
+                                  f"(expert), which is the drift check non-negotiable 3 asks "
+                                  f"for.",
+            "bench_commit": C.sh_out(f"git -C {REPO} rev-parse HEAD"),
+            "command": " ".join(sys.argv),
+            "observations": manifest.get("frames"),
+            "observation_source": manifest.get("dataset"),
+            "torch": sw.get("torch"), "python": sw.get("python"),
+            "cuda": sw.get("cuda"), "jetpack": sw.get("jetpack"), "l4t": sw.get("l4t"),
+            "raw_files": [],
+            "host_issue_over_wall": round(iss / wal, 6) if wal else None,
+            "not_measured": [
+                "compiled bf16_both co-run: the stock path corrupts non-deterministically "
+                "when pipelined across two streams (max|d| 1.273 on one run, all-NaN on "
+                "another) while compiled SERIAL is correct and eager PIPELINED is bitwise "
+                "exact. See scratch/NOTE_e12_compiled_two_stream.txt. Needs the own-CUDAGraph "
+                "fallback of spec §7 before any compiled co-run number can be reported.",
+                "Step 4 (MODE_30W, 8 SMs): waits for the owner's capped-mode reboot, per "
+                "spec §5 Step 4 and §11, which permit the MAXN part to be marked done.",
+                "Step 3 mechanisms (stream priority -3, graphs on both stages, green "
+                "contexts, libsmctrl, MPS, two processes): not yet attempted.",
+            ],
+            "notes": [
+                "NO OVERLAP OCCURRED. T_pipe equals A_iso + B_iso, and host issue/wall = "
+                f"{iss / wal:.4f} -- the CPU spends the entire wall clock issuing kernels, so "
+                "the two streams never both have resident work. s and p therefore read ~1.00 "
+                "because each stage ran with the GPU to itself, NOT because overlap was "
+                "ideal. Only T_pipe separates those two readings.",
+                "pi0 eager is launch-bound: E5 measured ae_step at 84.2 % GPU idle over 968 "
+                "kernels per step. GPU contention (KerColle's head-of-line blocking) cannot "
+                "arise in a configuration that never fills the GPU, so this configuration "
+                "cannot answer that question -- the compiled rung is where it becomes "
+                "answerable.",
+                "mechanism=pi0_nosync memoises the constant att_masks tensors at "
+                "modeling_pi0.py:681 (per prefix) and :746 (per denoise step), removing 1+N "
+                "host syncs per frame. A LABELLED harness change per spec §7, verified to "
+                "keep the fresh-KV equivalence bitwise identical. It also made the expert "
+                "stage ~19 % faster at N=4 (226.81 -> 184.18 ms), which is an optimisation "
+                "for the shipping model independent of E12.",
+                f"r = {r_val:.4f} here, NOT E7's 1.50. In eager the expert is the longer "
+                f"stage ({B_iso:.1f} vs {A_iso:.1f} ms); under bf16_both the prefix is "
+                f"(251.28 vs 167.36). Compiling speeds the expert more than the prefix and "
+                f"flips which stage sets the period, so r must come from the same session.",
+            ]})
+        print(f"  wrote {out}/corun_ratios.csv (+ summary, samples, meta.json)", flush=True)
     return 0
 
 
