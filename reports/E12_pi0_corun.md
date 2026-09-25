@@ -102,8 +102,11 @@ synchronisation at:
 |---|---|---|
 | `modeling_pi0.py:681` | once per **prefix** | `att_masks` list → bool tensor |
 | `modeling_pi0.py:746` | once per **denoise step** | `att_masks` list → `embs.dtype` tensor |
+| `modeling_pi0.py:858-859` | once per **denoise step** | `torch.tensor(<python float>, device="cuda")` for the timestep — a **pageable** H2D copy, so the host blocks until the stream drains |
 
-That is **1 + N host syncs per frame** (11 at N = 10). A sync in either stage's issue path
+That is **1 + 2N host-blocking operations per frame** (21 at N = 10). The third site was found
+last, by reconciliation against E7 rather than by the sync-debug pass, and it is the expensive
+one: **33.6 % of the expert stage** (measured below). A sync in either stage's issue path
 stalls the *other* stream's launches, so with one issuing thread (§13.7 — a second Python
 thread is forbidden, T010's numbers were GIL artefacts) the streams cannot overlap.
 
@@ -126,6 +129,72 @@ co-run question resolves.
 
 **Removing the syncs was necessary but not sufficient**: `T_pipe` still equals `A_iso + B_iso`,
 because the workload remains launch-bound.
+
+**Caveat, and a correction to the sentence above.** "Worth taking regardless" is too broad for
+this variant *as implemented*: it is **eager-only**. Under the compiled `bf16_both` rung it
+raises `Error: accessing tensor output of CUDAGraphs that has been overwritten by a subsequent
+run` — the memoised tensor is allocated **inside** the compiled region on the first call, so it
+becomes a CUDAGraph output and cannot be handed back on the next invocation. E12's MAXN run is
+eager (§4), so the 19 % figure is sound for what it measures. A compile-safe version must
+allocate those tensors outside the compiled region; not attempted.
+
+### Reconciled against E7's `ae` time — and a correction to this report
+
+E7 reports `ae` = **167.36 ms** for π0 `bf16_both`, N = 10, MAXN. Measuring the same stage in
+`bench/corun_2proc.py` at the same rung, N and power mode gave **111.01 ms** — a 50.8 %
+disagreement, while the **prefix agreed to +0.24 %** (251.89 vs 251.28). A rung-level number
+cannot be quoted with a third of one stage unexplained, so it was chased to the end. Two
+hypotheses were tested and rejected before the cause was found:
+
+| hypothesis | measured effect | verdict |
+|---|---:|---|
+| E7's 20 Hz Rails **Python thread** + tegrastats subprocess steal the GIL from the issue loop | +0.19 % | rejected |
+| E7 measures `ae` in a process where the **prefix's** graphs, CUDA-graph pool and fragmented allocator are resident (`power_phases.py:187` runs `prefix`→`ae`→`full` in one process) | +0.29 % | rejected |
+| E7 builds the timestep tensor **inside** the denoise loop | **+50.5 %** | **confirmed** |
+
+The residency hypothesis predicted the right *direction* — more resident state should make the
+expert slower — which is why it was worth a run; direction agreement is not magnitude, and
+238 resident prefix iterations moved the median from 111.02 to 111.34 ms.
+
+The cause is one line. `phase_builders.make_ae` builds the timestep per step, and
+`bench/corun.py`'s `expert_stage` precomputed it. Swapping only that line back
+(`--e7-timesteps`), everything else identical:
+
+| expert variant, `bf16_both`, N = 10, MAXN | median | p5–p95 | n |
+|---|---:|---|---:|
+| precomputed timestep tensors | **111.02 ms** | 110.90–111.28 | 406 |
+| E7's per-step `torch.tensor(<float>, device="cuda")` | **167.09 ms** | 166.62–168.05 | 270 |
+| *E7's reported `ae`, for comparison* | *167.36 ms* | — | — |
+
+**167.09 against E7's 167.36 is 0.16 %.** The discrepancy is accounted for in full, and
+`r = A_iso/B_iso = 1.50` from E7 **stands and may be quoted**.
+
+**Whose defect this is.** Not E7's: `modeling_pi0.py:858-859` in the shipping `sample_actions`
+does exactly the same thing, so `make_ae` faithfully reproduces the model and E7's 167.36 ms is
+a correct measurement of it. **The defect is in this report.** §6 below stated that precomputing
+the timestep tensors was "not labelled, because §7 names it as the example of a permitted
+harness fix". That was written believing the change was free. It is worth **33.6 % of the
+expert stage** — 56.07 ms of 167.09, or 5.6 ms per denoise step. §7 permitting the *class* of
+change does not make an unlabelled 33.6 % speed-up acceptable, and it is labelled here and in
+§6 now.
+
+**Mechanism, and how strong the evidence for it is.** 5.6 ms per step is far too large for a
+4-byte transfer, which is the evidence that the cost is the **drain** rather than the copy: a
+pageable H2D copy blocks the host until it lands, which requires the stream to reach it, so the
+host's run-ahead over a launch-bound stage is discarded once per step. The controlled swap above
+is the measurement; the drain is the explanation offered for it. It was **not** separately
+instrumented (no nsys capture of the stall), so the mechanism is an inference and the 56 ms is
+the measurement.
+
+**A second free optimisation to shipping π0**, independent of E12 and simpler than the
+`att_masks` de-sync, which needs no memoisation and no compile-safety argument: hoist the N
+constant timestep tensors out of the denoise loop. **33.6 % of the expert stage** at N = 10,
+`bf16_both`, MAXN.
+
+**What this does and does not change about E12's answer.** Nothing in direction. `T_pipe` still
+equals `A_iso + B_iso` and `issue/wall` is still 1.0000; removing host-blocking work makes a
+stage faster without making the pipeline overlap. It **strengthens** §3's claim: π0 hands the
+GPU back to the host `1 + 2N` times per frame, which is why nothing overlaps.
 
 ## 4. The compiled `bf16_both` path corrupts when pipelined
 
@@ -191,13 +260,24 @@ report states separately.
   splits contention from bottleneck from overlap, and `corun_ratios.csv`'s `notes` field
   carries the same caveat, because that file is what gets read directly.
 * **A harness change is labelled, not folded into the baseline.** `pi0_nosync` has its own
-  mechanism name in every row and its own equivalence pass. Precomputing my own timestep
-  tensors is *not* labelled, because §7 names it as the example of a permitted harness fix.
+  mechanism name in every row and its own equivalence pass. ~~Precomputing my own timestep
+  tensors is *not* labelled, because §7 names it as the example of a permitted harness fix.~~
+  **Corrected 2026-09-25 (§3).** That was written believing the change was free; it is worth
+  **33.6 % of the expert stage**, and it is what made this report's expert disagree with E7's
+  `ae` by 50.8 %. §7 permitting the class of change does not license leaving a third of a
+  stage unlabelled. It is labelled now. **The general lesson is the one this campaign keeps
+  relearning: "permitted by the protocol" was allowed to stand in for "measured to be
+  small", and the two are not the same.** The cost was never measured until the disagreement
+  with E7 forced it.
 * **The isolated reference is the mean of both brackets** (drift 0.6 % prefix, 0.7 % expert),
   so drift is shared across the ratio rather than attributed to whichever end ran first. Both
   bracket medians are in `corun_summary.csv`.
 * **In-session vs E7.** `A_iso` 474.08 ms here vs E7's 251.28 ms is the eager/`bf16_both`
-  difference, not drift; this run is eager by necessity (§4).
+  difference, not drift; this run is eager by necessity (§4). The expert side was reconciled
+  separately and completely in §3: at E7's own rung the two harnesses agree to **0.16 %** once
+  the unlabelled timestep change is undone. Two candidate explanations were measured and
+  rejected first (sampler +0.19 %, in-process residency +0.29 %), so the agreement is not a
+  coincidence of offsetting errors.
 * **What would change the conclusion.** A configuration where `issue/wall` is well below 1.0
   and `T_pipe` falls below `A_iso + B_iso`. Everything in §5's "not measured" list is aimed
   there. Until one exists, the honest statement is that **E12 has not yet tested GPU

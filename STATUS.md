@@ -2,6 +2,71 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ RESOLVED + 🛠 A FREE 33.6 % OPTIMISATION TO π0 — E7's `ae` time reconciled (2026-09-25)
+
+**Short version for the research side: `r = A/B = 1.50` from E7 is CORRECT and you may quote
+it. And π0 leaves 33.6 % of its action-expert time on the table for a one-line change.**
+
+E12's isolated expert measured **111.01 ms** where E7's `ae` reports **167.36 ms** at the same
+rung (`bf16_both`), N = 10 and power mode — 50.8 % apart, while the prefix agreed to +0.24 %.
+That was chased to the end, because a third of one stage unexplained invalidates any `r`
+derived from it.
+
+**Cause: one line.** π0's shipping `sample_actions` (`modeling_pi0.py:858-859`) — and E7's
+`phase_builders.make_ae`, which faithfully copies it — builds the timestep tensor *inside* the
+denoise loop:
+
+```python
+time_tensor = torch.tensor(time, dtype=torch.float32, device=device).expand(bsize)
+```
+
+`torch.tensor(<python float>, device="cuda")` copies from **pageable** host memory, so the host
+blocks until the copy lands — i.e. until the stream drains every kernel queued ahead of it. On a
+launch-bound stage that throws away the host's run-ahead once per denoise step.
+
+| expert variant, π0 `bf16_both`, N = 10, MAXN | median | n |
+|---|---:|---:|
+| timestep tensors hoisted out of the loop | **111.02 ms** | 406 |
+| E7's / shipping π0's per-step construction | **167.09 ms** | 270 |
+| *E7's reported `ae`* | *167.36 ms* | — |
+
+**167.09 vs 167.36 = 0.16 %.** Reconciled. Two other explanations were measured and rejected
+first — E7's Rails/tegrastats samplers (+0.19 %) and in-process residency of the prefix's
+graphs and pools (+0.29 %) — so this is not offsetting errors.
+
+**What you can use.**
+1. **`r = 1.50` stands.** E7 correctly measured the shipping model.
+2. **A second free optimisation to π0, worth 33.6 % of the action expert** (56.07 ms of
+   167.09 at N = 10): hoist the N constant timestep tensors out of the denoise loop. Simpler
+   than the `att_masks` de-sync — no memoisation, no compile-safety question. If the paper
+   quotes an expert-stage latency for π0, it is worth saying that a third of it is a pageable
+   host copy rather than expert compute.
+3. **π0 hands the GPU back to the host `1 + 2N` times per frame** (21 at N = 10): `1 + N`
+   `att_masks` conversions plus `N` timestep copies. This *strengthens* E12's finding that
+   nothing overlaps; it does not change it. `T_pipe` is still `A_iso + B_iso`.
+
+**My own error, disclosed.** `reports/E12_pi0_corun.md` §6 said precomputing those tensors was
+"not labelled, because §7 names it as the example of a permitted harness fix". I wrote that
+believing the change was free without measuring it. It is worth a third of the stage. Corrected
+in §3 and §6 of that report. **"Permitted by the protocol" was allowed to stand in for
+"measured to be small".**
+
+**Also corrected, narrower:** E12 §3 called the `att_masks` de-sync "worth taking regardless".
+It is **eager-only as implemented** — under `bf16_both` it raises `accessing tensor output of
+CUDAGraphs that has been overwritten`, because the memoised tensor is allocated inside the
+compiled region. E12's MAXN run is eager, so its 19 % figure is sound for what it measured.
+
+**Also fixed, in my own tooling:** `bench/watchdog.sh` §2c globbed only `*_E7_*`, `*_E11*`,
+`*_E5*`, so it reported **7** result directories missing `meta.json` when the true number is
+**33** (E4, E8q and E12 were never examined), and it printed `missing[:4]` beside the full
+count. Both fixed; it now scopes every result directory and prints all of them grouped by
+experiment. The `meta.json` back-fill for the genuine runs among those 33 is queued.
+
+Evidence: `scratch/NOTE_e7_ae_time_discrepancy.txt`, `scratch/e12_sampler_test/*.json`,
+`bench/corun_2proc.py --e7-timesteps|--preheat-prefix|--sampler`.
+
+---
+
 ## 🛑 CORRECTION FOR THE RESEARCH SIDE — two E11 quantities were WRONG in a pushed commit
 
 **If you pulled commit `493c548` (2026-09-24 ~19:00) and used `gpu_idle_ae_total` or

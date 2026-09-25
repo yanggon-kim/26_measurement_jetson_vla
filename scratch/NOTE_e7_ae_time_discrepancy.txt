@@ -1,116 +1,88 @@
-OPEN DISCREPANCY: my isolated expert is 33.7 % FASTER than E7's `ae` phase
-2026-09-25 05:05. Found by non-negotiable 3's reconciliation. NOT yet resolved.
+E7 `ae` vs E12 isolated expert: RESOLVED 2026-09-25.
 
-## The numbers
+THE GAP
+  E7 (results/*_E7_pi0_*, bf16_both, N=10, MAXN): ae = 167.36 ms
+  E12 isolated expert (bench/corun_2proc.py, same rung/N/mode): 111.01 ms
+  ratio 1.508 (+50.8 %). The prefix matched to +0.24 % (251.89 vs 251.28), so the
+  discrepancy was specific to the expert stage.
 
-Same model, same rung (bf16_both), same N (10), same MAXN + jetson_clocks, same checkpoint:
+WHAT IT WAS NOT (both measured, both rejected)
+  1. E7's samplers. power_core.measure() runs a 20 Hz Rails PYTHON thread (takes the GIL
+     from the kernel-issue loop) and a tegrastats subprocess at 100 ms. Same expert code
+     under all three conditions:
+         none                111.02 ms
+         rails               111.22 ms  (+0.18 %)
+         rails+tegrastats    111.23 ms  (+0.19 %)
+     0.19 %, not the ~50 % required.
+  2. In-process residency. power_phases.py:187 is `for phase in ("prefix","ae","full")`,
+     all three sequentially in ONE process, so E7's `ae` loop inherits the prefix's
+     compiled graphs, CUDA-graph memory pool and a fragmented caching allocator, while my
+     harness measured the expert in a fresh process. Replicated with --preheat-prefix 60
+     (238 prefix iterations before timing, same process):
+         fresh process       111.02 ms
+         after prefix loop   111.34 ms  (+0.29 %)
+     0.29 %. Rejected. Note this hypothesis predicted the right DIRECTION, which is why it
+     was worth running -- direction agreement is not magnitude.
 
-    stage    mine (2-proc, isolated)   E7 reported   deviation
-    prefix        251.89 ms              251.28 ms     +0.24 %   <- matches
-    expert        111.01 ms              167.36 ms    -33.67 %   <- does NOT
+WHAT IT WAS
+  The only remaining difference between the two code paths was one line. E7's
+  phase_builders.make_ae builds the timestep tensor INSIDE the denoise loop:
 
-    ratio: 167.36 / 111.01 = 1.508
+      tt = torch.tensor(t, dtype=torch.float32, device=x_t.device).expand(bsize)
 
-The prefix agreeing to 0.24 % says the harness, the rung, the checkpoint and the gate are
-right. Only the expert disagrees, and my number is the FASTER one -- which normally means my
-measurement is doing less work, so it deserves suspicion first.
+  while bench/corun.py's expert_stage precomputed them via timestep_tensors().
+  torch.tensor(<python float>, device="cuda") copies from PAGEABLE host memory, which is
+  blocking: the host waits until the copy lands, i.e. until the stream has drained every
+  kernel queued ahead of it. On a launch-bound stage the CPU normally runs far ahead of
+  the GPU; this discards that run-ahead once per denoise step.
 
-Checked and ruled out: bench/phase_builders.make_ae's body is structurally IDENTICAL to
-bench/corun.py's expert_stage -- same bounded Python loop, same per-step
-`torch.tensor(t, device=...)`, same `x_t = x_t + dt * v_t`, same single cache built once by
-prefix_once, same single noise tensor. N is 10 in both. The code is not the difference.
+  Controlled swap -- corun_2proc.py --e7-timesteps, everything else identical:
+      precomputed timesteps   111.02 ms
+      E7's per-step tensor    167.09 ms   <- E7 reports 167.36 ms, agreement 0.16 %
 
-Corroboration that E7's figure is not a typo: E5's pi0 best ae_step region is 197.39 ms
-profiled at an inflation of about x1.17, i.e. roughly 168 ms unprofiled, which matches E7's
-167.36. So both of E7's own measurements agree with each other and disagree with mine.
+  Cost: 56.07 ms of 167.09, i.e. 33.6 % of the expert stage at N=10, or 5.6 ms per
+  denoise step. That per-step figure is far too large for a 4-byte copy, which is the
+  evidence that the mechanism is the DRAIN and not the transfer. I did not separately
+  instrument the drain (e.g. nsys on the stall); the controlled swap is the evidence, and
+  the mechanism above is the explanation for it.
 
-## Hypothesis: E7's own power sampler inflates it, because this phase is GIL-bound
+WHOSE FAULT
+  NOT E7's. lerobot modeling_pi0.py:858-859 in the shipping sample_actions does exactly
+  the same thing:
+      time = 1.0 + step * dt
+      time_tensor = torch.tensor(time, dtype=torch.float32, device=device).expand(bsize)
+  So E7's make_ae faithfully reproduces the shipping model, E7's 167.36 ms is a correct
+  measurement of it, and r = A/B = 1.50 STANDS and may now be quoted.
 
-bench/power_core.py defines `class Rails(threading.Thread)` -- a daemon thread sampling four
-sysfs rails at 20 Hz -- and E7's `ae` numbers were measured with it running.
+  The defect is in E12's reporting. reports/E12_pi0_corun.md §6 stated that precomputing
+  the timestep tensors is "not labelled, because §7 names it as the example of a permitted
+  harness fix." That was written believing the change was free. It is worth 33.6 % of the
+  expert stage. §7 permitting the CLASS of change does not make an unlabelled 33.6 %
+  speedup acceptable -- it is now labelled wherever E12's expert numbers appear.
 
-E12 has now MEASURED that this workload is CPU-issue-bound: host issue/wall = 1.0000 over a
-99.5-second run, consistent with E5's 84.2 % GPU idle over 968 kernels/step. A workload whose
-wall clock is entirely Python issuing kernels is exactly the workload a 20 Hz Python sampler
-thread would slow, by taking the GIL away from the issue loop.
+CONSEQUENCES
+  1. A second free optimisation to shipping pi0, independent of E12 and simpler than the
+     att_masks de-sync: hoist the N constant timestep tensors out of the denoise loop.
+     Worth 33.6 % of the expert stage at N=10, bf16_both, MAXN.
+  2. Together with the att_masks syncs (E12 §3), pi0's per-frame host-blocking operations
+     are 1+N att_masks conversions AND N pageable timestep copies. This STRENGTHENS E12's
+     conclusion rather than altering it: the shipping model is built in a way that hands
+     the GPU back to the host N times per frame, which is why nothing overlaps.
+  3. E12's own conclusions are unchanged in direction: T_pipe = A_iso + B_iso and
+     issue/wall = 1.0000. Removing host-blocking work makes a stage faster; it did not
+     make the pipeline overlap.
 
-E7 did check its sampler's cost and found 2 %: `full` 722.55 ms with it against Part B's
-711.75 ms without, at N = 4. But at N = 4 `full` is prefix-dominated (A = 249.92,
-B = 67.18), and the prefix is fewer, larger kernels. A sampler can cost 2 % on a
-prefix-dominated frame and much more on the expert alone. The 2 % check does not cover the
-`ae` phase, and nothing else does.
+SEPARATE FINDING, recorded so the claim is not left over-broad
+  The att_masks de-sync (patch_pi0_nosync) does NOT survive torch.compile. Under
+  bf16_both it raises "Error: accessing tensor output of CUDAGraphs that has been
+  overwritten by a subsequent run" -- the memoised tensor is allocated inside the compiled
+  region on the first call, so it becomes a CUDAGraph output and cannot be reused. The
+  19 % figure in E12 §3 is EAGER, which is what E12's MAXN run used. §3's "worth taking
+  regardless of how the co-run question resolves" needs that caveat: as implemented it is
+  eager-only. A compile-safe version would allocate the tensors outside the compiled
+  region.
 
-## Why this matters beyond bookkeeping
-
-If the hypothesis holds, then E7's **`ae` phase times are inflated** and three things follow:
-
-1. **`r = A_iso / B_iso` is wrong.** E7 gives 1.50 at N = 10 (251.28 / 167.36). With
-   B_iso = 111.01 it is 2.27. `r` is the break-even the ENTIRE E12 question is compared
-   against -- "s < r means the expert is not the bottleneck" -- so the threshold itself moves.
-   E12's own reports use the in-session `r` (§3 requires it), so E12's conclusions are not
-   affected, but anyone quoting 1.50 from E7 would be using an inflated denominator.
-2. **E7's "the expert is the CHEAP phase" finding needs re-checking.** Its energy figures are
-   mean power x region time, so an inflated region time inflates the integrated energy too
-   and the energy-to-time RATIO may be largely unaffected -- but the absolute per-phase times
-   and the A:B split are what the PIM argument quotes.
-3. It would be a **third instance tonight of a measurement artefact that favours a
-   conclusion**: the expert looking slower makes the expert look more worth accelerating.
-
-## The decisive test, not yet run
-
-Add power_core's Rails sampler thread to bench/corun_2proc.py's expert role and re-measure.
-Same code, one difference. If 111 ms becomes ~167 ms, the hypothesis is confirmed and E7's
-`ae` numbers carry a sampler artefact. If it stays near 111, the hypothesis is wrong and the
-discrepancy is something else that still needs finding.
-
-Do NOT quote E7's 1.50 as the break-even, and do not "correct" E7's numbers, until this test
-has run. Right now there is a measured disagreement and a plausible mechanism, which is not
-the same as a confirmed cause.
-
-## Not affected
-
-E12's `s` is a ratio of MY OWN B_co and B_iso, measured through one harness, so a systematic
-offset in B_iso cancels. The reconciliation against E7 is a cross-check on absolute values,
-and it is that cross-check which failed -- not E12's internal arithmetic.
-
-
-=====================================================================================
-UPDATE 05:55 — the sampler hypothesis is FALSIFIED. The gap is something else.
-=====================================================================================
-
-Same expert code, three interference conditions, 45 s each, bf16_both, N = 10:
-
-    sampler=none              111.02 ms   n=406
-    sampler=rails             111.22 ms   n=404   (+0.18 %)
-    sampler=rails+tegrastats  111.23 ms   n=405   (+0.19 %)
-
-**The sampler costs 0.19 %, not 50 %.** E7's Rails thread and tegrastats subprocess do not
-explain the 33.67 % gap. The reasoning was plausible -- this phase IS CPU-issue-bound
-(issue/wall = 1.0000), so a 20 Hz GIL-taking thread SHOULD have hurt it -- and it is wrong.
-Apparently 20 Hz is simply too slow to matter against an issue loop running flat out; the
-thread sleeps ~50 ms between samples and holds the GIL for microseconds.
-
-Also established, incidentally: the baseline reproduces to 111.01 / 111.02 / 111.22 / 111.23
-across four separate processes. Run-to-run variation is NOT the explanation either. The gap is
-systematic, and both sides are internally reproducible -- E7's 167.36 is corroborated by E5's
-independent nsys measurement (~168 ms), and mine agrees with itself to 0.01 ms.
-
-## Next candidate: process state, not measurement overhead
-
-E7's power_phases.py measures **idle -> prefix -> ae -> full, sequentially in ONE process**.
-By the time its `ae` loop runs, the prefix's compiled graphs, its CUDA-graph memory pool and
-a fragmented caching allocator are all resident. My two-process harness measures the expert
-in a **fresh process** that has only ever run a prefix once, to build one cache.
-
-That is a real difference and it is the right next thing to test, because it predicts a
-direction: more resident state should make the expert SLOWER, which is the sign of the gap.
-
-The test: run a prefix LOOP in the same process before timing the expert, replicating E7's
-sequence, and see whether 111 ms moves toward 167 ms. If it does, E7's `ae` number is a
-measurement of the expert *after* the prefix phase rather than of the expert alone -- which is
-a legitimate thing to measure and simply not the same quantity, and it would need saying in
-both reports rather than "correcting" either.
-
-Still do NOT quote E7's r = 1.50 as though reconciled. The discrepancy is now BETTER
-characterised and still unexplained: one hypothesis tested and rejected, one named and
-untested.
+FILES
+  bench/corun.py            expert_stage(..., e7_timesteps=False) -- diagnostic flag
+  bench/corun_2proc.py      --e7-timesteps, --preheat-prefix, --sampler
+  scratch/e12_sampler_test/ expert_none|rails|rails_tegrastats|preheat|e7ts .json

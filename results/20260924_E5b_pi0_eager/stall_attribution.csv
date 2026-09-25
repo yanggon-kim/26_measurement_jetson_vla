@@ -1,0 +1,113 @@
+model,mode,region,kernel,duration_us,launches,sm_throughput_pct,launch_bound_s1,stall_reason,share_of_all_stalls_pct,share_of_waiting_pct,above_5pct,instruction_class,documented_in_s7,cause,pipe_lsu_pct,pipe_fma_pct,pipe_alu_pct
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,wait,32.23,45.96,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,selected,29.86,,yes,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,long_scoreboard,22.44,32.0,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,dispatch_stall,10.47,14.93,yes,control,yes,pipe imbalance — normally small,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,imc_miss,1.66,2.36,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,barrier,1.31,1.87,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,no_instruction,1.31,1.87,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,mio_throttle,0.3,0.43,,LSU,yes,LSU issue queue full: too many loads or stores in flight,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,short_scoreboard,0.3,0.43,,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,math_pipe_throttle,0.12,0.16,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,drain,0.0,0.0,,control,yes,pipeline drain after a barrier or branch — normally small,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,20.64,42.59,8.0
+pi0,eager,ae_step_0,ampere_sgemm_128x64_tn,203.14,2,49.76,,misc,0.0,0.0,,control,yes,pipe imbalance — normally small,20.64,42.59,8.0
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,imc_miss,35.1,36.3,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,short_scoreboard,18.96,19.61,yes,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,no_instruction,17.71,18.32,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,long_scoreboard,14.85,15.35,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,wait,9.55,9.87,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,selected,3.29,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,dispatch_stall,0.28,0.29,,control,yes,pipe imbalance — normally small,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,drain,0.15,0.16,,control,yes,pipeline drain after a barrier or branch — normally small,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,misc,0.05,0.05,,control,yes,pipe imbalance — normally small,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,math_pipe_throttle,0.05,0.05,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.47,0.67,2.08
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,87.55,11,1.09,yes,mio_throttle,0.0,0.0,,LSU,yes,LSU issue queue full: too many loads or stores in flight,1.47,0.67,2.08
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,imc_miss,55.71,56.86,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,no_instruction,29.89,30.51,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,short_scoreboard,6.84,6.99,yes,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,wait,4.11,4.2,,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,selected,2.03,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,drain,1.32,1.34,,control,yes,pipeline drain after a barrier or branch — normally small,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,dispatch_stall,0.1,0.1,,control,yes,pipe imbalance — normally small,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,long_scoreboard,0.0,0.0,,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,math_pipe_throttle,0.0,0.0,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,mio_throttle,0.0,0.0,,LSU,yes,LSU issue queue full: too many loads or stores in flight,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel_with_index,5.09,1,1.63,yes,misc,0.0,0.0,,control,yes,pipe imbalance — normally small,0.21,0.16,0.57
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,short_scoreboard,37.71,38.93,yes,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,imc_miss,21.99,22.7,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,long_scoreboard,16.99,17.53,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,no_instruction,10.2,10.53,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,wait,9.6,9.91,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,selected,3.12,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,drain,0.26,0.27,,control,yes,pipeline drain after a barrier or branch — normally small,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,dispatch_stall,0.11,0.12,,control,yes,pipe imbalance — normally small,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,misc,0.01,0.01,,control,yes,pipe imbalance — normally small,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,math_pipe_throttle,0.0,0.0,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.6,0.55,2.6
+pi0,eager,ae_step_0,elementwise_kernel,45.06,4,3.19,yes,mio_throttle,0.0,0.0,,LSU,yes,LSU issue queue full: too many loads or stores in flight,0.6,0.55,2.6
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,long_scoreboard,35.24,36.3,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,imc_miss,31.66,32.61,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,no_instruction,17.15,17.67,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,wait,11.69,12.04,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,selected,2.92,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,short_scoreboard,1.03,1.06,,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,drain,0.21,0.22,,control,yes,pipeline drain after a barrier or branch — normally small,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,math_pipe_throttle,0.05,0.06,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,misc,0.04,0.04,,control,yes,pipe imbalance — normally small,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,dispatch_stall,0.0,0.0,,control,yes,pipe imbalance — normally small,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,0.56,0.42,1.79
+pi0,eager,ae_step_0,unrolled_elementwise_kernel,28.35,3,0.26,yes,mio_throttle,0.0,0.0,,LSU,yes,LSU issue queue full: too many loads or stores in flight,0.56,0.42,1.79
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,long_scoreboard,41.53,43.62,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,imc_miss,28.23,29.65,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,no_instruction,14.59,15.33,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,wait,7.39,7.77,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,selected,4.8,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,short_scoreboard,1.34,1.41,,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,drain,0.82,0.86,,control,yes,pipeline drain after a barrier or branch — normally small,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,mio_throttle,0.82,0.86,,LSU,yes,LSU issue queue full: too many loads or stores in flight,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,dispatch_stall,0.38,0.4,,control,yes,pipe imbalance — normally small,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,math_pipe_throttle,0.1,0.1,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.26,6.72,2.14
+pi0,eager,ae_step_0,silu_kernel,7.58,1,7.42,,misc,0.0,0.0,,control,yes,pipe imbalance — normally small,1.26,6.72,2.14
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,imc_miss,36.71,37.7,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,long_scoreboard,23.67,24.31,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,no_instruction,19.65,20.18,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,short_scoreboard,9.41,9.66,yes,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,wait,7.09,7.28,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,selected,2.61,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,drain,0.55,0.57,,control,yes,pipeline drain after a barrier or branch — normally small,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,dispatch_stall,0.21,0.22,,control,yes,pipe imbalance — normally small,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,math_pipe_throttle,0.05,0.05,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,misc,0.04,0.04,,control,yes,pipe imbalance — normally small,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.22,0.87,1.93
+pi0,eager,ae_step_0,vectorized_elementwise_kernel,144.17,19,1.27,yes,mio_throttle,0.0,0.0,,LSU,yes,LSU issue queue full: too many loads or stores in flight,1.22,0.87,1.93
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,long_scoreboard,41.94,44.03,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,imc_miss,28.34,29.76,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,no_instruction,14.08,14.78,yes,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,wait,7.32,7.69,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,selected,4.76,,,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,short_scoreboard,1.33,1.4,,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,mio_throttle,0.95,1.0,,LSU,yes,LSU issue queue full: too many loads or stores in flight,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,drain,0.81,0.85,,control,yes,pipeline drain after a barrier or branch — normally small,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,dispatch_stall,0.38,0.4,,control,yes,pipe imbalance — normally small,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,math_pipe_throttle,0.1,0.1,,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,barrier,0.0,0.0,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,lg_throttle,0.0,0.0,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,1.29,6.9,2.19
+pi0,eager,ae_step_0,silu_kernel,7.62,1,7.42,,misc,0.0,0.0,,control,yes,pipe imbalance — normally small,1.29,6.9,2.19

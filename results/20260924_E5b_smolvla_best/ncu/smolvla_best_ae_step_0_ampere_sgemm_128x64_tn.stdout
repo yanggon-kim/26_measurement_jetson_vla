@@ -1,0 +1,16 @@
+==PROF== Connected to process 470827 (/usr/bin/python3.10)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  45%|████▌     | 221/489 [00:00<00:00, 2208.92it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 2572.38it/s]
+Reducing the number of VLM layers to 16 ...
+compile_style: ladder targets (denoise_step, embed_image, pg.forward)
+prep: SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids (mask is all-true by construction)
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+==PROF== Connected to process 470955 (/usr/bin/python3.10)
+==PROF== Profiling "ampere_sgemm_128x64_tn": 0%....50%....100% - 15 passes
+{"region_requested": "ae_step_0", "mode": "reduce-overhead", "num_steps": 10, "weights": {"verdict": "not verified: assert_real_weights diffs against pi0's own safetensors and is pi0-specific"}, "compile_style": "ladder targets: denoise_step, embed_image, pg.forward @reduce-overhead", "dynamo": {"frames_compiled": 8, "graph_breaks": 0, "compiled": true}, "warmup": 8, "instrumented": true, "gpu_cur_freq_hz": 1300500000, "power_mode": "NV Power Mode: MAXN", "sm_count": 16, "regions_ms": {"vision": 32.78940773010254, "vlm_prefix": 11.366399765014648, "ae_step[0]": 3030.622802734375, "ae_step[1]": 10.431903839111328, "ae_step[2]": 10.35696029663086, "ae_step[3]": 10.401568412780762, "ae_step[4]": 10.58131217956543, "ae_step[5]": 11.870016098022461, "ae_step[6]": 12.225055694580078, "ae_step[7]": 12.163904190063477, "ae_step[8]": 12.080608367919922, "ae_step[9]": 12.134176254272461, "ae_total": 3142.271728515625}}
+==PROF== Disconnected from process 470955
+==PROF== Disconnected from process 470827
+==PROF== Report: /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260924_E5b_smolvla_best/ncu/smolvla_best_ae_step_0_ampere_sgemm_128x64_tn.ncu-rep

@@ -94,7 +94,7 @@ def timestep_tensors(num_steps: int, bsize: int, device, dtype=torch.float32):
     return ts
 
 
-def expert_stage(ctx, pkv, pad, noise, num_steps: int):
+def expert_stage(ctx, pkv, pad, noise, num_steps: int, e7_timesteps: bool = False):
     """The N denoising steps for ONE frame, against THAT frame's cache and noise.
 
     The cache and the noise are arguments, not captured state: that is the whole difference
@@ -107,11 +107,21 @@ def expert_stage(ctx, pkv, pad, noise, num_steps: int):
     dt = -1.0 / num_steps
     state = ctx["state"]
     has_state_arg = spec.name == "pi0"
-    tsteps = timestep_tensors(num_steps, bsize, pad.device)
+    tsteps = None if e7_timesteps else timestep_tensors(num_steps, bsize, pad.device)
     with torch.no_grad():
         x_t = noise
         for step in range(num_steps):
-            tt = tsteps[step]          # precomputed: see timestep_tensors()
+            if e7_timesteps:
+                # E7's construction, verbatim from phase_builders.make_ae. DIAGNOSTIC ONLY:
+                # torch.tensor(<python float>, device="cuda") copies from PAGEABLE host
+                # memory, which blocks the host until the copy lands -- i.e. until the
+                # stream has drained every kernel queued ahead of it. On a launch-bound
+                # stage that discards the host's run-ahead once per denoise step. This
+                # flag exists to measure that cost against E7's `ae` time, nothing else.
+                tt = torch.tensor(1.0 + step * dt, dtype=torch.float32,
+                                  device=x_t.device).expand(bsize)
+            else:
+                tt = tsteps[step]      # precomputed: see timestep_tensors()
             if has_state_arg:
                 v_t = m.denoise_step(state, pad, pkv, x_t, tt)
             else:

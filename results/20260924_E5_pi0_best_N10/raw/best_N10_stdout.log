@@ -1,0 +1,20 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  _C._set_float32_matmul_precision(precision)
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+bf16_both: prep=[vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)] compiled=[model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs]
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-report-77cf.qdstrm'
+[1/1] [0%                          ] best_N10.nsys-repProcessing events...
+[1/1] [0%                          ] best_N10.nsys-rep[1/1] [5%                          ] best_N10.nsys-rep[1/1] [8%                          ] best_N10.nsys-rep[1/1] [==19%                       ] best_N10.nsys-rep[1/1] [==20%                       ] best_N10.nsys-rep[1/1] [==21%                       ] best_N10.nsys-rep[1/1] [===22%                      ] best_N10.nsys-rep[1/1] [===23%                      ] best_N10.nsys-rep[1/1] [===============66%          ] best_N10.nsys-rep[1/1] [========================100%] best_N10.nsys-rep[1/1] [========================100%] best_N10.nsys-rep
+{"gate": {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}, "model": "pi0", "steps": 10, "inferences": 2, "compile_mode": null, "rung": "bf16_both", "rung_detail": "bf16_both: prep=[vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)] compiled=[model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs]", "regions": {"vision": 57.51411056518555, "vlm_prefix": 193.19100952148438, "ae_step[0]": 20.364608764648438, "ae_step[1]": 19.70038414001465, "ae_step[2]": 19.620800018310547, "ae_step[3]": 19.477888107299805, "ae_step[4]": 19.488096237182617, "ae_step[5]": 19.422815322875977, "ae_step[6]": 19.47007942199707, "ae_step[7]": 19.421247482299805, "ae_step[8]": 19.471904754638672, "ae_step[9]": 19.42278480529785, "ae_total": 197.77622985839844}}
+Generated:
+    /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260924_E5_pi0_best_N10/raw/best_N10.nsys-rep
+gpu_cur_freq_hz=1300500000

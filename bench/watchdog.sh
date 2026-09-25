@@ -598,17 +598,27 @@ if os.system("pgrep -x tegrastats >/dev/null 2>&1") == 0 and not running:
     print("  *** tegrastats is running with NO measurement — it corrupts the next "
           "power log (tegrastats --stop, then pkill -9 -x tegrastats, both under sudo)")
 
+# Scope is EVERY result directory. It used to glob only *_E7_*, *_E11* and *_E5*, which
+# meant E4, E8q and E12 runs were never examined: the audit reported 7 gaps where there
+# were 33. A completeness check that silently excludes most of the tree reports green over
+# a broken thing, which is the failure mode this whole script exists to catch.
 missing = []
-for d in sorted(glob.glob("results/*_E7_*") + glob.glob("results/*_E11*")
-                + glob.glob("results/*_E5*")):
-    if Path(d, "meta.json").exists():
+for d in sorted(glob.glob("results/*")):
+    if not os.path.isdir(d) or Path(d, "meta.json").exists():
         continue
     if any(d == v or d.startswith(v) for v in live_dirs):
         continue                       # in progress: meta.json is written at the end
     missing.append(os.path.basename(d))
 if missing:
-    print(f"  {len(missing)} finished run(s) with NO meta.json (protocol §5): "
-          f"{missing[:4]}")
+    # Print ALL of them, grouped by experiment. The old code printed `missing[:4]` beside
+    # the true count, so an audit reading "7 ... [4 items]" looked self-contradictory.
+    byexp = {}
+    for m in missing:
+        parts = m.split("_")
+        byexp.setdefault(parts[1] if len(parts) > 1 else "?", []).append(m)
+    print(f"  {len(missing)} finished run(s) with NO meta.json (protocol §5), all of them:")
+    for exp in sorted(byexp):
+        print(f"      {exp:6s} {len(byexp[exp]):2d}  {', '.join(sorted(byexp[exp]))}")
 PYF
 echo
 echo "--- 3. QUEUE MARKERS"
@@ -650,6 +660,18 @@ for f in scratch/queues/*.log; do
   _fails=$((_fails + n))
   echo "  QUEUE_FAILURES=$n outstanding in $f"
   printf "%s\n" "$out" | sed 's/^/      line /'
+  # Name exit 137. It is 128+9, i.e. SIGKILL, and on this device that is almost always the
+  # kernel OOM-killer: Orin shares 62 GB between CPU and GPU and one pi0 process is ~15 GB.
+  # A SIGKILLed python writes NO traceback, so its log is 0 bytes and the failure looks
+  # identical to a lost child or a broken pipe. That cost real time twice tonight -- at
+  # 02:42 I attributed an OOM kill to `nohup ... &` losing a child, wrongly. Saying it here
+  # points at dmesg instead of at a theory.
+  if printf "%s\n" "$out" | grep -q "EXIT=137"; then
+    echo "      ^ EXIT=137 is SIGKILL (128+9). Check the kernel first, not the harness:"
+    echo "        sudo dmesg -T | grep -i oom-kill"
+    sudo -n /bin/sh -c 'dmesg -T 2>/dev/null | grep -i "Out of memory: Killed" | tail -2' \
+      2>/dev/null | sed 's/^/        /'
+  fi
 done
 if [ "$_fails" -eq 0 ]; then
   echo "  QUEUE_FAILURES=0 outstanding (earlier failures all followed by a _DONE marker)"

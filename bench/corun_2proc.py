@@ -102,6 +102,25 @@ def main() -> int:
     ap.add_argument("--peer-timeout", type=float, default=900.0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--nosync", action="store_true")
+    ap.add_argument("--e7-timesteps", action="store_true",
+                    help="Build the per-step timestep tensor exactly as E7's "
+                         "phase_builders.make_ae does -- torch.tensor(<python float>, "
+                         "device=cuda) inside the denoise loop -- instead of precomputing "
+                         "them. That is the ONLY remaining code difference between this "
+                         "expert and E7's `ae` closure, and a pageable H2D copy blocks the "
+                         "host until the stream drains, so it is the candidate for the "
+                         "111 vs 167.36 ms gap now that the sampler (+0.19 %) and "
+                         "in-process residency (+0.29 %) are both ruled out.")
+    ap.add_argument("--preheat-prefix", type=float, default=0.0,
+                    help="Run a PREFIX loop for this many seconds in THIS process before "
+                         "timing the chosen role. Replicates E7's sequence: power_phases.py "
+                         "line 187 runs `for phase in (prefix, ae, full)` in ONE process, so "
+                         "its `ae` loop executes with the prefix's compiled graphs, CUDA-graph "
+                         "memory pool and a fragmented caching allocator all resident. My "
+                         "fresh-process expert measures 111 ms against E7's 167.36; this "
+                         "tests whether that resident state is the difference. It predicts "
+                         "the right direction -- more resident state should make the expert "
+                         "SLOWER -- which is why it is worth a run.")
     ap.add_argument("--sampler", choices=("none", "rails", "rails+tegrastats"),
                     default="none",
                     help="Reproduce E7's measurement conditions, to test whether E7's `ae` "
@@ -145,7 +164,21 @@ def main() -> int:
     else:
         pkv, pad = CR.prefix_stage(ctx)      # the expert works from its OWN cache: nothing
         def once():                          # crosses a process boundary, so there is no
-            CR.expert_stage(ctx, pkv, pad, noise, args.steps)   # fresh-KV question here
+            CR.expert_stage(ctx, pkv, pad, noise, args.steps,  # fresh-KV question here
+                            e7_timesteps=args.e7_timesteps)
+
+    if args.preheat_prefix > 0:
+        # A prefix LOOP, not one call, so the graphs and pools it leaves behind match what
+        # E7's `ae` loop inherits from the `prefix` loop that ran before it.
+        print(f"  preheat: prefix loop for {args.preheat_prefix:.0f}s (replicating E7's "
+              f"prefix -> ae sequence in one process)", flush=True)
+        _pt0 = time.perf_counter()
+        _pn = 0
+        while time.perf_counter() - _pt0 < args.preheat_prefix:
+            CR.prefix_stage(ctx)
+            torch.cuda.synchronize()
+            _pn += 1
+        print(f"  preheat: {_pn} prefix iterations done", flush=True)
 
     for _ in range(args.warm):
         once()
@@ -197,7 +230,8 @@ def main() -> int:
 
     s = CR.summarize(samples)
     out = {"role": args.role, "rung": args.rung, "nosync": args.nosync,
-           "sampler": args.sampler,
+           "sampler": args.sampler, "e7_timesteps": args.e7_timesteps,
+           "preheat_prefix_s": args.preheat_prefix,
            "rails_samples": len(rails.samples) if rails is not None else 0,
            "steps": args.steps, "condition": "corun" if args.peer else "isolated",
            "peer_ready_seen": peer_ok, "wall_s": round(wall, 4),
