@@ -1,0 +1,70 @@
+MODE_50W: a clean frequency-only experiment, and what it says about energy
+2026-09-24 23:20, pi0 N=10, first two points of the 50W queue. For reports/E7_*.md.
+
+## Why this comparison is well controlled
+
+Checked in /etc/nvpmodel.conf rather than assumed:
+
+    mode        TPC_PG_MASK   EMC MAX_FREQ
+    MAXN            0             -1  (unrestricted)
+    MODE_15W      248       2133000000
+    MODE_30W      240             -1
+    MODE_50W        0             -1
+
+and measured after switching:
+
+    MAXN       16 SMs, mask 0, GPU 1300.5 MHz, CPU 2201.6 MHz
+    MODE_50W   16 SMs, mask 0, GPU  816.0 MHz, CPU 1497.6 MHz
+
+So MAXN -> MODE_50W changes GPU and CPU clocks ONLY, at constant SM count and constant
+memory bandwidth. It is a frequency-only perturbation. MODE_30W will also keep EMC
+unrestricted but gates TPCs (mask 240 -> 8 SMs), and MODE_15W caps EMC as well, so neither
+of those is frequency-only -- state that in the report before anyone lines up all four
+modes as if they were one sweep.
+
+## Latency: sub-proportional, implying a clock-insensitive fraction
+
+    GPU clock ratio                1.594x   (1300.5 / 816.0)
+    pi0 eager  1083.19 -> 1582.89  1.461x
+    pi0 best    424.68 ->  625.86  1.474x
+
+Modelling T = C/f + M with M insensitive to clock gives M/(C+M) = 22.4 % for eager and
+20.2 % for best. Since EMC is unchanged and CPU clock fell by a similar 1.470x, the
+residual is work that scales with NEITHER clock: memory-bandwidth-bound time and fixed
+device latencies.
+
+This is a THIRD independent line of evidence on the memory-bound fraction, after the
+roofline position (E1/E2) and the stall counters (E5b), and it is the only one that
+perturbs the machine rather than observing it. It does not agree with a strong
+memory-bound reading: ~20 % clock-insensitive is not a memory wall.
+
+## Energy: lowering the clock saves much less than it seems
+
+pi0, module rail, per inference:
+
+                     MAXN        50W      ratio
+    eager  power    34.24 W    21.09 W    0.616
+           latency  1083.19    1582.89    1.461
+           energy   37.09 J    33.38 J    0.900
+           above-idle energy   25.00 -> 19.14 J   0.765
+    best   power    42.77 W    26.16 W    0.612
+           latency   424.68     625.86    1.474
+           energy    18.16 J    16.37 J    0.901
+           above-idle energy   13.67 -> 10.82 J   0.792
+
+Three things to say plainly:
+
+1. **A 37 % clock cut buys 10 % total energy and costs 47 % latency.** Energy-delay product
+   is 1.32x WORSE at 50W for both modes, so if latency matters at all, MAXN wins.
+2. **The above-idle saving (21-23 %) is far larger than the total (10 %)** because the frame
+   takes 47 % longer and the device's baseline draw is integrated over that longer window.
+   Most of the power saving is eaten by running for longer.
+3. That mechanism is the same one E7's original finding described from the other side: the
+   expert region is idle-dominated, so anything that lengthens wall time re-accumulates idle
+   energy. Frequency scaling is the cheapest possible demonstration of it.
+
+## Caveat
+
+Two points of twelve. pi0.5, SmolVLA and GR00T x3 are still running. Do not generalise the
+1.46x or the 0.90x until the set is complete -- SmolVLA in particular behaved unlike the
+others in E7 (energy-to-time ratio 0.45 against pi0's 0.80).
