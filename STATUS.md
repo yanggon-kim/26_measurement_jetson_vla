@@ -2,6 +2,55 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## 🛑 CORRECTION FOR THE RESEARCH SIDE — two E11 quantities were WRONG in a pushed commit
+
+**If you pulled commit `493c548` (2026-09-24 ~19:00) and used `gpu_idle_ae_total` or
+`gpu_idle_frac_ae_total` for π0.5 or SmolVLA, discard those two values and re-pull.**
+Everything else in that commit is unaffected.
+
+**What was wrong.** `bench/pipelining.py` launched its nsys sub-capture as
+`nsys_target.py --steps N --inferences 2` with no `--model`, and that flag defaults to
+`pi0`. So E11f's `gpu_idle` rows for **every** model were π0's numbers recorded under that
+model's name. Two of §13.8's 35 quantities were affected, in the consolidated
+`model_inputs.csv` that you read directly.
+
+**How it was proven**, so you can check rather than take my word:
+
+| | kernels/step N=4 | N=10 | `ae_total` N=4 | idle N=4 |
+|---|---:|---:|---:|---:|
+| E11f rows labelled `smolvla` (wrong) | 968.25 | 968.70 | 343.54 ms | 0.8426 |
+| π0's own E5 eager | 968.25 | 968.7 | 343.75 ms | 0.8427 |
+| SmolVLA's real value (E5) | **1183.7** | — | — | **0.9273** |
+
+**Fixed** in `a49e7e9`; E11f re-run for π0.5 and SmolVLA and both re-consolidated. Each
+re-run now verifies its own identity by comparing kernels/step against that model's own E5
+capture, and prints `*** STILL THE WRONG MODEL ***` if they disagree:
+
+```
+VERIFY pi05    N=4: 1102.25 vs its own E5 1102.70 -> OK    N=10: 1102.70 vs 1102.70 -> OK
+VERIFY smolvla N=4: 1183.25 vs its own E5 1183.70 -> OK    N=10: 1183.70 vs 1183.70 -> OK
+```
+
+**π0's own E11f rows were never wrong** — the bad default happened to be π0 — so they are
+not re-measured. The contaminated directories are kept at
+`scratch/wrongmodel_20260924_E11f_{pi05,smolvla}_pipelining` rather than deleted, so the
+wrong numbers stay inspectable beside the commit that explains them.
+
+**Why it got through.** It wrote wrong numbers instead of crashing, and every artefact was
+internally self-consistent — it simply described the wrong model. Nothing cross-checked
+identity. A kernel launch count turns out to be a good fingerprint for exactly this: it is
+deterministic, model-specific, and already recorded independently in E5.
+
+**A claim of mine that this invalidated:** I had reported SmolVLA's eager `ae` GPU-idle as
+84.0 % and argued it was a counter-example to the GPU-idle hypothesis registered in
+`reports/E7_power_energy.md`. That was π0's number. SmolVLA's real eager `ae_step` idle is
+**0.9273**, and with the correct values the three LeRobot models are monotonic in idle drop
+against their E7 energy-to-time ratios (π0.5 0.198/0.96, π0 0.370/0.80, SmolVLA
+0.548/0.45). The hypothesis is **supported**; my falsification of it was an artefact of this
+bug. It still needs the GR00T models before anyone writes it up as confirmed.
+
+---
+
 ## ⛳ STANDING ITEM — E7 capped power modes need two human reboots (do not lose this)
 
 The owner has committed to two reboots for the capped-mode half of E7 and asked to be

@@ -1,7 +1,7 @@
 # E11 — the consolidated hand-off (protocol §13.8)
 
 Run directory: `20260924_E11_pi05_inputs`  
-Written by `bench/consolidate_e11.py` at 2026-09-24T23:15:22Z.
+Written by `bench/consolidate_e11.py` at 2026-09-25T03:34:52Z.
 
 ## Answer
 
