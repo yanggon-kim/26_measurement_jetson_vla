@@ -67,6 +67,33 @@ def prefix_stage(ctx):
     return PB.prefix_once(ctx)
 
 
+_TIMESTEPS: dict[tuple, torch.Tensor] = {}
+
+
+def timestep_tensors(num_steps: int, bsize: int, device, dtype=torch.float32):
+    """The N timestep tensors, built ONCE and reused.
+
+    `torch.tensor(<python float>, device=...)` is a host->device transfer and
+    torch.cuda.set_sync_debug_mode("warn") flags it as a synchronising operation. Inside the
+    denoising loop it fired once per step, and a sync in one stage's issue path stalls the
+    OTHER stream's launches too -- which is why the first pipeline showed
+    T_pipe = T_serial with no overlap at all.
+
+    §7 of the spec names precomputing the step times as THE example of a permitted harness
+    change, so this is not a labelled variant: it is the harness being correct. The VALUES
+    are identical (t = 1 + step * dt, same float arithmetic), so the equivalence check must
+    still show bitwise identity -- and it is re-run to prove that rather than assumed.
+    """
+    key = (num_steps, bsize, str(device), dtype)
+    ts = _TIMESTEPS.get(key)
+    if ts is None:
+        dt = -1.0 / num_steps
+        ts = [torch.tensor(1.0 + step * dt, dtype=dtype, device=device).expand(bsize)
+              for step in range(num_steps)]
+        _TIMESTEPS[key] = ts
+    return ts
+
+
 def expert_stage(ctx, pkv, pad, noise, num_steps: int):
     """The N denoising steps for ONE frame, against THAT frame's cache and noise.
 
@@ -80,11 +107,11 @@ def expert_stage(ctx, pkv, pad, noise, num_steps: int):
     dt = -1.0 / num_steps
     state = ctx["state"]
     has_state_arg = spec.name == "pi0"
+    tsteps = timestep_tensors(num_steps, bsize, pad.device)
     with torch.no_grad():
         x_t = noise
         for step in range(num_steps):
-            t = 1.0 + step * dt
-            tt = torch.tensor(t, dtype=torch.float32, device=x_t.device).expand(bsize)
+            tt = tsteps[step]          # precomputed: see timestep_tensors()
             if has_state_arg:
                 v_t = m.denoise_step(state, pad, pkv, x_t, tt)
             else:
@@ -92,6 +119,61 @@ def expert_stage(ctx, pkv, pad, noise, num_steps: int):
                                      x_t=x_t, timestep=tt)
             x_t = x_t + dt * v_t
     return x_t
+
+
+def patch_pi0_nosync(policy) -> str:
+    """LABELLED VARIANT: memoise pi0's two `torch.tensor(<python list>)` conversions.
+
+    Measured with torch.cuda.set_sync_debug_mode("warn"), the stock model synchronises at
+
+        modeling_pi0.py:681   once per PREFIX    att_masks -> bool tensor
+        modeling_pi0.py:746   once per DENOISE STEP   att_masks -> embs.dtype tensor
+
+    i.e. 1 + N host syncs per frame (11 at N = 10). A sync in either stage's issue path
+    stalls the OTHER stream's launches, so with one issuing thread (§13.7) the two streams
+    cannot overlap however correctly they are wired -- which is why the first pipeline gave
+    T_pipe = T_serial exactly.
+
+    Both build a tensor from a CONSTANT Python list, so the conversion is memoised on the
+    list's CONTENTS. Keying on contents rather than on call site is what makes it correct
+    when the prompt length changes between observations: a different att_masks is a
+    different key and gets its own tensor. The cached tensor is only ever `.expand()`ed by
+    the caller, which is a view, so handing back the same object is safe.
+
+    This is a **labelled harness change**, not part of the baseline. §7 permits it -- "a
+    harness change, allowed if the equivalence check passes and the isolated stages are
+    re-measured through the changed harness" -- and every number taken under it carries the
+    label, with its own isolated times. The baseline rung is untouched: this patches nothing
+    in site-packages and changes no numerics.
+    """
+    import lerobot.policies.pi0.modeling_pi0 as M                     # noqa: PLC0415
+    m = policy.model
+    memo: dict = {}
+    real_tensor = torch.tensor
+
+    def cached(data, **kw):
+        if type(data) is list and data and isinstance(data[0], (bool, int, float)):
+            key = (tuple(data), kw.get("dtype"), str(kw.get("device")))
+            t = memo.get(key)
+            if t is None:
+                t = real_tensor(data, **kw)
+                memo[key] = t
+            return t
+        return real_tensor(data, **kw)
+
+    def wrap(fn):
+        def inner(*a, **k):
+            M.torch.tensor = cached          # restored in finally; single-threaded (§13.7)
+            try:
+                return fn(*a, **k)
+            finally:
+                M.torch.tensor = real_tensor
+        return inner
+
+    m.embed_prefix = wrap(m.embed_prefix)
+    m.embed_suffix = wrap(m.embed_suffix)
+    return ("pi0_nosync: memoised the constant att_masks tensors at modeling_pi0.py:681 "
+            "(per prefix) and :746 (per denoise step); 1+N host syncs per frame removed")
 
 
 def _record_stream(obj, stream):
@@ -470,6 +552,12 @@ def main() -> int:
                          "only that path has")
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--frames", type=int, default=6)
+    ap.add_argument("--nosync", action="store_true",
+                    help="LABELLED VARIANT: memoise pi0's per-prefix and per-step "
+                         "torch.tensor(<list>) conversions, which are host syncs that stall "
+                         "the other stream's launches. Its numbers are reported under the "
+                         "label `pi0_nosync` with their own isolated times, never as the "
+                         "baseline.")
     ap.add_argument("--sync-debug", action="store_true",
                     help="torch.cuda.set_sync_debug_mode('warn') around a short pipeline. "
                          "§7: a host synchronisation inside either stage's issue path "
@@ -509,6 +597,8 @@ def main() -> int:
         # layernorms and the vision tower and E7 saw the check then report "325/400 tensors
         # match" -- a true statement about the cast, not about the checkpoint.
         real = P.assert_real_weights(policy, spec=spec)
+        if getattr(args, "nosync", False):
+            print("  " + patch_pi0_nosync(policy), flush=True)
         rung_note = ""
         if path == "compiled":
             import opt_ladder as OL                                   # noqa: PLC0415
@@ -617,6 +707,8 @@ def run_timing(args, spec, gate) -> int:
 
     policy, cfg, _ = MR.load_policy(spec, n=args.steps, compile_mode=None)
     P.assert_real_weights(policy, spec=spec)
+    if getattr(args, "nosync", False):
+        print("  " + patch_pi0_nosync(policy), flush=True)
     frames, manifest = load_frames(policy, spec, REPO / args.fixtures, args.frames,
                                    args.seed)
     stream_p, stream_e = torch.cuda.Stream(), torch.cuda.Stream()
