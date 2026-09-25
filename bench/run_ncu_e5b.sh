@@ -150,6 +150,23 @@ if [ -f "${REP}.ncu-rep" ]; then
   fi
 else
   echo "  NO REPORT WRITTEN — see $OUT/ncu/${TAG}.stdout"
+  # A capture that profiled NOTHING must not exit 0. pi05/best did exactly that at 22:00:
+  # ncu ran, matched no kernel, printed the list of kernels it DID see (all
+  # triton_poi_fused_*), wrote no report, and the queue logged EXIT=0. Only the watchdog's
+  # artefact check noticed, and that is a poor place to first learn a capture did nothing.
+  #
+  # The cause is worth stating in the failure, because it is not a typo: the targets come
+  # from the C1 captures taken days earlier, and TorchInductor's autotuning does not
+  # guarantee the same kernel choice on a later run. pi05's best rung has
+  # max-autotune-no-cudagraphs on pg.forward, and this time inductor generated Triton
+  # kernels where C1 had recorded a cuBLAS/cutlass one. So the target list can name a kernel
+  # that this run never launches.
+  echo "  *** ncu matched NO kernel for regex '${KREGEX:-?}'. The kernels it DID see"
+  echo "      are listed in $OUT/ncu/${TAG}.stdout. Targets come from the C1 captures, and"
+  echo "      TorchInductor autotuning can choose different kernels on a later run, so a"
+  echo "      target may name a kernel this run never launches. Re-derive the target from"
+  echo "      that list rather than assuming the capture is retryable as-is. ***"
+  exit 3
 fi
 
 # Collect the .cubin of every kernel compiled during this run. A Triton kernel is
