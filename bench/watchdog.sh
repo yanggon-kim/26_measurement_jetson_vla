@@ -253,7 +253,13 @@ for tag, pat, need, target in (
         names = (need,) if isinstance(need, str) else need
         return any((Path(d) / n).exists() and (Path(d) / n).stat().st_size > 0
                    for n in names)
-    rows = [(d, _has(d, need)) for d in sorted(glob.glob(pat))]
+    # A directory carrying SUPERSEDED.md is kept as measured but is NOT a usable result: the E8
+    # spatial arms produced before the settle-wait fix were still counted "usable" at 16:28
+    # because they have a summary.json.
+    sup_md = [os.path.basename(d) for d in sorted(glob.glob(pat))
+              if (Path(d) / "SUPERSEDED.md").exists()]
+    rows = [(d, _has(d, need)) for d in sorted(glob.glob(pat))
+            if not (Path(d) / "SUPERSEDED.md").exists()]
     ok = sum(1 for _, o in rows if o)
     live = [os.path.basename(d) for d, o in rows if not o and _is_live(d)]
     broken_all = [os.path.basename(d) for d, o in rows if not o and not _is_live(d)]
@@ -310,6 +316,7 @@ for tag, pat, need, target in (
           + (f"   RUNNING: {live}" if live else "")
           + (f"   BROKEN: {broken[:3]}" if broken else "")
           + (f"   superseded: {superseded}" if superseded else "")
+          + (f"   SUPERSEDED.md (kept, not usable): {sup_md}" if sup_md else "")
           + (f"   awaiting the final analyse pass: {awaiting}" if awaiting else ""))
 
 # A 0-byte stdout is a run that produced nothing while leaving a directory behind --
