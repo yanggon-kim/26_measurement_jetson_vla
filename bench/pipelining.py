@@ -136,17 +136,72 @@ def gpu_idle_from_nsys(nsys_dir: Path, tag: str, n_inferences: int = 2) -> dict 
             "per_inference": True}
 
 
-def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec):
+def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec,
+                     cm: str | None = None, steps: int | None = None):
     """The per-layer host-segment sequence, `layers_per_inf` times with a pause between
-    segments — the plan's 18 x N layers per inference."""
+    segments — the plan's 18 x N layers per inference.
+
+    Returns (run, n_segs, capture_note). `capture_note` is empty unless the fallback below
+    fired, in which case it states what was done and goes into the run's meta.json.
+    """
     # Through host_segments' DISPATCHER, not LayerCapture directly. SmolVLA's layer body
     # is inlined in its container's forward, so LayerCapture refuses it by design --
     # loudly, which is why the preflight caught this rather than a silent empty capture.
     cap = capture_layer(policy, 0, spec)
     with cap, torch.no_grad():
         policy.predict_action_chunk(batch)
-    t = layer_intermediates(policy, cap, spec)
-    ex = spec.resolve(policy, spec.expert_layers_path.rsplit('.', 1)[0])
+
+    # A Python-level layer capture cannot see inside a CUDA graph. This capture patches a
+    # layer's forward and then calls predict_action_chunk; when that whole frame has been
+    # captured as one graph, the replay runs no Python and `cap.args` stays None.
+    #
+    # It is SmolVLA under reduce-overhead that does this, and only since the static-posids
+    # fix (f7b91a9) made its frame capturable at all -- so enabling the graph is what broke
+    # the capture. The evidence is in the run itself: SmolVLA's compiled `full` phase is
+    # 57.54 ms against a 96.63 ms `prefix` phase measured in the same run. A frame cannot
+    # be faster than its own prefix unless it is replaying as a graph while the prefix
+    # phase runs as the eager sub-path phase_loops documents. pi0.5's compiled `full` is
+    # 708.06 ms against a 653.66 ms prefix, is NOT graphed as a unit, still runs Python,
+    # and captured 6/6 segments -- which is why this fallback is conditional rather than
+    # applied to every compiled run. pi0.5's path is unchanged.
+    #
+    # The fallback captures from a second, EAGER instance of the same checkpoint. That is
+    # sound because the capture is SETUP, not the measurement: what E11f measures is the
+    # contention slowdown of replaying a fixed sequence of host-launched segments, and the
+    # segments are built from the same modules with the same shapes and dtypes either way.
+    # It is recorded per-row and in meta.json rather than left implicit, because a reader
+    # comparing this model's compiled host_sequence against pi0.5's must know that one
+    # capture came from a graphed frame and the other could not.
+    capture_note = ""
+    cap_policy = policy
+    if cap.args is None and cm is not None:
+        import model_registry as _MR                                  # noqa: PLC0415
+        print(f"  layer capture empty under {cm} (the frame replays as a CUDA graph, so "
+              f"no Python layer body runs); re-capturing from a second EAGER instance",
+              flush=True)
+        eager_policy, _, _ = _MR.load_policy(spec, n=steps, compile_mode=None)
+        cap = capture_layer(eager_policy, 0, spec)
+        with cap, torch.no_grad():
+            eager_policy.predict_action_chunk(batch)
+        if cap.args is None:
+            raise SystemExit(
+                f"layer 0 was not captured even from an EAGER {spec.name} instance, so the "
+                f"CUDA graph is not the explanation and the wrap point itself is wrong. "
+                f"Refusing to build segments from nothing.")
+        # Kept referenced deliberately: the segment closures below hold this model's
+        # modules, so freeing it here would invalidate every segment.
+        cap_policy = eager_policy
+        capture_note = (
+            f"host_sequence segments were captured from a SECOND, EAGER instance of "
+            f"{spec.checkpoint}. Under compile_mode={cm} this model's whole frame replays "
+            f"as a CUDA graph, so the Python layer body never executes and a layer capture "
+            f"records nothing. The capture is setup rather than measurement -- what is "
+            f"measured is the contention slowdown of replaying a fixed host-launched "
+            f"segment sequence -- but it means this row's segments did NOT come from the "
+            f"compiled frame. pi0.5's compiled frame is not graphed as a unit and captured "
+            f"normally, so its rows are not comparable to this one in that respect.")
+    t = layer_intermediates(cap_policy, cap, spec)
+    ex = spec.resolve(cap_policy, spec.expert_layers_path.rsplit('.', 1)[0])
     S = t["x"].shape[1]
     t["_partials"] = torch.randn(4, S, ex.config.hidden_size, device="cuda", dtype=t["x"].dtype)
     # The six mapping segments, INTERSECTED with what this model actually has: SmolVLA
@@ -173,7 +228,7 @@ def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec):
                     time.sleep(pause_ms / 1e3)
         torch.cuda.synchronize()
 
-    return run, len(segs)
+    return run, len(segs), capture_note
 
 
 
@@ -318,7 +373,10 @@ def main() -> int:
 
         # --- (c) concurrency
         print(f"=== {mode}: concurrency ===", flush=True)
-        seq_fn, n_segs = host_sequence_fn(policy, batch, 18, args.pause_ms, spec)
+        seq_fn, n_segs, capture_note = host_sequence_fn(
+            policy, batch, 18, args.pause_ms, spec, cm=cm, steps=args.steps)
+        if capture_note:
+            notes.append(capture_note)
         prefix_fn = PL.make_phase(policy, batch, "prefix", args.steps, spec)
 
         # The mapping's 2 ms pause x 6 segments x 18 layers puts 216 ms of time.sleep inside
