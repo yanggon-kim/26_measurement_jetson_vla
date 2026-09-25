@@ -63,12 +63,12 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 13:46:20** · elapsed **67.19 h** of 26 (258 %) · 38.2 GiB free · 0.86 GiB swap
+**Updated 14:06:21** · elapsed **67.52 h** of 26 (260 %) · 50.7 GiB free · 0.66 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 523453 | `bench/opt_ladder.py --model pi05 --steps 1,2,4,6,8,10 --rungs eager_tf32,bf16_both_graphs` | 47 min | 0.2 GiB |
-| 524940 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model pi05 --outdir results/20260925_E3E4_pi05_Nsweep --single-rung` | 5 min | 20.8 GiB |
+| 525788 | `bench/opt_ladder.py --model smolvla --steps 1,2,4,6,8,10 --rungs eager_tf32,vlm_graphs --` | 2 min | 0.4 GiB |
+| 526268 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260925_E3E4_smolvla_Nsweep --singl` | 0 min | 0.6 GiB |
 
 Latest log lines:
 
@@ -83,7 +83,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 13:47** (59 configurations)
+**Re-derived from every result CSV on disk at 14:07** (71 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -140,6 +140,18 @@ Latest log lines:
 | smolvla | 10 | bf16_vision | — | — | — | nan | — |
 | smolvla | 10 | bf16_norms | — | — | — | nan | — |
 | smolvla | 10 | bf16_both | — | — | — | nan | — |
+| pi05 | 1 | eager_tf32 | 103.12 | 555.47 | 61.57 | 726.24 | 8.5 % |
+| pi05 | 1 | bf16_both_graphs | 56.36 | 227.32 | 18.50 | 308.16 | 6.0 % |
+| pi05 | 2 | eager_tf32 | 103.13 | 554.36 | 123.92 | 787.52 | 15.7 % |
+| pi05 | 2 | bf16_both_graphs | 56.54 | 227.12 | 37.09 | 327.10 | 11.3 % |
+| pi05 | 4 | eager_tf32 | 102.95 | 558.60 | 247.36 | 915.12 | 27.0 % |
+| pi05 | 4 | bf16_both_graphs | 56.43 | 227.19 | 73.69 | 363.51 | 20.3 % |
+| pi05 | 6 | eager_tf32 | 103.02 | 591.71 | 371.42 | 1072.35 | 34.6 % |
+| pi05 | 6 | bf16_both_graphs | 56.29 | 227.25 | 110.31 | 400.03 | 27.6 % |
+| pi05 | 8 | eager_tf32 | 103.17 | 566.23 | 499.75 | 1175.20 | 42.5 % |
+| pi05 | 8 | bf16_both_graphs | 56.36 | 226.87 | 147.52 | 436.90 | 33.8 % |
+| pi05 | 10 | eager_tf32 | 103.28 | 559.11 | 612.27 | 1280.43 | 47.8 % |
+| pi05 | 10 | bf16_both_graphs | 56.37 | 227.43 | 184.09 | 474.01 | 38.8 % |
 | pi05 | 10 | paper config (eager+TF32) | 103.61 | 550.51 | 626.90 | 1287.32 | 48.7 % |
 | pi05 | 10 | paper config (eager+TF32) | 239.39 | 2166.69 | 617.87 | 3030.99 | 20.4 % |
 | pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
