@@ -72,3 +72,45 @@ the same as a confirmed cause.
 E12's `s` is a ratio of MY OWN B_co and B_iso, measured through one harness, so a systematic
 offset in B_iso cancels. The reconciliation against E7 is a cross-check on absolute values,
 and it is that cross-check which failed -- not E12's internal arithmetic.
+
+
+=====================================================================================
+UPDATE 05:55 — the sampler hypothesis is FALSIFIED. The gap is something else.
+=====================================================================================
+
+Same expert code, three interference conditions, 45 s each, bf16_both, N = 10:
+
+    sampler=none              111.02 ms   n=406
+    sampler=rails             111.22 ms   n=404   (+0.18 %)
+    sampler=rails+tegrastats  111.23 ms   n=405   (+0.19 %)
+
+**The sampler costs 0.19 %, not 50 %.** E7's Rails thread and tegrastats subprocess do not
+explain the 33.67 % gap. The reasoning was plausible -- this phase IS CPU-issue-bound
+(issue/wall = 1.0000), so a 20 Hz GIL-taking thread SHOULD have hurt it -- and it is wrong.
+Apparently 20 Hz is simply too slow to matter against an issue loop running flat out; the
+thread sleeps ~50 ms between samples and holds the GIL for microseconds.
+
+Also established, incidentally: the baseline reproduces to 111.01 / 111.02 / 111.22 / 111.23
+across four separate processes. Run-to-run variation is NOT the explanation either. The gap is
+systematic, and both sides are internally reproducible -- E7's 167.36 is corroborated by E5's
+independent nsys measurement (~168 ms), and mine agrees with itself to 0.01 ms.
+
+## Next candidate: process state, not measurement overhead
+
+E7's power_phases.py measures **idle -> prefix -> ae -> full, sequentially in ONE process**.
+By the time its `ae` loop runs, the prefix's compiled graphs, its CUDA-graph memory pool and
+a fragmented caching allocator are all resident. My two-process harness measures the expert
+in a **fresh process** that has only ever run a prefix once, to build one cache.
+
+That is a real difference and it is the right next thing to test, because it predicts a
+direction: more resident state should make the expert SLOWER, which is the sign of the gap.
+
+The test: run a prefix LOOP in the same process before timing the expert, replicating E7's
+sequence, and see whether 111 ms moves toward 167 ms. If it does, E7's `ae` number is a
+measurement of the expert *after* the prefix phase rather than of the expert alone -- which is
+a legitimate thing to measure and simply not the same quantity, and it would need saying in
+both reports rather than "correcting" either.
+
+Still do NOT quote E7's r = 1.50 as though reconciled. The discrepancy is now BETTER
+characterised and still unexplained: one hypothesis tested and rejected, one named and
+untested.

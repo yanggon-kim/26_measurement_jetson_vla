@@ -102,6 +102,15 @@ def main() -> int:
     ap.add_argument("--peer-timeout", type=float, default=900.0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--nosync", action="store_true")
+    ap.add_argument("--sampler", choices=("none", "rails", "rails+tegrastats"),
+                    default="none",
+                    help="Reproduce E7's measurement conditions, to test whether E7's `ae` "
+                         "time carries a sampler artefact. power_core.measure() starts BOTH "
+                         "a 20 Hz Rails PYTHON THREAD (which takes the GIL from the kernel "
+                         "issue loop) and a tegrastats SUBPROCESS at 100 ms (which competes "
+                         "for CPU but not the GIL). They are separable and are separated "
+                         "here, because this phase is CPU-issue-bound (measured issue/wall "
+                         "= 1.0000) and so is exactly what a GIL thief would slow.")
     args = ap.parse_args()
 
     import model_registry as MR                                       # noqa: PLC0415
@@ -150,6 +159,24 @@ def main() -> int:
         print(f"  warm; waiting for peer {args.peer}", flush=True)
         peer_ok = wait_for(Path(args.peer), args.peer_timeout, "peer")
 
+    # Optional interference, started AFTER warm-up and the peer handshake so it covers only
+    # the timed window -- the same placement power_core.measure() uses.
+    rails = teg = None
+    if args.sampler != "none":
+        import power_core as PC                                       # noqa: PLC0415
+        rails = PC.Rails(20.0)
+        rails.start()
+        print("  sampler: Rails thread at 20 Hz started", flush=True)
+        if args.sampler == "rails+tegrastats":
+            import subprocess                                         # noqa: PLC0415
+            teg_log = Path(args.out).with_suffix(".tegrastats.log")
+            teg_log.parent.mkdir(parents=True, exist_ok=True)
+            teg = subprocess.Popen(                                   # noqa: S603
+                ["sudo", "-n", "tegrastats", "--interval", "100",
+                 "--logfile", str(teg_log)],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print("  sampler: tegrastats subprocess at 100 ms started", flush=True)
+
     samples: list[float] = []
     t0 = time.perf_counter()
     end = t0 + args.seconds
@@ -160,8 +187,18 @@ def main() -> int:
         samples.append((time.perf_counter() - a) * 1e3)
     wall = time.perf_counter() - t0
 
+    if rails is not None:
+        rails.stop.set()
+        rails.join(timeout=5)
+    if teg is not None:
+        import power_core as PC                                       # noqa: PLC0415
+        PC.stop_tegrastats()          # 22 orphaned tegrastats once corrupted a run
+        teg.wait(timeout=10)
+
     s = CR.summarize(samples)
     out = {"role": args.role, "rung": args.rung, "nosync": args.nosync,
+           "sampler": args.sampler,
+           "rails_samples": len(rails.samples) if rails is not None else 0,
            "steps": args.steps, "condition": "corun" if args.peer else "isolated",
            "peer_ready_seen": peer_ok, "wall_s": round(wall, 4),
            "iterations": len(samples), "throughput_per_s": round(len(samples) / wall, 4),
