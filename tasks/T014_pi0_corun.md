@@ -33,3 +33,5 @@ Steps (details, latitude and hazards in the specification):
 
 Result directories `results/<date>_E12_pi0_*` (names in spec §10); report `reports/E12_pi0_corun.md`.
 Acceptance: spec §11.
+
+status: claimed 2026-09-25
