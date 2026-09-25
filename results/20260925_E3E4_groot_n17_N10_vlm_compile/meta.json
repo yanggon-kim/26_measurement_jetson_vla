@@ -1,0 +1,75 @@
+{
+ "experiment": "E4d (GR00T phase split)",
+ "model": "groot_n17",
+ "checkpoint": "nvidia/GR00T-N1.7-3B",
+ "precision": "bfloat16",
+ "matmul_precision": "high",
+ "compile": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+ "force_gemm_autotune": false,
+ "rung": "vlm_compile",
+ "num_inference_timesteps": 10,
+ "n_warmup": 20,
+ "n_timed": 50,
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "tpc_pg_mask": "0",
+  "gpu_cur_freq_hz": "1300500000",
+  "gpu_min_freq_hz": "1300500000",
+  "gpu_max_freq_hz": "1300500000",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "torch": "2.10.0",
+  "device": "Orin",
+  "capability": "(8, 7)"
+ },
+ "date_utc": "2026-09-25T23:42:42Z",
+ "command": "bench/groot_phases.py --outdir results/20260925_E3E4_groot_n17_N10_vlm_compile --checkpoint nvidia/GR00T-N1.7-3B --version n17 --steps 10 --warmup 20 --timed 50 --rung vlm_compile --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs",
+ "embodiment_tag": "oxe_droid_relative_eef_relative_joint",
+ "gr00t_root": null,
+ "compat_shims": [],
+ "observation_shapes": {
+  "video": {
+   "exterior_image_1_left": [
+    1,
+    2,
+    256,
+    256,
+    3
+   ],
+   "wrist_image_left": [
+    1,
+    2,
+    256,
+    256,
+    3
+   ]
+  },
+  "state": {
+   "eef_9d": [
+    1,
+    1,
+    9
+   ],
+   "gripper_position": [
+    1,
+    1,
+    1
+   ],
+   "joint_position": [
+    1,
+    1,
+    7
+   ]
+  }
+ },
+ "fixture_note": "keys and shapes are read from the checkpoint's own processor_config.json and statistics.json; pixel and state VALUES are random, which latency does not depend on",
+ "data_processing_note": "data_processing_cpu is the checkpoint's own processor + collator, timed separately; e2e below is the GPU path only (model.get_action on already-collated inputs), the same split NVIDIA's benchmark_inference.py reports",
+ "vision_note": "SUPERSEDED 2026-09-23: vision IS separated now. GR00T's backbone is Qwen3VLForConditionalGeneration, whose .visual and .language_model are the same two parts the LeRobot models expose as embed_image and pg.forward, so vision is timed as a nested region and vlm_prefix is the backbone minus it. GR00T therefore gets the same three-way split as every other model in the study.",
+ "regions": {
+  "vision": "backbone.model.visual (Qwen3-VL image encoder)",
+  "vlm_backbone": "Gr00tN1d7.backbone (gr00t_n1d7.py:603), vision INSIDE",
+  "vlm_prefix_excl_vision": "vlm_backbone minus vision, derived",
+  "ae_total": "action_head.get_action, containing the num_inference_timesteps loop (:366+)"
+ }
+}
