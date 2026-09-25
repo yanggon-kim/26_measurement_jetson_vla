@@ -51,6 +51,47 @@ bug. It still needs the GR00T models before anyone writes it up as confirmed.
 
 ---
 
+## ✅ MODE_50W is DONE and the device is back at MAXN (2026-09-25 00:50)
+
+18 runs at MODE_50W: 12 LeRobot + 6 GR00T, 0 failures. `sudo nvpmodel -m 3` and the return
+`-m 0` both took with **no reboot prompt**, because 50W's `TPC_PG_MASK` is 0, the same as
+MAXN's, and TPC gating is what is applied at boot. Both switches were run with stdin closed
+so a prompt would have received EOF rather than a confirmation.
+
+**The gate after restoring is byte-identical to the one recorded before switching**: 16 SMs,
+mask 0, 1300.5 MHz, min==max locked, CPU 2201.6 MHz. Checked against the stored pre-switch
+gate rather than merely checking "is it MAXN", because a device back in MAXN with unlocked
+clocks would pass the naive test and silently corrupt everything measured afterwards.
+
+### The one robust result: underclocking loses, on every model
+
+`reports/E7_power_energy.md` has the full table, 12 pairable points, paired on
+`(model, rung, matmul_precision)`:
+
+* **energy·delay is WORSE at 50W in all 12** — 1.196× to 1.400×. No model, eager or
+  compiled, benefits.
+* energy alone falls **0.6 % to 15.1 %**, and costs **37 % to 55 %** more latency.
+  SmolVLA eager saves essentially nothing (×0.994).
+* So the frequency knob already shows that trading latency for energy loses here. Worth
+  knowing for a study whose case is partly about joules.
+
+### Three hypotheses registered, three falsified
+
+1. Energy-to-time ratio tracks GPU-idle fraction (registered in `reports/E7_power_energy.md`)
+   — monotonic over π0/π0.5/SmolVLA, broken by GR00T.
+2. Clock-insensitive fraction tracks GPU-idle fraction (registered 2026-09-24 23:36) —
+   same shape, broken by GR00T, and **inverted**: GR00T's compiled head has 0.0008 idle and
+   the *highest* clock-insensitive fraction of all 12 points (37.3 %). It also fails within
+   GR00T — N1.6 and N1.7 have near-identical eager idle and fractions 2.2× apart.
+3. The action expert is memory-latency bound — **no configuration** meets §7's ≥60 %
+   threshold (E5b, six configurations, 19.5–47.6 % time-weighted).
+
+**Two independent relationships both fitted the LeRobot three and both broke on the DiT
+head.** Treat any relationship fitted on those three as LeRobot-specific until a DiT model
+confirms it — two for two is enough to make that the default rather than a caveat.
+
+---
+
 ## ▶ NEXT, needs you: resume E7 at MODE_30W (id 2), then MODE_15W (id 1)
 
 **Everything that can be done without a reboot is done.** MODE_50W ran unattended tonight

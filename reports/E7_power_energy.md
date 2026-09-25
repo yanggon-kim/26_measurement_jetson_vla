@@ -10,7 +10,7 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.
 
-**Coverage: 29 of 14 planned runs.** Complete. Present: `groot_n15/all_compile_autotune`, `groot_n15/best`, `groot_n15/eager`, `groot_n15/eager_fp32`, `groot_n16/all_compile_autotune`, `groot_n16/best`, `groot_n16/eager`, `groot_n16/eager_fp32`, `groot_n17/best`, `groot_n17/eager`, `groot_n17/eager_fp32`, `groot_n17/vlm_compile`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
+**Coverage: 32 of 14 planned runs.** Complete. Present: `groot_n15/all_compile_autotune`, `groot_n15/best`, `groot_n15/eager`, `groot_n15/eager_fp32`, `groot_n16/all_compile_autotune`, `groot_n16/best`, `groot_n16/eager`, `groot_n16/eager_fp32`, `groot_n17/best`, `groot_n17/eager`, `groot_n17/eager_fp32`, `groot_n17/vlm_compile`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
 
 ## Energy per inference
 
@@ -19,6 +19,9 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | GR00T N1.5 | 4 | `all_compile_autotune` | prefix | 98.08 | 64.07 | 53.44 | 6284.1 | 5241.3 |
 | GR00T N1.5 | 4 | `all_compile_autotune` | ae | 60.24 | 55.55 | 44.92 | 3346.3 | 2705.9 |
 | GR00T N1.5 | 4 | `all_compile_autotune` | full | 159.65 | 52.19 | 41.56 | 8332.5 | 6635.3 |
+| GR00T N1.5 | 4 | `all_compile_autotune` | prefix | 141.48 | 36.87 | 27.98 | 5215.6 | 3957.9 |
+| GR00T N1.5 | 4 | `all_compile_autotune` | ae | 84.07 | 33.39 | 24.50 | 2807.2 | 2059.8 |
+| GR00T N1.5 | 4 | `all_compile_autotune` | full | 226.89 | 32.73 | 23.84 | 7426.9 | 5409.9 |
 | GR00T N1.5 | 4 | `best` | prefix | 201.48 | 35.47 | 26.56 | 7147.1 | 5351.3 |
 | GR00T N1.5 | 4 | `best` | ae | 156.26 | 25.82 | 16.90 | 4034.0 | 2641.3 |
 | GR00T N1.5 | 4 | `best` | full | 353.44 | 33.09 | 24.18 | 11695.4 | 8545.1 |
@@ -28,9 +31,15 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | GR00T N1.5 | 4 | `eager_fp32` | prefix | 141.67 | 59.99 | 48.62 | 8498.3 | 6888.7 |
 | GR00T N1.5 | 4 | `eager_fp32` | ae | 108.37 | 40.32 | 28.95 | 4368.9 | 3137.6 |
 | GR00T N1.5 | 4 | `eager_fp32` | full | 251.27 | 54.63 | 43.27 | 13726.9 | 10871.9 |
+| GR00T N1.5 | 4 | `eager_fp32` | prefix | 201.45 | 35.60 | 26.70 | 7172.0 | 5378.9 |
+| GR00T N1.5 | 4 | `eager_fp32` | ae | 158.83 | 25.57 | 16.67 | 4061.2 | 2647.4 |
+| GR00T N1.5 | 4 | `eager_fp32` | full | 353.89 | 32.93 | 24.03 | 11655.2 | 8505.2 |
 | GR00T N1.6 | 4 | `all_compile_autotune` | prefix | 88.19 | 59.50 | 48.93 | 5247.2 | 4315.2 |
 | GR00T N1.6 | 4 | `all_compile_autotune` | ae | 73.73 | 45.38 | 34.81 | 3345.5 | 2566.3 |
 | GR00T N1.6 | 4 | `all_compile_autotune` | full | 163.06 | 56.85 | 46.28 | 9269.4 | 7546.1 |
+| GR00T N1.6 | 4 | `all_compile_autotune` | prefix | 133.35 | 33.97 | 25.08 | 4530.0 | 3344.9 |
+| GR00T N1.6 | 4 | `all_compile_autotune` | ae | 98.13 | 29.36 | 20.47 | 2881.0 | 2008.9 |
+| GR00T N1.6 | 4 | `all_compile_autotune` | full | 231.51 | 34.09 | 25.21 | 7893.1 | 5835.7 |
 | GR00T N1.6 | 4 | `best` | prefix | 183.07 | 29.62 | 20.87 | 5421.8 | 3820.8 |
 | GR00T N1.6 | 4 | `best` | ae | 311.69 | 19.13 | 10.38 | 5962.6 | 3236.7 |
 | GR00T N1.6 | 4 | `best` | full | 485.79 | 23.61 | 14.86 | 11467.2 | 7218.6 |
@@ -110,7 +119,7 @@ The `full` loop is the complete inference. This is the number a robot's battery 
 
 | model | N | eager J | best J | eager ms | best ms | energy saved | time saved | energy ÷ time saving |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| GR00T N1.5 | 4 | 13.73 | 11.70 | 251.3 | 353.4 | 1.17× | 0.71× | 1.65 |
+| GR00T N1.5 | 4 | 11.66 | 11.70 | 353.9 | 353.4 | 1.00× | 1.00× | 1.00 |
 | GR00T N1.6 | 4 | 11.58 | 11.47 | 499.8 | 485.8 | 1.01× | 1.03× | 0.98 |
 | GR00T N1.7 | 4 | 12.21 | 8.53 | 529.0 | 329.1 | 1.43× | 1.61× | 0.89 |
 | π0 | 10 | 37.09 | 18.16 | 1083.2 | 424.7 | 2.04× | 2.55× | 0.80 |
@@ -133,10 +142,13 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 | model | N | configuration | prefix mJ | ae mJ | prefix % of energy | ae % of energy | prefix % of time | ae % of time | **ae energy ÷ time** |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
 | GR00T N1.5 | 4 | `all_compile_autotune` | 5241.3 | 2705.9 | 66.0 | 34.0 | 62.0 | 38.0 | **0.89** |
+| GR00T N1.5 | 4 | `all_compile_autotune` | 3957.9 | 2059.8 | 65.8 | 34.2 | 62.7 | 37.3 | **0.92** |
 | GR00T N1.5 | 4 | `best` | 5351.3 | 2641.3 | 67.0 | 33.0 | 56.3 | 43.7 | **0.76** |
 | GR00T N1.5 | 4 | `eager` | 5346.7 | 2640.0 | 66.9 | 33.1 | 56.3 | 43.7 | **0.76** |
 | GR00T N1.5 | 4 | `eager_fp32` | 6888.7 | 3137.6 | 68.7 | 31.3 | 56.7 | 43.3 | **0.72** |
+| GR00T N1.5 | 4 | `eager_fp32` | 5378.9 | 2647.4 | 67.0 | 33.0 | 55.9 | 44.1 | **0.75** |
 | GR00T N1.6 | 4 | `all_compile_autotune` | 4315.2 | 2566.3 | 62.7 | 37.3 | 54.5 | 45.5 | **0.82** |
+| GR00T N1.6 | 4 | `all_compile_autotune` | 3344.9 | 2008.9 | 62.5 | 37.5 | 57.6 | 42.4 | **0.89** |
 | GR00T N1.6 | 4 | `best` | 3820.8 | 3236.7 | 54.1 | 45.9 | 37.0 | 63.0 | **0.73** |
 | GR00T N1.6 | 4 | `eager` | 3831.7 | 3194.6 | 54.5 | 45.5 | 37.4 | 62.6 | **0.73** |
 | GR00T N1.6 | 4 | `eager_fp32` | 4836.1 | 3810.9 | 55.9 | 44.1 | 36.9 | 63.1 | **0.70** |
@@ -184,8 +196,11 @@ MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and `EMC MAX
 
 | model | rung | latency × | power × | energy × | above-idle × | energy·delay × | clock-insensitive |
 |---|---|---:|---:|---:|---:|---:|---:|
+| GR00T N1.5 | `all_compile_autotune` | 1.421 | 0.627 | 0.891 | 0.815 | 1.267 | 29.1 % |
 | GR00T N1.5 | `best` | — | — | — | — | — | no MAXN run at matmul=high |
 | GR00T N1.5 | `eager` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.5 | `eager_fp32` | 1.408 | 0.603 | 0.849 | 0.782 | 1.196 | 31.2 % |
+| GR00T N1.6 | `all_compile_autotune` | 1.420 | 0.600 | 0.852 | 0.773 | 1.209 | 29.3 % |
 | GR00T N1.6 | `best` | — | — | — | — | — | no MAXN run at matmul=high |
 | GR00T N1.6 | `eager` | — | — | — | — | — | no MAXN run at matmul=high |
 | GR00T N1.6 | `eager_fp32` | 1.501 | 0.622 | 0.933 | 0.825 | 1.400 | 15.6 % |
@@ -224,6 +239,29 @@ MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and `EMC MAX
 | full | VIN_SYS_5V0 | 9410 | 4212 | 5198 | 1502.3 | 375.6 |
 | full | module | 52194 | 10631 | 41563 | 8332.5 | 2083.1 |
 | full | module_without_memory_rail | 48394 | 10225 | 38168 | 7725.9 | 1931.5 |
+
+### GR00T N1.5 — `all_compile_autotune`, N=4, MODE_50W (compiled)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3543 | 405 | 3138 | 501.3 |  |
+| prefix | VDD_CPU_CV | 827 | 407 | 420 | 117.0 |  |
+| prefix | VDD_GPU_SOC | 23487 | 3941 | 19546 | 3322.9 |  |
+| prefix | VIN_SYS_5V0 | 9008 | 4137 | 4872 | 1274.5 |  |
+| prefix | module | 36865 | 8890 | 27975 | 5215.6 |  |
+| prefix | module_without_memory_rail | 33322 | 8485 | 24837 | 4714.3 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 3608 | 405 | 3204 | 303.3 | 75.8 |
+| ae | VDD_CPU_CV | 509 | 407 | 102 | 42.8 | 10.7 |
+| ae | VDD_GPU_SOC | 20102 | 3941 | 16161 | 1689.9 | 422.5 |
+| ae | VIN_SYS_5V0 | 9173 | 4137 | 5036 | 771.2 | 192.8 |
+| ae | module | 33392 | 8890 | 24503 | 2807.2 | 701.8 |
+| ae | module_without_memory_rail | 29784 | 8485 | 21299 | 2503.8 | 626.0 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3275 | 405 | 2871 | 743.2 | 185.8 |
+| full | VDD_CPU_CV | 880 | 407 | 472 | 199.6 | 49.9 |
+| full | VDD_GPU_SOC | 19962 | 3941 | 16020 | 4529.2 | 1132.3 |
+| full | VIN_SYS_5V0 | 8616 | 4137 | 4480 | 1955.0 | 488.8 |
+| full | module | 32733 | 8890 | 23843 | 7426.9 | 1856.7 |
+| full | module_without_memory_rail | 29458 | 8485 | 20972 | 6683.7 | 1670.9 |
 
 ### GR00T N1.5 — `best`, N=4, MODE_50W (eager)
 
@@ -294,6 +332,29 @@ MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and `EMC MAX
 | full | module | 54630 | 11362 | 43268 | 13726.9 | 3431.7 |
 | full | module_without_memory_rail | 50361 | 10866 | 39494 | 12654.2 | 3163.5 |
 
+### GR00T N1.5 — `eager_fp32`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3702 | 407 | 3295 | 745.8 |  |
+| prefix | VDD_CPU_CV | 802 | 409 | 393 | 161.6 |  |
+| prefix | VDD_GPU_SOC | 21848 | 3943 | 17906 | 4401.3 |  |
+| prefix | VIN_SYS_5V0 | 9249 | 4142 | 5108 | 1863.3 |  |
+| prefix | module | 35602 | 8901 | 26701 | 7172.0 |  |
+| prefix | module_without_memory_rail | 31900 | 8494 | 23406 | 6426.2 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2539 | 407 | 2132 | 403.2 | 100.8 |
+| ae | VDD_CPU_CV | 1192 | 409 | 783 | 189.3 | 47.3 |
+| ae | VDD_GPU_SOC | 14301 | 3943 | 10358 | 2271.5 | 567.9 |
+| ae | VIN_SYS_5V0 | 7537 | 4142 | 3395 | 1197.1 | 299.3 |
+| ae | module | 25569 | 8901 | 16668 | 4061.2 | 1015.3 |
+| ae | module_without_memory_rail | 23030 | 8494 | 14536 | 3657.9 | 914.5 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3483 | 407 | 3076 | 1232.7 | 308.2 |
+| full | VDD_CPU_CV | 1001 | 409 | 592 | 354.3 | 88.6 |
+| full | VDD_GPU_SOC | 19508 | 3943 | 15565 | 6903.6 | 1725.9 |
+| full | VIN_SYS_5V0 | 8942 | 4142 | 4800 | 3164.5 | 791.1 |
+| full | module | 32934 | 8901 | 24034 | 11655.2 | 2913.8 |
+| full | module_without_memory_rail | 29451 | 8494 | 20957 | 10422.5 | 2605.6 |
+
 ### GR00T N1.6 — `all_compile_autotune`, N=4, MAXN (compiled)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -316,6 +377,29 @@ MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and `EMC MAX
 | full | VIN_SYS_5V0 | 10347 | 4162 | 6185 | 1687.1 | 421.8 |
 | full | module | 56847 | 10569 | 46278 | 9269.4 | 2317.4 |
 | full | module_without_memory_rail | 52504 | 10164 | 42340 | 8561.2 | 2140.3 |
+
+### GR00T N1.6 — `all_compile_autotune`, N=4, MODE_50W (compiled)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3138 | 404 | 2734 | 418.5 |  |
+| prefix | VDD_CPU_CV | 1192 | 406 | 787 | 159.0 |  |
+| prefix | VDD_GPU_SOC | 21195 | 3942 | 17253 | 2826.3 |  |
+| prefix | VIN_SYS_5V0 | 8446 | 4136 | 4310 | 1126.2 |  |
+| prefix | module | 33971 | 8887 | 25084 | 4530.0 |  |
+| prefix | module_without_memory_rail | 30833 | 8483 | 22350 | 4111.5 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 3444 | 404 | 3039 | 337.9 | 84.5 |
+| ae | VDD_CPU_CV | 614 | 406 | 208 | 60.2 | 15.1 |
+| ae | VDD_GPU_SOC | 16436 | 3942 | 12494 | 1612.8 | 403.2 |
+| ae | VIN_SYS_5V0 | 8867 | 4136 | 4731 | 870.1 | 217.5 |
+| ae | module | 29360 | 8887 | 20473 | 2881.0 | 720.3 |
+| ae | module_without_memory_rail | 25916 | 8483 | 17434 | 2543.1 | 635.8 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3556 | 404 | 3151 | 823.2 | 205.8 |
+| full | VDD_CPU_CV | 799 | 406 | 394 | 185.1 | 46.3 |
+| full | VDD_GPU_SOC | 20640 | 3942 | 16698 | 4778.3 | 1194.6 |
+| full | VIN_SYS_5V0 | 9100 | 4136 | 4964 | 2106.6 | 526.7 |
+| full | module | 34095 | 8887 | 25207 | 7893.1 | 1973.3 |
+| full | module_without_memory_rail | 30539 | 8483 | 22056 | 7070.0 | 1767.5 |
 
 ### GR00T N1.6 — `best`, N=4, MODE_50W (eager)
 
@@ -881,10 +965,13 @@ MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and `EMC MAX
 | model | N | configuration | E7 `full` loop median ms | Part B e2e median ms | ratio |
 |---|---:|---|---:|---:|---:|
 | GR00T N1.5 | 4 | `all_compile_autotune` | 159.65 | 168.75 | 0.95× |
+| GR00T N1.5 | 4 | `all_compile_autotune` | 226.89 | 168.75 | 1.34× |
 | GR00T N1.5 | 4 | `best` | 353.44 | — | — |
 | GR00T N1.5 | 4 | `eager` | 352.28 | — | — |
 | GR00T N1.5 | 4 | `eager_fp32` | 251.27 | 255.22 | 0.98× |
+| GR00T N1.5 | 4 | `eager_fp32` | 353.89 | 255.22 | 1.39× |
 | GR00T N1.6 | 4 | `all_compile_autotune` | 163.06 | 174.59 | 0.93× |
+| GR00T N1.6 | 4 | `all_compile_autotune` | 231.51 | 174.59 | 1.33× |
 | GR00T N1.6 | 4 | `best` | 485.79 | — | — |
 | GR00T N1.6 | 4 | `eager` | 477.78 | — | — |
 | GR00T N1.6 | 4 | `eager_fp32` | 333.00 | 327.22 | 1.02× |
