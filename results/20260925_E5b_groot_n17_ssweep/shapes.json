@@ -1,0 +1,73 @@
+{
+  "model": "groot_n17",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "n_blocks": 32,
+  "N": 4,
+  "own_S_from_config": 40,
+  "block0_projections": [
+    {
+      "name": "norm1.linear",
+      "in": 1536,
+      "out": 3072,
+      "bias": true,
+      "dtype": "bfloat16"
+    },
+    {
+      "name": "attn1.to_q",
+      "in": 1536,
+      "out": 1536,
+      "bias": true,
+      "dtype": "bfloat16"
+    },
+    {
+      "name": "attn1.to_k",
+      "in": 2048,
+      "out": 1536,
+      "bias": true,
+      "dtype": "bfloat16"
+    },
+    {
+      "name": "attn1.to_v",
+      "in": 2048,
+      "out": 1536,
+      "bias": true,
+      "dtype": "bfloat16"
+    },
+    {
+      "name": "attn1.to_out.0",
+      "in": 1536,
+      "out": 1536,
+      "bias": true,
+      "dtype": "bfloat16"
+    },
+    {
+      "name": "ff.net.0.proj",
+      "in": 1536,
+      "out": 6144,
+      "bias": true,
+      "dtype": "bfloat16"
+    },
+    {
+      "name": "ff.net.2",
+      "in": 6144,
+      "out": 1536,
+      "bias": true,
+      "dtype": "bfloat16"
+    }
+  ],
+  "largest": {
+    "name": "ff.net.0.proj",
+    "in": 1536,
+    "out": 6144,
+    "bias": true,
+    "dtype": "bfloat16"
+  },
+  "q": {
+    "name": "attn1.to_q",
+    "in": 1536,
+    "out": 1536,
+    "bias": true,
+    "dtype": "bfloat16"
+  },
+  "note": "S in the DiT is the number of action tokens it attends over; T009 states S = 41 for N1.7. own_S_from_config is what the loaded config says, recorded so a disagreement is visible rather than assumed away."
+}
