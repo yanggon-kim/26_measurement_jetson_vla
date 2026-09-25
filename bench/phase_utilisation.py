@@ -112,6 +112,14 @@ def main() -> int:
                "--capture-range=cudaProfilerApi", "--capture-range-end=stop",
                "-f", "true", "-o", str(rep.with_suffix("")),
                sys.executable, str(REPO / "bench" / "nsys_target.py"),
+               # Passed EXPLICITLY, for the reason in bench/pipelining.py: nsys_target's
+               # --model defaults to "pi0", so omitting it silently profiles pi0 under
+               # whatever name the caller thinks it is measuring. This tool has no --model
+               # option and its one committed result (20260922_E4d_pi0_phase_util_N10) is
+               # pi0, so that result is correct -- but the omission was the same latent
+               # trap, and stating pi0 here is what keeps it from becoming a real defect if
+               # the tool is ever pointed at another model.
+               "--model", "pi0",
                "--steps", str(args.steps), "--inferences", str(args.inferences)]
         if args.mode != "eager":
             cmd += ["--compile-mode", args.mode]

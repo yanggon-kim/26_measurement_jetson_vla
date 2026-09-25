@@ -491,8 +491,17 @@ def main() -> int:
         # --- (b) nsys, N = 4 and N = 10
         for n in (4, 10):
             tag = f"{mode}_N{n}"
+            # --model is NOT optional here. nsys_target.py's --model defaults to "pi0",
+            # so omitting it made every model's E11f gpu_idle rows pi0's numbers under
+            # this model's name. Proven by exact numerical identity: smolvla's E11f rows
+            # gave kernels/step 968.25 (N=4) and 968.70 (N=10), which are pi0's own E5
+            # values to three significant figures, while SmolVLA's real value is 1183.7.
+            # It produced WRONG NUMBERS rather than a crash, in two of §13.8's quantities
+            # (gpu_idle_ae_total, gpu_idle_frac_ae_total), and they reached the committed
+            # consolidated model_inputs.csv for pi0.5 and SmolVLA before it was caught.
             cmd = ["bash", str(REPO / "bench" / "run_nsys.sh"), str(out), tag, "--",
                    sys.executable, str(REPO / "bench" / "nsys_target.py"),
+                   "--model", spec.name,
                    "--steps", str(n), "--inferences", "2"]
             if cm:
                 cmd += ["--compile-mode", cm, "--no-regions"]
