@@ -51,6 +51,66 @@ bug. It still needs the GR00T models before anyone writes it up as confirmed.
 
 ---
 
+## ▶ NEXT, needs you: resume E7 at MODE_30W (id 2), then MODE_15W (id 1)
+
+**Everything that can be done without a reboot is done.** MODE_50W ran unattended tonight
+because its TPC mask is identical to MAXN's. 30W and 15W gate TPCs, which is applied at
+boot, so they need you.
+
+### Why these two genuinely need a reboot and 50W did not
+
+From `/etc/nvpmodel.conf` on this board, plus the clocks measured after switching:
+
+| mode | `TPC_PG_MASK` | SMs | `EMC MAX_FREQ` | GPU clock | reboot? |
+|---|---:|---:|---|---:|---|
+| MAXN (0) | 0 | 16 | `-1` unrestricted | 1300.5 MHz | — |
+| **MODE_50W (3)** | **0** | **16** | `-1` | **816.0 MHz** | **no — already done** |
+| MODE_30W (2) | 240 | **8** | `-1` | (unmeasured) | **yes** |
+| MODE_15W (1) | 248 | **6** | **2133 MHz capped** | (unmeasured) | **yes** |
+
+**These four are not one sweep.** 50W is frequency-only at constant SMs and constant memory
+bandwidth. 30W halves the SM count. 15W cuts SMs further *and* caps memory. Any table that
+lines all four up as "power budget vs latency" is conflating three different perturbations —
+say which knob moved in each.
+
+### Exact commands
+
+```bash
+# 1. switch, confirm the prompt yourself, and reboot
+sudo nvpmodel -m 2          # MODE_30W   (use -m 1 for MODE_15W)
+sudo reboot
+
+# 2. after it comes back
+cd /home/yanggon/00_VLA/26_measurement_jetson_vla
+sudo nvpmodel -q            # must say MODE_30W
+sudo jetson_clocks && sudo jetson_clocks --fan
+
+# 3. run it — the queue refuses to start in the wrong mode
+bash bench/queues/queue_e7_capped.sh 2>&1 | tee scratch/queues/queue_e7_30w.log
+
+# 4. when both modes are done, return to MAXN (this also needs a reboot)
+sudo nvpmodel -m 0 && sudo reboot
+```
+
+**I never confirm a reboot prompt and never use `nvpmodel --force`** (AGENTS.md), which is
+why these steps are yours rather than mine.
+
+### What the capped runs should produce
+
+Per T004 step 4b: the four power loops for **eager + best at N=10 only**, plus one E3-style
+latency run at N=4 and N=10. Nothing from a capped mode is ever averaged with MAXN; the
+directory name carries the mode. `--allow-capped` is implemented in `power_phases.py`,
+`phase_loops.py` and `groot_phases.py`, and `gate()` still records the real mode.
+
+### What 50W already told us, so you know what to expect
+
+π0 N=10, module rail, MAXN → 50W: power ×0.62, latency ×1.46, **energy ×0.90**, above-idle
+energy ×0.77, and **energy·delay 1.32× worse**. A 37 % clock cut bought 10 % energy and cost
+47 % latency. Expect 30W and 15W to be worse on energy·delay still, and expect the SM
+reduction to change the shape rather than just the scale.
+
+---
+
 ## ⛳ STANDING ITEM — E7 capped power modes need two human reboots (do not lose this)
 
 The owner has committed to two reboots for the capped-mode half of E7 and asked to be

@@ -134,12 +134,18 @@ def main() -> int:
     ap.add_argument("--no-fine-layers", dest="fine_layers", action="store_false",
                     help="disable ae_layer[j] timing — the control for the step-0 offset, "
                          "since ae_layer instrumentation lands on that step alone")
+    ap.add_argument("--allow-capped", action="store_true",
+                    help="permit a capped power mode (MODE_50W/30W/15W). gate() defaults to "
+                         "require_maxn=True and raises, which is right for the MAXN campaign "
+                         "but makes T004 step 4b's capped-mode latency run impossible. The "
+                         "real mode is still recorded in the gate and in meta.json, so a "
+                         "capped number can never be mistaken for a MAXN one.")
     ap.add_argument("--layers-in-step", type=int, default=0,
                     help="which denoising step carries the ae_layer[j] events")
     args = ap.parse_args()
     steps = [int(x) for x in args.steps.split(",")]
 
-    gate = P.gate()
+    gate = P.gate(require_maxn=not args.allow_capped)
     print("gate:", json.dumps(gate))
     policy, cfg, shipped = P.load_policy(num_inference_steps=steps[0], compile_mode=None)
     integrity = P.assert_real_weights(policy)
