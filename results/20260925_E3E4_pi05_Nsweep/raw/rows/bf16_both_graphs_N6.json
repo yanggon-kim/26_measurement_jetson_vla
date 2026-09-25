@@ -1,0 +1,23 @@
+{
+  "N": 6,
+  "rung": "bf16_both_graphs",
+  "label": "B2+B3 with CUDA graphs on the prefix too",
+  "matmul_precision": "high",
+  "status": "measured",
+  "not_applicable_reason": "",
+  "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@reduce-overhead+clone",
+  "regions": "on",
+  "prep": "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16'): fp32 checkpoint cast to bf16 keeping LeRobot's own params_to_keep_float32; vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 37 layernorm modules -> bf16 (own parameters only)",
+  "compile_call_s": 1.776,
+  "e2e_median_ms": 400.031,
+  "e2e_p5_ms": 399.0812,
+  "e2e_p95_ms": 402.7642,
+  "n": 100,
+  "error": "",
+  "mem_available_GiB_before": 50.95,
+  "mem_available_GiB_after": 37.4,
+  "swap_used_GiB_after": 0.862,
+  "vision_ms": 56.2902,
+  "vlm_prefix_ms": 227.2453,
+  "ae_total_ms": 110.3116
+}
