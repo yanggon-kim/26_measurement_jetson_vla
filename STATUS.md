@@ -372,12 +372,36 @@ cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 sudo nvpmodel -q            # must say MODE_30W
 sudo jetson_clocks && sudo jetson_clocks --fan
 
-# 3. run it — the queue refuses to start in the wrong mode
-bash bench/queues/queue_e7_capped.sh 2>&1 | tee scratch/queues/queue_e7_30w.log
+# 3. run BOTH queues, in this order. Each refuses to start in the wrong mode.
+bash bench/queues/queue_e7_capped.sh  2>&1 | tee scratch/queues/queue_e7_30w.log
+bash bench/queues/queue_e12_capped.sh 2>&1 | tee scratch/queues/queue_e12_30w.log
 
 # 4. when both modes are done, return to MAXN (this also needs a reboot)
 sudo nvpmodel -m 0 && sudo reboot
 ```
+
+**`queue_e12_capped.sh` is new (2026-09-25) and is T014 step 4.** It runs the pipeline, the
+equivalence gate (re-run, not inherited — fewer SMs change the schedule and nothing downstream
+is valid until it passes *at that mode*), the green-context SM curve, and the energy arms. It
+records the GPU clock **before** measuring, because without it the comparison below cannot be
+made.
+
+**It carries a prediction written before the run**, which is the point of running it: on
+2026-09-25 CUDA green contexts gave π0 a *software* 8-SM partition at MAXN, and MODE_30W gates
+8 SMs in *hardware*. Those should agree.
+
+| π0 eager N=10, median ms | prefix | expert |
+|---|---:|---:|
+| MAXN, whole GPU (16 SMs) | 478.08 | 580.79 |
+| MAXN, green context, 8 SMs | 779.79 (1.631×) | 587.56 (**1.012×**) |
+| **MODE_30W, 8 SMs in hardware** | **predicted ≈ 779.79 × (clock ratio)** | **predicted ≈ 587.56 × (clock ratio)** |
+
+If they agree after accounting for clock, the green-context method is validated against real
+silicon and E12 §5's conclusion stands. **If the expert slows far more than the clock ratio,
+the green-context result is wrong and E12 §5 needs revisiting** — which is exactly why the
+prediction is recorded here in advance rather than fitted afterwards.
+
+`issue/wall` should stay ≈ 1.0000: fewer SMs does not make the host issue kernels faster.
 
 **I never confirm a reboot prompt and never use `nvpmodel --force`** (AGENTS.md), which is
 why these steps are yours rather than mine.
