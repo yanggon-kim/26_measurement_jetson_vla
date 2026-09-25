@@ -38,7 +38,10 @@ def main() -> int:
     ap.add_argument("--seconds", type=float, default=60.0)
     ap.add_argument("--corun-config", default="rung_prefix", choices=("rung_prefix", "graphs_both"))
     ap.add_argument("--corun-split", default="", help="e.g. 12/4 for a green split; empty = full GPU")
-    ap.add_argument("--frames-per-call", type=int, default=10)
+    ap.add_argument("--frames-per-call", type=int, default=30,
+                    help="frames per timed call; a pipeline has a fill and a drain per call, so "
+                         "10 (the first version) inflated the co-run period to 323 ms vs M3's "
+                         "steady 307")
     args = ap.parse_args()
     out = REPO / args.outdir
     if out.exists() and any(out.iterdir()):
@@ -102,11 +105,18 @@ def main() -> int:
             rung_note["memo"] = H.memo_681(policy)
         frames, manifest = CR.load_frames(policy, spec, REPO / "bench/fixtures/e12", 5, seed0=0)
         split = tuple(int(x) for x in args.corun_split.split("/")) if args.corun_split else None
-        h = H.Harness(policy, spec, frames, N, config=args.corun_config, split=split,
-                      order="prefix_first")
+        # (b) is the fair SERIAL frame on the WHOLE GPU, through the same configuration's harness.
+        # The first version measured it through the partitioned harness -- prefix on 12 SMs then
+        # expert on 4, one after the other: 526 ms instead of ~353 -- which made the co-run look
+        # 13 % cheaper in energy by comparison. That run is kept in scratch/superseded/.
+        hf = H.Harness(policy, spec, frames, N, config=args.corun_config, split=None,
+                       order="prefix_first")
+        h = hf if split is None else H.Harness(policy, spec, frames, N, config=args.corun_config,
+                                               split=split, order="prefix_first")
         F = args.frames_per_call
-        h.run("serial", 6, fin); h.run("pipeline", 6, fin)
-        measure_arm("b_fair_serial", lambda: h.run("serial", F, fin), F, h.label() + "+serial")
+        hf.run("serial", 6, fin); h.run("pipeline", 6, fin)
+        measure_arm("b_fair_serial", lambda: hf.run("serial", F, fin), F,
+                    hf.label() + "+serial_full_gpu")
         measure_arm("c_best_corun", lambda: h.run("pipeline", F, fin), F, h.label())
 
     PC.write_power_csv(out / "power.csv", rows, [{"phase": "idle", **x} for x in idle_s] + samples)
