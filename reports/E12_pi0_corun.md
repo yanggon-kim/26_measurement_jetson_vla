@@ -7,7 +7,7 @@
 
 **On one Orin GPU, π0's two stages do not overlap — and the reason is the host, not the GPU.**
 
-**And the GPU is not the obstacle even in principle.** §5 partitions Orin's 16 SMs with CUDA
+**⚠ Superseded for the compiled configuration by E12b (see §5's correction):** §5 partitions Orin's 16 SMs with CUDA
 green contexts and finds the **action expert is SM-independent**: taking away three quarters of
 the SMs costs it 1.3 % (eager) / 4.9 % (`bf16_both`), while the prefix slows 2.98×. A stage that
 does not occupy the SM array can neither block nor be blocked at the CTA dispatcher, so
@@ -231,7 +231,26 @@ a repeated last frame.
 **No compiled co-run number is reported.** Timing that path would produce plausible
 milliseconds for a pipeline computing NaN, which is worse than reporting nothing.
 
-## 5. Step 3 answered with green contexts: **neither stage saturates Orin's 16 SMs**
+## 5. Step 3 with green contexts (⚠ compiled rows corrected below)
+
+> **⚠ CORRECTION 2026-09-25 (found by E12b / T015 M0 and M3) — the `bf16_both` rows of this
+> section are INVALID; the eager rows stand.** E12b M0 measured that a CUDA graph obeys the
+> partition it was **captured** in, not the green stream it is replayed on: a graph captured on
+> the primary context and replayed in a 4-SM partition ran at full-GPU speed (0.99×), while eager
+> launches and in-partition captures were confined (3.24–3.35×). The `bf16_both` rung replays
+> CUDA-graph **trees** (`denoise_step`, `embed_image`) recorded outside the partition, so the
+> "compiled expert 1.049× on 4 SMs" and "compiled prefix 1.958×" points below were not confined
+> and do not describe a partition. Properly confined (graphs captured inside the green context,
+> E12b M3), the **compiled expert on 4 SMs takes 254.9 ms, 2.50× its 101.8 ms on 16 SMs**: the
+> compiled expert is **SM-sensitive**. The eager curve (1.013×) stands — eager launches are
+> confined (M0) — and so does "the eager expert is launch-bound". Two claims built on the invalid
+> rows are withdrawn: the derived 12/4 period of 271.26 ms, and "the expert can neither block nor
+> be blocked at the CTA dispatcher" — E12b M2's timeline shows the opposite on the whole GPU:
+> the two streams execute concurrently for 3.1 % of a co-run frame and the expert queues
+> 175 ms/frame behind the prefix's 1008-CTA GEMM grids (head-of-line blocking).
+> `reports/E12b_pi0_compiled_corun.md` supersedes this section for the compiled configuration.
+
+
 
 The sections above establish that π0's two stages do not overlap and that the **host** is why.
 They do not answer the research question, because KerColle's mechanism is GPU contention and a

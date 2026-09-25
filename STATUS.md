@@ -2,6 +2,27 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## 🛑 CORRECTION (2026-09-25, from T015 M0/M2/M3) — T014's compiled green-context claims were wrong
+
+**Do not use** T014's "the action expert is SM-independent at `bf16_both` (4 SMs cost 4.9 %)", the
+derived 12/4 co-run bound of 271.26 ms, or "the expert can neither block nor be blocked at the CTA
+dispatcher" (`reports/E12_pi0_corun.md` §5, and the E6/STATUS text that cited them).
+
+* **Why they were wrong.** E12b M0: a CUDA graph obeys the partition it was *captured* in, not the
+  green stream it is replayed on (primary-captured graph on a 4-SM stream: 0.99×; eager launches and
+  in-partition captures: 3.24–3.35×). `bf16_both` replays CUDA-graph trees recorded outside the
+  partition, so T014's compiled "4-SM" points ran on the whole GPU.
+* **What is true instead.** Confined properly, the **compiled expert on 4 SMs is 254.9 ms, 2.50× its
+  16-SM time** — SM-sensitive. On the whole GPU the two stages **do** block each other: E12b M2's
+  timeline shows kernels of both streams executing together for 3.1 % of a co-run frame, with the
+  expert queued 175 ms/frame behind the prefix's 1008-CTA GEMMs (head-of-line blocking). The
+  research side's review was right to reject the claim.
+* **What stands.** Everything eager: the eager expert is launch-bound and SM-insensitive (eager
+  launches are confined, M0), `issue/wall`-free facts such as `T_pipe = A + B` in eager, and E6's
+  byte/FLOP analysis.
+
+---
+
 ## ▶ NOW: T015 / E12b (claimed 2026-09-25 ~10:20) — where it sits in the queue
 
 **The owner directed it directly**: T015 was taken immediately, and the pre-reboot queue the owner had
