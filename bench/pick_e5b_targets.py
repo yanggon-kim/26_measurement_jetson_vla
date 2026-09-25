@@ -32,6 +32,12 @@ from crosscheck_sass import _short_name   # noqa: E402
 LAUNCH_GAP_US = 62.0        # E5, pi0 eager: median inter-kernel gap
 MODELS = ("pi0", "pi05", "smolvla")
 MODES = ("eager", "best")
+# GR00T (T009 step 3). Its C1 captures cover `ae_total`, not `ae_step_0`: GR00T's denoising
+# loop lives inside action_head.get_action with no per-step wrap point (run_ncu_c1_groot.sh),
+# and C1 capped each at its first 40 kernels. So "coverage" below is of that CAPTURED
+# window, not of the whole ae_total region, and the report must say so. Its captures go
+# through run_ncu_e5b_groot.sh because GR00T lives in its own checkout and venv.
+GROOT = (("groot_n17", "ae_total"),)
 
 
 def targets_for(model: str, mode: str, region: str = "ae_step_0",
@@ -83,10 +89,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--coverage", type=float, default=60.0)
     ap.add_argument("--emit-queue", action="store_true")
+    ap.add_argument("--only-groot", action="store_true",
+                    help="emit GR00T targets only (the LeRobot ones were captured 2026-09-24)")
+    ap.add_argument("--no-groot", action="store_true")
     args = ap.parse_args()
 
     lines = []
-    for model in MODELS:
+    for model in (() if args.only_groot else MODELS):
         for mode in MODES:
             rows, cum = targets_for(model, mode, coverage=args.coverage)
             if not rows:
@@ -112,6 +121,30 @@ def main() -> int:
                     f'NCU_COUNT=20 bash bench/run_ncu_e5b.sh {model} {mode} '
                     f'{r["region"]} results/${{DATE}}_E5b_{model}_{mode} '
                     f'"{re.escape(r["kernel"])}"')
+    ap_groot = [] if args.no_groot else GROOT
+    for model, region in ap_groot:
+        ver = model.split("_", 1)[1]
+        for mode in MODES:
+            rows, cum = targets_for(model, mode, region=region, coverage=args.coverage)
+            if not rows:
+                print(f"{model}/{mode}: no C1 capture", file=sys.stderr)
+                continue
+            if not args.emit_queue:
+                print(f"\n{model}/{mode}  (targets cover {cum:.1f} % of the C1-CAPTURED "
+                      f"{region} kernels -- the first 40 launches, not the whole region)")
+                for r in rows:
+                    print(f"   {r['share_pct']:5.1f}%  {r['duration_us']:8.1f} us  "
+                          f"x{r['launches']:<3d} SM {r['sm_pct']:5.1f}%  "
+                          f"{r['verdict']:26s} {r['kernel']}")
+            if cum < args.coverage:
+                print(f"   *** coverage {cum:.1f} % is BELOW §5's {args.coverage:.0f} %",
+                      file=sys.stderr)
+            for r in rows:
+                if r["verdict"] != "TARGET":
+                    continue
+                lines.append(
+                    f'NCU_COUNT=20 bash bench/run_ncu_e5b_groot.sh {ver} {mode} {region} '
+                    f'results/${{DATE}}_E5b_{model}_{mode} "{re.escape(r["kernel"])}"')
     if args.emit_queue:
         print("\n".join(lines))
     return 0

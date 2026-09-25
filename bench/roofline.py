@@ -43,6 +43,16 @@ def main() -> int:
     ap.add_argument("--ncu", action="append", default=[],
                     help="an E5 run dir with ncu/kernels.csv (repeatable)")
     ap.add_argument("--model", default="pi0")
+    ap.add_argument("--rung", default="",
+                    help="the rung / compile configuration the REGION TIMES were measured in. "
+                         "Stamped on every row. Added after E6's first cross-model table set "
+                         "a CUDA-graphed GR00T action head against eager LeRobot ones without "
+                         "anyone noticing: a roofline row without its rung cannot be compared "
+                         "with another, and nothing in the CSV said which was which.")
+    ap.add_argument("--ladder-row", default="",
+                    help="a Part B ladder row JSON (raw/rows/<rung>*.json). Supplies the "
+                         "UNPROFILED region times vision_ms / vlm_prefix_ms / ae_total_ms and "
+                         "N, and sets --rung from the row itself so the two cannot disagree.")
     ap.add_argument("--ae-total-steps", type=int, default=0,
                     help="If the measured summary gives `ae_total` but no per-step region "
                          "(pi0.5 and SmolVLA record only the total), derive the ae_step time "
@@ -77,6 +87,22 @@ def main() -> int:
                                  "floor_ms": float(r["floor_ms"] or 0),
                                  "bound": r.get("bound", "")}
     times, step_times = {}, []
+    if args.ladder_row:
+        row = json.loads(Path(args.ladder_row).read_text())
+        if row.get("error"):
+            raise SystemExit(f"ladder row {args.ladder_row} is a FAILED rung: {row['error'][:120]}")
+        if args.rung and args.rung != row.get("rung"):
+            raise SystemExit(f"--rung {args.rung} disagrees with the row's own rung {row.get('rung')}")
+        args.rung = row.get("rung", "")
+        for k, reg in (("vision_ms", "vision"), ("vlm_prefix_ms", "vlm_prefix"),
+                       ("vlm_backbone_ms", "vlm_backbone"), ("ae_total_ms", "ae_total")):
+            if isinstance(row.get(k), (int, float)) and row[k] > 0:
+                times[reg] = float(row[k])
+        if not args.ae_total_steps and row.get("N"):
+            args.ae_total_steps = int(row["N"])
+    if not args.rung:
+        print("  *** WARNING: no --rung given; rows will say 'unlabelled'. Do not compare "
+              "them with another model's rows until the rung is known.")
     for f in args.regions:
         for r in csv.DictReader(Path(f).open()):
             reg = r.get("region")
@@ -109,15 +135,20 @@ def main() -> int:
         vf = json.loads(Path(args.vision_flops).read_text())
         v = analytic.get("vision")
         if v is not None:
-            declared = float(vf["bytes_as_loaded_fp32"])
-            if abs(declared - v["bytes"]) > 1:
-                raise SystemExit(
-                    f"vision bytes disagree: floor.csv {v['bytes']:.0f} vs "
-                    f"vision_flops.py {declared:.0f}. Refusing to combine FLOPs from one "
-                    f"derivation with bytes from another that does not agree with it.")
-            v["flops"] = float(vf["flops_vision_region"])
-            print(f"  vision FLOPs {v['flops']:.0f} from {args.vision_flops}; bytes agree "
-                  f"with floor.csv at {v['bytes']:.0f} B")
+            # A rung that casts the tower (bf16_both) halves its bytes, so match against BOTH
+            # of vision_flops.py's byte counts. FLOPs do not depend on dtype; the cross-check
+            # exists only to prove the two derivations describe the same tower.
+            cands = {k: float(vf[k]) for k in ("bytes_as_loaded_fp32",
+                                               "bytes_as_stored_in_checkpoint") if k in vf}
+            hit = [k for k, b in cands.items() if abs(b - v["bytes"]) <= 1]
+            if hit:
+                v["flops"] = float(vf["flops_vision_region"])
+                print(f"  vision FLOPs {v['flops']:.0f} from {args.vision_flops}; bytes agree "
+                      f"with floor.csv's {v['bytes']:.0f} B via {hit[0]}")
+            else:
+                print(f"  *** vision bytes {v['bytes']:.0f} match neither of vision_flops.py's "
+                      f"{cands}; vision FLOPs LEFT UNCOUNTED rather than combined across "
+                      f"derivations that disagree")
 
     missing = [r for r in analytic if r not in times]
     if missing:
@@ -152,7 +183,8 @@ def main() -> int:
             "pct_spec_bw": round(100 * gb / SPEC_BW, 3),
             "floor_ms": round(floor_ms, 6) if floor_ms else "",
             "gap_ratio": round(ms / floor_ms, 3) if floor_ms else "",
-            "roof_source": "measured (T005/E1)", "source": source, "note": note})
+            "roof_source": "measured (T005/E1)", "source": source,
+            "rung": args.rung or "unlabelled", "note": note})
 
     for reg, a in analytic.items():
         ms = times.get(reg) or times.get(f"{reg}_wall")

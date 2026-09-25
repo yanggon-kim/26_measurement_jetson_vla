@@ -154,7 +154,13 @@ def arch_of(lm, expert_layers=None) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True, choices=("pi05", "smolvla"))
+    ap.add_argument("--model", required=True, choices=("pi0", "pi05", "smolvla"))
+    ap.add_argument("--rung", default="",
+                    help="apply this opt_ladder rung BEFORE counting bytes. Rungs such as "
+                         "bf16_both cast the vision tower and layernorms to bf16, so the bytes "
+                         "a region moves -- and therefore its floor -- depend on the rung. A "
+                         "compiled-rung roofline built on eager-load bytes would overstate "
+                         "achieved bandwidth for every cast region.")
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--outdir", required=True)
     args = ap.parse_args()
@@ -169,6 +175,17 @@ def main() -> int:
                                 revision=spec.revision)
     tokens = P.token_counts(policy, batch, spec=spec)
     Ptok, Stok = tokens["prefix_tokens_P"], tokens["suffix_tokens_S"]
+    rung_note = "default load (no rung applied)"
+    if args.rung:
+        # Tokens are taken above, BEFORE the rung: the rung compiles embed_image and a token
+        # count must not pay a compile. The rung's casts are what change the bytes counted
+        # below, and torch.compile is lazy, so nothing is compiled by applying it here.
+        import opt_ladder as OL                                        # noqa: PLC0415
+        compiled, prep, prec, _, fails, _ = OL.apply_rung(policy, spec, args.rung)
+        if fails:
+            raise SystemExit(f"rung {args.rung} failed: {fails}")
+        rung_note = f"{args.rung}: prep=[{prep}] compiled={compiled} matmul={prec}"
+        print(f"  rung applied before counting bytes: {rung_note}")
 
     regs = regions_for(policy, spec)
     for k, (mod, path) in regs.items():
@@ -203,7 +220,8 @@ def main() -> int:
                                ("measured", MEASURED_GBPS, MEASURED_TFLOPS)):
             fmem = b / (gbps * 1e9) * 1e3
             fcomp = f / (tfl * 1e12) * 1e3
-            rows.append({"model": args.model, "region": region, "bytes_read": b, "flops": f,
+            rows.append({"model": args.model, "rung": args.rung or "default",
+                         "region": region, "bytes_read": b, "flops": f,
                          "peak_GBps": gbps, "peak_TFLOPps": tfl,
                          "floor_mem_ms": round(fmem, 4),
                          "floor_compute_ms": round(fcomp, 4),
@@ -230,7 +248,8 @@ def main() -> int:
         w.writeheader()
         w.writerows(rows)
     (out / "floor_inputs.json").write_text(json.dumps({
-        "model": args.model, "checkpoint": spec.checkpoint, "revision": spec.revision,
+        "model": args.model, "rung": args.rung or "default", "rung_note": rung_note,
+        "checkpoint": spec.checkpoint, "revision": spec.revision,
         "tokens": tokens, "architecture_from_config": arch,
         "element_size_bytes": el_size,
         "resolved_region_paths": {k: (v[1] if v[0] is not None else None)
