@@ -1,0 +1,105 @@
+{
+  "experiment": "E11a (GR00T DiT block)",
+  "task": "T012",
+  "date_utc": "2026-09-25T01:55:59Z",
+  "model": "groot_n15",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "model_repo": "nvidia/GR00T-N1.5-3B",
+  "precision": "bfloat16",
+  "num_inference_timesteps": 4,
+  "blocks_measured": {
+    "0": "cross_attn",
+    "1": "self_attn"
+  },
+  "n_blocks": 16,
+  "hidden_dim": 1536,
+  "heads": 32,
+  "head_dim": 48,
+  "n_warmup": 20,
+  "n_timed": 1000,
+  "exec_styles": [
+    "eager",
+    "compiled",
+    "cudagraph"
+  ],
+  "power_mode": "NV Power Mode: MAXN",
+  "gate": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "tpc_pg_mask": "0",
+    "gpu_cur_freq_hz": "1300500000",
+    "gpu_min_freq_hz": "1300500000",
+    "gpu_max_freq_hz": "1300500000",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "torch": "2.10.0",
+    "device": "Orin",
+    "capability": "(8, 7)"
+  },
+  "gr00t_root": "/home/yanggon/00_VLA/Isaac-GR00T-n1d5",
+  "observation_shapes": {
+    "video": {
+      "video.exterior_image_1": [
+        1,
+        256,
+        256,
+        3
+      ],
+      "video.exterior_image_2": [
+        1,
+        256,
+        256,
+        3
+      ],
+      "video.wrist_image": [
+        1,
+        256,
+        256,
+        3
+      ]
+    },
+    "state": {
+      "state.eef_position": [
+        1,
+        3
+      ],
+      "state.eef_rotation": [
+        1,
+        3
+      ],
+      "state.gripper_position": [
+        1,
+        1
+      ]
+    }
+  },
+  "torch": "2.10.0",
+  "python": "3.10.12",
+  "bench_commit": "8d6eb167c7249d195d0957ea116cdc5524df1328",
+  "command": "bench/groot_segments.py --outdir results/20260924_E11a_groot_n15_hostseg --version n15 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T-n1d5 --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid --data-config oxe_droid",
+  "raw_files": [
+    {
+      "path": "raw/segment_timings.csv",
+      "sha256": "934e32d899085bb74a199632278535907befb55c00a2ec4587667f01e13ef20c",
+      "bytes": 3250,
+      "kind": "other",
+      "produced_by": "bench/groot_segments.py --outdir results/20260924_E11a_groot_n15_hostseg --version n15 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T-n1d5 --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid --data-config oxe_droid",
+      "secrets_scan": "clean",
+      "committed": true
+    }
+  ],
+  "not_measured": [
+    "adalayernorm1 block0 compiled: RuntimeError: Inference tensors cannot be saved for backward. Please do not use Tensors created in inference mode in computation tracked by autograd. To work around this, you",
+    "adalayernorm1 block1 compiled: RuntimeError: Inference tensors cannot be saved for backward. Please do not use Tensors created in inference mode in computation tracked by autograd. To work around this, you",
+    "model_inputs.csv names model='groot_n15', which is NOT in check_model_inputs.py's MODELS set ['groot_n17', 'none', 'pi0', 'pi05', 'smolvla']. The checker will reject this file. The rows are correct; the SCHEMA needs extending, which is the research side's call (AGENTS.md) \u2014 raised in STATUS.md under 'Questions for the research side'. The file is written anyway so the measurement is not lost."
+  ],
+  "schema_note": "model_inputs.csv names model='groot_n15', which is NOT in check_model_inputs.py's MODELS set ['groot_n17', 'none', 'pi0', 'pi05', 'smolvla']. The checker will reject this file. The rows are correct; the SCHEMA needs extending, which is the research side's call (AGENTS.md) \u2014 raised in STATUS.md under 'Questions for the research side'. The file is written anyway so the measurement is not lost.",
+  "notes": [
+    "Segments were reconstructed under torch.autocast(cuda, torch.bfloat16), because this model's own gr00t/model/policy.py:189-191 wraps inference in it (--api=old). The reported bytes are the traffic of the ops as autocast runs them; autocast's OWN cast of the fp32 encoder states to torch.bfloat16 is additional traffic the shared bytes_formula does not model, and it does not arise for n1.7/n1.6, whose policy.py has no autocast.",
+    "Both kinds of DiT block are measured. DiT.forward (dit.py:310-326) sends encoder_hidden_states only on even indices when interleave_self_attention is set, so odd blocks are pure self-attention and even blocks cross-attend onto the VLM's tokens. Measuring one and calling it 'the block' would hide half the architecture.",
+    "The attention is NOT split into score / softmax / context. attn1 is a diffusers Attention running under _sdpa_context(), so those happen inside one fused kernel; separating them would mean measuring a different implementation than the model's. pi0's eager Gemma path does expose them, which is why its segment table has a softmax row and this one does not.",
+    "The feed-forward is reported whole. pi0's table splits act_fn(gate)*up from its projections per protocol \u00a713.2; the diffusers FeedForward is a Sequential whose pieces would have to be indexed by position, which is brittle against a version change.",
+    "The timing engine is bench/host_segments.py's, unchanged, so these numbers are comparable with pi0's rather than produced by a second harness.",
+    "METADATA CORRECTED IN PLACE 2026-09-24 after the run, no measurement changed: the autocast sentence above was originally written into meta['not_measured'], because bench/groot_segments.py appended it to the list that populates that key. It describes HOW everything here was measured, so filing it as something NOT measured stated the opposite -- beside two genuine entries about adalayernorm1's compiled style. The code fix is committed, so runs after it write this correctly; this file was edited rather than re-measured because re-running would have discarded a valid measurement to relocate a sentence. Disclosed here per protocol \u00a75."
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "experiment": "E11a (GR00T DiT block)",
+  "task": "T012",
+  "date_utc": "2026-09-25T00:25:33Z",
+  "model": "groot_n16",
+  "checkpoint": "nvidia/GR00T-N1.6-3B",
+  "model_repo": "nvidia/GR00T-N1.6-3B",
+  "precision": "bfloat16",
+  "num_inference_timesteps": 4,
+  "blocks_measured": {
+    "0": "cross_attn",
+    "1": "self_attn"
+  },
+  "n_blocks": 32,
+  "hidden_dim": 1536,
+  "heads": 32,
+  "head_dim": 48,
+  "n_warmup": 20,
+  "n_timed": 1000,
+  "exec_styles": [
+    "eager",
+    "compiled",
+    "cudagraph"
+  ],
+  "power_mode": "NV Power Mode: MAXN",
+  "gate": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "tpc_pg_mask": "0",
+    "gpu_cur_freq_hz": "1300500000",
+    "gpu_min_freq_hz": "1300500000",
+    "gpu_max_freq_hz": "1300500000",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "torch": "2.10.0",
+    "device": "Orin",
+    "capability": "(8, 7)"
+  },
+  "gr00t_root": "/home/yanggon/00_VLA/Isaac-GR00T-n1d6",
+  "observation_shapes": {
+    "video": {
+      "res256_image_side_0": [
+        1,
+        1,
+        256,
+        256,
+        3
+      ],
+      "res256_image_side_1": [
+        1,
+        1,
+        256,
+        256,
+        3
+      ],
+      "res256_image_wrist_0": [
+        1,
+        1,
+        256,
+        256,
+        3
+      ]
+    },
+    "state": {
+      "end_effector_position_relative": [
+        1,
+        1,
+        3
+      ],
+      "end_effector_rotation_relative": [
+        1,
+        1,
+        4
+      ],
+      "gripper_qpos": [
+        1,
+        1,
+        2
+      ],
+      "base_position": [
+        1,
+        1,
+        3
+      ],
+      "base_rotation": [
+        1,
+        1,
+        4
+      ]
+    }
+  },
+  "torch": "2.10.0",
+  "python": "3.10.12",
+  "bench_commit": "16ab28fe0fb6d14a1fa9e9fadc91f6e5b11c2b12",
+  "command": "bench/groot_segments.py --outdir results/20260924_E11a_groot_n16_hostseg --version n16 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T-n1d6 --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron",
+  "raw_files": [
+    {
+      "path": "raw/segment_timings.csv",
+      "sha256": "3a096803663184d53999fd01d0af571baa0c2b5eab97c4a2ac82f705840bdaa4",
+      "bytes": 3414,
+      "kind": "other",
+      "produced_by": "bench/groot_segments.py --outdir results/20260924_E11a_groot_n16_hostseg --version n16 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T-n1d6 --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron",
+      "secrets_scan": "clean",
+      "committed": true
+    }
+  ],
+  "not_measured": [
+    "model_inputs.csv names model='groot_n16', which is NOT in check_model_inputs.py's MODELS set ['groot_n17', 'none', 'pi0', 'pi05', 'smolvla']. The checker will reject this file. The rows are correct; the SCHEMA needs extending, which is the research side's call (AGENTS.md) \u2014 raised in STATUS.md under 'Questions for the research side'. The file is written anyway so the measurement is not lost."
+  ],
+  "schema_note": "model_inputs.csv names model='groot_n16', which is NOT in check_model_inputs.py's MODELS set ['groot_n17', 'none', 'pi0', 'pi05', 'smolvla']. The checker will reject this file. The rows are correct; the SCHEMA needs extending, which is the research side's call (AGENTS.md) \u2014 raised in STATUS.md under 'Questions for the research side'. The file is written anyway so the measurement is not lost.",
+  "notes": [
+    "Both kinds of DiT block are measured. DiT.forward (dit.py:310-326) sends encoder_hidden_states only on even indices when interleave_self_attention is set, so odd blocks are pure self-attention and even blocks cross-attend onto the VLM's tokens. Measuring one and calling it 'the block' would hide half the architecture.",
+    "The attention is NOT split into score / softmax / context. attn1 is a diffusers Attention running under _sdpa_context(), so those happen inside one fused kernel; separating them would mean measuring a different implementation than the model's. pi0's eager Gemma path does expose them, which is why its segment table has a softmax row and this one does not.",
+    "The feed-forward is reported whole. pi0's table splits act_fn(gate)*up from its projections per protocol \u00a713.2; the diffusers FeedForward is a Sequential whose pieces would have to be indexed by position, which is brittle against a version change.",
+    "The timing engine is bench/host_segments.py's, unchanged, so these numbers are comparable with pi0's rather than produced by a second harness."
+  ]
+}
