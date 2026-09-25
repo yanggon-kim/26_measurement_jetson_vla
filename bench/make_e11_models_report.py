@@ -36,9 +36,24 @@ ORDER = ["pi0", "pi05", "smolvla", "groot_n17", "groot_n16", "groot_n15"]
 
 
 def load(pattern: str) -> dict[str, list[dict]]:
-    """model -> its rows, taking the NEWEST consolidated run per model."""
+    """model -> its rows, taking the NEWEST run per model.
+
+    `pattern` is a COMMA-SEPARATED list, because GR00T's rows do not live in a consolidated
+    directory. LABEL and ORDER below list all three GR00T versions, so including them was
+    always the intent, but the old default glob was `results/*_E11_*_inputs` and GR00T's
+    directories are named `results/<date>_E11a_groot_n17_hostseg`, which that pattern cannot
+    match. The generator therefore reported "for N model(s)" with no GR00T row at all, and
+    said nothing about it.
+
+    GR00T legitimately has only E11a: E11c/d/e/f are built on the LeRobot phase loops and a
+    transformers KV cache and GR00T has neither (scope statement in
+    bench/queues/queue_e11.sh). Its rows populate the three per-segment quantities E11a
+    produces and leave the later sections blank, which the GR00T scope note in the report
+    states explicitly rather than leaving to inference.
+    """
     by_model: dict[str, tuple[str, list[dict]]] = {}
-    for d in sorted(glob.glob(pattern)):
+    pats = [x.strip() for x in pattern.split(",") if x.strip()]
+    for d in sorted(x for pat in pats for x in glob.glob(pat)):
         f = Path(d) / "model_inputs.csv"
         if not f.exists() or f.stat().st_size == 0:
             continue
@@ -61,7 +76,9 @@ def num(x):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--glob", default="results/*_E11_*_inputs")
+    ap.add_argument("--glob",
+                    default="results/*_E11_*_inputs,results/*_E11a_groot_*_hostseg",
+                    help="comma-separated globs; GR00T has no consolidated dir")
     ap.add_argument("--out", default="reports/E11_models.md")
     args = ap.parse_args()
 
@@ -82,6 +99,14 @@ def main() -> int:
          "at zero. SmolVLA has no AdaRMS gate; GR00T's attention is fused under SDPA and "
          "has no separable `softmax`; π0's conditioning tensor is `None` so it has no "
          "`adaln_cond`. Printing a zero for any of those would assert something false.",
+         "",
+         "**GR00T contributes E11a only, and that is a scope statement rather than a "
+         "gap.** E11c/d/e/f are built on the LeRobot phase loops and on a `transformers` "
+         "KV cache, and GR00T has neither \u2014 its prefix is a whole VLM invoked as one "
+         "unit and its action head takes the backbone output, not a cache. So the GR00T "
+         "rows carry per-segment bytes, FLOPs and times for a DiT block, which is what the "
+         "PIM model needs from a DiT architecture, and the handover, prefix-sweep, "
+         "memory-pressure and pipelining sections are blank for them by design.",
          ""]
 
     # ---- conditions --------------------------------------------------------------------
