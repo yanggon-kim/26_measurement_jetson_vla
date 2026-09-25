@@ -108,3 +108,50 @@ tonight: three models, two independent measurements, monotonic, with a mechanism
 still be checked against GR00T, whose compiled head has ~0 idle and would predict a very LOW
 clock-insensitive fraction. Those six points are running now, and GR00T is the test that
 could break it -- state it as a hypothesis until they land.
+
+
+## VERDICT 00:26: the clock-insensitivity relationship is ALSO LeRobot-only
+
+Tested like-for-like, ae_total idle for every model (E11f eager N=10 for the LeRobot three,
+E5 eager for N1.7), against the clock-insensitive fraction measured at 50W:
+
+    model        ae_total idle (eager)   clock-insensitive
+    pi0.5              0.6463                  8.2 %
+    GR00T N1.7         0.7153                 35.0 %
+    pi0                0.8436                 22.3 %
+    SmolVLA            0.9268                 31.4 %
+
+The three LeRobot models are monotonic. N1.7 has the SECOND-LOWEST idle and the HIGHEST
+clock-insensitive fraction, so the relationship is falsified across architectures.
+
+This pairing is valid: both runs use rung eager_fp32 at matmul_precision=highest, verified
+against the MAXN baseline's meta.json. The earlier 31.9 % figure came from a confounded
+pairing (TF32 on vs off) and is discarded; the valid figure is 35.0 %, which happens to be
+worse for the hypothesis, so the confound was not hiding a confirmation.
+
+## The meta-finding, which is worth more than either hypothesis
+
+TWO independent relationships have now been tested and BOTH hold within the LeRobot
+flow-matching family and BOTH break on GR00T's DiT action head:
+
+  1. energy-to-time ratio vs GPU-idle fraction   (registered in reports/E7_power_energy.md)
+  2. clock-insensitive fraction vs GPU-idle fraction  (registered here, tonight)
+
+Same shape both times: clean and monotonic over pi0 / pi0.5 / SmolVLA, broken by GR00T.
+That is no longer a coincidence to explain away. Either the flow-matching family shares
+something the DiT head does not -- architecture, or the LeRobot runtime they all share --
+or three points is simply too few to fit a line through and both relationships are noise
+dressed as structure.
+
+The practical instruction for the report: any relationship fitted on the LeRobot three must
+be stated as LeRobot-specific until a DiT model confirms it. Two for two is enough evidence
+to make that the default rather than the caveat.
+
+## Limitation of this test, stated rather than buried
+
+The LeRobot idle figures have corrected counterparts (pi0.5 0.4837, pi0 0.7632, SmolVLA
+0.8858) and GR00T's do not -- reports/E5_timeline.md prints "—" for GR00T because its E5
+eager used --tf32 off (the eager_fp32 rung) and the corrected column needs a matched
+unprofiled reference I have not established for it. So the comparison above uses RAW idle
+for all four, which is self-consistent but not the figure the protocol prefers. The LeRobot
+ordering is unchanged by using corrected values; GR00T cannot be checked either way yet.
