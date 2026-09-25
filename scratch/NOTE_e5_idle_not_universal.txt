@@ -1,0 +1,38 @@
+E5: the 84 % eager GPU-idle figure is pi0-specific, not a family property
+2026-09-24 19:41, first cross-model E5 rows. Correction to carry into reports/E5_timeline.md.
+
+                                    ae_step idle   kernels/step
+    pi0     eager N=10                 0.8417          968.7
+    pi0     best  N=10                 0.4714          372.7
+    pi0.5   eager N=10                 0.6429         1102.7
+    pi0.5   best  N=10                 0.4453          401.7
+
+pi0's 84 % has been the motivating number for the idle-time argument and was explicitly
+marked "already answered, do not re-measure". That is correct FOR pi0. It does not
+generalise: pi0.5's eager ae_step is 64.3 %, twenty points lower, while running MORE
+kernels per step (1102.7 vs 968.7). So the gap structure differs between two models of the
+same family with the same container and the same wrap points -- a model with more launches
+per step is LESS launch-starved here, which rules out "kernel count alone sets the idle
+fraction".
+
+Compiled, the two converge: 0.4714 and 0.4453. Whatever the eager difference is, it is
+largely removed by compiling the three ladder callables.
+
+## Bearing on the E7 hypothesis, with two models rather than six
+
+reports/E7_power_energy.md registers: the action expert's energy-to-time ratio tracks its
+GPU-idle fraction. Pairing E7's eager->best ratios with the idle DROP measured here:
+
+    pi0   N=10   idle 0.8417 -> 0.4714   drop 0.370   E7 ratio 0.80
+    pi0.5 N=10   idle 0.6429 -> 0.4453   drop 0.198   E7 ratio 0.96
+
+Direction is consistent: the model whose idle falls further saves proportionally more
+energy than time. But SmolVLA is the case that already looked wrong for it -- eager ae idle
+84.0 % (from E11f), nearly pi0's, yet an E7 ratio of 0.45 against pi0's 0.80. Its E5 rows
+are being measured now and will decide it. Two agreeing points are not support for a
+hypothesis whose counter-example is already on record; do not write the hypothesis up as
+confirmed on this pair.
+
+All idle figures here are RAW. The corrected ones use each run's own profiling inflation
+factor -- pi0's eager was x1.53, SmolVLA's E11f captures were x1.34-1.42, so the factor is
+per-run and not a constant of the device.
