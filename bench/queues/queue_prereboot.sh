@@ -184,7 +184,8 @@ e3e4_sweep)
         vlm_compile) RA="--tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs" ;;
       esac
       run "groot_n17 N=$N $rung" /bin/bash -c ". $GV/activate_orin_venv.sh >/dev/null 2>&1; \
-        HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 exec $GV/bin/python bench/groot_phases.py \
+        HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TRITON_CACHE_DIR=/tmp/triton_yanggon \
+        TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon exec $GV/bin/python bench/groot_phases.py \
         --outdir $d --checkpoint nvidia/GR00T-N1.7-3B --version n17 --steps $N \
         --warmup 20 --timed 50 --rung $rung $RA"
     done
@@ -197,7 +198,8 @@ e3e4_sweep)
   CK=$(ls -d ~/.cache/huggingface/hub/models--nvidia--GR00T-N1.7-3B/snapshots/* | head -1)
   run "Isaac-GR00T scripts/deployment/benchmark_inference.py" /bin/bash -c \
     ". $GV/activate_orin_venv.sh >/dev/null 2>&1; cd /home/yanggon/00_VLA/Isaac-GR00T && \
-     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 $GV/bin/python scripts/deployment/benchmark_inference.py \
+     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TRITON_CACHE_DIR=/tmp/triton_yanggon \
+       TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon $GV/bin/python scripts/deployment/benchmark_inference.py \
        --model-path $CK --dataset-path demo_data/droid_sample \
        --embodiment-tag oxe_droid_relative_eef_relative_joint --num-iterations 20 --warmup 5 \
        > $PWD/$d/raw/benchmark_inference.log 2>&1"

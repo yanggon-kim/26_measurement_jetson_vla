@@ -117,6 +117,13 @@ exec $(which ncu) \
       --num-steps $N --region "$REGION"
 EOF
 sudo -n /bin/sh "$RUNNER" > "$OUT/ncu/${TAG}.stdout" 2>&1
+RC_NCU=$?
+# CACHE_OWNERSHIP_FIX (2026-09-25): the profiled process runs as root, so every Triton / Inductor
+# cache entry it creates is root-owned; a later user-run process that hits one fails with
+# PermissionError (all six compiled GR00T N-sweep runs failed that way). Hand them back.
+sudo -n chown -R "$(id -u):$(id -g)" /tmp/triton_yanggon /tmp/torchinductor_yanggon \
+    "$HOME/.triton" "$HOME/.cache/triton_groot" "$HOME/.cache/triton_groot16" 2>/dev/null
+( exit $RC_NCU )
 RC=$?
 echo "  ncu rc=$RC in $((SECONDS-t0))s"
 
