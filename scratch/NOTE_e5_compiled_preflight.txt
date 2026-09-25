@@ -1,0 +1,56 @@
+E5 compiled half: the withdrawn blocker, withdrawn on evidence
+2026-09-24 19:14, scratch/preflight/E5_rung_smoke/. For reports/E5_timeline.md.
+
+## What was believed
+
+results/20260922_E5_pi0_reduce-overhead_N4/ holds a 0-byte stdout and nothing else. The
+reason recorded at the time: bench/regions.py's context managers graph-break a model
+compiled through --compile-mode, so compiled captures had to run --no-regions and had no
+NVTX ranges to project a timeline onto. The plan listed that as a blocker and then WITHDREW
+it on reasoning: --compile-mode is applied to sample_actions and swallows the whole frame,
+but the ladder RUNGS compile embed_image, container.forward and denoise_step individually
+and instrument AFTER compiling, so every region boundary stays outside a compiled callable.
+
+Reasoning is not a measurement, so it was preflighted before committing 14 captures.
+
+## What the preflight measured
+
+    bash bench/run_nsys.sh scratch/preflight/E5_rung_smoke best_smoke -- \
+      python bench/nsys_target.py --model pi0 --steps 4 --inferences 2 --rung bf16_both
+    python bench/parse_nsys.py scratch/preflight/E5_rung_smoke --tag best_smoke \
+      --steps 4 --inferences 2
+
+NSYS_EXIT=0, PARSE_EXIT=0, and timeline_summary.csv carries a per-REGION ae_step row:
+
+    region    gpu_idle_frac  kernels_per_unit  wall_ms  n_kernels  instances
+    ae_step   0.4735         372.25            79.31    1489       8 (4/inference)
+
+So the compiled half IS measurable per region. The blocker is withdrawn on evidence.
+
+## The result this already gives, before the matrix
+
+pi0's committed EAGER ae_step numbers, results/20260922_E5_pi0_eager_N4/:
+
+                        eager     best (bf16_both)   change
+    gpu_idle_frac       0.8427    0.4735             -44 %
+    kernels_per_unit    968.25    372.25             -62 %
+
+Compiling removes roughly three fifths of the kernel launches per denoising step and cuts
+the GPU-idle fraction of ae_step from 84 % to 47 %. Both are SMOKE-RUN numbers from a 2-
+inference capture and must be restated from the matrix run before they are reported; they
+are recorded here because they set the expectation the matrix should confirm, and a matrix
+result that disagrees with them is a signal to look rather than to overwrite.
+
+Note the idle fraction is the RAW one. pi0's eager E5 carries both raw and corrected
+(0.84 vs 0.756) and check_report_numbers.py deliberately checks only the corrected one, so
+the corrected compiled figure has to be computed with this run's own inflation factor, not
+with eager's x1.53.
+
+## Why this matters to the E7 hypothesis
+
+reports/E7_power_energy.md registers the hypothesis that the action expert's
+energy-to-time ratio tracks its GPU-idle fraction. If that held, a configuration that
+halves ae_step idle should move the ratio a long way. E7's own eager->best figures for pi0
+N=4 give 0.88, and for SmolVLA 0.45 while SmolVLA's eager idle (84.0 %) is nearly pi0's
+(84.3 %) -- already awkward for the hypothesis. E5's per-region compiled idle is the
+measurement that decides it.
