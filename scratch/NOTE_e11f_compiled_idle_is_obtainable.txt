@@ -1,0 +1,47 @@
+E11f's two "unobtainable" compiled quantities are obtainable after all
+2026-09-24 20:33. For reports/E11_models.md and the T011 status block. NOT acted on tonight.
+
+## What is recorded as not measured
+
+bench/pipelining.py's compiled nsys sub-capture prints "no usable exports" and writes empty
+gpu_idle rows with the note
+
+    "nsys exports missing or no ae_step NVTX ranges (compiled captures run with
+     --no-regions because the context managers graph-break a compiled model)"
+
+so two of §13.8's 35 quantities -- gpu_idle_ae_total and gpu_idle_frac_ae_total -- are
+absent under compiled modes. The plan said to budget for that: "T010 already could not get
+them, for a model-independent reason."
+
+## Why that reason is wrong
+
+E5 measured them. bench/nsys_target.py --rung compiles embed_image, container.forward and
+denoise_step INDIVIDUALLY and instruments afterwards, so every region boundary stays outside
+a compiled callable and the NVTX ranges survive:
+
+    results/20260924_E5_pi0_best_N4   ae_step  gpu_idle_frac 0.4720  kernels/step 372.25
+    results/20260924_E5_pi0_best_N10  ae_step  gpu_idle_frac 0.4714  kernels/step 372.70
+
+pipelining.py passes --compile-mode + --no-regions instead. That is the whole difference. The
+obstacle is the chosen compile path, not a model-independent property of compiled capture.
+
+## Two ways to close it, neither done tonight
+
+1. Switch pipelining's nsys sub-capture to --rung <this model's best rung>, the way
+   queue_e5.sh does. Needs the per-model best rung threaded into pipelining and a third
+   E11f re-run for every model. Correct but not cheap, and E11f has already been re-run
+   twice today.
+2. Source the two quantities from the E5 run instead, in consolidate_e11.py. Cheaper, but it
+   is a CROSS-RUN citation: E5's capture uses --inferences 2 and its own gate, so the row
+   would have to carry from=<E5 dir> in `variant` and must not be presented as if measured
+   inside E11f. Protocol §13.8's copy rule allows restating a row from another run, which is
+   already how the E3/E4 region latencies get in.
+
+Option 2 is the better value. Either way the report must stop saying these are unobtainable,
+because that sentence is now false and E5's own numbers are the counter-example.
+
+## What the report should say tonight
+
+"Not measured inside E11f under compiled modes, because its sub-capture uses --compile-mode
+--no-regions. The same quantity IS measured per region by E5 via --rung: 0.4720 for pi0's
+best at N=4. Closing the gap is a consolidation change, recorded and not yet applied."
