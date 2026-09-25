@@ -211,7 +211,9 @@ SUPERSEDED = {
 for tag, pat, need, target in (
         ("E11 hybrid",  "results/*_E11*_*",  "model_inputs.csv",       4),
         ("E5 timeline", "results/*_E5_*",    "timeline_summary.csv",  12),
-        ("E5b instr",   "results/*_E5b_*",   "stall_attribution.csv",  6),
+        # s_sweep.csv: the E5b S sweep (docs/03 "isolated kernels") is an E5b deliverable in
+        # its own right and has no stall_attribution.csv -- it was reported BROKEN at 09:33.
+        ("E5b instr",   "results/*_E5b_*",   ("stall_attribution.csv", "s_sweep.csv"), 9),
         # E12 (T014). corun_ratios.csv is the file that carries s, p and r -- a directory
         # with timings but no ratios has not answered the question the experiment exists
         # for. Target 5 per docs/E12_corun/README.md §10 (corun N10, mechanisms, N4,
@@ -232,7 +234,17 @@ for tag, pat, need, target in (
         # BROKEN. Listing them beats a special case per tag, which is how the old hardcoded
         # JOBS allowlist rotted.
         ("E12 corun",   "results/*_E12_*",
-         ("corun_ratios.csv", "sm_sensitivity.csv", "power.csv"),       5)):
+         ("corun_ratios.csv", "sm_sensitivity.csv", "power.csv"),       5),
+        # Pre-reboot queue (2026-09-25). E6 has per-model directories and a matched-rung tree
+        # (results/<date>_E6_rungs/<model>_<rung>/); the tree's parent carries no roofline.csv
+        # of its own, so it is excluded by the [!r] rather than reported BROKEN.
+        ("E6 roofline", "results/*_E6_[!r]*",  ("roofline.csv",),         6),
+        ("E6 rungs",    "results/*_E6_rungs/*", ("roofline.csv",),       12),
+        ("E3E4 sweep",  "results/*_E3E4_*",
+         ("opt_ladder.csv", "phase_split.csv", "raw/benchmark_inference.log"), 15),
+        # E8 writes summary.json and episodes.csv together at the END of a run, so a directory
+        # with neither is either live or failed; _is_live() tells which.
+        ("E8 LIBERO",   "results/*_E8_*",     ("summary.json",),         10)):
     def _has(d, need):
         names = (need,) if isinstance(need, str) else need
         return any((Path(d) / n).exists() and (Path(d) / n).stat().st_size > 0

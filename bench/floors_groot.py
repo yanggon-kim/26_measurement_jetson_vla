@@ -58,6 +58,8 @@ def main() -> int:
                     default="oxe_droid_relative_eef_relative_joint")
     ap.add_argument("--gr00t-root", dest="gr00t_root", default="")
     ap.add_argument("--compat-shims", action="store_true")
+    ap.add_argument("--data-config", default="oxe_droid",
+                    help="N1.5's old Gr00tPolicy API needs it (groot_phases._load_n15)")
     ap.add_argument("--steps", type=int, default=4)
     ap.add_argument("--outdir", required=True)
     args = ap.parse_args()

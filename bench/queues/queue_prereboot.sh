@@ -205,5 +205,92 @@ e3e4_sweep)
   echo "E3E4_SWEEP_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+e6_groot_old)
+  # Plan step 6: E6 for GR00T N1.5 and N1.6. No branch switch: their worktrees and the groot16
+  # venv are how queue_e7_50w_groot.sh already runs them. Bytes do not change across rungs
+  # (tf32 / compilation only), so one floor per version serves its eager and compiled rows.
+  gate
+  echo "E6_GROOT_OLD_START $(date -Is)"
+  V16=$HOME/venvs/groot16
+  for spec in "n16 /home/yanggon/00_VLA/Isaac-GR00T-n1d6 nvidia/GR00T-N1.6-3B new robocasa_panda_omron" \
+              "n15 /home/yanggon/00_VLA/Isaac-GR00T-n1d5 nvidia/GR00T-N1.5-3B old oxe_droid"; do
+    set -- $spec; v=$1; root=$2; ck=$3; api=$4; tag=$5
+    d=results/${DATE}_E6_groot_$v
+    if [ ! -s "$d/floor.csv" ]; then
+      run "floors groot_$v" /bin/bash -c ". $V16/activate_orin_venv.sh >/dev/null 2>&1; \
+        HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 exec $V16/bin/python bench/floors_groot.py \
+        --outdir $d --checkpoint $ck --version $v --api $api --embodiment-tag $tag \
+        --data-config oxe_droid --gr00t-root $root --steps 4"
+    fi
+    [ -s "$d/floor.csv" ] || { echo "  NO floor for groot_$v -- rooflines skipped"; continue; }
+    for r in eager_tf32 all_compile_autotune; do
+      rd=results/${DATE}_E6_rungs/groot_${v}_${r}; mkdir -p "$rd"
+      [ -s "$rd/roofline.csv" ] && continue
+      cp "$d/floor.csv" "$d/floor_inputs.json" "$rd/"
+      run "roofline groot_$v $r" $PY bench/roofline.py --outdir "$rd" --floor "$rd/floor.csv" \
+          --ladder-row results/20260923_E4d_groot_${v}_ladder/raw/rows/${r}.json --model groot_$v
+    done
+  done
+  echo "E6_GROOT_OLD_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
+e8)
+  # Plan step 5, the owner's CORE scope: pi0 only (pi0.5's base checkpoint scores 0/30 and
+  # cannot be validated). fp32 and the FULL bf16_both rung at N=10 on all four suites, 10 tasks
+  # x 10 episodes; bf16_both at N in {4, 2} on libero_spatial. fp32 runs first on each suite as
+  # the harness's own control: if it collapses to zero there, bf16 on that suite is skipped --
+  # comparing against zero distinguishes nothing.
+  gate
+  echo "E8_START $(date -Is)"
+  LPY=$HOME/venvs/libero/bin/python
+  export MUJOCO_GL=egl HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+  # Is the FULL compiled rung usable in the closed loop? One-episode smoke, into scratch. If
+  # not, the bf16 arm falls back to the casts-only prep and every result says so.
+  BF="--rung bf16_both"; BFTAG=bf16both
+  if ! $LPY bench/libero_eval.py --model pi0 --rung bf16_both --suite libero_spatial --tasks 1 \
+        --episodes 1 --outdir scratch/e8_smoke_rung > scratch/e8_smoke_rung.log 2>&1; then
+    echo "  *** full bf16_both rung FAILED in the closed loop (scratch/e8_smoke_rung.log); the"
+    echo "      bf16 arm uses the casts-only prep instead and is labelled bf16castonly"
+    tail -5 scratch/e8_smoke_rung.log
+    BF="--prep bf16_both"; BFTAG=bf16castonly
+  fi
+  for suite in libero_spatial libero_object libero_goal libero_10; do
+    d=results/${DATE}_E8_pi0_${suite}_fp32_N10
+    [ -s "$d/summary.json" ] || run "E8 $suite fp32 N=10" $LPY bench/libero_eval.py --model pi0 \
+        --suite $suite --tasks 10 --episodes 10 --steps 10 --outdir "$d"
+    ok=$($PY -c "import json;print(json.load(open('$d/summary.json'))['successes'])" 2>/dev/null || echo 0)
+    if [ "${ok:-0}" -eq 0 ]; then
+      echo "  *** fp32 control scored 0 on $suite -- bf16 arm SKIPPED there (nothing to compare)"
+      continue
+    fi
+    d=results/${DATE}_E8_pi0_${suite}_${BFTAG}_N10
+    [ -s "$d/summary.json" ] || run "E8 $suite $BFTAG N=10" $LPY bench/libero_eval.py --model pi0 \
+        --suite $suite --tasks 10 --episodes 10 --steps 10 $BF --outdir "$d"
+  done
+  for N in 4 2; do
+    d=results/${DATE}_E8_pi0_libero_spatial_${BFTAG}_N${N}
+    [ -s "$d/summary.json" ] || run "E8 libero_spatial $BFTAG N=$N" $LPY bench/libero_eval.py \
+        --model pi0 --suite libero_spatial --tasks 10 --episodes 10 --steps $N $BF --outdir "$d"
+  done
+  echo "E8_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
+chain)
+  # Everything after e6_rungs, in plan order, one GPU job at a time. Waits for a running
+  # e6_rungs to finish first rather than overlapping it.
+  # ...or until that stage's process is gone: a stage that died without its DONE marker must
+  # not leave this chain waiting forever while the watchdog reports NOTHING RUNNING.
+  until grep -q "E6_RUNGS_DONE" scratch/queues/queue_prereboot_e6_rungs.log 2>/dev/null \
+        || ! pgrep -f "[q]ueue_prereboot[.]e6_rungs" >/dev/null; do sleep 20; done
+  grep -q "E6_RUNGS_DONE" scratch/queues/queue_prereboot_e6_rungs.log \
+    || echo "  *** e6_rungs ended WITHOUT its DONE marker -- continuing, check its log"
+  for st in e3e4_sweep e6_groot_old e8; do
+    echo "########## $(date +%H:%M) CHAIN stage $st"
+    QP_SNAPSHOT= bash bench/queues/queue_prereboot.sh $st > scratch/queues/queue_prereboot_$st.log 2>&1
+    echo "EXIT=$? CHAIN stage $st"
+  done
+  echo "PREREBOOT_CHAIN_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 *) echo "unknown stage $STAGE"; exit 2 ;;
 esac
