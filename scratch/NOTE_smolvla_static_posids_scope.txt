@@ -142,3 +142,37 @@ Consequences checked rather than assumed:
 
 The check to run before writing any new reconstruction: grep the OTHER drivers for the
 contexts they enter around the same model. _sdpa_ctx was carried across; autocast was not.
+
+
+=====================================================================================
+APPENDIX 2, 18:40: do NOT read SmolVLA's compiled host_sequence slowdown as a result
+about compilation
+=====================================================================================
+
+The 18:18 E11f run measured, for the host_sequence activity:
+
+    eager           two_streams  1.788    two_processes  1.002
+    reduce-overhead two_streams  1.780    two_processes  1.005
+
+Those look like a clean finding -- "compiling does not change the two-stream penalty".
+They are not, for SmolVLA, and the reason is the fallback added in b510d60.
+
+Under reduce-overhead SmolVLA's whole frame replays as a CUDA graph, so the Python layer
+capture records nothing and the segments are re-captured from a second EAGER instance. The
+host_sequence replayed in the compiled row is therefore built from the SAME eager-captured
+tensors and modules as the eager row. The two numbers are close because they are close to
+being the same measurement, not because compilation left the contention unchanged.
+
+What the compiled row does legitimately measure: the contention behaviour of that fixed
+host-launched segment sequence while the process is otherwise in its compiled
+configuration. What it does NOT support: any statement of the form "compilation does/does
+not affect host-segment contention for SmolVLA".
+
+pi0.5 is different and its comparison IS valid: its compiled frame is not graphed as a
+unit, its Python still ran, and it captured 6/6 segments from the compiled policy. So
+pi0.5's eager-vs-compiled host_sequence rows are like for like and SmolVLA's are not.
+
+This asymmetry must be stated in reports/E11_models.md next to the table, not left in
+meta.json for someone to find. meta.json carries the per-run note
+(capture_notes, prefixed "[reduce-overhead]"); the report needs the comparison-level
+warning, which is a different statement.
