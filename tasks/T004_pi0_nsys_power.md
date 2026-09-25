@@ -78,3 +78,58 @@ trace if taken; E7: raw tegrastats logs and sysfs samples; all: command stdout; 
 `STATUS.md` (protocol §6f). Self-review (§11).
 
 status: claimed 2026-09-22
+
+status: done 2026-09-25
+
+**Step 4 (E7 power/energy) and the E5 timeline are complete; step 4b's capped modes are
+handed off.**
+
+**E7 at MAXN** — 14 points, 6 models, eager + best. `reports/E7_power_energy.md`.
+**E7 at MODE_50W** — 18 runs, 0 failures, 12 pairable against MAXN.
+**E5 nsys timeline** — 14 captures including the compiled half that was previously
+abandoned. `reports/E5_timeline.md`. bench commit `946d3ff831d1`.
+
+**Headline (E7 MAXN).** The action expert's energy-to-time ratio is below 1 in all 14
+points: eager SmolVLA 0.83, N1.7 0.77, N1.5 0.72, N1.6 0.70, π0.5 0.69, π0 0.40 (N=10) /
+0.32 (N=4). π0's prefix draws 40.9 W above idle against the expert's 9.7 W — **the expert
+is the cheap phase**, and the energy case for a memory-side accelerator aimed at it is
+weaker than the latency case by roughly three times.
+
+**Headline (MODE_50W).** 50W keeps all 16 SMs and unrestricted EMC, lowering only the
+clocks (GPU 1300.5 → 816.0 MHz), so it is a frequency-only perturbation — unlike 30W
+(8 SMs) and 15W (6 SMs + EMC capped). **Energy·delay is worse at 50W in all 12 pairable
+points** (1.196–1.400×): energy falls 0.6–15.1 % and costs 37–55 % latency. Underclocking
+is not an efficiency route on this device for any of these models.
+
+**E5's compiled half exists after all.** The blocker recorded as "compiled captures cannot
+carry NVTX regions" was true only of `--compile-mode`; ladder `--rung`s compile the three
+callables individually and instrument afterwards, so regions survive. π0's `ae_step` goes
+0.8417 → 0.4714 idle and 968.7 → 372.7 kernels/step when compiled. The abandoned
+`20260922_E5_pi0_reduce-overhead_N4` is superseded by `20260924_E5_pi0_best_N4`.
+
+**Two registered hypotheses, both falsified.** The energy-to-time-vs-idle relationship and
+the clock-insensitivity-vs-idle relationship each hold monotonically over π0/π0.5/SmolVLA
+and each break on GR00T — the second is inverted (compiled GR00T has 0.0008 idle and the
+highest clock-insensitive fraction of all 12 points) and fails within GR00T too. Recorded
+in `reports/E7_power_energy.md` and `scratch/NOTE_50w_frequency_scaling.txt`.
+
+**Deviations.**
+
+1. `bench/pipelining.py` called `nsys_target.py` without `--model`, which defaults to
+   `pi0`, so E11f's two `gpu_idle_*` quantities were π0's numbers under every model's
+   name — in a **pushed** commit. Fixed, re-run, re-consolidated, disclosed at the top of
+   `STATUS.md`.
+2. The first 50W GR00T queue used rung names (`eager`/`best`) that do not match the MAXN
+   campaign's (`eager_fp32`/`vlm_compile`/`all_compile_autotune`), and the rung name does
+   not set math precision — `--tf32` does. The mismatched runs are kept in `results/` and
+   the report lists them as unpairable rather than comparing runs at different precision.
+3. E5's corrected idle fraction is computed from Part B's unprofiled `ae_total_ms`, and is
+   left blank with a stated reason for N=4 rows and for GR00T, where no matched reference
+   exists.
+
+**Repository size (protocol §6f):** `results/` 1.2 GB, `.git` 206 MB, 4755 objects. Below
+the ~2 GB stop-and-ask threshold.
+
+**Step 4b (MODE_30W, MODE_15W) is a handoff**, at the top of `STATUS.md` with exact
+commands and `bench/queues/queue_e7_capped.sh`. Both change `TPC_PG_MASK`, which is applied
+at boot, so they need a human reboot; the agent never confirms one.
