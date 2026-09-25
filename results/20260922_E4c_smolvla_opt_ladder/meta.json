@@ -2,19 +2,19 @@
   "experiment": "E4c (optimisation ladder)",
   "task": "T004",
   "date_utc": "2026-09-23T13:20:25Z",
-  "model": "lerobot/pi0_libero_finetuned_v044",
-  "model_repo": "lerobot/pi0_libero_finetuned_v044",
-  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-  "model_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "model": "lerobot/smolvla_base",
+  "model_repo": "lerobot/smolvla_base",
+  "model_commit": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+  "model_revision": null,
+  "checkpoint": "lerobot/smolvla_base",
   "precision": "bfloat16",
   "compile_mode": "per rung, see opt_ladder.csv",
   "batch": 1,
   "num_denoise_steps": [
     10
   ],
-  "prefix_tokens": 816,
-  "suffix_tokens": 51,
+  "prefix_tokens": "not recorded by opt_ladder for this model; see measure_S",
+  "suffix_tokens": "not recorded by opt_ladder for this model; see measure_S",
   "n_warmup": 20,
   "n_timed": 10,
   "power_mode": "NV Power Mode: MAXN",
@@ -285,5 +285,21 @@
     "Rungs 0-3 keep regions on; 4-5 cannot, because a region boundary inside a compiled sample_actions forces a graph break. Compare rung 4/5's e2e with rung 3's e2e, never with its per-region numbers.",
     "`step_compile`/`whole_compile` use max-autotune-no-cudagraphs to get compilation WITHOUT CUDA graphs; the next rung adds reduce-overhead, whose difference from it is the CUDA-graph contribution. T003 found the stock modes differ by 1-4 % otherwise, so the mode change is a graph switch, not a codegen change.",
     "TF32 is set explicitly on every rung rather than inherited from config.compile_model, so that the precision factor is separated from the compilation factor instead of moving with it."
-  ]
+  ],
+  "model_key": "smolvla",
+  "meta_correction": {
+    "date": "2026-09-25",
+    "by": "watchdog audit",
+    "what": "opt_ladder.py wrote pi0's checkpoint/commit (P.CHECKPOINT/P.REVISION), fixed prefix/suffix token counts and a command without --model for EVERY model. The measurement itself ran the right model: --model is passed to each per-rung worker process (opt_ladder.py:671) and the latencies differ from pi0's. Fields replaced from bench/model_registry.py and the HF snapshot sha on disk; writer fixed in the same commit.",
+    "original_values": {
+      "model": "lerobot/pi0_libero_finetuned_v044",
+      "model_repo": "lerobot/pi0_libero_finetuned_v044",
+      "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+      "model_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+      "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+      "prefix_tokens": 816,
+      "suffix_tokens": 51,
+      "command": "python bench/opt_ladder.py --outdir results/20260922_E4c_smolvla_opt_ladder --steps 10 --warmup 20 --timed 10"
+    }
+  }
 }

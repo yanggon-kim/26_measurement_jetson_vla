@@ -570,13 +570,21 @@ def finish(out: Path, args, gate, rows, notes, steps, samples=None, verified=Non
     orig = compress_and_record(sp)
 
     sw = software_versions()
+    # Model identity comes from --model's registry spec. It used to be P.CHECKPOINT (pi0's) for
+    # every model, so the pi0.5 and SmolVLA ladders recorded pi0's checkpoint and commit
+    # (found 2026-09-25; their metas carry a meta_correction block).
+    spec = MR.get(args.model)
+    tok = ({"prefix_tokens": 816, "suffix_tokens": 51} if args.model == "pi0" else
+           {"prefix_tokens": "not recorded by opt_ladder for this model; see measure_S",
+            "suffix_tokens": "not recorded by opt_ladder for this model; see measure_S"})
     write_json(out / "meta.json", {
         "experiment": "E4c (optimisation ladder)", "task": "T004",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
-        "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
+        "model_key": args.model, "model": spec.checkpoint, "model_repo": spec.checkpoint,
+        "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision,
+        "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": "per rung, see opt_ladder.csv", "batch": 1,
-        "num_denoise_steps": steps, "prefix_tokens": 816, "suffix_tokens": 51,
+        "num_denoise_steps": steps, **tok,
         "n_warmup": args.warmup, "n_timed": args.timed,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
@@ -586,8 +594,9 @@ def finish(out: Path, args, gate, rows, notes, steps, samples=None, verified=Non
         "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
         "bench_files_sha256": sw.get("bench_files_sha256"),
         "weights_verified": verified or real, "shipped_config": shipped,
-        "command": f"python bench/opt_ladder.py --outdir {args.outdir} "
-                   f"--steps {args.steps} --warmup {args.warmup} --timed {args.timed}",
+        "command": f"python bench/opt_ladder.py --model {args.model} --outdir {args.outdir} "
+                   f"--steps {args.steps} --rungs {args.rungs} --warmup {args.warmup} "
+                   f"--timed {args.timed}",
         "throttled": False,
         "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
         "originals": [orig], "not_measured": notes, "raw_files": [],
