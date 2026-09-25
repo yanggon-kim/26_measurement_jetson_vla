@@ -1,0 +1,35 @@
+########## 10:56 E12b M2 nsys timeline
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+All keys loaded successfully!
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  _C._set_float32_matmul_precision(precision)
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-report-137a.qdstrm'
+[1/1] [0%                          ] m2.nsys-repProcessing events...
+[1/1] [0%                          ] m2.nsys-rep[1/1] [==19%                       ] m2.nsys-rep[1/1] [==20%                       ] m2.nsys-rep[1/1] [=====31%                    ] m2.nsys-rep[1/1] [========41%                 ] m2.nsys-rep[1/1] [===========51%              ] m2.nsys-rep[1/1] [=============60%            ] m2.nsys-rep[1/1] [===============65%          ] m2.nsys-rep[1/1] [===============67%          ] m2.nsys-rep[1/1] [========================100%] m2.nsys-rep[1/1] [========================100%] m2.nsys-rep
+  captured bf16_both+hoist+owngraph_expert+dbuf_kv+prefix_first; nonfinite 0
+Generated:
+    /home/yanggon/00_VLA/26_measurement_jetson_vla/scratch/e12b/nsys/m2.nsys-rep
+EXIT=0 E12b M2 nsys timeline
+m2_cuda_api_sum.csv
+m2_cuda_gpu_kern_sum.csv
+m2_cuda_gpu_trace.csv
+m2_nvtx_pushpop_trace.csv
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/e12b_nsys_analyze.py", line 218, in <module>
+    raise SystemExit(main())
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/e12b_nsys_analyze.py", line 124, in main
+    sp, se = main_stream("prefix_alone"), main_stream("expert_alone")
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/e12b_nsys_analyze.py", line 120, in main_stream
+    for k in in_range(nm):
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/e12b_nsys_analyze.py", line 115, in in_range
+    s, e = ranges[nm]
+KeyError: 'prefix_alone'
+EXIT=1 nsys analysis

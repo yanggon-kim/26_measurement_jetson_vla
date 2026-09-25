@@ -1,0 +1,193 @@
+{
+  "experiment": "E12b M2 -- compiled co-run, whole GPU (T015)",
+  "bench_commit": "80bf710230c13928e1d6a700eb8b2edc73c14d58",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "bf16_both",
+  "rung_note": {
+    "rung": "bf16_both",
+    "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
+    "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
+    "matmul_precision": "high",
+    "matches_E7": true,
+    "expert": "model.denoise_step@default"
+  },
+  "variant": "bf16_both+hoist+owngraph_expert+dbuf_kv+<order>",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (full GPU, 16 SMs)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "gate_start": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600",
+    "emc_rate_hz": 3199000000,
+    "temps_mC": {
+      "cpu-thermal": 45812,
+      "gpu-thermal": 41000,
+      "soc0-thermal": 42125,
+      "soc1-thermal": 41906,
+      "soc2-thermal": 42031,
+      "tj-thermal": 45812
+    },
+    "t_utc": "2026-09-25T17:46:44Z"
+  },
+  "throttled": false,
+  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 56.1 C (trip threshold used 95 C); temps at end {'cpu-thermal': 56093, 'gpu-thermal': 52125, 'soc0-thermal': 52000, 'soc1-thermal': 51093, 'soc2-thermal': 52031, 'tj-thermal': 56093}",
+  "N": 10,
+  "batch": 1,
+  "frames_per_condition": 120,
+  "equivalence_pass": true,
+  "bracket_drift_pct": {
+    "prefix_alone": 0.46551424718587764,
+    "expert_alone": 0.47686633530018574,
+    "serial": 0.07523510971786833
+  },
+  "peak_memory_allocated_GiB": 8.283,
+  "frames_manifest": {
+    "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
+    "dataset": "HuggingFaceVLA/libero",
+    "split": "train",
+    "source_api": "https://datasets-server.huggingface.co/rows",
+    "episode_index": 0,
+    "task_index": 0,
+    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+    "frames": [
+      {
+        "file": "obs_0.json",
+        "row_offset": 0,
+        "frame_index": 0
+      },
+      {
+        "file": "obs_1.json",
+        "row_offset": 25,
+        "frame_index": 25
+      },
+      {
+        "file": "obs_2.json",
+        "row_offset": 50,
+        "frame_index": 50
+      },
+      {
+        "file": "obs_3.json",
+        "row_offset": 75,
+        "frame_index": 75
+      },
+      {
+        "file": "obs_4.json",
+        "row_offset": 99,
+        "frame_index": 99
+      }
+    ]
+  },
+  "decisions": {
+    "pipeline": "free-running, gated only by CUDA events (a per-frame barrier would serialise the stages)",
+    "kv_handoff": "dbuf_kv: KV + pad copied on the prefix stream into expert buffer k%2; prefix(k) waits for expert(k-2)",
+    "first_5_frames_dropped": "per-stage medians skip frames 0-4 of each run (pipeline fill); T_pipe is wall / frames over the whole run",
+    "orders": "prefix_first is the headline; expert_first measured alongside"
+  },
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/e12b_m2.py --outdir results/20260925_E12b_pi0_corun_N10_MAXN --m1 results/20260925_E12b_pi0_fairexpert_N10_MAXN/summary.json",
+  "torch": "2.8.0",
+  "date_utc": "2026-09-25T17:56:46Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "each frame's KV / pad / noise copied into the expert graph's static input buffers ON THE EXPERT STREAM (counted in the expert stage time)",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "corun_breakdown.csv",
+      "bytes": 535,
+      "sha256": "9c549af4f80ce0a506618504cd99c6a0dc795b67572596453c51e0597c4eeaeb"
+    },
+    {
+      "path": "corun_decomposition.csv",
+      "bytes": 632,
+      "sha256": "17b50aa3e5ec46fe448ef262a4efbe14669a24b489b1d16522e1ebfab3ceb851"
+    },
+    {
+      "path": "corun_ratios.csv",
+      "bytes": 1979,
+      "sha256": "bac0f79528b735f3726acdba40723be4ca7c26b515f2b8583c8ecc0ea1714e17"
+    },
+    {
+      "path": "equivalence.csv",
+      "bytes": 1688,
+      "sha256": "4721d8c4ab4902ed61be7f92b881b28ba9df7a9c72860ce1bc5c27726e4b287b"
+    },
+    {
+      "path": "equivalence.md",
+      "bytes": 655,
+      "sha256": "457cc14ed187737936ecee38cd1e6f92ee2085278a73d536d9e2c2063aa85452"
+    },
+    {
+      "path": "host_issue.csv",
+      "bytes": 118443,
+      "sha256": "5224b4e73fa373749a2e11e2fd249abd6c8ed480abaa8f06f0202bbdec119247"
+    },
+    {
+      "path": "latency_samples.csv",
+      "bytes": 222374,
+      "sha256": "ae96cd03c9c35d4f119ca0245fe28589ce9a137dffc6359aaeef576179352102"
+    },
+    {
+      "path": "nsys/m2_cuda_api_sum.csv",
+      "bytes": 1187,
+      "sha256": "d306ebd2163052c1c51955e5e795c42623a6060f513746a3b74d2dc7e96bca01"
+    },
+    {
+      "path": "nsys/m2_cuda_gpu_kern_sum.csv",
+      "bytes": 14774,
+      "sha256": "3b1f14f4d171d883fae2ad78c17514e656ccba1a5c0b4ae25da1c49f9793ee5a"
+    },
+    {
+      "path": "nsys/m2_cuda_gpu_trace.csv",
+      "bytes": 9008454,
+      "sha256": "58c2609542cc86249a992cea8e84c18ec712f202e43ca40e9dbb8cff9f0148ad"
+    },
+    {
+      "path": "nsys/m2_nvtx_pushpop_trace.csv",
+      "bytes": 4708,
+      "sha256": "0d088f8682680363ac640b86bca5e2cfede107f734b09669de20ef370ce4c1bd"
+    },
+    {
+      "path": "prefix_grids.csv",
+      "bytes": 3727,
+      "sha256": "1548e12647756bb92fcb22a2f862b12ef414ad8da511d778445e0d21b0167f1b"
+    },
+    {
+      "path": "raw/stdout_m2.log",
+      "bytes": 4243,
+      "sha256": "b116448ade4e25c0d5556cff3c2450e6153b3640a9b35d8fb3ab77608ef97da9"
+    },
+    {
+      "path": "raw/stdout_nsys.log",
+      "bytes": 3037,
+      "sha256": "2aa0091b4d37018779d4db45fd52328529988e534e153a3bb91036dc36ed27bf"
+    }
+  ],
+  "nsys": {
+    "capture": "bench/e12b_nsys.py under nsys --capture-range=cudaProfilerApi --cuda-graph-trace=node -t cuda,nvtx; 5 pipeline + 5 prefix_alone + 5 expert_alone + 3 serial frames after warm-up of every condition; run under env -i",
+    "committed": "CSV exports under nsys/ only; m2.nsys-rep and m2.sqlite stay in scratch/e12b/nsys/ (committed: false, protocol \u00a73.5 token exception)",
+    "analysis": "bench/e12b_nsys_analyze.py -> corun_breakdown.csv, corun_decomposition.csv, prefix_grids.csv"
+  }
+}

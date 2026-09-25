@@ -1,0 +1,41 @@
+########## 10:46 E12b M2 compiled co-run, full GPU
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+All keys loaded successfully!
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  _C._set_float32_matmul_precision(precision)
+  harness built in 20.9 s: bf16_both+hoist+owngraph_expert+dbuf_kv+prefix_first
+    pipeline       frame 0 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control  frame 0 max|d| 8.861e-02 nonfinite 0 -> n/a (frame 0)
+    pipeline       frame 1 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control  frame 1 max|d| 1.084e-01 nonfinite 0 -> DETECTED
+    pipeline       frame 2 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control  frame 2 max|d| 1.343e-01 nonfinite 0 -> DETECTED
+    pipeline       frame 3 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control  frame 3 max|d| 6.991e-02 nonfinite 0 -> DETECTED
+    pipeline       frame 4 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control  frame 4 max|d| 1.250e-01 nonfinite 0 -> DETECTED
+    pipeline       frame 5 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control  frame 5 max|d| 1.996e+00 nonfinite 0 -> DETECTED
+  equivalence PASS; serial frame-to-frame scale 5.4077
+  prefix_alone_pre       prefix   249.01  expert      nan  frame      nan  period   249.05  host-issue  248.98 ms  nonfinite 0
+  expert_alone_pre       prefix      nan  expert   101.46  frame      nan  period   101.48  host-issue  101.42 ms  nonfinite 0
+  serial_pre             prefix   251.57  expert   101.31  frame   352.90  period   353.06  host-issue   76.14 ms  nonfinite 0
+  pipeline_prefix_first  prefix   258.42  expert   270.85  frame      nan  period   345.69  host-issue  345.59 ms  nonfinite 0
+  pipeline_expert_first  prefix   288.16  expert   337.96  frame      nan  period   338.06  host-issue  337.93 ms  nonfinite 0
+  pipeline_60s           prefix   258.35  expert   270.76  frame      nan  period   345.52  host-issue  345.44 ms  nonfinite 0
+  prefix_alone_post      prefix   247.85  expert      nan  frame      nan  period   247.94  host-issue  247.83 ms  nonfinite 0
+  expert_alone_post      prefix      nan  expert   100.97  frame      nan  period   101.00  host-issue  100.95 ms  nonfinite 0
+  serial_post            prefix   252.27  expert   100.90  frame   353.16  period   353.44  host-issue   76.58 ms  nonfinite 0
+  pipeline_prefix_first  ref=fair_full_gpu_same_harness   O=1.3915  phi=0.0702  p=1.0402  s=2.676  r=2.4545  T_pipe=345.6877
+  pipeline_prefix_first  ref=stock_harness                O=1.3813  phi=0.0867  p=1.0326  s=2.4413  r=2.2558  T_pipe=345.6877
+  pipeline_expert_first  ref=fair_full_gpu_same_harness   O=1.3608  phi=0.1431  p=1.1599  s=3.3391  r=2.4545  T_pipe=338.0571
+  pipeline_expert_first  ref=stock_harness                O=1.3508  phi=0.1597  p=1.1514  s=3.0462  r=2.2558  T_pipe=338.0571
+  pipeline_60s           ref=fair_full_gpu_same_harness   O=1.3908  phi=0.0718  p=1.0399  s=2.6752  r=2.4545  T_pipe=345.5195
+  pipeline_60s           ref=stock_harness                O=1.3806  phi=0.0883  p=1.0323  s=2.4405  r=2.2558  T_pipe=345.5195
+EXIT=0 E12b M2 compiled co-run, full GPU
