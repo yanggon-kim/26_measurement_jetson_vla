@@ -69,9 +69,30 @@ ROWS = ("https://datasets-server.huggingface.co/rows"
 OFFSETS = (0, 25, 50, 75, 99)
 
 
-def fetch(url: str, timeout: int = 60) -> bytes:
-    with urllib.request.urlopen(url, timeout=timeout) as r:      # noqa: S310
-        return r.read()
+def fetch(url: str, timeout: int = 60, tries: int = 5) -> bytes:
+    """GET with backoff. The datasets-server returns 502/503 under load.
+
+    A mid-run 502 left the observation set half-migrated to a new schema once, which is a
+    worse state than either failing outright or succeeding: three files in the new shape and
+    two in the old, with nothing saying so.
+    """
+    import time                                                  # noqa: PLC0415
+    last = None
+    for attempt in range(tries):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as r:   # noqa: S310
+                return r.read()
+        except urllib.error.HTTPError as e:                      # noqa: PERF203
+            last = e
+            if e.code not in (429, 500, 502, 503, 504):
+                raise
+        except (urllib.error.URLError, TimeoutError) as e:
+            last = e
+        wait = 2 ** attempt
+        print(f"    {type(last).__name__} {getattr(last, 'code', '')} -- retry "
+              f"{attempt + 1}/{tries} in {wait}s", flush=True)
+        time.sleep(wait)
+    raise SystemExit(f"giving up on {url[:90]}: {last}")
 
 
 def main() -> int:
@@ -125,10 +146,17 @@ def main() -> int:
             png = fetch(img["src"])
             name = f"obs_{i}_{key.rsplit('.', 1)[-1]}.png"
             (out / name).write_bytes(png)
-            rec["images"][key] = name
-            rec.setdefault("_image_meta", {})[key] = {
-                "height": img.get("height"), "width": img.get("width"),
-                "sha256": hashlib.sha256(png).hexdigest(), "bytes": len(png)}
+            # The SAME shape bench/fixtures/observation.json uses, because
+            # pi0_common.build_batch does `Image.open(fixtures / spec["file"])` -- a bare
+            # filename string here raised `TypeError: string indices must be integers`
+            # inside build_batch, which is a confusing place to learn the fixture schema.
+            rec["images"][key] = {
+                "file": name, "width": img.get("width"), "height": img.get("height"),
+                "mode": "RGB", "bytes": len(png),
+                "sha256": hashlib.sha256(png).hexdigest(),
+                "note": "PNG as served by the datasets-server rows API; pixels are "
+                        "bit-identical to the dataset cell (verified for obs_0 against "
+                        "bench/fixtures/image.png)"}
         (out / f"obs_{i}.json").write_text(json.dumps(rec, indent=2) + "\n")
         manifest["frames"].append({"file": f"obs_{i}.json", "row_offset": off,
                                    "frame_index": row["frame_index"]})
@@ -146,8 +174,11 @@ def main() -> int:
         prev = None
         for i in range(len(offsets)):
             rec = json.loads((out / f"obs_{i}.json").read_text())
-            a = np.asarray(Image.open(out / rec["images"]["observation.images.image"]),
-                           dtype=np.float32) / 255.0
+            # ["file"], not the dict itself: this line read the old bare-string schema and
+            # broke the moment the writer above started emitting build_batch's shape.
+            a = np.asarray(
+                Image.open(out / rec["images"]["observation.images.image"]["file"]),
+                dtype=np.float32) / 255.0
             st = np.asarray(rec["state"], dtype=np.float32)
             if prev is not None:
                 pa, ps = prev
