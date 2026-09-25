@@ -63,9 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 16:26:28** · elapsed **69.86 h** of 26 (269 %) · 48.5 GiB free · 0.66 GiB swap
+**Updated 16:46:29** · elapsed **70.19 h** of 26 (270 %) · 42.2 GiB free · 0.66 GiB swap
 
-> **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
+| pid | running | for | rss |
+|---|---|---:|---:|
+| 542126 | `bench/libero_eval.py --model pi0 --rung bf16_both --suite libero_spatial --tasks 1 --episo` | 3 min | 14.8 GiB |
 
 Latest log lines:
 
@@ -80,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 16:27** (83 configurations)
+**Re-derived from every result CSV on disk at 16:47** (83 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
