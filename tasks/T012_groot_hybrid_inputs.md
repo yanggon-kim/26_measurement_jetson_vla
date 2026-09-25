@@ -37,3 +37,50 @@ T010 report structure; a GR00T row added to `reports/E11_models.md`. Raw files u
 "not measured" with the exact error; it does not block the rest.
 
 status: claimed 2026-09-24
+
+status: done 2026-09-24
+
+**Results.** Per-segment DiT block data for all three GR00T versions, via
+`bench/groot_segments.py` (new) reusing `bench/host_segments.py`'s timing engine unchanged,
+so the numbers are comparable with π0's rather than produced by a second harness:
+
+| version | run | model_inputs rows | checker |
+|---|---|---:|---|
+| N1.7 | `results/20260924_E11a_groot_n17_hostseg` | — | **CHECK_OK** |
+| N1.6 | `results/20260924_E11a_groot_n16_hostseg` | — | rejected: no `groot_n16` in `MODELS` |
+| N1.5 | `results/20260924_E11a_groot_n15_hostseg` | 162 | rejected: no `groot_n15` in `MODELS` |
+
+Report: `reports/E11_models.md`. bench commit `26322ec0c513`.
+
+**Scope, stated rather than implied.** GR00T gets E11a only. E11c/d/e/f are built on the
+LeRobot phase loops and a `transformers` KV cache, and GR00T has neither — its prefix is a
+whole VLM invoked as one unit and its action head takes the backbone output, not a cache.
+Porting them is separate work. What GR00T contributes is the per-segment bytes, FLOPs and
+times of a DiT block, which is what the PIM model needs from that architecture.
+`DiT.forward` (`dit.py:310-326`) calls `block(...)`, so `transformer_blocks[i].forward`
+is a valid wrap point — checked before anything was written. Both block kinds are measured,
+because odd indices are pure self-attention and even ones cross-attend onto the VLM's tokens.
+
+**Blocked on the research side (not a defect here).** `check_model_inputs.py`'s `MODELS`
+set is `{pi0, pi05, smolvla, groot_n17, none}`, so `groot_n16` and `groot_n15` rows are
+rejected. The rows are written anyway, each `meta.json` records the mismatch, and the run
+says so loudly. **Relabelling the rows to pass the checker would be falsifying the model
+field, so it was not done.** Raised in `STATUS.md` under "Questions for the research side":
+please extend `MODELS`.
+
+**Deviations.**
+
+1. **N1.5 needed the model's own autocast context.** `gr00t/model/policy.py:190` wraps
+   n1.5's inference in `torch.autocast(cuda, bfloat16)`; n1.7 and n1.6 do not (checked: 2
+   mentions against 0). Reconstructing outside that context read an fp32
+   `encoder_hidden_states` into a bf16 Linear. It took three attempts to fix properly —
+   first the detection, then its scope (the timing closures as well as the reconstruction).
+   The capture itself was always correct: `groot_segments.py:107` calls `GP_step`, which
+   mirrors `groot_phases.py`'s own autocast handling.
+2. **N1.5's compiled `adalayernorm1` timing is not measured.** It is the only version
+   running under `torch.inference_mode`, and inference tensors cannot be saved for backward,
+   so `torch.compile` refuses them. n1.7 and n1.6 have zero such failures and n1.5's eager
+   timings are unaffected. Recorded in that run's `meta.json` under `not_measured`.
+3. Segment bytes verified bf16 rather than assumed: N1.7's `adaln_cond` `bytes_read` is
+   9440256, which is 1536×3072 weight elements at 2 bytes plus temb 1536 at 2 bytes exactly.
+   N1.5 matches after the autocast fix.
