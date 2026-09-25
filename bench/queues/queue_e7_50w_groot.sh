@@ -60,23 +60,52 @@ p = os.path.join(out, "meta.json")
 if not os.path.exists(p):
     print(f"  VERIFY {want}: no meta.json"); raise SystemExit
 m = json.load(open(p))
-got = m.get("rung")
-mm = m.get("matmul_precision")
-ok = got == want
-print(f"  VERIFY {os.path.basename(out)}: rung={got!r} matmul={mm} -> "
-      f"{'OK' if ok else '*** ASKED FOR ' + want + ' ***'}")
+got, mm = m.get("rung"), m.get("matmul_precision")
+# Compare against the MAXN run for the SAME rung. Checking the rung name alone is what let
+# the first correction through: the name matched and matmul_precision did not, which is the
+# whole confound. Verify the quantity that differs, not a proxy for it.
+import glob as _g
+ref = None
+for d in sorted(_g.glob(f"results/*_E7_groot_*_{want}")):
+    if d.endswith("_50W"):
+        continue
+    try:
+        ref = json.load(open(os.path.join(d, "meta.json")))
+        break
+    except OSError:
+        pass
+rmm = ref.get("matmul_precision") if ref else None
+ok = got == want and (rmm is None or mm == rmm)
+print(f"  VERIFY {os.path.basename(out)}: rung={got!r} matmul={mm} "
+      f"(MAXN baseline matmul={rmm}) -> "
+      f"{'OK' if ok else '*** MISMATCH: this does not pair with the MAXN run ***'}")
 PYE
 }
 
-groot n17 groot "" eager_fp32 --checkpoint nvidia/GR00T-N1.7-3B
-groot n17 groot "" vlm_compile --checkpoint nvidia/GR00T-N1.7-3B
+# Copied VERBATIM from bench/queues/queue_e7_maxn.sh:118-136, not reconstructed. The rung
+# NAME does not set the math precision -- `--tf32 off|on` does, and the compiled rungs also
+# carry --head-mode / --vision-mode / --llm-mode / --force-gemm-autotune. My first attempt
+# passed only the rung name and produced eager_fp32 with matmul_precision=high, i.e. TF32
+# still ON, against a MAXN baseline at matmul_precision=highest. The confound survived the
+# fix for it.
+groot n17 groot "" eager_fp32 --checkpoint nvidia/GR00T-N1.7-3B --tf32 off
+groot n17 groot "" vlm_compile --checkpoint nvidia/GR00T-N1.7-3B --tf32 on \
+      --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs
+
 groot n16 groot16 /home/yanggon/00_VLA/Isaac-GR00T-n1d6 eager_fp32 \
-      --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron
+      --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron --tf32 off
 groot n16 groot16 /home/yanggon/00_VLA/Isaac-GR00T-n1d6 all_compile_autotune \
-      --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron
+      --checkpoint nvidia/GR00T-N1.6-3B --embodiment-tag robocasa_panda_omron \
+      --force-gemm-autotune --tf32 on --head-mode reduce-overhead \
+      --vision-mode max-autotune-no-cudagraphs --llm-mode max-autotune-no-cudagraphs
+
 groot n15 groot16 /home/yanggon/00_VLA/Isaac-GR00T-n1d5 eager_fp32 \
-      --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid --data-config oxe_droid
+      --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid \
+      --data-config oxe_droid --tf32 off
 groot n15 groot16 /home/yanggon/00_VLA/Isaac-GR00T-n1d5 all_compile_autotune \
-      --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid --data-config oxe_droid
+      --checkpoint nvidia/GR00T-N1.5-3B --api old --embodiment-tag oxe_droid \
+      --data-config oxe_droid --force-gemm-autotune --tf32 on \
+      --head-mode reduce-overhead --vision-mode max-autotune-no-cudagraphs \
+      --llm-mode max-autotune-no-cudagraphs
 
 echo "E7_50WG_DONE $(date -Is)"
