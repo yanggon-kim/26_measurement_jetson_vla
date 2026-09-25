@@ -246,6 +246,36 @@ for d in sorted(glob.glob("results/*_E11_*_inputs")):
         print(f"  {os.path.basename(d):34s} rows={rows}  complete")
 PYC
 echo
+echo "--- 1d. DOES EACH E5 CSV CONTAIN THE METRIC IT EXISTS FOR"
+$HOME/venvs/pi0/bin/python - <<'PYR'
+# The plan's audit spec asks for "a CSV without the metric it exists for", and section 1b
+# does not answer it: it counts a run usable when timeline_summary.csv exists and has rows.
+# At 20:01 it reported "E5 timeline 14 usable of 15" while SIX of those fourteen had no
+# ae_step row at all -- the GR00T captures carry ae_total instead, because GR00T's action
+# head is invoked as one unit and has no per-step denoise_step range. That is a real
+# structural difference and not a failure, but a cross-model ae_step table built from that
+# directory listing would silently have omitted every DiT model.
+#
+# So report WHICH region each E5 run actually has. An ae_step run and an ae_total run are
+# both fine; a run with neither is broken, and a table must not mix them without saying so.
+import csv, glob, os
+step, total, neither = [], [], []
+for d in sorted(glob.glob("results/*_E5_*")):
+    f = os.path.join(d, "timeline_summary.csv")
+    if not os.path.exists(f) or os.path.getsize(f) == 0:
+        continue
+    regs = {x.get("region") for x in csv.DictReader(open(f))}
+    n = os.path.basename(d)
+    (step if "ae_step" in regs else total if "ae_total" in regs else neither).append(n)
+print(f"  ae_step region : {len(step)}  {step}")
+print(f"  ae_total only  : {len(total)}  {total}")
+if neither:
+    print(f"  *** NEITHER ae_step NOR ae_total: {neither} -- these carry no expert region "
+          f"and cannot answer what E5 exists to answer ***")
+else:
+    print("  every E5 run carries an expert region (ae_step or ae_total)")
+PYR
+echo
 echo "--- 2. RUNNING NOW (from /proc; pgrep -f matches itself)"
 $HOME/venvs/pi0/bin/python - <<'PYC'
 import os
