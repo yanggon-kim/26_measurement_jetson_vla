@@ -106,6 +106,50 @@ class DiTBlockCapture:
         return False
 
 
+def model_autocast_ctx():
+    """The autocast context the GR00T policy runs inference under, or nullcontext.
+
+    groot_n15 died reconstructing its cross-attention with
+
+        RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16
+        at attn.to_k(encoder_hidden_states)
+
+    because `gr00t/model/policy.py:190` wraps n1.5's inference in
+
+        with torch.inference_mode(), torch.autocast(device_type="cuda", dtype=COMPUTE_DTYPE)
+
+    so its backbone hands the DiT fp32 encoder states and autocast casts them at the op
+    boundary. Reconstructing without that context reads the raw fp32 tensor straight into a
+    bf16 Linear. n1.7 and n1.6 have NO autocast in their policy.py (checked: 0 mentions
+    against n1.5's 2), which is exactly why they reconstructed fine and n1.5 did not.
+
+    This is the same fidelity problem `_sdpa_ctx` above exists for: a reconstruction must
+    run under the contexts the real forward runs under, or it is measuring different code.
+    Detected from the installed source rather than keyed on a version string, and it
+    returns nullcontext when the source has no autocast, so a model that gains or loses one
+    does not silently get the wrong treatment.
+    """
+    import inspect
+    try:
+        pol = importlib.import_module("gr00t.model.policy")
+    except ImportError:
+        return nullcontext(), ""
+    try:
+        src = inspect.getsource(pol)
+    except OSError:
+        return nullcontext(), ""
+    if "torch.autocast" not in src:
+        return nullcontext(), ""
+    dt = getattr(pol, "COMPUTE_DTYPE", torch.bfloat16)
+    note = (f"Segments were reconstructed under torch.autocast(cuda, {dt}), because this "
+            f"model's own gr00t/model/policy.py wraps inference in it. The reported bytes "
+            f"are the traffic of the ops as autocast runs them; autocast's OWN cast of the "
+            f"fp32 encoder states to {dt} is additional traffic that the shared "
+            f"bytes_formula does not model, and it does not arise for n1.7/n1.6, whose "
+            f"policy.py has no autocast.")
+    return torch.autocast(device_type="cuda", dtype=dt), note
+
+
 def intermediates(cap: DiTBlockCapture) -> dict:
     """Reproduce the tensors the block passes between segments, in its own order.
 
@@ -122,7 +166,8 @@ def intermediates(cap: DiTBlockCapture) -> dict:
     ehs = a["encoder_hidden_states"]
     mask = a["encoder_attention_mask"] if ehs is not None else a["attention_mask"]
 
-    with torch.no_grad():
+    ac, _ = model_autocast_ctx()
+    with torch.no_grad(), ac:
         if getattr(b, "norm_type", "") == "ada_norm":
             normed1 = b.norm1(x, a["temb"])                     # :190, shift+scale
             # the conditioning path, separately, because it is per-STEP work that a

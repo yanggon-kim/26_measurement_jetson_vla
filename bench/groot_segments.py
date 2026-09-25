@@ -128,6 +128,14 @@ def main() -> int:
     styles = [s for s in args.styles.split(",") if s]
     seg_rows, all_rows, notes = [], [], []
 
+    # Record the autocast context the reconstruction ran under. n1.5 wraps inference in
+    # torch.autocast and n1.7/n1.6 do not, so this differs across the three versions and a
+    # reader comparing their segment dtypes has to be told which.
+    _ac_note = SG.model_autocast_ctx()[1]
+    if _ac_note:
+        notes.append(_ac_note)
+        print(f"\n  {_ac_note}\n", flush=True)
+
     for bi, cap in caps.items():
         t = SG.intermediates(cap)
         S = t["x"].shape[1]
