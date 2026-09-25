@@ -54,3 +54,24 @@ halves ae_step idle should move the ratio a long way. E7's own eager->best figur
 N=4 give 0.88, and for SmolVLA 0.45 while SmolVLA's eager idle (84.0 %) is nearly pi0's
 (84.3 %) -- already awkward for the hypothesis. E5's per-region compiled idle is the
 measurement that decides it.
+
+## CONFIRMED by the matrix, 19:31 -- the smoke numbers stand
+
+                             idle      kernels/step   region wall
+    smoke (2 inferences)     0.4735    372.25          79.31 ms
+    matrix pi0 best N=4      0.4720    372.25          79.03 ms
+    matrix pi0 best N=10     0.4714    372.70         197.39 ms
+
+kernels_per_unit is IDENTICAL between the smoke run and the matrix at N=4, which is what a
+launch count should be -- it is deterministic, not sampled. Idle agrees to 0.3 %, wall to
+0.4 %. So the preflight's preview needed no restatement, and the "a disagreement is a signal
+to look" clause was not triggered.
+
+Per-step time is invariant in N: 79.03/4 = 19.76 ms and 197.39/10 = 19.74 ms. That is the
+check that the ae_step region is not quietly absorbing prefix work -- if it were, the
+per-step figure would fall as N grew because a fixed cost would be spread over more steps.
+
+So against pi0's committed eager ae_step (0.8427 idle, 968.25 kernels/step), compiling:
+  * cuts kernel launches per denoising step by 61.5 %  (968.25 -> 372.4 avg)
+  * cuts the ae_step GPU-idle fraction from 84.3 % to 47.2 %
+Both raw. The corrected figures need this run's own inflation factor.
