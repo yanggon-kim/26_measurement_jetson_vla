@@ -232,17 +232,37 @@ for tag, pat, need, target in (
     #
     # Same live-awareness class as the stale JOBS list and the buffered zero-byte stdout:
     # the check was not wrong about the file, it was wrong about what its absence meant.
+    # Phases whose `need` file is written by ONE final pass at the end of a queue, not per
+    # directory. Such a directory legitimately sits without it while the queue works on the
+    # next thing, and _is_live() cannot see that because nothing is writing to it.
+    #
+    # A TABLE, not a chain of `if tag == ...`. E5b needed this on 2026-09-25 and E12 needed
+    # the identical thing an hour later; adding a second special case is how the JOBS
+    # allowlist went stale twice. Entries: tag -> (queue log, done marker, partial evidence).
+    LATE_NEED = {
+        "E5b instr": ("scratch/queues/queue_e5b.log", "E5B_DONE",
+                      "results/{d}/ncu/*_details.csv"),
+        # e12_2proc_ratios.py writes corun_ratios.csv after the whole matrix. Evidence is
+        # raw/*.log, which each role opens IMMEDIATELY -- the per-role JSON is written only
+        # when that role's 60 s window ends, so keying on it left the directory looking
+        # broken for the first several minutes of a run that was working fine.
+        "E12 corun": ("scratch/queues/queue_e12_2proc.log", "E12_2PROC_DONE",
+                      "results/{d}/raw/*.log"),
+    }
     awaiting = []
-    if tag == "E5b instr" and not any(
-            "E5B_DONE" in open(f, errors="ignore").read()
-            for f in glob.glob("scratch/queues/queue_e5b.log")):
-        still = []
-        for b in broken_all:
-            if glob.glob(f"results/{b}/ncu/*_details.csv"):
-                awaiting.append(b)
-            else:
-                still.append(b)
-        broken_all = still
+    ent = LATE_NEED.get(tag)
+    if ent:
+        log, marker, partial = ent
+        queue_done = any(marker in open(f, errors="ignore").read()
+                         for f in glob.glob(log))
+        if not queue_done:
+            still = []
+            for b in broken_all:
+                if glob.glob(partial.format(d=b)):
+                    awaiting.append(b)
+                else:
+                    still.append(b)
+            broken_all = still
 
     superseded, broken = [], []
     for b in broken_all:
