@@ -294,6 +294,71 @@ def main() -> int:
           "Every rail separately, as protocol §4 requires. `above idle` is this run's own "
           "60 s baseline in the same power mode, subtracted.",
           ""]
+    # ---- MAXN vs MODE_50W ------------------------------------------------------------
+    # Pairs on (model, rung, matmul_precision), NOT on a label. "best" and "eager" are not
+    # configurations: GR00T's eager_fp32 at matmul=highest and its eager at matmul=high are
+    # different runs, and pairing them by name produced a TF32-on-vs-off comparison that
+    # inflated the apparent clock-insensitive fraction and falsified a hypothesis for the
+    # wrong reason. A pair whose precision does not match is listed as unpairable rather
+    # than quietly compared.
+    CLK = 1300.5 / 816.0            # measured: MAXN 1300.5 MHz, MODE_50W 816.0 MHz
+
+    def _key(run):
+        return (run["rows"][0].get("model", "?"),
+                run["meta"].get("rung") or run["rows"][0].get("mode", "?"),
+                run["meta"].get("matmul_precision"))
+
+    def _full(run, rail="module"):
+        for r in run["rows"]:
+            if r.get("phase") == "full" and r.get("rail") == rail:
+                return r
+        return None
+
+    _maxn, _capped = {}, {}
+    for run in runs:
+        pm = run["rows"][0].get("power_mode") or ""
+        if "MAXN" in pm:
+            _maxn.setdefault(_key(run), run)
+        elif "MODE_50W" in pm:
+            _capped.setdefault(_key(run), run)
+    if _capped:
+        L += ["## MAXN vs MODE_50W — a frequency-only comparison", "",
+              "MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and "
+              "`EMC MAX_FREQ` is unrestricted in both, so only the clocks move (GPU "
+              "1300.5 → 816.0 MHz, CPU 2201.6 → 1497.6 MHz). MODE_30W gates TPCs to 8 SMs "
+              "and MODE_15W also caps memory at 2133 MHz, so **these are three different "
+              "perturbations, not one power sweep.**", "",
+              "`clock-insensitive` solves `T = C/f + M` for the share of the frame that "
+              "does not scale with clock. With EMC unchanged that is memory-bandwidth time "
+              "plus fixed latencies.", "",
+              "| model | rung | latency × | power × | energy × | above-idle × | "
+              "energy·delay × | clock-insensitive |",
+              "|---|---|---:|---:|---:|---:|---:|---:|"]
+        for k in sorted(_capped, key=lambda z: (str(z[0]), str(z[1]))):
+            a, b = _maxn.get(k), _capped[k]
+            nm = LABEL.get(k[0], k[0])
+            if a is None:
+                L.append(f"| {nm} | `{k[1]}` | — | — | — | — | — | "
+                         f"no MAXN run at matmul={k[2]} |")
+                continue
+            x, y = _full(a), _full(b)
+            if not (x and y):
+                L.append(f"| {nm} | `{k[1]}` | — | — | — | — | — | no full/module row |")
+                continue
+            t = num(y["median_ms"]) / num(x["median_ms"])
+            P = num(y["mean_mW"]) / num(x["mean_mW"])
+            E = num(y["energy_per_inference_mJ"]) / num(x["energy_per_inference_mJ"])
+            Ea = num(y["energy_per_inference_above_idle_mJ"]) / num(
+                x["energy_per_inference_above_idle_mJ"])
+            ci = "—"
+            if t > 1:
+                M = (CLK - t) / (t - 1)
+                ci = f"{100 * M / (1 + M):.1f} %" if M > 0 else "0 % (scales fully)"
+            L.append(f"| {nm} | `{k[1]}` | {t:.3f} | {P:.3f} | {E:.3f} | {Ea:.3f} | "
+                     f"{E * t:.3f} | {ci} |")
+        L += ["", "**energy·delay above 1 means MAXN wins.** A clock cut that saves energy "
+              "while costing latency is a gain only if latency is free.", ""]
+
     for run in runs:
         rows, meta = run["rows"], run["meta"]
         model = rows[0].get("model", "?")

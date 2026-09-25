@@ -10,7 +10,7 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 
 **On summing the rails.** T005 tested the four rails for double-counting and found none — a load that raised `VDD_GPU_SOC` by 51.8 W raised `VIN_SYS_5V0` by only 8.7 W — so `module` is their sum, and `module_without_memory_rail` is the three-rail sum for anyone who wants the memory rail excluded.
 
-**Coverage: 14 of 14 planned runs.** Complete. Present: `groot_n15/all_compile_autotune`, `groot_n15/eager_fp32`, `groot_n16/all_compile_autotune`, `groot_n16/eager_fp32`, `groot_n17/eager_fp32`, `groot_n17/vlm_compile`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
+**Coverage: 29 of 14 planned runs.** Complete. Present: `groot_n15/all_compile_autotune`, `groot_n15/best`, `groot_n15/eager`, `groot_n15/eager_fp32`, `groot_n16/all_compile_autotune`, `groot_n16/best`, `groot_n16/eager`, `groot_n16/eager_fp32`, `groot_n17/best`, `groot_n17/eager`, `groot_n17/eager_fp32`, `groot_n17/vlm_compile`, `pi0/bf16_both`, `pi0/eager`, `pi05/bf16_both_graphs`, `pi05/eager`, `smolvla/eager`, `smolvla/vlm_graphs`.
 
 ## Energy per inference
 
@@ -19,27 +19,66 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | GR00T N1.5 | 4 | `all_compile_autotune` | prefix | 98.08 | 64.07 | 53.44 | 6284.1 | 5241.3 |
 | GR00T N1.5 | 4 | `all_compile_autotune` | ae | 60.24 | 55.55 | 44.92 | 3346.3 | 2705.9 |
 | GR00T N1.5 | 4 | `all_compile_autotune` | full | 159.65 | 52.19 | 41.56 | 8332.5 | 6635.3 |
+| GR00T N1.5 | 4 | `best` | prefix | 201.48 | 35.47 | 26.56 | 7147.1 | 5351.3 |
+| GR00T N1.5 | 4 | `best` | ae | 156.26 | 25.82 | 16.90 | 4034.0 | 2641.3 |
+| GR00T N1.5 | 4 | `best` | full | 353.44 | 33.09 | 24.18 | 11695.4 | 8545.1 |
+| GR00T N1.5 | 4 | `eager` | prefix | 201.25 | 35.44 | 26.57 | 7133.2 | 5346.7 |
+| GR00T N1.5 | 4 | `eager` | ae | 156.32 | 25.76 | 16.89 | 4027.7 | 2640.0 |
+| GR00T N1.5 | 4 | `eager` | full | 352.28 | 32.97 | 24.09 | 11613.5 | 8486.4 |
 | GR00T N1.5 | 4 | `eager_fp32` | prefix | 141.67 | 59.99 | 48.62 | 8498.3 | 6888.7 |
 | GR00T N1.5 | 4 | `eager_fp32` | ae | 108.37 | 40.32 | 28.95 | 4368.9 | 3137.6 |
 | GR00T N1.5 | 4 | `eager_fp32` | full | 251.27 | 54.63 | 43.27 | 13726.9 | 10871.9 |
 | GR00T N1.6 | 4 | `all_compile_autotune` | prefix | 88.19 | 59.50 | 48.93 | 5247.2 | 4315.2 |
 | GR00T N1.6 | 4 | `all_compile_autotune` | ae | 73.73 | 45.38 | 34.81 | 3345.5 | 2566.3 |
 | GR00T N1.6 | 4 | `all_compile_autotune` | full | 163.06 | 56.85 | 46.28 | 9269.4 | 7546.1 |
+| GR00T N1.6 | 4 | `best` | prefix | 183.07 | 29.62 | 20.87 | 5421.8 | 3820.8 |
+| GR00T N1.6 | 4 | `best` | ae | 311.69 | 19.13 | 10.38 | 5962.6 | 3236.7 |
+| GR00T N1.6 | 4 | `best` | full | 485.79 | 23.61 | 14.86 | 11467.2 | 7218.6 |
+| GR00T N1.6 | 4 | `eager` | prefix | 182.33 | 29.70 | 21.01 | 5415.7 | 3831.7 |
+| GR00T N1.6 | 4 | `eager` | ae | 304.92 | 19.16 | 10.48 | 5843.5 | 3194.6 |
+| GR00T N1.6 | 4 | `eager` | full | 477.78 | 23.71 | 15.02 | 11328.0 | 7177.3 |
 | GR00T N1.6 | 4 | `eager_fp32` | prefix | 126.03 | 49.59 | 38.37 | 6249.7 | 4836.1 |
 | GR00T N1.6 | 4 | `eager_fp32` | ae | 215.24 | 28.92 | 17.71 | 6225.1 | 3810.9 |
 | GR00T N1.6 | 4 | `eager_fp32` | full | 333.00 | 37.28 | 26.06 | 12414.8 | 8679.7 |
+| GR00T N1.6 | 4 | `eager_fp32` | prefix | 187.62 | 29.24 | 20.39 | 5486.6 | 3825.3 |
+| GR00T N1.6 | 4 | `eager_fp32` | ae | 320.74 | 19.03 | 10.18 | 6104.8 | 3264.9 |
+| GR00T N1.6 | 4 | `eager_fp32` | full | 499.80 | 23.18 | 14.32 | 11583.1 | 7157.7 |
+| GR00T N1.7 | 4 | `best` | prefix | 223.72 | 26.87 | 18.21 | 6010.3 | 4073.3 |
+| GR00T N1.7 | 4 | `best` | ae | 319.60 | 19.75 | 11.09 | 6312.2 | 3545.0 |
+| GR00T N1.7 | 4 | `best` | full | 534.54 | 23.05 | 14.39 | 12319.2 | 7691.0 |
+| GR00T N1.7 | 4 | `eager` | prefix | 224.33 | 26.55 | 17.84 | 5956.9 | 4002.5 |
+| GR00T N1.7 | 4 | `eager` | ae | 320.03 | 19.54 | 10.83 | 6252.5 | 3464.4 |
+| GR00T N1.7 | 4 | `eager` | full | 536.02 | 22.87 | 14.15 | 12257.2 | 7587.2 |
 | GR00T N1.7 | 4 | `eager_fp32` | prefix | 161.75 | 42.34 | 31.23 | 6848.1 | 5052.0 |
 | GR00T N1.7 | 4 | `eager_fp32` | ae | 226.84 | 29.37 | 18.26 | 6661.2 | 4142.5 |
 | GR00T N1.7 | 4 | `eager_fp32` | full | 381.65 | 35.37 | 24.27 | 13498.8 | 9261.1 |
+| GR00T N1.7 | 4 | `eager_fp32` | prefix | 222.99 | 27.05 | 18.29 | 6032.5 | 4077.4 |
+| GR00T N1.7 | 4 | `eager_fp32` | ae | 315.25 | 19.66 | 10.89 | 6197.1 | 3433.1 |
+| GR00T N1.7 | 4 | `eager_fp32` | full | 529.04 | 23.07 | 14.31 | 12206.6 | 7568.1 |
 | GR00T N1.7 | 4 | `vlm_compile` | prefix | 158.61 | 42.50 | 31.93 | 6740.3 | 5064.7 |
 | GR00T N1.7 | 4 | `vlm_compile` | ae | 81.05 | 45.48 | 34.91 | 3685.8 | 2829.5 |
 | GR00T N1.7 | 4 | `vlm_compile` | full | 239.85 | 40.39 | 29.83 | 9688.0 | 7154.2 |
+| GR00T N1.7 | 4 | `vlm_compile` | prefix | 219.66 | 27.00 | 18.31 | 5930.0 | 4021.1 |
+| GR00T N1.7 | 4 | `vlm_compile` | ae | 108.17 | 29.99 | 21.30 | 3244.1 | 2304.0 |
+| GR00T N1.7 | 4 | `vlm_compile` | full | 329.07 | 25.91 | 17.22 | 8525.1 | 5665.2 |
+| π0.5 | 10 | `bf16_both_graphs` | prefix | 426.53 | 28.37 | 19.57 | 12102.1 | 8345.4 |
+| π0.5 | 10 | `bf16_both_graphs` | ae | 253.04 | 21.88 | 13.07 | 5535.5 | 3306.9 |
+| π0.5 | 10 | `bf16_both_graphs` | full | 689.10 | 27.48 | 18.67 | 18933.6 | 12864.3 |
+| π0.5 | 10 | `eager` | prefix | 3776.60 | 25.52 | 16.61 | 96381.6 | 62736.2 |
+| π0.5 | 10 | `eager` | ae | 912.52 | 20.97 | 12.07 | 19139.6 | 11010.0 |
+| π0.5 | 10 | `eager` | full | 4699.50 | 24.68 | 15.77 | 115982.3 | 74114.9 |
 | π0.5 | 10 | `bf16_both_graphs` | prefix | 291.85 | 48.22 | 37.16 | 14072.0 | 10846.2 |
 | π0.5 | 10 | `bf16_both_graphs` | ae | 184.27 | 32.81 | 21.75 | 6045.1 | 4008.4 |
 | π0.5 | 10 | `bf16_both_graphs` | full | 482.09 | 45.33 | 34.28 | 21854.6 | 16526.2 |
 | π0.5 | 10 | `eager` | prefix | 2424.98 | 45.59 | 34.74 | 110558.8 | 84253.7 |
 | π0.5 | 10 | `eager` | ae | 624.42 | 32.92 | 22.07 | 20555.2 | 13781.8 |
 | π0.5 | 10 | `eager` | full | 3041.59 | 43.72 | 32.88 | 132990.6 | 99996.9 |
+| π0 | 10 | `bf16_both` | prefix | 376.72 | 27.01 | 18.14 | 10175.9 | 6834.3 |
+| π0 | 10 | `bf16_both` | ae | 244.26 | 19.14 | 10.27 | 4676.2 | 2509.6 |
+| π0 | 10 | `bf16_both` | full | 625.86 | 26.16 | 17.29 | 16373.4 | 10821.9 |
+| π0 | 10 | `eager` | prefix | 725.50 | 29.46 | 20.46 | 21372.3 | 14844.9 |
+| π0 | 10 | `eager` | ae | 861.33 | 14.44 | 5.45 | 12439.7 | 4690.3 |
+| π0 | 10 | `eager` | full | 1582.89 | 21.09 | 12.09 | 33379.4 | 19138.0 |
 | π0 | 10 | `bf16_both` | prefix | 251.28 | 36.04 | 25.45 | 9057.2 | 6395.8 |
 | π0 | 10 | `bf16_both` | ae | 167.36 | 29.19 | 18.60 | 4885.1 | 3112.5 |
 | π0 | 10 | `bf16_both` | full | 424.68 | 42.77 | 32.18 | 18164.2 | 13666.2 |
@@ -52,6 +91,12 @@ This is the quantity the processing-in-memory case actually rests on. Parts A, B
 | π0 | 4 | `eager` | prefix | 478.39 | 51.72 | 40.93 | 24744.0 | 19580.5 |
 | π0 | 4 | `eager` | ae | 238.89 | 20.47 | 9.68 | 4890.4 | 2311.9 |
 | π0 | 4 | `eager` | full | 722.55 | 41.18 | 30.38 | 29753.1 | 21954.2 |
+| SmolVLA | 10 | `eager` | prefix | 144.79 | 19.68 | 10.85 | 2849.7 | 1570.6 |
+| SmolVLA | 10 | `eager` | ae | 888.73 | 12.46 | 3.62 | 11069.6 | 3218.8 |
+| SmolVLA | 10 | `eager` | full | 1042.29 | 13.46 | 4.63 | 14033.6 | 4826.4 |
+| SmolVLA | 10 | `vlm_graphs` | prefix | 60.12 | 28.20 | 19.39 | 1695.2 | 1165.9 |
+| SmolVLA | 10 | `vlm_graphs` | ae | 59.38 | 23.05 | 14.25 | 1368.9 | 846.1 |
+| SmolVLA | 10 | `vlm_graphs` | full | 128.34 | 25.91 | 17.11 | 3325.6 | 2195.7 |
 | SmolVLA | 10 | `eager` | prefix | 102.92 | 31.81 | 20.64 | 3273.6 | 2124.0 |
 | SmolVLA | 10 | `eager` | ae | 641.35 | 19.37 | 8.20 | 12422.4 | 5259.0 |
 | SmolVLA | 10 | `eager` | full | 740.69 | 19.06 | 7.89 | 14119.6 | 5846.6 |
@@ -65,9 +110,9 @@ The `full` loop is the complete inference. This is the number a robot's battery 
 
 | model | N | eager J | best J | eager ms | best ms | energy saved | time saved | energy ÷ time saving |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| GR00T N1.5 | 4 | 13.73 | 8.33 | 251.3 | 159.6 | 1.65× | 1.57× | 1.05 |
-| GR00T N1.6 | 4 | 12.41 | 9.27 | 333.0 | 163.1 | 1.34× | 2.04× | 0.66 |
-| GR00T N1.7 | 4 | 13.50 | 9.69 | 381.6 | 239.8 | 1.39× | 1.59× | 0.88 |
+| GR00T N1.5 | 4 | 13.73 | 11.70 | 251.3 | 353.4 | 1.17× | 0.71× | 1.65 |
+| GR00T N1.6 | 4 | 11.58 | 11.47 | 499.8 | 485.8 | 1.01× | 1.03× | 0.98 |
+| GR00T N1.7 | 4 | 12.21 | 8.53 | 529.0 | 329.1 | 1.43× | 1.61× | 0.89 |
 | π0 | 10 | 37.09 | 18.16 | 1083.2 | 424.7 | 2.04× | 2.55× | 0.80 |
 | π0 | 4 | 29.75 | 15.12 | 722.6 | 323.1 | 1.97× | 2.24× | 0.88 |
 | π0.5 | 10 | 132.99 | 21.85 | 3041.6 | 482.1 | 6.09× | 6.31× | 0.96 |
@@ -88,17 +133,32 @@ The last column is the one to read: the expert's share of the ENERGY divided by 
 | model | N | configuration | prefix mJ | ae mJ | prefix % of energy | ae % of energy | prefix % of time | ae % of time | **ae energy ÷ time** |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
 | GR00T N1.5 | 4 | `all_compile_autotune` | 5241.3 | 2705.9 | 66.0 | 34.0 | 62.0 | 38.0 | **0.89** |
+| GR00T N1.5 | 4 | `best` | 5351.3 | 2641.3 | 67.0 | 33.0 | 56.3 | 43.7 | **0.76** |
+| GR00T N1.5 | 4 | `eager` | 5346.7 | 2640.0 | 66.9 | 33.1 | 56.3 | 43.7 | **0.76** |
 | GR00T N1.5 | 4 | `eager_fp32` | 6888.7 | 3137.6 | 68.7 | 31.3 | 56.7 | 43.3 | **0.72** |
 | GR00T N1.6 | 4 | `all_compile_autotune` | 4315.2 | 2566.3 | 62.7 | 37.3 | 54.5 | 45.5 | **0.82** |
+| GR00T N1.6 | 4 | `best` | 3820.8 | 3236.7 | 54.1 | 45.9 | 37.0 | 63.0 | **0.73** |
+| GR00T N1.6 | 4 | `eager` | 3831.7 | 3194.6 | 54.5 | 45.5 | 37.4 | 62.6 | **0.73** |
 | GR00T N1.6 | 4 | `eager_fp32` | 4836.1 | 3810.9 | 55.9 | 44.1 | 36.9 | 63.1 | **0.70** |
+| GR00T N1.6 | 4 | `eager_fp32` | 3825.3 | 3264.9 | 54.0 | 46.0 | 36.9 | 63.1 | **0.73** |
+| GR00T N1.7 | 4 | `best` | 4073.3 | 3545.0 | 53.5 | 46.5 | 41.2 | 58.8 | **0.79** |
+| GR00T N1.7 | 4 | `eager` | 4002.5 | 3464.4 | 53.6 | 46.4 | 41.2 | 58.8 | **0.79** |
 | GR00T N1.7 | 4 | `eager_fp32` | 5052.0 | 4142.5 | 54.9 | 45.1 | 41.6 | 58.4 | **0.77** |
+| GR00T N1.7 | 4 | `eager_fp32` | 4077.4 | 3433.1 | 54.3 | 45.7 | 41.4 | 58.6 | **0.78** |
 | GR00T N1.7 | 4 | `vlm_compile` | 5064.7 | 2829.5 | 64.2 | 35.8 | 66.2 | 33.8 | **1.06** |
+| GR00T N1.7 | 4 | `vlm_compile` | 4021.1 | 2304.0 | 63.6 | 36.4 | 67.0 | 33.0 | **1.10** |
+| π0.5 | 10 | `bf16_both_graphs` | 8345.4 | 3306.9 | 71.6 | 28.4 | 62.8 | 37.2 | **0.76** |
+| π0.5 | 10 | `eager` | 62736.2 | 11010.0 | 85.1 | 14.9 | 80.5 | 19.5 | **0.77** |
 | π0.5 | 10 | `bf16_both_graphs` | 10846.2 | 4008.4 | 73.0 | 27.0 | 61.3 | 38.7 | **0.70** |
 | π0.5 | 10 | `eager` | 84253.7 | 13781.8 | 85.9 | 14.1 | 79.5 | 20.5 | **0.69** |
+| π0 | 10 | `bf16_both` | 6834.3 | 2509.6 | 73.1 | 26.9 | 60.7 | 39.3 | **0.68** |
+| π0 | 10 | `eager` | 14844.9 | 4690.3 | 76.0 | 24.0 | 45.7 | 54.3 | **0.44** |
 | π0 | 10 | `bf16_both` | 6395.8 | 3112.5 | 67.3 | 32.7 | 60.0 | 40.0 | **0.82** |
 | π0 | 10 | `eager` | 19460.0 | 5626.0 | 77.6 | 22.4 | 44.5 | 55.5 | **0.40** |
 | π0 | 4 | `bf16_both` | 8087.0 | 1214.4 | 86.9 | 13.1 | 78.8 | 21.2 | **0.62** |
 | π0 | 4 | `eager` | 19580.5 | 2311.9 | 89.4 | 10.6 | 66.7 | 33.3 | **0.32** |
+| SmolVLA | 10 | `eager` | 1570.6 | 3218.8 | 32.8 | 67.2 | 14.0 | 86.0 | **0.78** |
+| SmolVLA | 10 | `vlm_graphs` | 1165.9 | 846.1 | 57.9 | 42.1 | 50.3 | 49.7 | **0.85** |
 | SmolVLA | 10 | `eager` | 2124.0 | 5259.0 | 28.8 | 71.2 | 13.8 | 86.2 | **0.83** |
 | SmolVLA | 10 | `vlm_graphs` | 1554.7 | 1025.2 | 60.3 | 39.7 | 48.8 | 51.2 | **0.78** |
 
@@ -115,6 +175,32 @@ E5 measured π0's `ae_step` at **84.3 % GPU idle**, against vision at 1.2 % and 
 ## Per-rail detail
 
 Every rail separately, as protocol §4 requires. `above idle` is this run's own 60 s baseline in the same power mode, subtracted.
+
+## MAXN vs MODE_50W — a frequency-only comparison
+
+MODE_50W has the **same TPC mask (0) and the same 16 SMs as MAXN**, and `EMC MAX_FREQ` is unrestricted in both, so only the clocks move (GPU 1300.5 → 816.0 MHz, CPU 2201.6 → 1497.6 MHz). MODE_30W gates TPCs to 8 SMs and MODE_15W also caps memory at 2133 MHz, so **these are three different perturbations, not one power sweep.**
+
+`clock-insensitive` solves `T = C/f + M` for the share of the frame that does not scale with clock. With EMC unchanged that is memory-bandwidth time plus fixed latencies.
+
+| model | rung | latency × | power × | energy × | above-idle × | energy·delay × | clock-insensitive |
+|---|---|---:|---:|---:|---:|---:|---:|
+| GR00T N1.5 | `best` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.5 | `eager` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.6 | `best` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.6 | `eager` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.6 | `eager_fp32` | 1.501 | 0.622 | 0.933 | 0.825 | 1.400 | 15.6 % |
+| GR00T N1.7 | `best` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.7 | `eager` | — | — | — | — | — | no MAXN run at matmul=high |
+| GR00T N1.7 | `eager_fp32` | 1.386 | 0.652 | 0.904 | 0.817 | 1.253 | 35.0 % |
+| GR00T N1.7 | `vlm_compile` | 1.372 | 0.641 | 0.880 | 0.792 | 1.207 | 37.3 % |
+| π0 | `bf16_both` | 1.474 | 0.612 | 0.901 | 0.792 | 1.328 | 20.2 % |
+| π0 | `eager` | 1.461 | 0.616 | 0.900 | 0.765 | 1.315 | 22.3 % |
+| π0.5 | `bf16_both_graphs` | 1.429 | 0.606 | 0.866 | 0.778 | 1.238 | 27.7 % |
+| π0.5 | `eager` | 1.545 | 0.564 | 0.872 | 0.741 | 1.347 | 8.2 % |
+| SmolVLA | `eager` | 1.407 | 0.706 | 0.994 | 0.826 | 1.399 | 31.4 % |
+| SmolVLA | `vlm_graphs` | 1.455 | 0.606 | 0.881 | 0.773 | 1.282 | 23.4 % |
+
+**energy·delay above 1 means MAXN wins.** A clock cut that saves energy while costing latency is a gain only if latency is free.
 
 ### GR00T N1.5 — `all_compile_autotune`, N=4, MAXN (compiled)
 
@@ -138,6 +224,52 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | VIN_SYS_5V0 | 9410 | 4212 | 5198 | 1502.3 | 375.6 |
 | full | module | 52194 | 10631 | 41563 | 8332.5 | 2083.1 |
 | full | module_without_memory_rail | 48394 | 10225 | 38168 | 7725.9 | 1931.5 |
+
+### GR00T N1.5 — `best`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3666 | 405 | 3261 | 738.7 |  |
+| prefix | VDD_CPU_CV | 803 | 408 | 395 | 161.7 |  |
+| prefix | VDD_GPU_SOC | 21794 | 3962 | 17831 | 4391.0 |  |
+| prefix | VIN_SYS_5V0 | 9210 | 4138 | 5072 | 1855.7 |  |
+| prefix | module | 35473 | 8913 | 26560 | 7147.1 |  |
+| prefix | module_without_memory_rail | 31807 | 8508 | 23298 | 6408.4 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2559 | 405 | 2154 | 399.9 | 100.0 |
+| ae | VDD_CPU_CV | 1193 | 408 | 785 | 186.4 | 46.6 |
+| ae | VDD_GPU_SOC | 14481 | 3962 | 10518 | 2262.7 | 565.7 |
+| ae | VIN_SYS_5V0 | 7584 | 4138 | 3446 | 1185.1 | 296.3 |
+| ae | module | 25817 | 8913 | 16904 | 4034.0 | 1008.5 |
+| ae | module_without_memory_rail | 23258 | 8508 | 14749 | 3634.2 | 908.5 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3480 | 405 | 3075 | 1229.9 | 307.5 |
+| full | VDD_CPU_CV | 1129 | 408 | 721 | 398.9 | 99.7 |
+| full | VDD_GPU_SOC | 19535 | 3962 | 15573 | 6904.5 | 1726.1 |
+| full | VIN_SYS_5V0 | 8947 | 4138 | 4809 | 3162.1 | 790.5 |
+| full | module | 33090 | 8913 | 24177 | 11695.4 | 2923.9 |
+| full | module_without_memory_rail | 29610 | 8508 | 21102 | 10465.5 | 2616.4 |
+
+### GR00T N1.5 — `eager`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 3656 | 407 | 3249 | 735.9 |  |
+| prefix | VDD_CPU_CV | 804 | 412 | 392 | 161.7 |  |
+| prefix | VDD_GPU_SOC | 21790 | 3918 | 17873 | 4385.3 |  |
+| prefix | VIN_SYS_5V0 | 9194 | 4140 | 5054 | 1850.3 |  |
+| prefix | module | 35444 | 8877 | 26568 | 7133.2 |  |
+| prefix | module_without_memory_rail | 31788 | 8469 | 23319 | 6397.3 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2553 | 407 | 2146 | 399.1 | 99.8 |
+| ae | VDD_CPU_CV | 1193 | 412 | 781 | 186.5 | 46.6 |
+| ae | VDD_GPU_SOC | 14456 | 3918 | 10538 | 2259.9 | 565.0 |
+| ae | VIN_SYS_5V0 | 7563 | 4140 | 3423 | 1182.3 | 295.6 |
+| ae | module | 25765 | 8877 | 16888 | 4027.7 | 1006.9 |
+| ae | module_without_memory_rail | 23212 | 8469 | 14742 | 3628.6 | 907.1 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 3462 | 407 | 3054 | 1219.5 | 304.9 |
+| full | VDD_CPU_CV | 986 | 412 | 575 | 347.5 | 86.9 |
+| full | VDD_GPU_SOC | 19584 | 3918 | 15666 | 6899.2 | 1724.8 |
+| full | VIN_SYS_5V0 | 8934 | 4140 | 4794 | 3147.4 | 786.8 |
+| full | module | 32966 | 8877 | 24090 | 11613.5 | 2903.4 |
+| full | module_without_memory_rail | 29505 | 8469 | 21036 | 10394.1 | 2598.5 |
 
 ### GR00T N1.5 — `eager_fp32`, N=4, MAXN (eager)
 
@@ -185,6 +317,52 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | module | 56847 | 10569 | 46278 | 9269.4 | 2317.4 |
 | full | module_without_memory_rail | 52504 | 10164 | 42340 | 8561.2 | 2140.3 |
 
+### GR00T N1.6 — `best`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2945 | 404 | 2541 | 539.1 |  |
+| prefix | VDD_CPU_CV | 804 | 405 | 399 | 147.3 |  |
+| prefix | VDD_GPU_SOC | 17780 | 3800 | 13981 | 3255.0 |  |
+| prefix | VIN_SYS_5V0 | 8087 | 4136 | 3950 | 1480.4 |  |
+| prefix | module | 29617 | 8746 | 20871 | 5421.8 |  |
+| prefix | module_without_memory_rail | 26672 | 8341 | 18330 | 4882.7 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1833 | 404 | 1429 | 571.4 | 142.8 |
+| ae | VDD_CPU_CV | 1222 | 405 | 817 | 381.0 | 95.2 |
+| ae | VDD_GPU_SOC | 9598 | 3800 | 5799 | 2991.7 | 747.9 |
+| ae | VIN_SYS_5V0 | 6476 | 4136 | 2340 | 2018.6 | 504.6 |
+| ae | module | 19130 | 8746 | 10384 | 5962.6 | 1490.7 |
+| ae | module_without_memory_rail | 17297 | 8341 | 8955 | 5391.3 | 1347.8 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2322 | 404 | 1917 | 1127.7 | 281.9 |
+| full | VDD_CPU_CV | 1221 | 405 | 816 | 593.2 | 148.3 |
+| full | VDD_GPU_SOC | 12877 | 3800 | 9078 | 6255.6 | 1563.9 |
+| full | VIN_SYS_5V0 | 7186 | 4136 | 3049 | 3490.7 | 872.7 |
+| full | module | 23605 | 8746 | 14860 | 11467.2 | 2866.8 |
+| full | module_without_memory_rail | 21284 | 8341 | 12942 | 10339.4 | 2584.9 |
+
+### GR00T N1.6 — `eager`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2952 | 407 | 2545 | 538.2 |  |
+| prefix | VDD_CPU_CV | 812 | 407 | 406 | 148.2 |  |
+| prefix | VDD_GPU_SOC | 17831 | 3734 | 14097 | 3251.3 |  |
+| prefix | VIN_SYS_5V0 | 8107 | 4139 | 3968 | 1478.1 |  |
+| prefix | module | 29702 | 8688 | 21015 | 5415.7 |  |
+| prefix | module_without_memory_rail | 26751 | 8280 | 18470 | 4877.5 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1861 | 407 | 1454 | 567.6 | 141.9 |
+| ae | VDD_CPU_CV | 1193 | 407 | 786 | 363.9 | 91.0 |
+| ae | VDD_GPU_SOC | 9599 | 3734 | 5865 | 2927.0 | 731.7 |
+| ae | VIN_SYS_5V0 | 6510 | 4139 | 2371 | 1985.1 | 496.3 |
+| ae | module | 19164 | 8688 | 10477 | 5843.5 | 1460.9 |
+| ae | module_without_memory_rail | 17303 | 8280 | 9023 | 5276.0 | 1319.0 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2322 | 407 | 1915 | 1109.5 | 277.4 |
+| full | VDD_CPU_CV | 1195 | 407 | 788 | 570.9 | 142.7 |
+| full | VDD_GPU_SOC | 13003 | 3734 | 9268 | 6212.3 | 1553.1 |
+| full | VIN_SYS_5V0 | 7190 | 4139 | 3051 | 3435.3 | 858.8 |
+| full | module | 23710 | 8688 | 15022 | 11328.0 | 2832.0 |
+| full | module_without_memory_rail | 21388 | 8280 | 13107 | 10218.5 | 2554.6 |
+
 ### GR00T N1.6 — `eager_fp32`, N=4, MAXN (eager)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -207,6 +385,75 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | VIN_SYS_5V0 | 8065 | 4274 | 3791 | 2685.6 | 671.4 |
 | full | module | 37281 | 11216 | 26065 | 12414.8 | 3103.7 |
 | full | module_without_memory_rail | 34425 | 10759 | 23666 | 11463.7 | 2865.9 |
+
+### GR00T N1.6 — `eager_fp32`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2906 | 406 | 2500 | 545.2 |  |
+| prefix | VDD_CPU_CV | 805 | 409 | 397 | 151.1 |  |
+| prefix | VDD_GPU_SOC | 17496 | 3901 | 13594 | 3282.6 |  |
+| prefix | VIN_SYS_5V0 | 8036 | 4138 | 3897 | 1507.7 |  |
+| prefix | module | 29242 | 8854 | 20388 | 5486.6 |  |
+| prefix | module_without_memory_rail | 26337 | 8448 | 17889 | 4941.4 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1815 | 406 | 1409 | 582.3 | 145.6 |
+| ae | VDD_CPU_CV | 1193 | 409 | 784 | 382.7 | 95.7 |
+| ae | VDD_GPU_SOC | 9584 | 3901 | 5682 | 3073.8 | 768.5 |
+| ae | VIN_SYS_5V0 | 6441 | 4138 | 2303 | 2066.0 | 516.5 |
+| ae | module | 19034 | 8854 | 10179 | 6104.8 | 1526.2 |
+| ae | module_without_memory_rail | 17218 | 8448 | 8770 | 5522.5 | 1380.6 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2258 | 406 | 1852 | 1128.6 | 282.2 |
+| full | VDD_CPU_CV | 1195 | 409 | 787 | 597.3 | 149.3 |
+| full | VDD_GPU_SOC | 12637 | 3901 | 8736 | 6316.2 | 1579.0 |
+| full | VIN_SYS_5V0 | 7085 | 4138 | 2946 | 3541.0 | 885.2 |
+| full | module | 23175 | 8854 | 14321 | 11583.1 | 2895.8 |
+| full | module_without_memory_rail | 20917 | 8448 | 12469 | 10454.4 | 2613.6 |
+
+### GR00T N1.7 — `best`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2726 | 406 | 2320 | 609.7 |  |
+| prefix | VDD_CPU_CV | 1054 | 406 | 648 | 235.8 |  |
+| prefix | VDD_GPU_SOC | 15370 | 3709 | 11661 | 3438.6 |  |
+| prefix | VIN_SYS_5V0 | 7716 | 4138 | 3578 | 1726.1 |  |
+| prefix | module | 26866 | 8658 | 18208 | 6010.3 |  |
+| prefix | module_without_memory_rail | 24140 | 8253 | 15888 | 5400.6 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1937 | 406 | 1531 | 619.0 | 154.7 |
+| ae | VDD_CPU_CV | 1260 | 406 | 854 | 402.6 | 100.7 |
+| ae | VDD_GPU_SOC | 9932 | 3709 | 6223 | 3174.2 | 793.6 |
+| ae | VIN_SYS_5V0 | 6622 | 4138 | 2484 | 2116.4 | 529.1 |
+| ae | module | 19750 | 8658 | 11092 | 6312.2 | 1578.1 |
+| ae | module_without_memory_rail | 17814 | 8253 | 9561 | 5693.2 | 1423.3 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2314 | 406 | 1909 | 1237.1 | 309.3 |
+| full | VDD_CPU_CV | 1217 | 406 | 812 | 650.6 | 162.7 |
+| full | VDD_GPU_SOC | 12358 | 3709 | 8648 | 6605.7 | 1651.4 |
+| full | VIN_SYS_5V0 | 7157 | 4138 | 3020 | 3825.8 | 956.4 |
+| full | module | 23046 | 8658 | 14388 | 12319.2 | 3079.8 |
+| full | module_without_memory_rail | 20732 | 8253 | 12480 | 11082.1 | 2770.5 |
+
+### GR00T N1.7 — `eager`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2719 | 407 | 2312 | 609.9 |  |
+| prefix | VDD_CPU_CV | 807 | 407 | 400 | 181.1 |  |
+| prefix | VDD_GPU_SOC | 15323 | 3758 | 11565 | 3437.4 |  |
+| prefix | VIN_SYS_5V0 | 7705 | 4140 | 3566 | 1728.5 |  |
+| prefix | module | 26555 | 8712 | 17842 | 5956.9 |  |
+| prefix | module_without_memory_rail | 23836 | 8305 | 15531 | 5347.0 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1909 | 407 | 1502 | 611.0 | 152.8 |
+| ae | VDD_CPU_CV | 1194 | 407 | 787 | 382.2 | 95.5 |
+| ae | VDD_GPU_SOC | 9890 | 3758 | 6132 | 3164.9 | 791.2 |
+| ae | VIN_SYS_5V0 | 6544 | 4140 | 2405 | 2094.4 | 523.6 |
+| ae | module | 19537 | 8712 | 10825 | 6252.5 | 1563.1 |
+| ae | module_without_memory_rail | 17628 | 8305 | 9323 | 5641.5 | 1410.4 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2284 | 407 | 1877 | 1224.2 | 306.1 |
+| full | VDD_CPU_CV | 1195 | 407 | 788 | 640.7 | 160.2 |
+| full | VDD_GPU_SOC | 12298 | 3758 | 8540 | 6592.2 | 1648.1 |
+| full | VIN_SYS_5V0 | 7089 | 4140 | 2949 | 3800.0 | 950.0 |
+| full | module | 22867 | 8712 | 14155 | 12257.2 | 3064.3 |
+| full | module_without_memory_rail | 20583 | 8305 | 12278 | 11032.9 | 2758.2 |
 
 ### GR00T N1.7 — `eager_fp32`, N=4, MAXN (eager)
 
@@ -231,6 +478,29 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | module | 35370 | 11104 | 24266 | 13498.8 | 3374.7 |
 | full | module_without_memory_rail | 32609 | 10645 | 21964 | 12445.2 | 3111.3 |
 
+### GR00T N1.7 — `eager_fp32`, N=4, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2746 | 407 | 2338 | 612.3 |  |
+| prefix | VDD_CPU_CV | 1171 | 412 | 758 | 261.1 |  |
+| prefix | VDD_GPU_SOC | 15384 | 3807 | 11576 | 3430.4 |  |
+| prefix | VIN_SYS_5V0 | 7753 | 4141 | 3612 | 1728.8 |  |
+| prefix | module | 27053 | 8768 | 18285 | 6032.5 |  |
+| prefix | module_without_memory_rail | 24307 | 8361 | 15946 | 5420.3 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1917 | 407 | 1510 | 604.5 | 151.1 |
+| ae | VDD_CPU_CV | 1195 | 412 | 783 | 376.7 | 94.2 |
+| ae | VDD_GPU_SOC | 9970 | 3807 | 6163 | 3143.1 | 785.8 |
+| ae | VIN_SYS_5V0 | 6575 | 4141 | 2434 | 2072.9 | 518.2 |
+| ae | module | 19658 | 8768 | 10890 | 6197.1 | 1549.3 |
+| ae | module_without_memory_rail | 17740 | 8361 | 9380 | 5592.7 | 1398.2 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2315 | 407 | 1908 | 1224.8 | 306.2 |
+| full | VDD_CPU_CV | 1196 | 412 | 783 | 632.5 | 158.1 |
+| full | VDD_GPU_SOC | 12409 | 3807 | 8602 | 6564.8 | 1641.2 |
+| full | VIN_SYS_5V0 | 7154 | 4141 | 3013 | 3784.6 | 946.1 |
+| full | module | 23073 | 8768 | 14306 | 12206.6 | 3051.7 |
+| full | module_without_memory_rail | 20758 | 8361 | 12398 | 10981.8 | 2745.4 |
+
 ### GR00T N1.7 — `vlm_compile`, N=4, MAXN (compiled)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -253,6 +523,75 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | VIN_SYS_5V0 | 8688 | 4154 | 4533 | 2083.7 | 520.9 |
 | full | module | 40393 | 10564 | 29828 | 9688.0 | 2422.0 |
 | full | module_without_memory_rail | 37084 | 10158 | 26925 | 8894.4 | 2223.6 |
+
+### GR00T N1.7 — `vlm_compile`, N=4, MODE_50W (compiled)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2740 | 405 | 2335 | 601.9 |  |
+| prefix | VDD_CPU_CV | 1102 | 407 | 695 | 242.0 |  |
+| prefix | VDD_GPU_SOC | 15412 | 3741 | 11671 | 3385.4 |  |
+| prefix | VIN_SYS_5V0 | 7742 | 4137 | 3606 | 1700.7 |  |
+| prefix | module | 26997 | 8691 | 18306 | 5930.0 |  |
+| prefix | module_without_memory_rail | 24256 | 8285 | 15971 | 5328.1 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 3599 | 405 | 3193 | 389.3 | 97.3 |
+| ae | VDD_CPU_CV | 721 | 407 | 314 | 78.0 | 19.5 |
+| ae | VDD_GPU_SOC | 16570 | 3741 | 12829 | 1792.5 | 448.1 |
+| ae | VIN_SYS_5V0 | 9100 | 4137 | 4963 | 984.4 | 246.1 |
+| ae | module | 29990 | 8691 | 21299 | 3244.1 | 811.0 |
+| ae | module_without_memory_rail | 26391 | 8285 | 18106 | 2854.8 | 713.7 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2796 | 405 | 2391 | 920.1 | 230.0 |
+| full | VDD_CPU_CV | 881 | 407 | 474 | 289.9 | 72.5 |
+| full | VDD_GPU_SOC | 14403 | 3741 | 10662 | 4739.8 | 1185.0 |
+| full | VIN_SYS_5V0 | 7826 | 4137 | 3689 | 2575.2 | 643.8 |
+| full | module | 25906 | 8691 | 17216 | 8525.1 | 2131.3 |
+| full | module_without_memory_rail | 23110 | 8285 | 14825 | 7604.9 | 1901.2 |
+
+### π0.5 — `bf16_both_graphs`, N=10, MODE_50W (compiled_subpath)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2710 | 407 | 2304 | 1156.1 |  |
+| prefix | VDD_CPU_CV | 612 | 407 | 205 | 260.9 |  |
+| prefix | VDD_GPU_SOC | 17344 | 3856 | 13488 | 7397.9 |  |
+| prefix | VIN_SYS_5V0 | 7707 | 4139 | 3568 | 3287.2 |  |
+| prefix | module | 28373 | 8808 | 19566 | 12102.1 |  |
+| prefix | module_without_memory_rail | 25663 | 8401 | 17262 | 10946.0 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2396 | 407 | 1989 | 606.2 | 60.6 |
+| ae | VDD_CPU_CV | 896 | 407 | 489 | 226.7 | 22.7 |
+| ae | VDD_GPU_SOC | 11437 | 3856 | 7582 | 2894.0 | 289.4 |
+| ae | VIN_SYS_5V0 | 7148 | 4139 | 3009 | 1808.6 | 180.9 |
+| ae | module | 21876 | 8808 | 13069 | 5535.5 | 553.6 |
+| ae | module_without_memory_rail | 19481 | 8401 | 11080 | 4929.3 | 492.9 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2744 | 407 | 2338 | 1890.9 | 189.1 |
+| full | VDD_CPU_CV | 614 | 407 | 207 | 422.7 | 42.3 |
+| full | VDD_GPU_SOC | 16359 | 3856 | 12504 | 11273.1 | 1127.3 |
+| full | VIN_SYS_5V0 | 7759 | 4139 | 3620 | 5346.7 | 534.7 |
+| full | module | 27476 | 8808 | 18668 | 18933.6 | 1893.4 |
+| full | module_without_memory_rail | 24732 | 8401 | 16331 | 17042.6 | 1704.3 |
+
+### π0.5 — `eager`, N=10, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2000 | 427 | 1573 | 7553.2 |  |
+| prefix | VDD_CPU_CV | 690 | 451 | 239 | 2605.2 |  |
+| prefix | VDD_GPU_SOC | 16185 | 3846 | 12339 | 61123.7 |  |
+| prefix | VIN_SYS_5V0 | 6646 | 4186 | 2460 | 25099.5 |  |
+| prefix | module | 25521 | 8909 | 16612 | 96381.6 |  |
+| prefix | module_without_memory_rail | 23521 | 8482 | 15038 | 88828.4 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1800 | 427 | 1373 | 1642.2 | 164.2 |
+| ae | VDD_CPU_CV | 1233 | 451 | 782 | 1125.3 | 112.5 |
+| ae | VDD_GPU_SOC | 11567 | 3846 | 7721 | 10555.0 | 1055.5 |
+| ae | VIN_SYS_5V0 | 6375 | 4186 | 2189 | 5817.0 | 581.7 |
+| ae | module | 20974 | 8909 | 12065 | 19139.6 | 1914.0 |
+| ae | module_without_memory_rail | 19175 | 8482 | 10692 | 17497.3 | 1749.7 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 1953 | 427 | 1527 | 9179.7 | 918.0 |
+| full | VDD_CPU_CV | 768 | 451 | 317 | 3608.4 | 360.8 |
+| full | VDD_GPU_SOC | 15362 | 3846 | 11516 | 72193.7 | 7219.4 |
+| full | VIN_SYS_5V0 | 6597 | 4186 | 2411 | 31000.5 | 3100.1 |
+| full | module | 24680 | 8909 | 15771 | 115982.3 | 11598.2 |
+| full | module_without_memory_rail | 22726 | 8482 | 14244 | 106802.6 | 10680.3 |
 
 ### π0.5 — `bf16_both_graphs`, N=10, MAXN (compiled_subpath)
 
@@ -299,6 +638,52 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | VIN_SYS_5V0 | 7469 | 4192 | 3277 | 22718.7 | 2271.9 |
 | full | module | 43724 | 10848 | 32876 | 132990.6 | 13299.1 |
 | full | module_without_memory_rail | 41297 | 10419 | 30878 | 125609.7 | 12561.0 |
+
+### π0 — `bf16_both`, N=10, MODE_50W (compiled_subpath)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2673 | 405 | 2268 | 1007.0 |  |
+| prefix | VDD_CPU_CV | 557 | 403 | 154 | 209.8 |  |
+| prefix | VDD_GPU_SOC | 16147 | 3925 | 12222 | 6082.9 |  |
+| prefix | VIN_SYS_5V0 | 7635 | 4137 | 3498 | 2876.2 |  |
+| prefix | module | 27012 | 8870 | 18141 | 10175.9 |  |
+| prefix | module_without_memory_rail | 24338 | 8465 | 15874 | 9168.9 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1765 | 405 | 1359 | 431.1 | 43.1 |
+| ae | VDD_CPU_CV | 882 | 403 | 479 | 215.5 | 21.5 |
+| ae | VDD_GPU_SOC | 10224 | 3925 | 6300 | 2497.4 | 249.7 |
+| ae | VIN_SYS_5V0 | 6273 | 4137 | 2136 | 1532.2 | 153.2 |
+| ae | module | 19144 | 8870 | 10274 | 4676.2 | 467.6 |
+| ae | module_without_memory_rail | 17380 | 8465 | 8915 | 4245.1 | 424.5 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2548 | 405 | 2142 | 1594.6 | 159.5 |
+| full | VDD_CPU_CV | 810 | 403 | 407 | 507.0 | 50.7 |
+| full | VDD_GPU_SOC | 15322 | 3925 | 11398 | 9589.5 | 959.0 |
+| full | VIN_SYS_5V0 | 7481 | 4137 | 3345 | 4682.3 | 468.2 |
+| full | module | 26161 | 8870 | 17291 | 16373.4 | 1637.3 |
+| full | module_without_memory_rail | 23614 | 8465 | 15149 | 14778.9 | 1477.9 |
+
+### π0 — `eager`, N=10, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2558 | 428 | 2130 | 1855.7 |  |
+| prefix | VDD_CPU_CV | 811 | 432 | 379 | 588.1 |  |
+| prefix | VDD_GPU_SOC | 18629 | 3960 | 14669 | 13515.1 |  |
+| prefix | VIN_SYS_5V0 | 7461 | 4177 | 3284 | 5413.3 |  |
+| prefix | module | 29458 | 8997 | 20462 | 21372.3 |  |
+| prefix | module_without_memory_rail | 26901 | 8569 | 18332 | 19516.6 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 1104 | 428 | 675 | 950.6 | 95.1 |
+| ae | VDD_CPU_CV | 1226 | 432 | 794 | 1055.6 | 105.6 |
+| ae | VDD_GPU_SOC | 6835 | 3960 | 2875 | 5886.9 | 588.7 |
+| ae | VIN_SYS_5V0 | 5279 | 4177 | 1102 | 4546.7 | 454.7 |
+| ae | module | 14442 | 8997 | 5446 | 12439.7 | 1244.0 |
+| ae | module_without_memory_rail | 13339 | 8569 | 4770 | 11489.2 | 1148.9 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 1742 | 428 | 1314 | 2756.9 | 275.7 |
+| full | VDD_CPU_CV | 877 | 432 | 445 | 1388.3 | 138.8 |
+| full | VDD_GPU_SOC | 12223 | 3960 | 8263 | 19347.5 | 1934.8 |
+| full | VIN_SYS_5V0 | 6246 | 4177 | 2069 | 9886.7 | 988.7 |
+| full | module | 21088 | 8997 | 12090 | 33379.4 | 3337.9 |
+| full | module_without_memory_rail | 19346 | 8569 | 10777 | 30622.5 | 3062.2 |
 
 ### π0 — `bf16_both`, N=10, MAXN (compiled_subpath)
 
@@ -392,6 +777,52 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | full | module | 41178 | 10794 | 30384 | 29753.1 | 7438.3 |
 | full | module_without_memory_rail | 38647 | 10369 | 28278 | 27924.1 | 6981.0 |
 
+### SmolVLA — `eager`, N=10, MODE_50W (eager)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 1561 | 406 | 1155 | 226.1 |  |
+| prefix | VDD_CPU_CV | 1193 | 403 | 790 | 172.7 |  |
+| prefix | VDD_GPU_SOC | 10943 | 3885 | 7058 | 1584.4 |  |
+| prefix | VIN_SYS_5V0 | 5984 | 4139 | 1845 | 866.4 |  |
+| prefix | module | 19682 | 8834 | 10848 | 2849.7 |  |
+| prefix | module_without_memory_rail | 18120 | 8427 | 9693 | 2623.6 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 809 | 406 | 403 | 719.1 | 71.9 |
+| ae | VDD_CPU_CV | 1195 | 403 | 792 | 1062.0 | 106.2 |
+| ae | VDD_GPU_SOC | 5603 | 3885 | 1718 | 4979.4 | 497.9 |
+| ae | VIN_SYS_5V0 | 4848 | 4139 | 709 | 4309.0 | 430.9 |
+| ae | module | 12456 | 8834 | 3622 | 11069.6 | 1107.0 |
+| ae | module_without_memory_rail | 11646 | 8427 | 3219 | 10350.5 | 1035.0 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 935 | 406 | 528 | 974.2 | 97.4 |
+| full | VDD_CPU_CV | 1195 | 403 | 792 | 1245.5 | 124.6 |
+| full | VDD_GPU_SOC | 6308 | 3885 | 2424 | 6575.3 | 657.5 |
+| full | VIN_SYS_5V0 | 5026 | 4139 | 887 | 5238.6 | 523.9 |
+| full | module | 13464 | 8834 | 4631 | 14033.6 | 1403.4 |
+| full | module_without_memory_rail | 12530 | 8427 | 4102 | 13059.4 | 1305.9 |
+
+### SmolVLA — `vlm_graphs`, N=10, MODE_50W (compiled_subpath)
+
+| phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
+|---|---|---:|---:|---:|---:|---:|
+| prefix | VDDQ_VDD2_1V8AO (regulator input) | 2435 | 404 | 2031 | 146.4 |  |
+| prefix | VDD_CPU_CV | 591 | 401 | 190 | 35.5 |  |
+| prefix | VDD_GPU_SOC | 17911 | 3864 | 14047 | 1076.8 |  |
+| prefix | VIN_SYS_5V0 | 7259 | 4135 | 3124 | 436.5 |  |
+| prefix | module | 28196 | 8805 | 19391 | 1695.2 |  |
+| prefix | module_without_memory_rail | 25761 | 8400 | 17361 | 1548.8 |  |
+| ae | VDDQ_VDD2_1V8AO (regulator input) | 2331 | 404 | 1926 | 138.4 | 13.8 |
+| ae | VDD_CPU_CV | 836 | 401 | 435 | 49.7 | 5.0 |
+| ae | VDD_GPU_SOC | 12758 | 3864 | 8894 | 757.6 | 75.8 |
+| ae | VIN_SYS_5V0 | 7127 | 4135 | 2992 | 423.2 | 42.3 |
+| ae | module | 23052 | 8805 | 14248 | 1368.9 | 136.9 |
+| ae | module_without_memory_rail | 20722 | 8400 | 12321 | 1230.5 | 123.1 |
+| full | VDDQ_VDD2_1V8AO (regulator input) | 2372 | 404 | 1968 | 304.5 | 30.4 |
+| full | VDD_CPU_CV | 772 | 401 | 371 | 99.1 | 9.9 |
+| full | VDD_GPU_SOC | 15566 | 3864 | 11702 | 1997.7 | 199.8 |
+| full | VIN_SYS_5V0 | 7202 | 4135 | 3068 | 924.3 | 92.4 |
+| full | module | 25913 | 8805 | 17109 | 3325.6 | 332.6 |
+| full | module_without_memory_rail | 23541 | 8400 | 15140 | 3021.1 | 302.1 |
+
 ### SmolVLA — `eager`, N=10, MAXN (eager)
 
 | phase | rail | mean mW | idle mW | above idle mW | mJ/inf | mJ/step |
@@ -450,17 +881,32 @@ Every rail separately, as protocol §4 requires. `above idle` is this run's own 
 | model | N | configuration | E7 `full` loop median ms | Part B e2e median ms | ratio |
 |---|---:|---|---:|---:|---:|
 | GR00T N1.5 | 4 | `all_compile_autotune` | 159.65 | 168.75 | 0.95× |
+| GR00T N1.5 | 4 | `best` | 353.44 | — | — |
+| GR00T N1.5 | 4 | `eager` | 352.28 | — | — |
 | GR00T N1.5 | 4 | `eager_fp32` | 251.27 | 255.22 | 0.98× |
 | GR00T N1.6 | 4 | `all_compile_autotune` | 163.06 | 174.59 | 0.93× |
+| GR00T N1.6 | 4 | `best` | 485.79 | — | — |
+| GR00T N1.6 | 4 | `eager` | 477.78 | — | — |
 | GR00T N1.6 | 4 | `eager_fp32` | 333.00 | 327.22 | 1.02× |
+| GR00T N1.6 | 4 | `eager_fp32` | 499.80 | 327.22 | 1.53× |
+| GR00T N1.7 | 4 | `best` | 534.54 | — | — |
+| GR00T N1.7 | 4 | `eager` | 536.02 | — | — |
 | GR00T N1.7 | 4 | `eager_fp32` | 381.65 | 372.48 | 1.02× |
+| GR00T N1.7 | 4 | `eager_fp32` | 529.04 | 372.48 | 1.42× |
 | GR00T N1.7 | 4 | `vlm_compile` | 239.85 | 240.49 | 1.00× |
+| GR00T N1.7 | 4 | `vlm_compile` | 329.07 | 240.49 | 1.37× |
+| π0.5 | 10 | `bf16_both_graphs` | 689.10 | 487.81 | 1.41× |
+| π0.5 | 10 | `eager` | 4699.50 | 3028.56 | 1.55× |
 | π0.5 | 10 | `bf16_both_graphs` | 482.09 | 487.81 | 0.99× |
 | π0.5 | 10 | `eager` | 3041.59 | 3028.56 | 1.00× |
+| π0 | 10 | `bf16_both` | 625.86 | 424.46 | 1.47× |
+| π0 | 10 | `eager` | 1582.89 | 1069.04 | 1.48× |
 | π0 | 10 | `bf16_both` | 424.68 | 424.46 | 1.00× |
 | π0 | 10 | `eager` | 1083.19 | 1069.04 | 1.01× |
 | π0 | 4 | `bf16_both` | 323.11 | — | — |
 | π0 | 4 | `eager` | 722.55 | 711.75 | 1.02× |
+| SmolVLA | 10 | `eager` | 1042.29 | 727.46 | 1.43× |
+| SmolVLA | 10 | `vlm_graphs` | 128.34 | 92.30 | 1.39× |
 | SmolVLA | 10 | `eager` | 740.69 | 727.46 | 1.02× |
 | SmolVLA | 10 | `vlm_graphs` | 88.20 | 92.30 | 0.96× |
 

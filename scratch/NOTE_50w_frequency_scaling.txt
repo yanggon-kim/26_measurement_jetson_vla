@@ -155,3 +155,46 @@ eager used --tf32 off (the eager_fp32 rung) and the corrected column needs a mat
 unprofiled reference I have not established for it. So the comparison above uses RAW idle
 for all four, which is self-consistent but not the figure the protocol prefers. The LeRobot
 ordering is unchanged by using corrected values; GR00T cannot be checked either way yet.
+
+
+## FINAL, 00:40, nine pairable points: the prediction is inverted, not merely broken
+
+    model / rung              latency x  power x  energy x  EDP x   clock-insensitive
+    GR00T N1.7 vlm_compile      1.372     0.641    0.880    1.207       37.3 %
+    GR00T N1.7 eager_fp32       1.386     0.652    0.904    1.253       35.0 %
+    GR00T N1.6 eager_fp32       1.501     0.622    0.933    1.400       15.6 %
+    pi0        eager            1.461     0.616    0.900    1.315       22.3 %
+    pi0        bf16_both        1.474     0.612    0.901    1.328       20.2 %
+    pi0.5      eager            1.545     0.564    0.872    1.347        8.2 %
+    pi0.5      bf16_both_graphs 1.429     0.606    0.866    1.238       27.7 %
+    SmolVLA    eager            1.407     0.706    0.994    1.399       31.4 %
+    SmolVLA    vlm_graphs       1.455     0.606    0.881    1.282       23.4 %
+
+I predicted GR00T's COMPILED head -- ae_total idle 0.0008, essentially no gaps -- would show
+a very LOW clock-insensitive fraction, since the mechanism was "idle does not scale with
+clock". It shows 37.3 %, the HIGHEST of all nine points. The prediction is not merely
+falsified, it is inverted.
+
+And it fails WITHIN GR00T: N1.6 and N1.7 have near-identical eager idle (0.7224 vs 0.7153)
+and clock-insensitive fractions of 15.6 % and 35.0 %, a factor of 2.2 apart. So idle
+fraction does not determine clock sensitivity even holding architecture constant.
+
+Whatever sets the clock-insensitive fraction, it is not the GPU-idle fraction. The
+mechanism I proposed was plausible and wrong.
+
+## What survives, and it is the only robust claim here
+
+**Energy-delay is worse at 50W in all nine points, 1.207x to 1.400x.** Not one configuration
+of any architecture benefits. Energy alone falls 0.6 % to 13.4 % (SmolVLA eager saves
+essentially nothing at x0.994), and the price is 37 % to 55 % more latency.
+
+For the PIM argument: underclocking is not a route to efficiency on this device for any of
+these models. If a memory-side accelerator's value is framed as "do the same work for less
+energy", the frequency knob already shows that trading latency for energy loses here.
+
+## Confounded rows are shown as unpairable, not hidden
+
+Six GR00T rows appear with "no MAXN run at matmul=high": those are the eager/best runs from
+the first 50W queue, whose rung names did not match the MAXN campaign. They are real runs of
+a real configuration and are kept; the report refuses to pair them rather than comparing
+runs at different math precision. The pairing key is (model, rung, matmul_precision).
