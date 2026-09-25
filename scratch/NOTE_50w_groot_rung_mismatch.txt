@@ -1,0 +1,46 @@
+DEFECT: the 50W GR00T points use different rungs than their MAXN baselines
+2026-09-24 23:50. Mine, introduced tonight in bench/queues/queue_e7_50w.sh.
+
+## What I got wrong
+
+queue_e7_50w.sh passes `eager` and `best` as GR00T rung names. The MAXN E7 campaign used:
+
+    n17   eager_fp32   vlm_compile
+    n16   eager_fp32   all_compile_autotune
+    n15   eager_fp32   all_compile_autotune
+
+`eager` and `eager_fp32` are NOT the same configuration:
+
+    20260924_E7_groot_n17_eager_fp32   rung=eager_fp32   matmul_precision=highest   (TF32 OFF)
+    20260924_E7_groot_n17_eager_50W    rung=eager        matmul_precision=high      (TF32 ON)
+
+So every GR00T 50W point pairs against a MAXN baseline at a different math precision. TF32
+is faster than FP32, so the 50W run gets a speed advantage that partially offsets the clock
+reduction and INFLATES the apparent clock-insensitive fraction.
+
+## It produced a false falsification, which is why this matters
+
+I registered a prediction: clock-insensitive fraction should track the expert region's
+GPU-idle fraction, and GR00T -- whose compiled head has ~0 idle -- was named as the test
+that could break it.
+
+n17 eager came in at 31.9 % clock-insensitive with an ae_total idle of 0.7153. That is
+ABOVE all three LeRobot models, including SmolVLA at idle 0.9273 / 31.4 %, so on its face
+the relationship was broken. It is not evidence either way: the point is confounded.
+
+Had I not checked the configuration, I would have reported my own prediction as falsified on
+a comparison that was never valid. I have been caught by exactly this twice tonight already
+(E5b's 'best' vs E5's 'best'), which is the only reason I looked.
+
+## What to do
+
+The six GR00T 50W points now running are valid measurements of `eager`/`best`; they are
+simply not the pair for the MAXN table. Keep them -- the directory name carries the rung --
+and re-run the six with the MAXN rung names so the MAXN-vs-50W comparison is like for like.
+
+Do NOT fix this by relabelling: the difference is real (TF32 on vs off), and renaming the
+directory would assert a configuration the run did not have.
+
+The LeRobot points are unaffected: pi0 bf16_both, pi0.5 bf16_both_graphs and SmolVLA
+vlm_graphs are the same rung names the MAXN campaign used, and their eager points are plain
+`--modes eager` in both. The five-point analysis stands.
