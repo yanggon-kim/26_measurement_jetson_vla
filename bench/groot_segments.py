@@ -136,9 +136,15 @@ def main() -> int:
     # code path that produced the published n1.5 latencies, so the same condition is reused
     # rather than a second mechanism invented beside it.
     SG._API[0] = args.api
+    # Into method_notes, NOT into `notes`: line ~252 writes `notes` to meta.json under the
+    # key "not_measured", and the autocast context is a statement about HOW everything was
+    # measured, not about something that was not. Filing it there said the opposite of what
+    # it means, next to genuine entries like "adalayernorm1 block0 compiled: RuntimeError:
+    # Inference tensors cannot be saved for backward".
+    method_notes = []
     _ac_note = SG.model_autocast_ctx(args.api)[1]
     if _ac_note:
-        notes.append(_ac_note)
+        method_notes.append(_ac_note)
 
     for bi, cap in caps.items():
         t = SG.intermediates(cap)
@@ -251,7 +257,7 @@ def main() -> int:
         "raw_files": [],
         "not_measured": notes,
         "schema_note": schema_note,
-        "notes": [
+        "notes": method_notes + [
             "Both kinds of DiT block are measured. DiT.forward (dit.py:310-326) sends "
             "encoder_hidden_states only on even indices when interleave_self_attention "
             "is set, so odd blocks are pure self-attention and even blocks cross-attend "
