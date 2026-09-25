@@ -257,9 +257,19 @@ def main() -> int:
         groups.setdefault((r["model"], r["mode"], r["region"], r["kernel"]), []).append(r)
     for (model, mode, region, kernel), rows in sorted(groups.items()):
         rows.sort(key=lambda r: -r["share_of_all_stalls_pct"])
-        L += [f"### {model} / {mode} / {region} — `{kernel}`", "",
+        # §1's verdict, carried into the heading. These kernels are in the capture only
+        # because the ncu regex matches short names that are substrings of one another, and
+        # without this marker a launch-bound kernel's stall table reads as an explanation
+        # when §1 says its instruction mix explains nothing about why the phase is slow.
+        _lb = rows[0].get("launch_bound_s1") == "yes"
+        _mark = " — ⚠ LAUNCH-BOUND (§1): not a target; its stall mix explains nothing" if _lb else ""
+        L += [f"### {model} / {mode} / {region} — `{kernel}`{_mark}", "",
               f"{rows[0]['duration_us']:.1f} µs, SM throughput "
-              f"{rows[0]['sm_throughput_pct']:.1f} %. **{verdict(rows)}**", "",
+              f"{rows[0]['sm_throughput_pct']:.1f} %. **{verdict(rows)}**"
+              + ("  \n*Swept into the capture by a substring match on the kernel name. "
+                 "Under 5 % SM throughput and shorter per launch than the 62 µs launch gap, "
+                 "so §1 excludes it from the instruction-level procedure. Shown for "
+                 "completeness; do not reason from it.*" if _lb else ""), "",
               "| stall reason | % of waiting | % of all | class | in §7 | cause |",
               "|---|---:|---:|---|---|---|"]
         for r in rows:
