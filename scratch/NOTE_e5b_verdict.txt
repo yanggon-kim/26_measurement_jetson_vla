@@ -1,0 +1,63 @@
+E5b verdict: NO configuration meets §7's memory-latency-bound threshold
+2026-09-24 23:10. Corrects a claim I made from the max-across-kernels figure.
+
+## The claim I got wrong
+
+I reported "long_scoreboard dominates every configuration, rising to 52-73 % in the compiled
+ones -- the memory-bound signature". That used the MAXIMUM long_scoreboard share across the
+kernels in each configuration. Taking a maximum is exactly what a threshold on the weighted
+figure exists to prevent, and §7's rule is "long scoreboard >= 60 % means memory-latency
+bound" applied to the phase, not to its most favourable kernel.
+
+Weighted by kernel duration, with launch-bound kernels excluded per §1:
+
+    config          time-wtd long_sb   max across kernels   §7 >= 60 %?
+    pi0.5  best            47.6 %            74.9 %             no
+    pi0    best            46.3 %            77.0 %             no
+    SmolVLA best           30.8 %            57.5 %             no
+    pi0    eager           32.4 %            44.0 %             no
+    SmolVLA eager          30.0 %            41.5 %             no
+    pi0.5  eager           19.5 %            36.6 %             no
+
+NONE of the six meets the threshold. The action expert's kernels are NOT memory-latency
+bound by the document's own criterion. That is a negative result for the PIM thesis and the
+second one tonight, after the GPU-idle hypothesis.
+
+## What IS true, aggregated by instruction class
+
+Summing §7's classes (time-weighted, launch-bound excluded):
+
+    config          LSU     control  ALU/XU   top three reasons
+    pi0    best     67.2 %   16.1 %   10.7 %  long_scoreboard 46, barrier 16, lg_throttle 12
+    pi0.5  best     48.4 %    7.2 %    9.1 %  long_scoreboard 48, imc_miss 12, short_sb 11
+    SmolVLA eager   41.1 %   23.5 %   20.6 %  long_scoreboard 30, wait 21, barrier 14
+    SmolVLA best    35.0 %   20.0 %   31.2 %  wait 31, long_scoreboard 31, barrier 10
+    pi0    eager    34.5 %   16.3 %   44.9 %  wait 45, long_scoreboard 34, dispatch_stall 14
+    pi0.5  eager    27.2 %    5.5 %   12.2 %  imc_miss 27, long_scoreboard 19, wait 12
+
+Three things worth stating, none of which is "memory-bound everywhere":
+
+1. **Only pi0 compiled is memory-subsystem dominated**, at 67.2 % LSU. It is the single best
+   case for a memory-side accelerator in the whole set.
+2. **pi0 EAGER is ALU/XU dominated**, 44.9 %, driven by `wait` at 45 % -- fixed-latency
+   operations (transcendental, integer divide, FP64), not memory. Measuring the eager
+   configuration and concluding "memory-bound" would be wrong for the very model the study
+   started from.
+3. **Compiling moves most models toward LSU** (pi0 34.5 -> 67.2, pi0.5 27.2 -> 48.4) but not
+   SmolVLA (41.1 -> 35.0). So "optimise, then the memory wall appears" is a tendency, not a
+   rule.
+
+`imc_miss` is pi0.5 eager's largest single wait at 27 % and §7 has no entry for it, so its
+cause is left open rather than guessed. C1 independently found the eager expert
+imc_miss-limited in all three LeRobot models, so this is a reproduced observation and a real
+question for the research side: what does imc_miss mean on this device?
+
+## Method notes
+
+* Launch-bound kernels are EXCLUDED from every figure above, per §1. They are present in the
+  captures because the ncu regex matches short names that are substrings of one another, and
+  they are flagged launch_bound_s1 in stall_attribution.csv.
+* `selected` is excluded from the waiting denominator, per §7 -- it means the warp was ready.
+* pi0.5/best is the re-capture taken with a `triton_` family regex after the stored target
+  named a kernel that run never launched; its 17 kernels are the Triton set that
+  --compile-mode reduce-overhead actually generates.
