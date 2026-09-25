@@ -257,7 +257,7 @@ e8)
     BF="--prep bf16_both"; BFTAG=bf16castonly
   fi
   for suite in libero_spatial libero_object libero_goal libero_10; do
-    d=results/${DATE}_E8_pi0_${suite}_fp32_N10
+    d=results/${DATE}_E8_pi0_${suite}_fp32_N10_settle10
     [ -s "$d/summary.json" ] || run "E8 $suite fp32 N=10" $LPY bench/libero_eval.py --model pi0 \
         --suite $suite --tasks 10 --episodes 10 --steps 10 --outdir "$d"
     ok=$($PY -c "import json;print(json.load(open('$d/summary.json'))['successes'])" 2>/dev/null || echo 0)
@@ -265,12 +265,12 @@ e8)
       echo "  *** fp32 control scored 0 on $suite -- bf16 arm SKIPPED there (nothing to compare)"
       continue
     fi
-    d=results/${DATE}_E8_pi0_${suite}_${BFTAG}_N10
+    d=results/${DATE}_E8_pi0_${suite}_${BFTAG}_N10_settle10
     [ -s "$d/summary.json" ] || run "E8 $suite $BFTAG N=10" $LPY bench/libero_eval.py --model pi0 \
         --suite $suite --tasks 10 --episodes 10 --steps 10 $BF --outdir "$d"
   done
   for N in 4 2; do
-    d=results/${DATE}_E8_pi0_libero_spatial_${BFTAG}_N${N}
+    d=results/${DATE}_E8_pi0_libero_spatial_${BFTAG}_N${N}_settle10
     [ -s "$d/summary.json" ] || run "E8 libero_spatial $BFTAG N=$N" $LPY bench/libero_eval.py \
         --model pi0 --suite libero_spatial --tasks 10 --episodes 10 --steps $N $BF --outdir "$d"
   done

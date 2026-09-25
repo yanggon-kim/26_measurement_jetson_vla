@@ -125,6 +125,8 @@ def main() -> int:
                          "bf16_both. --prep applies only the casts; the study's speed-up is "
                          "measured on the full rung, so its accuracy must be too.")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--num-steps-wait", type=int, default=10,
+                    help="no-op steps after reset so objects settle (LeRobot's LIBERO default)")
     ap.add_argument("--outdir", required=True)
     args = ap.parse_args()
 
@@ -154,6 +156,7 @@ def main() -> int:
     import opt_ladder as OL
     from libero.libero import benchmark, get_libero_path
     from libero.libero.envs import OffScreenRenderEnv
+    from lerobot.envs.libero import get_libero_dummy_action
 
     spec = MR.get(args.model)
     policy, cfg, _ = MR.load_policy(spec, n=args.steps, compile_mode=None)
@@ -213,6 +216,14 @@ def main() -> int:
             env.seed(args.seed + ep)
             env.reset()
             obs = env.set_init_state(init_states[ep % len(init_states)])
+            # Settle before the policy acts, exactly as LeRobot's own LIBERO env does
+            # (lerobot/envs/libero.py:305-308, num_steps_wait=10: "Step the simulator with a
+            # no-op action for a few frames so everything settles"). The first version of this
+            # harness acted from the first frame, while objects were still dropping into place:
+            # libero_object scored 0/88 and spatial 18/100 against published pi0 LIBERO results
+            # far higher. These steps do not count toward max_steps, as in LeRobot's env.
+            for _ in range(args.num_steps_wait):
+                obs, _, _, _ = env.step(get_libero_dummy_action())
             policy.reset()
             done = False
             steps = 0
@@ -269,6 +280,8 @@ def main() -> int:
         "achieved_control_hz": round(1000.0 / (med(t_sim) + med(t_policy)), 2)
         if t_sim else None,
         "max_steps": args.max_steps, "max_steps_source": max_steps_src,
+        "num_steps_wait": args.num_steps_wait,
+        "num_steps_wait_source": "lerobot.envs.libero default (settle with no-op actions)",
         "N": n_effective, "rung": args.rung or None, "rung_note": rung_note,
         "seed": args.seed, "seeds": f"env.seed(seed + episode), episodes 0..{args.episodes-1}",
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
