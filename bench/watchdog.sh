@@ -224,6 +224,28 @@ if empty_live:
     print(f"  ({len(empty_live)} empty stdout in a RUNNING job — output still buffered)")
 PYB
 echo
+echo "--- 1c. CONSOLIDATION COMPLETENESS (CHECK_OK does not cover this)"
+$HOME/venvs/pi0/bin/python - <<'PYC'
+# check_model_inputs.py validates the SCHEMA of the rows present. It cannot know a part is
+# absent. On 2026-09-24 at 17:23 the smolvla consolidation ran with three parts missing and
+# the queue printed "EXIT=0 smolvla consolidate" then "CHECK_OK smolvla" -- the MISSING
+# lines were there, three lines above, but the pass/fail signal said success. That file is
+# what the research side reads DIRECTLY to build the PIM model, so its completeness needs
+# to be in the audit and not only in a log nobody re-reads.
+import glob, json, os
+for d in sorted(glob.glob("results/*_E11_*_inputs")):
+    mp = os.path.join(d, "meta.json")
+    if not os.path.exists(mp):
+        print(f"  {os.path.basename(d):34s} NO meta.json"); continue
+    m = json.load(open(mp))
+    miss, rows = m.get("parts_missing"), m.get("total_rows")
+    if miss:
+        print(f"  {os.path.basename(d):34s} rows={rows}  *** INCOMPLETE "
+              f"parts_missing={miss} ***")
+    else:
+        print(f"  {os.path.basename(d):34s} rows={rows}  complete")
+PYC
+echo
 echo "--- 2. RUNNING NOW (from /proc; pgrep -f matches itself)"
 $HOME/venvs/pi0/bin/python - <<'PYC'
 import os

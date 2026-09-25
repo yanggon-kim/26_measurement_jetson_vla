@@ -71,4 +71,35 @@ else
     || echo "CHECK_FAILED groot_n15 (EXPECTED: no groot_n15 in the checker's MODELS set)"
 fi
 
+# ---- completeness, which CHECK_OK does NOT cover ---------------------------------------
+#
+# check_model_inputs.py validates the SCHEMA of the rows present. It cannot know that a
+# part is absent, so a consolidation that ran while E11f was missing prints CHECK_OK and
+# looks finished. consolidate_e11.py records the truth in meta.json as `parts_missing`, so
+# assert on that -- otherwise the one number that matters most here (is the artefact the
+# research side reads actually complete?) is the one nothing checks.
+echo
+echo "--- E11 consolidation completeness"
+$PY - <<'PYE'
+import json, glob, os, sys
+bad = 0
+for d in sorted(glob.glob("results/20260924_E11_*_inputs")) + sorted(
+        glob.glob("results/20260922b_E11_*_inputs")):
+    mp = os.path.join(d, "meta.json")
+    if not os.path.exists(mp):
+        print(f"  {os.path.basename(d):34s} NO meta.json"); bad += 1; continue
+    m = json.load(open(mp))
+    miss = m.get("parts_missing")
+    rows = m.get("total_rows") or m.get("model_inputs_rows")
+    if miss:
+        print(f"  {os.path.basename(d):34s} rows={rows}  *** parts_missing={miss} ***")
+        bad += 1
+    else:
+        print(f"  {os.path.basename(d):34s} rows={rows}  parts_missing=[] complete")
+if bad:
+    print(f"\n  *** {bad} consolidated file(s) are INCOMPLETE. CHECK_OK only validates the")
+    print(f"      schema of the rows that are there; it cannot see an absent part. ***")
+sys.exit(0)
+PYE
+
 echo "E11N15_DONE $(date -Is)"
