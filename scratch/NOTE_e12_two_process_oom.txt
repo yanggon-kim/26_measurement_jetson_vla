@@ -1,0 +1,66 @@
+E12 Step 3: two concurrent pi0 processes do NOT fit in Orin's unified memory
+2026-09-25 05:15. Confirmed from the kernel OOM log, not inferred.
+
+## The evidence
+
+    [Fri Sep 25 05:00:15 2026] python invoked oom-killer: ... order=0
+    [Fri Sep 25 05:00:15 2026] oom-kill: ... task=python, pid=491586, uid=1001
+    [Fri Sep 25 05:00:15 2026] Out of memory: Killed process 491586 (python)
+                               total-vm:100821396kB, anon-rss:15252540kB
+
+The expert role of the two-process co-run was killed during model load. Its log is 0 bytes
+because SIGKILL leaves no traceback -- the file existed only because the shell redirect
+created it. The prefix role survived, stayed warm, and sat waiting for a ready-file its peer
+would never write.
+
+One pi0 process is ~15 GB anon-rss. Orin AGX 64GB shares that 62 GB between CPU and GPU, so
+two copies plus each process's CUDA context and torch caching-allocator reservations do not
+fit. `free` showed 16 GB used and 38 GB free with only ONE process alive.
+
+An earlier entry in the same log:
+
+    [Fri Sep 25 02:42:49 2026] Out of memory: Killed process 486503 (python)
+                               total-vm:103404032kB, anon-rss:12492892kB
+
+## A correction to my own earlier diagnosis
+
+At ~02:40 a corun.py run died after printing only its gate line, and I attributed it to
+`nohup ... &` inside a backgrounded Bash call losing the child. **That was wrong.** The
+02:42:49 OOM kill is that process. The lesson I drew then (about process supervision) was
+plausible and not the cause; the actual cause was memory, and the tell was the same 0-byte /
+no-traceback signature I have now seen twice.
+
+Both failures look identical from userspace: a process that produces nothing and vanishes.
+`dmesg -T | grep -i oom-kill` is what distinguishes them, and it should be the FIRST check
+when a python run dies without output, ahead of any theory about shells.
+
+## What this means for Step 3
+
+"**two processes, no MPS** -- the naive multi-process deployment" is one of the mechanisms
+§5 Step 3 asks for. On this device, with this model, **it is not available as written**: the
+naive deployment cannot hold two copies of a 3B-parameter VLA in unified memory. That is a
+result, not a gap, and it is exactly the kind §5 says to record with evidence:
+
+  * It removes the cheapest answer to "why not just run the two stages in two processes?"
+    for a mobile SoC. On a desktop with discrete VRAM plus host RAM the arithmetic differs.
+  * It compounds with the other two blockers already recorded: the in-process pipeline is
+    CPU-issue-bound so nothing overlaps, and the compiled rung corrupts across two streams.
+    All three close off a different route to the same question.
+
+## What could still be tried, and at what cost
+
+1. **MPS** (`/usr/bin/nvidia-cuda-mps-control` exists) does not reduce per-process weights,
+   so it does not solve this. It changes how two contexts share the GPU, not how much memory
+   they need. Worth testing only if a two-process configuration can be made to fit at all.
+2. **Green contexts / libsmctrl** partition SMs WITHIN one process, so they are unaffected by
+   this and remain testable. They are the better next mechanism precisely because they need
+   one model copy.
+3. A smaller N, or bf16 weights on both sides, might make two copies fit -- but changing the
+   model's precision to make a mechanism fit would no longer be the baseline (non-negotiable
+   2), so it would be a labelled variant answering a different question.
+
+## Immediate consequence
+
+The co-run window never happened, so `e12_2proc_ratios.py` must refuse -- and it will, because
+`peer_ready_seen` is False for the prefix and the expert JSON does not exist. That refusal is
+the designed behaviour and it is the reason no `s` from this attempt will be reported.
