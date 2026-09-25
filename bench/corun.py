@@ -215,10 +215,12 @@ def run_pipeline(frames, num_steps: int, stream_p, stream_e, keep_actions: bool 
     cache. It must fail the equivalence check. If it does not, the check has no power and
     nothing this harness reports is verified.
     """
+    import time as _t                                                 # noqa: PLC0415
     pending: dict[int, dict] = {}
     actions: dict[int, torch.Tensor] = {}
     samples: list[dict] = []
     stale_src: dict | None = None        # the cache from TWO frames back (negative control)
+    _issue_t0 = _t.perf_counter()
 
     for fr in frames:
         k = fr["k"]
@@ -287,7 +289,21 @@ def run_pipeline(frames, num_steps: int, stream_p, stream_e, keep_actions: bool 
                     used_stale=bool(stale and stale_src is not None))
         samples.append(last)
 
+    # HOST ISSUE TIME vs WALL. The decisive test for "is there anything to overlap".
+    #
+    # pi0 in eager is launch-bound: E5 measured ae_step at 84.2 % GPU idle over 968 kernels
+    # per step. If one Python thread spends nearly the whole wall clock ISSUING kernels,
+    # then while it issues the expert the prefix stream has no queued work and vice versa,
+    # so the two streams cannot overlap however correctly they are wired -- and every stage
+    # still reports its isolated time, because each has the GPU to itself when it runs.
+    # That is indistinguishable from ideal overlap in s and p, and only T_pipe exposes it.
+    #
+    # issue_s close to wall_s  => CPU-bound issuing; co-run cannot help and the experiment
+    #                             cannot see GPU contention in this configuration.
+    # issue_s well below wall_s => the GPU is the bottleneck and overlap is meaningful.
+    issue_s = _t.perf_counter() - _issue_t0
     torch.cuda.synchronize()
+    wall_s = _t.perf_counter() - _issue_t0
     rows = []
     for r in samples:
         if keep_actions and r.get("act") is not None:
@@ -300,7 +316,8 @@ def run_pipeline(frames, num_steps: int, stream_p, stream_e, keep_actions: bool 
                      "used_stale": bool(r.get("used_stale", False)),
                      "prefix_ms": r["ev_p0"].elapsed_time(r["ev_p1"]),
                      "expert_ms": (r["ev_e0"].elapsed_time(r["ev_e1"])
-                                   if "ev_e0" in r else float("nan"))})
+                                   if "ev_e0" in r else float("nan")),
+                     "issue_s": issue_s, "wall_s": wall_s})
     return actions, rows
 
 
@@ -378,9 +395,74 @@ def frame_to_frame_scale(frames, num_steps: int) -> float:
 
 
 # --------------------------------------------------------------------------------------
+# timing (Steps 1 + 2)
+# --------------------------------------------------------------------------------------
+def summarize(vals: list[float]) -> dict:
+    import statistics                                                 # noqa: PLC0415
+    v = sorted(x for x in vals if x == x)                             # drop NaN
+    if not v:
+        return {"median_ms": float("nan"), "mean_ms": float("nan"), "p5_ms": float("nan"),
+                "p95_ms": float("nan"), "min_ms": float("nan"), "max_ms": float("nan"),
+                "n": 0}
+    def pct(q):
+        return v[min(len(v) - 1, max(0, int(round(q * (len(v) - 1)))))]
+    return {"median_ms": statistics.median(v), "mean_ms": statistics.fmean(v),
+            "p5_ms": pct(0.05), "p95_ms": pct(0.95), "min_ms": v[0], "max_ms": v[-1],
+            "n": len(v)}
+
+
+def bootstrap_ci(num: list[float], den_median: float, iters: int = 2000, seed: int = 7):
+    """95 % interval for the median of `num` divided by a fixed denominator median.
+
+    `s` is a ratio of two medians measured in different conditions, so the honest interval
+    is over the co-run samples with the isolated median held fixed -- resampling both would
+    conflate two sources of spread that the report states separately.
+    """
+    import random                                                     # noqa: PLC0415
+    import statistics                                                 # noqa: PLC0415
+    v = [x for x in num if x == x]
+    if not v or not den_median:
+        return float("nan"), float("nan")
+    rng = random.Random(seed)
+    meds = sorted(statistics.median(rng.choices(v, k=len(v))) for _ in range(iters))
+    lo = meds[int(0.025 * (iters - 1))] / den_median
+    hi = meds[int(0.975 * (iters - 1))] / den_median
+    return lo, hi
+
+
+def timing(frames, warm, num_steps, stream_p, stream_e):
+    """Bracketed isolated -> co-run -> isolated, all in one session (non-negotiable 3)."""
+    out = {}
+    print(f"  warm-up: {warm} frames", flush=True)
+    run_serial(frames[:warm], num_steps)
+    torch.cuda.synchronize()
+
+    print("  A_iso (prefix alone, through the co-run's own stream)...", flush=True)
+    out["A_iso_pre"] = run_isolated(frames, num_steps, "prefix", stream_p)
+    print("  B_iso (expert alone)...", flush=True)
+    out["B_iso_pre"] = run_isolated(frames, num_steps, "expert", stream_e)
+    print("  T_serial (both stages back to back on one stream)...", flush=True)
+    _, out["serial"] = run_serial(frames, num_steps)
+
+    print("  pipeline (prefix(k) || expert(k-1))...", flush=True)
+    torch.cuda.synchronize()
+    import time                                                       # noqa: PLC0415
+    t0 = time.perf_counter()
+    _, out["corun"] = run_pipeline(frames, num_steps, stream_p, stream_e)
+    torch.cuda.synchronize()
+    out["pipe_wall_s"] = time.perf_counter() - t0
+    out["pipe_frames"] = len(out["corun"])
+
+    print("  A_iso / B_iso again (the bracket: drift must be visible)...", flush=True)
+    out["A_iso_post"] = run_isolated(frames, num_steps, "prefix", stream_p)
+    out["B_iso_post"] = run_isolated(frames, num_steps, "expert", stream_e)
+    return out
+
+
+# --------------------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=("equivalence",), default="equivalence")
+    ap.add_argument("--mode", choices=("equivalence", "timing"), default="equivalence")
     ap.add_argument("--path", choices=("eager", "compiled", "both"), default="both",
                     help="§6.2 wants BOTH: eager, where nothing but the schedule differs, "
                          "and the compiled bf16_both path that is actually timed, where "
@@ -388,6 +470,14 @@ def main() -> int:
                          "only that path has")
     ap.add_argument("--steps", type=int, default=10)
     ap.add_argument("--frames", type=int, default=6)
+    ap.add_argument("--sync-debug", action="store_true",
+                    help="torch.cuda.set_sync_debug_mode('warn') around a short pipeline. "
+                         "§7: a host synchronisation inside either stage's issue path "
+                         "blocks the OTHER stream's launches too, so the stages serialise "
+                         "and the wall clock shows no overlap while the per-stage event "
+                         "timings still look isolated-normal.")
+    ap.add_argument("--warm", type=int, default=20,
+                    help="warm-up frames before any timed condition (spec Step 1: >= 20)")
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--fixtures", default="bench/fixtures/e12")
     ap.add_argument("--outdir", default="")
@@ -398,6 +488,9 @@ def main() -> int:
     print("gate:", json.dumps(gate), flush=True)
     spec = MR.get("pi0")
     fixtures = REPO / args.fixtures
+
+    if args.mode == "timing":
+        return run_timing(args, spec, gate)
 
     paths = ("eager", "compiled") if args.path == "both" else (args.path,)
     rows: list[dict] = []
@@ -504,6 +597,139 @@ def main() -> int:
                 for m in ("pipeline", "stale_control") for p in paths) + "\n")
         print(f"  wrote {out}/equivalence.csv and equivalence.md", flush=True)
     return 0 if ok else 1
+
+
+
+
+def run_timing(args, spec, gate) -> int:
+    """Step 1 + 2 at one power mode: A_iso, B_iso, T_serial, A_co, B_co, T_pipe -> s, p, r."""
+    import csv                                                        # noqa: PLC0415
+    import model_registry as MR                                       # noqa: PLC0415
+
+    if args.path == "compiled":
+        raise SystemExit(
+            "the stock compiled bf16_both path CANNOT be pipelined across two streams on "
+            "this stack: the §6 equivalence check fails non-deterministically (max|d| 1.273 "
+            "on one run, all-NaN on the next) while compiled SERIAL is correct and eager "
+            "PIPELINED is bitwise exact. See scratch/NOTE_e12_compiled_two_stream.txt. It "
+            "produces plausible milliseconds and NaN actions, so timing it would be worse "
+            "than not timing it. Implement the own-CUDAGraph fallback (spec §7) first.")
+
+    policy, cfg, _ = MR.load_policy(spec, n=args.steps, compile_mode=None)
+    P.assert_real_weights(policy, spec=spec)
+    frames, manifest = load_frames(policy, spec, REPO / args.fixtures, args.frames,
+                                   args.seed)
+    stream_p, stream_e = torch.cuda.Stream(), torch.cuda.Stream()
+
+    if args.sync_debug:
+        # Warm first: the first call compiles/allocates and would drown the signal.
+        run_serial(frames[:2], args.steps)
+        torch.cuda.synchronize()
+        print("  --- sync-debug: one pipeline pass, warnings are host syncs ---", flush=True)
+        torch.cuda.set_sync_debug_mode("warn")
+        try:
+            run_pipeline(frames[:3], args.steps, stream_p, stream_e)
+        finally:
+            torch.cuda.set_sync_debug_mode("default")
+        print("  --- end sync-debug ---", flush=True)
+        return 0
+
+    t = timing(frames, args.warm, args.steps, stream_p, stream_e)
+
+    A_pre = summarize([r["ms"] for r in t["A_iso_pre"]])
+    B_pre = summarize([r["ms"] for r in t["B_iso_pre"]])
+    A_post = summarize([r["ms"] for r in t["A_iso_post"]])
+    B_post = summarize([r["ms"] for r in t["B_iso_post"]])
+    A_co = summarize([r["prefix_ms"] for r in t["corun"]])
+    B_co = summarize([r["expert_ms"] for r in t["corun"]])
+    Tser = summarize([r["frame_ms"] for r in t["serial"]])
+
+    # Isolated reference = the mean of the two brackets, so drift is shared rather than
+    # attributed to whichever end happened to be measured first.
+    A_iso = (A_pre["median_ms"] + A_post["median_ms"]) / 2
+    B_iso = (B_pre["median_ms"] + B_post["median_ms"]) / 2
+    drift_A = abs(A_post["median_ms"] - A_pre["median_ms"]) / A_pre["median_ms"] * 100
+    drift_B = abs(B_post["median_ms"] - B_pre["median_ms"]) / B_pre["median_ms"] * 100
+    T_pipe = t["pipe_wall_s"] * 1e3 / max(t["pipe_frames"], 1)
+    s_val = B_co["median_ms"] / B_iso
+    p_val = A_co["median_ms"] / A_iso
+    r_val = A_iso / B_iso
+    lo, hi = bootstrap_ci([r["expert_ms"] for r in t["corun"]], B_iso)
+
+    print()
+    print(f"  A_iso  {A_iso:8.2f} ms   (bracket drift {drift_A:.1f} %)")
+    print(f"  B_iso  {B_iso:8.2f} ms   (bracket drift {drift_B:.1f} %)")
+    print(f"  T_serial {Tser['median_ms']:6.2f} ms      T_pipe {T_pipe:8.2f} ms")
+    print(f"  A_co   {A_co['median_ms']:8.2f} ms   B_co {B_co['median_ms']:8.2f} ms")
+    print()
+    print(f"  s = B_co/B_iso = {s_val:.4f}   [95% CI {lo:.4f}, {hi:.4f}]")
+    print(f"  r = A_iso/B_iso = {r_val:.4f}   <- the break-even for s, THIS session")
+    print(f"  p = A_co/A_iso = {p_val:.4f}")
+    print(f"  T_pipe/A_iso = {T_pipe / A_iso:.4f}   speed-up vs serial = "
+          f"{Tser['median_ms'] / T_pipe:.4f}")
+    print()
+    print(f"  VERDICT: s {'<' if s_val < r_val else '>'} r  -> the expert is "
+          f"{'NOT ' if s_val < r_val else ''}the pipeline's bottleneck under co-run")
+
+    if args.outdir:
+        out = REPO / args.outdir
+        (out / "raw").mkdir(parents=True, exist_ok=True)
+        with (out / "latency_samples.csv").open("w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["mechanism", "condition", "stage", "frame", "ms"])
+            for cond, rows_, stage, key in (
+                    ("isolated_pre", t["A_iso_pre"], "prefix", "ms"),
+                    ("isolated_pre", t["B_iso_pre"], "expert", "ms"),
+                    ("isolated_post", t["A_iso_post"], "prefix", "ms"),
+                    ("isolated_post", t["B_iso_post"], "expert", "ms"),
+                    ("serial", t["serial"], "prefix", "prefix_ms"),
+                    ("serial", t["serial"], "expert", "expert_ms"),
+                    ("serial", t["serial"], "frame", "frame_ms"),
+                    ("corun", t["corun"], "prefix", "prefix_ms"),
+                    ("corun", t["corun"], "expert", "expert_ms")):
+                for r in rows_:
+                    w.writerow(["baseline_eager", cond, stage, r["frame"], r[key]])
+        with (out / "corun_summary.csv").open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=["mechanism", "power_mode", "sm_count", "N",
+                                              "condition", "stage", "median_ms", "mean_ms",
+                                              "p5_ms", "p95_ms", "min_ms", "max_ms", "n"])
+            w.writeheader()
+            for cond, stage, d in (("isolated_pre", "prefix", A_pre),
+                                   ("isolated_pre", "expert", B_pre),
+                                   ("isolated_post", "prefix", A_post),
+                                   ("isolated_post", "expert", B_post),
+                                   ("corun", "prefix", A_co), ("corun", "expert", B_co),
+                                   ("serial", "frame", Tser)):
+                w.writerow({"mechanism": "baseline_eager",
+                            "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
+                            "N": args.steps, "condition": cond, "stage": stage, **d})
+        with (out / "corun_ratios.csv").open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=[
+                "mechanism", "power_mode", "sm_count", "N", "A_iso_ms", "B_iso_ms",
+                "T_serial_ms", "A_co_ms", "B_co_ms", "T_pipe_ms", "s", "s_ci95_lo",
+                "s_ci95_hi", "p", "r", "T_pipe_over_A_iso", "speedup_vs_serial",
+                "reference", "notes"])
+            w.writeheader()
+            w.writerow({
+                "mechanism": "baseline_eager", "power_mode": gate["power_mode"],
+                "sm_count": gate["sm_count"], "N": args.steps,
+                "A_iso_ms": round(A_iso, 4), "B_iso_ms": round(B_iso, 4),
+                "T_serial_ms": round(Tser["median_ms"], 4),
+                "A_co_ms": round(A_co["median_ms"], 4),
+                "B_co_ms": round(B_co["median_ms"], 4), "T_pipe_ms": round(T_pipe, 4),
+                "s": round(s_val, 6), "s_ci95_lo": round(lo, 6), "s_ci95_hi": round(hi, 6),
+                "p": round(p_val, 6), "r": round(r_val, 6),
+                "T_pipe_over_A_iso": round(T_pipe / A_iso, 6),
+                "speedup_vs_serial": round(Tser["median_ms"] / T_pipe, 6),
+                "reference": "own_isolated",
+                "notes": (f"EAGER baseline. The compiled bf16_both rung cannot be pipelined "
+                          f"on this stack (see scratch/NOTE_e12_compiled_two_stream.txt), so "
+                          f"r here is the EAGER ratio and is NOT E7's 1.50, which is "
+                          f"bf16_both. Isolated bracket drift: prefix {drift_A:.1f} %, "
+                          f"expert {drift_B:.1f} %. Fresh-KV equivalence verified bitwise "
+                          f"in eager.")})
+        print(f"  wrote {out}/corun_ratios.csv (+ summary, samples)", flush=True)
+    return 0
 
 
 if __name__ == "__main__":

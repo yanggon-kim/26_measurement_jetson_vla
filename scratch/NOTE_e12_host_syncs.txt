@@ -1,0 +1,83 @@
+E12: pi0's own forward path synchronises per denoising step, so two streams cannot overlap
+2026-09-25 03:30. Found with torch.cuda.set_sync_debug_mode("warn"), which §7 names.
+
+## The symptom that started it
+
+A first timing pass (eager, N=4, 6 frames) gave:
+
+    A_iso 478.91   B_iso 226.81
+    A_co  480.34   B_co  227.13      s = 1.0014   p = 1.0030
+    T_serial 705.02   T_pipe 707.13   speed-up vs serial = 0.9970
+
+Read alone, s = 1.00 and p = 1.00 say "co-running is free on Orin, perfect overlap" --
+which is ONE OF THE TWO HEADLINE OUTCOMES the research side is waiting for, and it would
+have been false. The wall clock refutes it: T_pipe = T_serial = A_iso + B_iso. Real overlap
+would give T_pipe -> max(A,B) = 479 ms.
+
+**s ~= 1 is what BOTH ideal overlap and zero overlap look like** in per-stage event timings,
+because a stage that has the GPU to itself measures its isolated time either way. Only
+T_pipe separates them. That is exactly why §3 of the spec insists s, p and T_pipe are
+always reported together, and it is the reason this was caught.
+
+## The cause, measured
+
+torch.cuda.set_sync_debug_mode("warn") over one pipeline pass reports synchronising CUDA
+operations at three places, all the same pattern -- building a DEVICE tensor from a PYTHON
+LIST, which forces a host-device sync:
+
+    bench/corun.py:87                per denoise step   torch.tensor(t, device=...)   (MINE)
+    .../lerobot/policies/pi0/modeling_pi0.py:746   per denoise step
+        att_masks = torch.tensor(att_masks, dtype=embs.dtype, device=embs.device)
+        # att_masks = [1] + [0] * (chunk_size - 1)  -- a CONSTANT list
+    .../modeling_pi0.py:681          per prefix
+        att_masks = torch.tensor(att_masks, dtype=torch.bool, device=pad_masks.device)
+
+A host sync in either stage's issue path blocks the OTHER stream's launches too. With one
+issuing thread (§13.7, and a second thread is forbidden because T010's numbers were GIL
+artefacts), a per-step sync in the expert means the prefix stream is empty whenever the
+expert is being issued, and vice versa. The streams are wired correctly and still cannot
+overlap.
+
+## Why this matters beyond the harness
+
+Two of the three syncs are **pi0's own model code**, not mine. So:
+
+* The stock LeRobot pi0 implementation **cannot** be pipelined across two CUDA streams,
+  on any GPU, for reasons that have nothing to do with Orin or with CTA dispatch.
+* A reviewer asking "why not just run both stages on one GPU on two streams?" -- the exact
+  objection E12 exists to answer -- has to deal with this first. It is a software property
+  and it is fixable, but it is not fixed in the shipping model.
+* KerColle's question (head-of-line blocking at the CTA dispatcher) is about GPU contention.
+  A workload that never gets both streams' work resident on the GPU cannot exhibit it. In
+  the stock eager configuration the question is not merely hard to answer, it is
+  **unanswerable**, and reporting s from it would answer a different question than the one
+  asked.
+
+## Compounding: eager is also launch-bound
+
+E5 measured pi0's eager ae_step at 84.2 % GPU idle over 968 kernels per step. Even with the
+syncs removed, one Python thread issuing ~1000 kernels per step may not keep two streams
+fed. The compiled bf16_both rung cuts that to 372 kernels/step and 47 % idle, which is where
+GPU contention becomes measurable -- and that is the path whose CUDA-graph trees corrupt
+across two streams (scratch/NOTE_e12_compiled_two_stream.txt).
+
+So the two obstacles compound: the configuration that CAN show contention is the one that
+cannot currently be pipelined safely, and the configuration that pipelines safely cannot
+show contention.
+
+## What follows, in order
+
+1. Remove MY sync (precompute the N timestep tensors once). Unambiguously allowed: §7 names
+   precomputing the step times as the example of a permitted harness change.
+2. Patch pi0's two as a LABELLED variant via monkeypatch -- never by editing site-packages --
+   with the equivalence check re-run through it and the isolated stages re-measured. §7:
+   "Removing one is a harness change, allowed if the equivalence check passes and the
+   isolated stages are re-measured through the changed harness."
+3. Report BOTH: the stock path (no overlap possible, syncs named and counted) and the
+   de-synced variant (where the GPU question can actually be asked). The first is a result
+   about the software; the second is the result about the device.
+
+## Do not
+
+Do not report s = 1.0014 as "co-running is free on Orin". It is the signature of a harness
+that never overlapped, and the spec's §1 warns about exactly this in both directions.
