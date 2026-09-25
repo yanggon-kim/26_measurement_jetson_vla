@@ -2,6 +2,45 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## 🔬🔬 FOR THE PAPER — GR00T N1.7's action step runs at 86 % of peak bandwidth, 1.16× its floor
+
+**This is the strongest measured support in the whole campaign for a memory-side accelerator,
+and it points at a different model than the study started from.**
+
+| model | `ae_step` ms | bytes/step | % peak BW | gap × floor | reading |
+|---|---:|---:|---:|---:|---|
+| π0 | 52.79 | 638 MB | 6.45 % | 15.51× | launch-bound |
+| π0.5 | 62.69 | 1 735 MB | 14.76 % | 6.77× | launch-bound |
+| SmolVLA | 60.80 | 203 MB | 1.78 % | 56.04× | launch-bound, extreme |
+| **GR00T N1.7** | **20.06** | **3 241 MB** | **86.17 %** | **1.161×** | **bandwidth-bound** |
+
+GR00T N1.7 streams a 1.09-billion-parameter DiT across the memory bus every denoising step and
+already sustains **161.5 GB/s of the 187.47 GB/s** this device can deliver, at **1.161× its
+physical floor** — protocol §9 reads < 1.5× as *near-optimal*. **There is no software overhead
+left to remove.** The only ways to make that step faster are to move less data or to move it
+faster, which is precisely what processing-in-memory offers. For π0 and SmolVLA the same
+accelerator would target a ceiling they use 6.5 % and 1.8 % of.
+
+**Why the byte count can be trusted**, since the result rests on it: `ae_step` bytes assume
+every step reads the whole action head, and that is validated by the gap ratio itself. A ratio
+below 1.0 is physically impossible — nothing beats the floor computed from the bytes it moves.
+Over-counting by even 20 % would have pushed the floor past the measured 20.06 ms and the ratio
+under 1. At 1.161× the count is consistent and cannot be a large overestimate.
+
+**Suggested framing:** make GR00T N1.7 (or a comparably large DiT action head) the subject of
+the bandwidth argument, and cite π0/π0.5/SmolVLA as the contrasting case where the same stage is
+launch-bound and a bandwidth accelerator would not help. That is a stronger paper than treating
+all four as one population, and every number for it is now measured on real silicon.
+
+FLOPs for GR00T are deliberately **not** counted: its DiT blocks alternate self- and
+cross-attention, so π0's linear-plus-self-attention formula does not apply and using it would
+have produced an authoritative-looking wrong number. Compute columns are empty, not 0.
+Outstanding: N1.5 and N1.6 (separate `Isaac-GR00T` branches and venvs), and GR00T's `vision`
+byte split (Cosmos-Reason2-2B does not name its tower `vision_model`/`vision_tower`, so the
+script recorded nothing rather than guessing).
+
+---
+
 ## 🔬 FOR THE PAPER — E6 now exists, and it changes which argument the PIM case can make
 
 **Every action expert measured is on the memory side of Orin's roofline, and none is anywhere

@@ -63,7 +63,7 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 08:26:04** · elapsed **61.85 h** of 26 (238 %) · 51.0 GiB free · 0.73 GiB swap
+**Updated 08:30:05** · elapsed **61.92 h** of 26 (238 %) · 51.0 GiB free · 0.73 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 
@@ -143,6 +143,8 @@ Latest log lines:
 | pi0 | 10 | paper config (eager+TF32) | 241.51 | 234.36 | 580.24 | 1062.42 | 54.6 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.31 | 64.60 | 610.92 | 716.81 | 85.2 % |
 | smolvla | 10 | paper config (eager+TF32) | 33.26 | 64.49 | 608.01 | 713.69 | 85.2 % |
+
+*(published: pushed at 08:26)*
 <!-- SLOW:END -->
 
 ## Live status
