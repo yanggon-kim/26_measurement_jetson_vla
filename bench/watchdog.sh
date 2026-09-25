@@ -18,6 +18,22 @@ audit_once() {
 
 echo "=================== WATCHDOG AUDIT $(date +%H:%M) ==================="
 echo
+# Protocol §1: a latency without its power mode is not a result. The device is not always in
+# MAXN any more -- MODE_50W runs unattended -- and a run started in the wrong mode produces
+# numbers that look ordinary and are mislabelled. So every audit states the mode FIRST, and
+# says loudly when it is not MAXN, because that is the condition under which a mistake is
+# silent. MODE_50W keeps all 16 SMs and only lowers the clocks (816.0 vs 1300.5 MHz), so
+# nothing crashes to warn you.
+_pm=$(sudo -n nvpmodel -q 2>/dev/null | head -1)
+_sm=$(ls -d /sys/class/devfreq/17000000.gpu 2>/dev/null >/dev/null && echo ok || echo "")
+case "$_pm" in
+  *MAXN*) echo "  POWER MODE: $_pm  (the default; MAXN-class runs are valid)" ;;
+  "")     echo "  *** POWER MODE UNREADABLE -- do not start a timed run until it is known ***" ;;
+  *)      echo "  *** POWER MODE IS CAPPED: $_pm -- any run started now carries THIS mode,"
+          echo "      not MAXN. Nothing will crash: 50W keeps 16 SMs and only lowers clocks."
+          echo "      Check the run directory name and meta.json record the mode. ***" ;;
+esac
+echo
 echo "--- 1a. PAST CORRECTNESS: Parts A/B/C, the work that is already reported"
 $HOME/venvs/pi0/bin/python - <<'PYA'
 import glob, json
