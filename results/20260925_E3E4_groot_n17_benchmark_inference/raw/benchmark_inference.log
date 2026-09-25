@@ -1,0 +1,47 @@
+/home/yanggon/venvs/groot/lib/python3.10/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+====================================================================================================
+GR00T INFERENCE BENCHMARK
+====================================================================================================
+Device: Jetson Orin (Orin)
+Model: /home/yanggon/.cache/huggingface/hub/models--nvidia--GR00T-N1.7-3B/snapshots/2fc962b973bccdd5d8ce4f67cc63b264d6886495
+Dataset: demo_data/droid_sample
+Iterations: 20
+Warmup: 5
+Use Trajectory: False
+
+Loading policy...
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:01<00:01,  1.04s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.52it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.40it/s]
+WARNING:root:Video key mismatch between model config and dataset. Auto-mapping by position: {'exterior_image_1_left': 'exterior_1_left', 'wrist_image_left': 'wrist_left'}
+Action Horizon: 40
+Denoising Steps: 4
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/Isaac-GR00T/gr00t/utils/video_utils.py", line 58, in _get_video_decoder_cls
+    from torchcodec.decoders import VideoDecoder
+ModuleNotFoundError: No module named 'torchcodec'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/Isaac-GR00T/scripts/deployment/benchmark_inference.py", line 678, in <module>
+    main(config)
+  File "/home/yanggon/00_VLA/Isaac-GR00T/scripts/deployment/benchmark_inference.py", line 429, in main
+    episode_data = dataset[0]
+  File "/home/yanggon/00_VLA/Isaac-GR00T/gr00t/data/dataset/lerobot_episode_loader.py", line 604, in __getitem__
+    video_data = self._load_video_data(episode_id, np.arange(actual_length))
+  File "/home/yanggon/00_VLA/Isaac-GR00T/gr00t/data/dataset/lerobot_episode_loader.py", line 442, in _load_video_data
+    video_data[image_key] = get_frames_by_indices(
+  File "/home/yanggon/00_VLA/Isaac-GR00T/gr00t/utils/video_utils.py", line 75, in get_frames_by_indices
+    decoder = _build_decoder(video_path, decoder_kwargs)
+  File "/home/yanggon/00_VLA/Isaac-GR00T/gr00t/utils/video_utils.py", line 65, in _build_decoder
+    video_decoder_cls = _get_video_decoder_cls()
+  File "/home/yanggon/00_VLA/Isaac-GR00T/gr00t/utils/video_utils.py", line 60, in _get_video_decoder_cls
+    raise _decoder_import_error(exc) from exc
+ImportError: torchcodec is required for video decoding. Install it via the platform deployment script (scripts/deployment/{dgpu,orin,thor,spark}/install_deps.sh) or `uv pip install torchcodec`.
