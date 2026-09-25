@@ -63,7 +63,7 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 07:58:03** · elapsed **61.38 h** of 26 (236 %) · 44.4 GiB free · 0.73 GiB swap
+**Updated 08:00:03** · elapsed **61.42 h** of 26 (236 %) · 51.0 GiB free · 0.73 GiB swap
 
 > **nothing is running.** If this persists, the chain broke — check the last log below and start the next item.
 

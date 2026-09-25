@@ -224,8 +224,15 @@ for tag, pat, need, target in (
         # the inverse of this script's usual failure -- red over a working thing rather than
         # green over a broken one -- and it is still a defect, because an audit that cries
         # wolf on good runs is one nobody reads.
+        # Three deliverable types now, because E12's mechanisms answer the question in
+        # different currencies: corun_ratios.csv carries s/p/r for the co-run schedules,
+        # sm_sensitivity.csv the per-SM-count curve for green contexts (no s or p -- it
+        # never runs two stages at once), power.csv the Step 5 energy arms. Each time a new
+        # mechanism landed this list was one short and the audit called a finished run
+        # BROKEN. Listing them beats a special case per tag, which is how the old hardcoded
+        # JOBS allowlist rotted.
         ("E12 corun",   "results/*_E12_*",
-         ("corun_ratios.csv", "sm_sensitivity.csv"),                    5)):
+         ("corun_ratios.csv", "sm_sensitivity.csv", "power.csv"),       5)):
     def _has(d, need):
         names = (need,) if isinstance(need, str) else need
         return any((Path(d) / n).exists() and (Path(d) / n).stat().st_size > 0
