@@ -35,3 +35,50 @@ Result directories `results/<date>_E12_pi0_*` (names in spec §10); report `repo
 Acceptance: spec §11.
 
 status: claimed 2026-09-25
+
+status: done (MAXN eager) 2026-09-25; compiled baseline, Step 3, Step 4 and Step 5 energy remain open
+
+**What is measured.** `results/20260925_E12_pi0_corun_N10_MAXN_eager_nosync/`, n = 100 frames per
+condition, bracketed in one session. Report: `reports/E12_pi0_corun.md`. bench commit `2685b9245576`.
+
+**The answer for eager: the stages do not overlap, and the host is why.** `T_pipe` 994.88 ms
+equals `A_iso + B_iso` 997.83 ms (ideal would be `max(A,B)` = 523.76), speed-up over serial
+0.9995, and **host `issue/wall` = 1.0000 over a 99.5-second run** — the CPU issues kernels for
+essentially the whole wall clock, so the two streams never both hold resident work.
+
+**`s` = 0.9956 must not be read as "co-running is free".** It is what ideal overlap AND zero
+overlap both look like in per-stage timings, since a stage alone on the GPU measures its
+isolated time either way. Only `T_pipe` separates them. Reported from `s` alone these numbers
+would have asserted one of §9's two pre-registered outcomes, falsely.
+
+**π0 eager cannot answer KerColle's question.** That mechanism is GPU contention; a
+launch-bound workload (E5: 84.2% idle, 968 kernels/step) never fills the GPU for contention to
+arise. The compiled rung is where it becomes answerable — and that path corrupts when
+pipelined (below).
+
+**Fresh-KV verified (non-negotiable 1).** Eager pipelined actions are **bitwise identical** to
+serial (6/6, max abs diff 0.000e+00); the negative control — expert given frame *k−2*'s cache
+— is detected 5/5. Five real LIBERO frames were captured so the check has power at all;
+`obs_0` reproduces the committed fixture bit-identically in decoded pixels.
+
+**Two findings beyond the headline.**
+1. **π0's shipping model synchronises 1 + N times per frame** — `modeling_pi0.py:681` per
+   prefix, `:746` per denoise step, both materialising a constant `att_masks`. This blocks
+   two-stream overlap on ANY GPU, independent of Orin. De-syncing them (labelled variant
+   `pi0_nosync`, equivalence re-verified bitwise) also made the **expert ≈19% faster at N = 4**
+   (226.81 → 184.18 ms) — an optimisation for the shipping model, independent of E12.
+2. **The stock compiled `bf16_both` path corrupts when pipelined**: max abs diff 1.273 on one
+   run, all-NaN on another, from identical code, while compiled SERIAL is correct and eager
+   PIPELINED is exact. `TORCH_LOGS=cudagraphs` says nothing — it fails silently. Hazard §7,
+   predicted in the spec. No compiled co-run number is reported.
+
+**`r` is configuration-dependent.** 0.905 here (eager: the expert is longer) vs E7's 1.50
+(`bf16_both`: the prefix is longer). Compiling speeds the expert more than the prefix and flips
+which stage sets the period, so `r` must come from the same session — §3 already requires this.
+
+**Open, and listed in the result's `meta.json` under `not_measured` rather than left implicit:**
+the compiled co-run (needs the own-`CUDAGraph` fallback of §7); Step 3's mechanisms (green
+contexts and MPS both probed as present on CUDA 12.6, so testable); Step 4 at MODE_30W (rides
+the owner's capped-mode reboot, as §11 permits); Step 5 energy and an N = 4 result directory;
+and the nsys timeline, which is unnecessary while `B_co − B_iso` is −2.3 ms because there is no
+slowdown to decompose.
