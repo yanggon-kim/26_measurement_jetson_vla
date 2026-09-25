@@ -49,7 +49,7 @@ stated as a conclusion rather than a conjecture:
 |---|---|---|
 | GPU idle during the expert | E5 | **84.2 %** idle over 968 kernels/step (eager) |
 | no configuration is memory-latency-bound | E5b | long-scoreboard stall share **19.5–47.6 %**, none meets §7's ≥ 60 % |
-| the expert does not use the SMs | E12 §5 | 4× fewer SMs costs it **1.3 %** (eager) / 4.9 % (`bf16_both`) |
+| the expert does not use the SMs | E12 §5 | 4× fewer SMs costs it **1.3 %** (eager) — ~~/ 4.9 % (`bf16_both`)~~ *withdrawn 2026-09-25: that point was not confined (E12b M0); the confined compiled expert is 2.50× slower on 4 SMs* |
 | the host issues for the whole wall clock | E12 §1 | `issue/wall` = **1.0000** |
 | **distance from the physical floor** | **E6, here** | **15.51×** |
 
