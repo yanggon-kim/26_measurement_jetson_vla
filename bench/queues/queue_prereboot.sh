@@ -161,5 +161,49 @@ e6_rungs)
   echo "E6_RUNGS_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+e3e4_sweep)
+  # T006 step 1 / T009 step 1: the N sweep N in {1,2,4,6,8,10} for the eager rung and the best
+  # rung (per-step time = slope over N, protocol §2). The committed ladders ran N=10 only
+  # (pi0.5, SmolVLA) and N=4 only (GR00T), so the slope did not exist for any of them.
+  gate
+  echo "E3E4_SWEEP_START $(date -Is)"
+  for spec in "pi05 bf16_both_graphs" "smolvla vlm_graphs"; do
+    set -- $spec; m=$1; best=$2
+    d=results/${DATE}_E3E4_${m}_Nsweep
+    [ -s "$d/opt_ladder.csv" ] && { echo "  done already: $d"; continue; }
+    run "N sweep $m eager_tf32,$best" $PY bench/opt_ladder.py --model $m \
+        --steps 1,2,4,6,8,10 --rungs eager_tf32,$best --outdir "$d"
+  done
+  GV=$HOME/venvs/groot
+  for N in 1 2 4 6 8 10; do
+    for rung in eager_tf32 vlm_compile; do
+      d=results/${DATE}_E3E4_groot_n17_N${N}_${rung}
+      [ -s "$d/phase_split.csv" ] && { echo "  done already: $d"; continue; }
+      case $rung in
+        eager_tf32)  RA="--tf32 on" ;;
+        vlm_compile) RA="--tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs" ;;
+      esac
+      run "groot_n17 N=$N $rung" /bin/bash -c ". $GV/activate_orin_venv.sh >/dev/null 2>&1; \
+        HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 exec $GV/bin/python bench/groot_phases.py \
+        --outdir $d --checkpoint nvidia/GR00T-N1.7-3B --version n17 --steps $N \
+        --warmup 20 --timed 50 --rung $rung $RA"
+    done
+  done
+  # T009 step 1 also asks for the repository's OWN benchmark, to compare per-component numbers.
+  # Run as shipped: base checkpoint, the DROID demo sample (matches the embodiment tag the rest
+  # of this campaign uses). If it fails on this device the error IS the result -- recorded,
+  # not worked around by substituting another script.
+  d=results/${DATE}_E3E4_groot_n17_benchmark_inference; mkdir -p "$d/raw"
+  CK=$(ls -d ~/.cache/huggingface/hub/models--nvidia--GR00T-N1.7-3B/snapshots/* | head -1)
+  run "Isaac-GR00T scripts/deployment/benchmark_inference.py" /bin/bash -c \
+    ". $GV/activate_orin_venv.sh >/dev/null 2>&1; cd /home/yanggon/00_VLA/Isaac-GR00T && \
+     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 $GV/bin/python scripts/deployment/benchmark_inference.py \
+       --model-path $CK --dataset-path demo_data/droid_sample \
+       --embodiment-tag oxe_droid_relative_eef_relative_joint --num-iterations 20 --warmup 5 \
+       > $PWD/$d/raw/benchmark_inference.log 2>&1"
+  echo "  benchmark_inference exit recorded above; log in $d/raw/"
+  echo "E3E4_SWEEP_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 *) echo "unknown stage $STAGE"; exit 2 ;;
 esac

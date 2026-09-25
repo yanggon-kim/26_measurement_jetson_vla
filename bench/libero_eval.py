@@ -112,7 +112,18 @@ def main() -> int:
     ap.add_argument("--suite", default="libero_spatial")
     ap.add_argument("--tasks", type=int, default=10)
     ap.add_argument("--episodes", type=int, default=3)
-    ap.add_argument("--max-steps", type=int, default=280)
+    ap.add_argument("--max-steps", type=int, default=None,
+                    help="default: LeRobot's own TASK_SUITE_MAX_STEPS for the suite "
+                         "(lerobot/envs/libero.py: spatial 280, object 280, goal 300, "
+                         "libero_10 520 -- each sized from that suite's longest training "
+                         "demo). A fixed 280 would truncate every libero_10 episode.")
+    ap.add_argument("--steps", type=int, default=None,
+                    help="denoising steps N (T006 step 2: N in {10, 4, 2}); default = the "
+                         "checkpoint's own")
+    ap.add_argument("--rung", default="",
+                    help="apply a full opt_ladder rung (casts AND torch.compile), e.g. "
+                         "bf16_both. --prep applies only the casts; the study's speed-up is "
+                         "measured on the full rung, so its accuracy must be too.")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--outdir", required=True)
     args = ap.parse_args()
@@ -145,8 +156,24 @@ def main() -> int:
     from libero.libero.envs import OffScreenRenderEnv
 
     spec = MR.get(args.model)
-    policy, cfg, _ = MR.load_policy(spec, n=None, compile_mode=None)
+    policy, cfg, _ = MR.load_policy(spec, n=args.steps, compile_mode=None)
     torch.set_float32_matmul_precision("highest")
+    n_effective = getattr(cfg, spec.n_field, None)
+    if args.max_steps is None:
+        from lerobot.envs.libero import TASK_SUITE_MAX_STEPS
+        args.max_steps = TASK_SUITE_MAX_STEPS[args.suite]
+        max_steps_src = "lerobot.envs.libero.TASK_SUITE_MAX_STEPS"
+    else:
+        max_steps_src = "--max-steps"
+    rung_note = ""
+    if args.rung:
+        if args.prep != "none":
+            raise SystemExit("--rung already applies its own casts; do not combine with --prep")
+        compiled, rprep, prec, comp_s, fails, _ = OL.apply_rung(policy, spec, args.rung)
+        if fails:
+            raise SystemExit(f"rung {args.rung} failed to compile: {fails}")
+        rung_note = f"{args.rung}: prep=[{rprep}] compiled={compiled} matmul={prec}"
+        print("rung:", rung_note, flush=True)
 
     prep_note = ""
     if args.prep != "none":
@@ -241,13 +268,25 @@ def main() -> int:
         "sim_ms_median": round(med(t_sim), 2),
         "achieved_control_hz": round(1000.0 / (med(t_sim) + med(t_policy)), 2)
         if t_sim else None,
-        "max_steps": args.max_steps, "seed": args.seed,
+        "max_steps": args.max_steps, "max_steps_source": max_steps_src,
+        "N": n_effective, "rung": args.rung or None, "rung_note": rung_note,
+        "seed": args.seed, "seeds": f"env.seed(seed + episode), episodes 0..{args.episodes-1}",
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
                             f"few-percent difference in success rate"),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=1))
+    # protocol §5: meta.json per run. E8q's directories had none and needed a back-fill.
+    import pi0_common as P
+    meta = {"experiment": "E8 LIBERO closed loop (T006 step 2)", **{k: summary[k] for k in (
+                "model", "prep", "rung", "suite", "N", "max_steps", "max_steps_source",
+                "seed", "command", "date_utc")},
+            "checkpoint": spec.checkpoint, "revision": spec.revision,
+            "gate": P.gate(), "torch": torch.__version__,
+            "bench_commit": __import__("subprocess").run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()}
+    (out / "meta.json").write_text(json.dumps(meta, indent=1))
     with (out / "episodes.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
