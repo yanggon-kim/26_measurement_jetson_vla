@@ -63,12 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 14:06:21** · elapsed **67.52 h** of 26 (260 %) · 50.7 GiB free · 0.66 GiB swap
+**Updated 14:26:22** · elapsed **67.86 h** of 26 (261 %) · 51.0 GiB free · 0.65 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 525788 | `bench/opt_ladder.py --model smolvla --steps 1,2,4,6,8,10 --rungs eager_tf32,vlm_graphs --` | 2 min | 0.4 GiB |
-| 526268 | `/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/opt_ladder.py --model smolvla --outdir results/20260925_E3E4_smolvla_Nsweep --singl` | 0 min | 0.6 GiB |
+| 530067 | `bench/libero_eval.py --model pi0 --rung bf16_both --suite libero_spatial --tasks 1 --episo` | 0 min | 0.5 GiB |
 
 Latest log lines:
 
@@ -83,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 14:07** (71 configurations)
+**Re-derived from every result CSV on disk at 14:27** (83 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
@@ -152,6 +151,18 @@ Latest log lines:
 | pi05 | 8 | bf16_both_graphs | 56.36 | 226.87 | 147.52 | 436.90 | 33.8 % |
 | pi05 | 10 | eager_tf32 | 103.28 | 559.11 | 612.27 | 1280.43 | 47.8 % |
 | pi05 | 10 | bf16_both_graphs | 56.37 | 227.43 | 184.09 | 474.01 | 38.8 % |
+| smolvla | 1 | eager_tf32 | 32.97 | 65.65 | 62.23 | 168.37 | 37.0 % |
+| smolvla | 1 | vlm_graphs | 30.98 | 7.61 | 4.48 | 50.13 | 8.9 % |
+| smolvla | 2 | eager_tf32 | 32.89 | 64.77 | 122.44 | 227.63 | 53.8 % |
+| smolvla | 2 | vlm_graphs | 30.97 | 7.62 | 8.87 | 54.84 | 16.2 % |
+| smolvla | 4 | eager_tf32 | 33.11 | 65.33 | 246.70 | 352.58 | 70.0 % |
+| smolvla | 4 | vlm_graphs | 31.01 | 7.61 | 17.60 | 63.48 | 27.7 % |
+| smolvla | 6 | eager_tf32 | 33.02 | 64.21 | 364.24 | 468.92 | 77.7 % |
+| smolvla | 6 | vlm_graphs | 31.03 | 7.63 | 26.14 | 71.92 | 36.3 % |
+| smolvla | 8 | eager_tf32 | 32.97 | 62.73 | 474.95 | 578.11 | 82.2 % |
+| smolvla | 8 | vlm_graphs | 31.06 | 7.65 | 35.05 | 80.96 | 43.3 % |
+| smolvla | 10 | eager_tf32 | 33.36 | 66.09 | 625.72 | 732.84 | 85.4 % |
+| smolvla | 10 | vlm_graphs | 31.03 | 7.60 | 43.36 | 89.11 | 48.7 % |
 | pi05 | 10 | paper config (eager+TF32) | 103.61 | 550.51 | 626.90 | 1287.32 | 48.7 % |
 | pi05 | 10 | paper config (eager+TF32) | 239.39 | 2166.69 | 617.87 | 3030.99 | 20.4 % |
 | pi0 | 10 | paper config (eager+TF32) | 103.00 | 234.30 | 571.58 | 915.15 | 62.5 % |
