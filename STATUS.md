@@ -23,7 +23,32 @@ dispatcher" (`reports/E12_pi0_corun.md` §5, and the E6/STATUS text that cited t
 
 ---
 
-## ▶ NOW: T015 / E12b (claimed 2026-09-25 ~10:20) — where it sits in the queue
+## ✅ T015 / E12b DONE (2026-09-25) — one Orin GPU does not overlap π0's prefix and a fair expert well
+
+`reports/E12b_pi0_compiled_corun.md`. **Best valid co-run `O` = 1.247** (green 12/4; poor, band ≥ 1.15);
+whole GPU **1.39**. Why: on the whole GPU the streams time-slice — kernels of both execute together for
+3.1 % of a frame, the expert queued 175 ms/frame behind the prefix's 1008-CTA GEMMs (head-of-line
+blocking, KerColle's mechanism, on silicon); partitioned, **the stages still slow each other through the
+memory system** (`s_part` 1.16–1.26, `p_part` 1.05–1.10; hog control passes) — **row 2 lands:
+partitioning SMs does not partition bandwidth**. Fair expert (`bf16_both` + hoist, bitwise equal to
+stock): **110.95 ms** — rows 7 and 8 do not land for it. **A labelled exact variant,
+`owngraph_expert` (the whole 10-step loop as one CUDA graph, bitwise equal), runs 101.2 ms and DOES
+fall in row 8's band (93.1–102.4) — whether it enters the GPU baseline is your call** (question below).
+Co-run energy per frame **1.020 ×** fair serial (row 10 does not land). All equivalence checks bitwise,
+stale controls detected, 0 non-finite.
+
+**Question for the research side:** should `owngraph_expert` (capturing the N-step expert loop as one
+CUDA graph; exact, GPU-agnostic, bitwise identical) join the hoist in the fair GPU baseline? It moves the
+GPU expert from 110.95 to 101.2 ms at N = 10.
+
+**Repository (§6f):** results/ 372.7 MB tracked, 1.2G on disk; largest E12b file 9.0 MB.
+
+**Queue now:** the pre-reboot queue resumes (E3/E4 N sweep → GR00T N1.5/N1.6 E6 → E8 LIBERO), then the
+owner's capped-mode reboot session.
+
+---
+
+## (was: NOW) T015 / E12b — where it sat in the queue
 
 **The owner directed it directly**: T015 was taken immediately, and the pre-reboot queue the owner had
 started earlier (`bench/queues/queue_prereboot.sh`: E3/E4 N sweep → GR00T N1.5/N1.6 E6 → E8 LIBERO) is

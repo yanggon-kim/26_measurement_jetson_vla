@@ -51,3 +51,16 @@ correction owed to your T014 Step-4 prediction in `STATUS.md` (the eager expert 
 the CPU too); please restate that prediction before the `MODE_30W` session.
 
 status: claimed 2026-09-25 (owner directed: taken ahead of the pre-reboot queue, which is paused)
+
+status: done 2026-09-25 (MAXN). Every acceptance item of spec §12 holds; the one deliberate deviation
+(M4 bandwidth sampled in separate runs rather than alongside the timing runs, so no headline timing
+carries a sampler) is stated in the report's §12 review. Report: `reports/E12b_pi0_compiled_corun.md`.
+Results: `results/20260925_E12b_pi0_{fairexpert,corun,green_corun,emc_calibration,energy}_*`.
+bench: `bench/e12b_*.py`, `bench/green_ctx.py`, `bench/queues/queue_e12b.sh`.
+Answer: best valid co-run O = 1.247 (green 12/4) — poor overlap; whole GPU O = 1.39 (head-of-line
+blocking: 3.1 % concurrency, expert queued 175 ms/frame behind 1008-CTA prefix grids); partitioned, the
+stages still couple through memory (s_part 1.16–1.26, hog control passing). Rows landed: 2, 4 (in part),
+5; not 1, 3, 6, 7, 9, 10; row 8 not for the fair expert (110.95 ms) but yes for the labelled, bitwise-
+equivalent owngraph_expert (101.2 ms) — the research side's call. Fair expert: bf16_both + hoist,
+bitwise equivalent to stock, 110.95 ms. Co-run energy 1.020 x fair serial per frame.
+Corrections owed and made: T014's compiled green-context rows were not confined (M0) — see STATUS.

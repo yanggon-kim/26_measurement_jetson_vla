@@ -1,0 +1,9 @@
+cc libsmctrl.c -c -o libsmctrl.o -fPIC  -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+ar rcs libsmctrl.a libsmctrl.o
+cc libsmctrl_test_gpc_info.c -o libsmctrl_test_gpc_info -g -L. -l:libsmctrl.a  -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+/usr/local/cuda/bin/nvcc -ccbin g++ libsmctrl_test_mask_shared.cu -c -g
+/usr/local/cuda/bin/nvcc -ccbin g++ libsmctrl_test_global_mask.c -o libsmctrl_test_global_mask libsmctrl_test_mask_shared.o -g -L. -l:libsmctrl.a -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+/usr/local/cuda/bin/nvcc -ccbin g++ libsmctrl_test_stream_mask.c -o libsmctrl_test_stream_mask libsmctrl_test_mask_shared.o -g -L. -l:libsmctrl.a -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+/usr/local/cuda/bin/nvcc -ccbin g++ libsmctrl_test_stream_mask_override.c -o libsmctrl_test_stream_mask_override libsmctrl_test_mask_shared.o -g -L. -l:libsmctrl.a -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+/usr/local/cuda/bin/nvcc -ccbin g++ libsmctrl_test_next_mask.c -o libsmctrl_test_next_mask libsmctrl_test_mask_shared.o -g -L. -l:libsmctrl.a -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64
+/usr/local/cuda/bin/nvcc -ccbin g++ libsmctrl_test_next_mask_override.c -o libsmctrl_test_next_mask_override libsmctrl_test_mask_shared.o -g -L. -l:libsmctrl.a -lcuda -I/usr/local/cuda/include -L/usr/local/cuda/lib64

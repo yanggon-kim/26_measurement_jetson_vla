@@ -146,3 +146,5 @@ green context current via `cuCtxFromGreenCtx` + `cuCtxSetCurrent` does.
 **Still open:** MPS and `CUDA_DEVICE_MAX_CONNECTIONS`; two green contexts running concurrently
 (needs the host-issue problem solved); the own-`CUDAGraph` compiled pipeline; Step 4 at
 MODE_30W (owner's reboot); Step 5 energy and an N = 4 result directory.
+
+status: MAXN items superseded by T015 2026-09-25; Step 4 waits for MODE_30W
