@@ -53,9 +53,21 @@ def targets_for(model: str, mode: str, region: str = "ae_step_0",
     out, cum = [], 0.0
     for n, v in sorted(merged.items(), key=lambda kv: -kv[1]["dur"]):
         share = 100 * v["dur"] / total
-        launch_bound = v["sm"] < 5.0 and v["dur"] < LAUNCH_GAP_US
+        # PER-LAUNCH duration, not the total. v["dur"] accumulates over every launch of
+        # this kernel, so comparing it to a single launch gap is a category error: a kernel
+        # launched 16 times at 7.6 us each sums to 121 us, clears a 62 us bar, and is
+        # admitted as a target -- when 7.6 us against a 62 us gap is exactly the
+        # launch-bound case §1 exists to exclude. This docstring's own example ("3 % SM
+        # throughput and 500 us is NOT launch-bound") is about one kernel's duration.
+        #
+        # It changes a real verdict: pi0.5/eager's vectorized_elementwise_kernel is SM 2.5 %
+        # at 7.6 us per launch, was admitted, and carried 31.5 % of that configuration's
+        # coverage on its own.
+        per_launch = v["dur"] / max(v["n"], 1)
+        launch_bound = v["sm"] < 5.0 and per_launch < LAUNCH_GAP_US
         row = {"model": model, "mode": mode, "region": region, "kernel": n,
                "duration_us": round(v["dur"], 1), "launches": v["n"],
+               "per_launch_us": round(per_launch, 2),
                "sm_pct": round(v["sm"], 1), "share_pct": round(share, 1),
                "verdict": "launch-bound (§1): skipped" if launch_bound else "TARGET"}
         if not launch_bound:
