@@ -277,6 +277,47 @@ e8)
   echo "E8_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+groot_bench)
+  # T009 step 1: NVIDIA's own benchmark_inference.py (PyTorch eager + torch.compile modes; no
+  # TensorRT engine given, TRT is E10). The 2026-09-25 16:43 attempt failed on a missing
+  # torchcodec (kept as results/20260925_E3E4_groot_n17_benchmark_inference). torchcodec 0.10.0a0
+  # was then installed --no-deps from the repo's own Orin wheel (env/INSTALL_LOG.md); a new
+  # directory, never the failed one.
+  gate
+  GV=$HOME/venvs/groot
+  d=results/${DATE}_E3E4_groot_n17_benchmark_inference_torchcodec
+  [ -e "$d" ] && { echo "REFUSING: $d exists"; exit 2; }
+  mkdir -p "$d/raw"
+  CK=$(ls -d ~/.cache/huggingface/hub/models--nvidia--GR00T-N1.7-3B/snapshots/* | head -1)
+  CMD="scripts/deployment/benchmark_inference.py --model-path $CK --dataset-path demo_data/droid_sample --embodiment-tag oxe_droid_relative_eef_relative_joint --num-iterations 20 --warmup 5"
+  GS=$(sudo -n nvpmodel -q 2>/dev/null | head -1); GF=$(cat /sys/devices/platform/bus@0/17000000.gpu/devfreq/17000000.gpu/cur_freq 2>/dev/null)
+  run "Isaac-GR00T benchmark_inference.py (torchcodec)" /bin/bash -c \
+    ". $GV/activate_orin_venv.sh >/dev/null 2>&1; cd /home/yanggon/00_VLA/Isaac-GR00T && \
+     HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TRITON_CACHE_DIR=/tmp/triton_yanggon \
+       TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon $GV/bin/python $CMD \
+       > $PWD/$d/raw/benchmark_inference.log 2>&1"
+  python3 - "$d" "$CMD" "$GS" "$GF" <<'PY'
+import json, sys, time, subprocess, hashlib, pathlib
+d, cmd, gs, gf = sys.argv[1:5]
+log = pathlib.Path(d, "raw/benchmark_inference.log")
+txt = log.read_text(errors="replace")
+whl = pathlib.Path("/home/yanggon/00_VLA/Isaac-GR00T/scripts/deployment/orin/wheels/torchcodec-0.10.0a0-cp310-cp310-linux_aarch64.whl")
+json.dump({
+  "experiment": "E3/E4 GR00T N1.7 -- NVIDIA's own scripts/deployment/benchmark_inference.py (T009 step 1 comparison), re-run with torchcodec",
+  "status": "completed" if "Traceback" not in txt else "FAILED -- see raw/benchmark_inference.log",
+  "gr00t_commit": subprocess.run(["git", "-C", "/home/yanggon/00_VLA/Isaac-GR00T", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+  "bench_commit": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+  "checkpoint": "nvidia/GR00T-N1.7-3B", "embodiment_tag": "oxe_droid_relative_eef_relative_joint",
+  "dataset": "demo_data/droid_sample (git-lfs pulled)", "power_mode": gs, "gpu_cur_freq_hz": gf,
+  "harness_change": "torchcodec 0.10.0a0 installed --no-deps from Isaac-GR00T's Orin wheel (sha256 "
+                    + hashlib.sha256(whl.read_bytes()).hexdigest() + "); uv pip freeze before/after differs only by that line",
+  "supersedes_failure": "results/20260925_E3E4_groot_n17_benchmark_inference (ImportError: torchcodec)",
+  "command": cmd, "cwd": "/home/yanggon/00_VLA/Isaac-GR00T", "log": "raw/benchmark_inference.log",
+  "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, open(pathlib.Path(d, "meta.json"), "w"), indent=2)
+PY
+  echo "GROOT_BENCH_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 chain)
   # Everything after e6_rungs, in plan order, one GPU job at a time. Waits for a running
   # e6_rungs to finish first rather than overlapping it.
