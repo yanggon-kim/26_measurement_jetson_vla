@@ -216,9 +216,21 @@ for tag, pat, need, target in (
         # with timings but no ratios has not answered the question the experiment exists
         # for. Target 5 per docs/E12_corun/README.md §10 (corun N10, mechanisms, N4,
         # energy, and MODE_30W which waits for the owner's reboot).
-        ("E12 corun",   "results/*_E12_*",   "corun_ratios.csv",       5)):
-    rows = [(d, (Path(d) / need).exists() and (Path(d) / need).stat().st_size > 0)
-            for d in sorted(glob.glob(pat))]
+        # E12 has TWO valid deliverables, not one. corun_ratios.csv carries s/p/r for the
+        # co-run mechanisms; sm_sensitivity.csv carries the per-SM-count curve for the green
+        # context mechanism, which answers the same question a different way and has no s or
+        # p to report (it never runs two stages at once). Keying on corun_ratios.csv alone
+        # made the 07:37 audit report both completed green-context runs as BROKEN. That is
+        # the inverse of this script's usual failure -- red over a working thing rather than
+        # green over a broken one -- and it is still a defect, because an audit that cries
+        # wolf on good runs is one nobody reads.
+        ("E12 corun",   "results/*_E12_*",
+         ("corun_ratios.csv", "sm_sensitivity.csv"),                    5)):
+    def _has(d, need):
+        names = (need,) if isinstance(need, str) else need
+        return any((Path(d) / n).exists() and (Path(d) / n).stat().st_size > 0
+                   for n in names)
+    rows = [(d, _has(d, need)) for d in sorted(glob.glob(pat))]
     ok = sum(1 for _, o in rows if o)
     live = [os.path.basename(d) for d, o in rows if not o and _is_live(d)]
     broken_all = [os.path.basename(d) for d, o in rows if not o and not _is_live(d)]

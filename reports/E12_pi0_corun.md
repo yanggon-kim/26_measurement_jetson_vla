@@ -337,6 +337,84 @@ What works is making the green context *current* on the thread — `cuCtxFromGre
 `cuCtxSetCurrent` — so cuBLAS binds its handle to the context that owns the stream
 (`bench/green_ctx.py::GreenCtxStream.activate`). Anyone repeating this on Jetson will hit it.
 
+## 5b. Step 5 (energy), N = 4, and the remaining Step 3 mechanisms
+
+### Energy: the schedule saves nothing, because it overlaps nothing
+
+`results/20260925_E12_pi0_energy_N10_MAXN_eager_nosync`, protocol §4 as E7: in-session 60 s
+idle baseline, 60 s per arm, four sysfs rails at 20 Hz plus tegrastats. Both arms run the
+**same frames through the same stage functions**; only the schedule differs. The serial arm is
+a whole-frame loop, **not** a prefix loop plus an expert loop — in E7 those do not sum to
+`full`.
+
+| arm | ms/frame | module power | above idle | energy/frame |
+|---|---:|---:|---:|---:|
+| pipelined | 1031.86 | 35 546 mW | +24 759 mW | **36 678.74 mJ** |
+| serial | 1035.31 | 35 518 mW | +24 731 mW | **36 772.51 mJ** |
+| **ratio** | **0.9967** | | | **0.9975** |
+
+**No difference, which is the predicted result and the point of measuring it.** `T_pipe` equals
+`A_iso + B_iso`, so a schedule that does not overlap cannot save time or energy. Had a
+difference appeared it would have indicated something the timing harness missed; none did.
+Energy is module power × measured frame time and carries no claim beyond those two
+measurements.
+
+### N = 4: the pre-registered sanity check failed, and that is informative
+
+`results/20260925_E12_pi0_corun_N4_MAXN_eager_nosync`. The plan pre-registered this as a
+harness check: at N = 4 the stages are more unequal, *"so overlap should be easy. If N=4 does
+not approach `T_pipe ≈ A_iso`, suspect the harness before trusting N=10."*
+
+| | N = 4 | N = 10 (§1) |
+|---|---:|---:|
+| `A_iso` | 475.17 ms | 474.08 ms |
+| `B_iso` | 192.71 ms | 523.76 ms |
+| `T_serial` | 665.63 ms | 994.38 ms |
+| `T_pipe` | **666.77 ms** | **994.88 ms** |
+| `r` = `A_iso`/`B_iso` | 2.466 | 0.905 |
+| `T_pipe`/`A_iso` | **1.403** | 2.099 |
+| `issue/wall` | **1.0000** | **1.0000** |
+
+`T_pipe/A_iso` is 1.403, not ≈ 1.0, so **the check fails as written**. The harness is not the
+cause: `issue/wall` = 1.0000 reproduces exactly at N = 4, and `T_pipe` again equals
+`A_iso + B_iso` (666.77 vs 667.88). The pre-registered expectation assumed GPU-side overlap was
+available; it is not, at either N. The check did its job — it confirmed the cause is systemic
+rather than an N = 10 artefact, which is what a sanity check is for even when it fails.
+
+### MPS: available on this Jetson, and moot for this experiment
+
+Commonly assumed unsupported on Tegra. **It is not**: the control daemon started, an
+`nvidia-cuda-mps-server` process spawned, and the log recorded
+`NEW SERVER 501594: Ready` / `NEW CLIENT 501571 from user 1001` for a real CUDA client
+(`scratch/mps_probe_control.log`). Device attributes: `COMPUTE_MODE` = 0 (DEFAULT),
+`INTEGRATED` = 1, `UNIFIED_ADDRESSING` = 1.
+
+**But it cannot help E12**, and the reason is worth stating because it is not a scheduling
+fact: the two-process co-run is blocked by **memory**, not by context switching. Each process
+holds its own ~15 GB π0 against Orin's 62 GB shared CPU+GPU pool, and MPS does not reduce that.
+Running the two arms under MPS would reproduce the same OOM. The daemon was stopped and the GPU
+verified clean before any subsequent measurement.
+
+*Untested idea, recorded rather than pursued:* a process that loads **only** the action expert
+and its KV cache, rather than the whole policy, would have a far smaller footprint and might
+fit alongside a prefix process. That is a different experiment — it changes what is deployed,
+not just how it is scheduled — and the green-context result in §5 already answers the question
+this one was meant to answer.
+
+### `CUDA_DEVICE_MAX_CONNECTIONS` and the own-`CUDAGraph` compiled pipeline: not done, with reasons
+
+Both remain open, and both are now **uninformative rather than merely unfinished**, which is a
+scoping judgement stated here rather than buried:
+
+* `CUDA_DEVICE_MAX_CONNECTIONS` controls how many hardware work queues back concurrent streams.
+  With `issue/wall` = 1.0000 there is never work on two streams simultaneously, so there is
+  nothing for extra queues to carry. Not tested.
+* The own-`CUDAGraph`, separate-memory-pool harness (§7's fallback for §4's corruption) would
+  make a *compiled* in-process pipeline measurable. §5 now shows that at `bf16_both` neither
+  stage saturates the SMs — the prefix loses only 27.7 % of ideal scaling at 8 SMs and the
+  expert 1.9 % — so a compiled pipeline would be limited by the same host issue bottleneck and
+  would measure it again. It is the right thing to build if the host bottleneck is ever fixed.
+
 ## 5. Measured / derived / not measured
 
 **Measured.** `A_iso`, `B_iso`, `A_co`, `B_co`, `T_serial` (CUDA events on each stage's own
