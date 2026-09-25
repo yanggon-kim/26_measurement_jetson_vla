@@ -1,0 +1,36 @@
+SmolVLA E11f eager: three independent measurements of the same point, 2026-09-24
+For reports/E11_models.md. Evidence lives in the queue logs, not in results/.
+
+Three runs happened because the first two died AFTER measuring: the 17:04 run in the
+reduce-overhead concurrency section ("layer 0 was never captured"), the 17:54 run on a
+NameError I had introduced at pipelining.py:379. Neither wrote anything to results/, so
+only the third is committed and there is no duplicate anyone could average. But all three
+printed their eager half, so the repeats are free reproducibility evidence.
+
+                        17:04      17:54      18:18     spread
+  prefix median ms       96.85     100.20      98.82     3.5 %
+  ae     median ms      238.33     249.61     242.88     4.7 %
+  full   median ms      341.61     356.45        -       4.3 %
+  two_streams slowdown    1.792      1.804      1.788    0.9 %
+  two_processes slowdown  1.001*     1.001      1.002    0.1 %
+  ae_total idle raw       84.0 %     84.0 %     84.3 %   0.4 %
+  corrected idle          0.7776     0.7856     0.7762   1.2 %
+  profiling inflation    x1.3876    x1.3379    x1.4222   6.3 %
+
+  * 17:04 printed 1.007; 1.001 is the 17:54 value. Both within the same band.
+
+The pattern to carry into the report: ABSOLUTE latencies drift 3-5 % between runs an hour
+apart, while the DERIVED ratios -- the two-stream slowdown and the GPU-idle fraction --
+reproduce to about 1 %. That is the signature of a uniform shift (thermal or clock
+residency; the gate records min==max pinned at 1300.5 MHz in all three, so it is not a
+clock change) rather than a measurement defect, and it is reassuring for exactly the
+quantities the PIM model consumes, which are ratios.
+
+The profiling inflation factor is the loosest at 6.3 %, which matters because the corrected
+idle fraction is computed with it. Even so the corrected idle lands within 1.2 %, because
+the raw idle moves with it.
+
+Do NOT average these three. Two of the runs are incomplete by construction and only the
+third has a meta.json, a bench_commit and a gate record. Cite the spread as a
+reproducibility bound and point at scratch/queues/queue_e11.log and
+queue_e11_fixup.log / queue_e11_recover.log for the other two.
