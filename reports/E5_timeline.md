@@ -12,7 +12,7 @@ A phase can be slow for three different reasons and only one of them is a memory
 
 | model | mode | N | region | unit | wall ms | kernel ms | GPU idle ms | idle frac | corrected | kernels / unit | gap median µs |
 |---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|
-| π0 | `eager` | 10 | ae_step | denoising step | 855.4 | 135.4 | 720.0 | 0.8417 | — | 968.7 | 61.6 |
+| π0 | `eager` | 10 | ae_step | denoising step | 855.4 | 135.4 | 720.0 | 0.8417 | 0.7639 | 968.7 | 61.6 |
 | π0 | `eager` | 10 | vision | inference | 242.8 | 240.0 | 2.8 | 0.0115 | — | 1650.0 | 1.3 |
 | π0 | `eager` | 10 | vlm_prefix | inference | 236.2 | 232.4 | 3.8 | 0.0162 | — | 939.0 | 1.3 |
 | π0 | `eager` | 10 | whole_capture | inference | 2682.7 | 1216.3 | 1466.4 | 0.5466 | — | 12318.0 | 0.0 |
@@ -20,6 +20,54 @@ A phase can be slow for three different reasons and only one of them is a memory
 | π0 | `eager` | 4 | vision | inference | 242.9 | 240.1 | 2.8 | 0.0115 | — | 1650.0 | 1.3 |
 | π0 | `eager` | 4 | vlm_prefix | inference | 236.2 | 232.4 | 3.8 | 0.0160 | — | 939.0 | 1.4 |
 | π0 | `eager` | 4 | whole_capture | inference | 1659.3 | 1053.8 | 605.5 | 0.3649 | — | 6504.0 | 0.0 |
+| GR00T N1.5 | `best` | 4 | ae_total | inference | 60.1 | 60.0 | 0.0 | 0.0008 | — | 760.0 | 0.0 |
+| GR00T N1.5 | `best` | 4 | vision | inference | 31.8 | 31.3 | 0.5 | 0.0149 | — | 286.0 | 1.4 |
+| GR00T N1.5 | `best` | 4 | vlm_prefix | inference | 64.7 | 58.4 | 6.3 | 0.0968 | — | 189.0 | 1.4 |
+| GR00T N1.5 | `best` | 4 | whole_capture | inference | 329.7 | 300.6 | 29.0 | 0.0881 | — | 1265.0 | 0.0 |
+| GR00T N1.5 | `eager` | 4 | ae_total | inference | 155.7 | 73.8 | 81.9 | 0.5258 | — | 1982.0 | 44.6 |
+| GR00T N1.5 | `eager` | 4 | vision | inference | 55.7 | 49.7 | 6.0 | 0.1078 | — | 709.0 | 1.4 |
+| GR00T N1.5 | `eager` | 4 | vlm_prefix | inference | 101.4 | 94.7 | 6.6 | 0.0655 | — | 754.0 | 1.4 |
+| GR00T N1.5 | `eager` | 4 | whole_capture | inference | 640.4 | 437.5 | 202.9 | 0.3169 | — | 3475.0 | 0.0 |
+| GR00T N1.6 | `best` | 4 | ae_total | inference | 73.1 | 73.0 | 0.1 | 0.0010 | — | 1392.0 | 0.0 |
+| GR00T N1.6 | `best` | 4 | vision | inference | 48.7 | 42.6 | 6.1 | 0.1244 | — | 382.0 | 1.4 |
+| GR00T N1.6 | `best` | 4 | vlm_prefix | inference | 43.9 | 31.6 | 12.2 | 0.2786 | — | 249.0 | 1.4 |
+| GR00T N1.6 | `best` | 4 | whole_capture | inference | 343.7 | 296.2 | 47.4 | 0.1380 | — | 2063.0 | 0.0 |
+| GR00T N1.6 | `eager` | 4 | ae_total | inference | 297.0 | 82.5 | 214.5 | 0.7224 | — | 3103.0 | 67.3 |
+| GR00T N1.6 | `eager` | 4 | vision | inference | 75.3 | 46.1 | 29.2 | 0.3874 | — | 586.0 | 16.8 |
+| GR00T N1.6 | `eager` | 4 | vlm_prefix | inference | 87.0 | 48.2 | 38.9 | 0.4466 | — | 983.0 | 39.5 |
+| GR00T N1.6 | `eager` | 4 | whole_capture | inference | 929.4 | 355.1 | 574.3 | 0.6180 | — | 4712.0 | 0.0 |
+| GR00T N1.7 | `best` | 4 | ae_total | inference | 80.2 | 80.2 | 0.1 | 0.0008 | — | 1631.0 | 0.0 |
+| GR00T N1.7 | `best` | 4 | vision | inference | 89.4 | 51.7 | 37.7 | 0.4216 | — | 921.0 | 1.4 |
+| GR00T N1.7 | `best` | 4 | vlm_prefix | inference | 91.1 | 33.1 | 58.1 | 0.6373 | — | 875.0 | 51.6 |
+| GR00T N1.7 | `best` | 4 | whole_capture | inference | 570.6 | 355.1 | 215.5 | 0.3777 | — | 3522.0 | 0.0 |
+| GR00T N1.7 | `eager` | 4 | ae_total | inference | 312.3 | 88.9 | 223.4 | 0.7153 | — | 3168.0 | 69.9 |
+| GR00T N1.7 | `eager` | 4 | vision | inference | 88.0 | 51.6 | 36.4 | 0.4132 | — | 921.0 | 1.4 |
+| GR00T N1.7 | `eager` | 4 | vlm_prefix | inference | 103.9 | 37.9 | 66.0 | 0.6355 | — | 1330.0 | 47.8 |
+| GR00T N1.7 | `eager` | 4 | whole_capture | inference | 1057.3 | 382.7 | 674.6 | 0.6381 | — | 5514.0 | 0.0 |
+| π0.5 | `best` | 10 | ae_step | denoising step | 213.3 | 118.3 | 95.0 | 0.4453 | 0.3626 | 401.7 | 0.1 |
+| π0.5 | `best` | 10 | vision | inference | 56.1 | 55.5 | 0.6 | 0.0111 | — | 837.0 | 0.0 |
+| π0.5 | `best` | 10 | vlm_prefix | inference | 226.8 | 226.6 | 0.2 | 0.0011 | — | 350.0 | 0.0 |
+| π0.5 | `best` | 10 | whole_capture | inference | 1009.8 | 801.5 | 208.2 | 0.2062 | — | 5244.0 | 0.0 |
+| π0.5 | `eager` | 10 | ae_step | denoising step | 902.5 | 322.3 | 580.2 | 0.6429 | 0.4729 | 1102.7 | 51.2 |
+| π0.5 | `eager` | 10 | vision | inference | 242.6 | 240.0 | 2.6 | 0.0108 | — | 1650.0 | 1.3 |
+| π0.5 | `eager` | 10 | vlm_prefix | inference | 2182.1 | 2179.7 | 2.4 | 0.0011 | — | 879.0 | 1.3 |
+| π0.5 | `eager` | 10 | whole_capture | inference | 6666.9 | 5484.6 | 1182.2 | 0.1773 | — | 13593.0 | 0.0 |
+| π0 | `best` | 10 | ae_step | denoising step | 197.4 | 104.3 | 93.0 | 0.4714 | 0.3814 | 372.7 | 0.1 |
+| π0 | `best` | 10 | vision | inference | 56.3 | 55.7 | 0.6 | 0.0111 | — | 837.0 | 0.0 |
+| π0 | `best` | 10 | vlm_prefix | inference | 192.3 | 191.4 | 0.9 | 0.0046 | — | 346.0 | 1.4 |
+| π0 | `best` | 10 | whole_capture | inference | 909.1 | 703.4 | 205.6 | 0.2262 | — | 4952.0 | 0.0 |
+| π0 | `best` | 4 | ae_step | denoising step | 79.0 | 41.7 | 37.3 | 0.4720 | — | 372.2 | 0.1 |
+| π0 | `best` | 4 | vision | inference | 56.6 | 56.0 | 0.6 | 0.0109 | — | 837.0 | 0.0 |
+| π0 | `best` | 4 | vlm_prefix | inference | 192.3 | 191.4 | 0.9 | 0.0046 | — | 346.0 | 1.4 |
+| π0 | `best` | 4 | whole_capture | inference | 672.0 | 578.9 | 93.1 | 0.1386 | — | 2714.0 | 0.0 |
+| SmolVLA | `best` | 10 | ae_step | denoising step | 57.4 | 35.6 | 21.8 | 0.3795 | 0.2063 | 355.7 | 0.1 |
+| SmolVLA | `best` | 10 | vision | inference | 31.7 | 30.0 | 1.6 | 0.0518 | — | 288.0 | 0.0 |
+| SmolVLA | `best` | 10 | vlm_prefix | inference | 7.4 | 7.0 | 0.4 | 0.0490 | — | 341.0 | 0.1 |
+| SmolVLA | `best` | 10 | whole_capture | inference | 210.8 | 146.2 | 64.6 | 0.3065 | — | 4225.0 | 0.0 |
+| SmolVLA | `eager` | 10 | ae_step | denoising step | 933.1 | 67.8 | 865.2 | 0.9273 | 0.8894 | 1183.7 | 64.5 |
+| SmolVLA | `eager` | 10 | vision | inference | 46.9 | 29.5 | 17.4 | 0.3712 | — | 464.0 | 15.4 |
+| SmolVLA | `eager` | 10 | vlm_prefix | inference | 98.1 | 11.3 | 86.8 | 0.8846 | — | 1287.0 | 62.0 |
+| SmolVLA | `eager` | 10 | whole_capture | inference | 2171.0 | 218.1 | 1952.9 | 0.8995 | 0.6441 | 13627.0 | 0.0 |
 
 ## Did the per-region split survive this capture?
 
@@ -29,6 +77,18 @@ A capture taken through `--compile-mode` has no NVTX regions: the context manage
 |---|---:|---:|---|
 | `20260922_E5_pi0_eager_N10` | 5 | 4 | per-region split intact |
 | `20260922_E5_pi0_eager_N4` | 5 | 4 | per-region split intact |
+| `20260924_E5_groot_n15_best` | 6 | 4 | per-region split intact |
+| `20260924_E5_groot_n15_eager` | 6 | 4 | per-region split intact |
+| `20260924_E5_groot_n16_best` | 6 | 4 | per-region split intact |
+| `20260924_E5_groot_n16_eager` | 7 | 4 | per-region split intact |
+| `20260924_E5_groot_n17_best` | 8 | 4 | per-region split intact |
+| `20260924_E5_groot_n17_eager` | 8 | 4 | per-region split intact |
+| `20260924_E5_pi05_best_N10` | 5 | 4 | per-region split intact |
+| `20260924_E5_pi05_eager_N10` | 5 | 4 | per-region split intact |
+| `20260924_E5_pi0_best_N10` | 5 | 4 | per-region split intact |
+| `20260924_E5_pi0_best_N4` | 5 | 4 | per-region split intact |
+| `20260924_E5_smolvla_best_N10` | 5 | 4 | per-region split intact |
+| `20260924_E5_smolvla_eager_N10` | 7 | 4 | per-region split intact |
 
 ## What this means for a memory-side accelerator
 
@@ -39,12 +99,30 @@ The idle fraction is the share of the phase during which **no kernel is running 
 
 So the ceiling below is the right number for "this kernel gets faster" and the wrong number for "this kernel stops existing". A processing-in-memory proposal can be either, and which one it is has to be stated before this table is applied to it.
 
-| model | mode | region | idle frac (corrected where available) | ceiling on any kernel-side speedup |
+| model | mode | region | idle frac (corrected where a matched unprofiled reference exists, else raw) | ceiling on any kernel-side speedup |
 |---|---|---|---:|---:|
-| π0 | `eager` | ae_step (denoising step) | 0.842 | 6.32× if every kernel became free |
+| π0 | `eager` | ae_step (denoising step) | 0.764 | 4.24× if every kernel became free |
 | π0 | `eager` | whole_capture (inference) | 0.547 | 2.21× if every kernel became free |
 | π0 | `eager` | ae_step (denoising step) | 0.843 | 6.36× if every kernel became free |
 | π0 | `eager` | whole_capture (inference) | 0.365 | 1.57× if every kernel became free |
+| GR00T N1.5 | `best` | whole_capture (inference) | 0.088 | 1.10× if every kernel became free |
+| GR00T N1.5 | `eager` | whole_capture (inference) | 0.317 | 1.46× if every kernel became free |
+| GR00T N1.6 | `best` | whole_capture (inference) | 0.138 | 1.16× if every kernel became free |
+| GR00T N1.6 | `eager` | whole_capture (inference) | 0.618 | 2.62× if every kernel became free |
+| GR00T N1.7 | `best` | whole_capture (inference) | 0.378 | 1.61× if every kernel became free |
+| GR00T N1.7 | `eager` | whole_capture (inference) | 0.638 | 2.76× if every kernel became free |
+| π0.5 | `best` | ae_step (denoising step) | 0.363 | 1.57× if every kernel became free |
+| π0.5 | `best` | whole_capture (inference) | 0.206 | 1.26× if every kernel became free |
+| π0.5 | `eager` | ae_step (denoising step) | 0.473 | 1.90× if every kernel became free |
+| π0.5 | `eager` | whole_capture (inference) | 0.177 | 1.22× if every kernel became free |
+| π0 | `best` | ae_step (denoising step) | 0.381 | 1.62× if every kernel became free |
+| π0 | `best` | whole_capture (inference) | 0.226 | 1.29× if every kernel became free |
+| π0 | `best` | ae_step (denoising step) | 0.472 | 1.89× if every kernel became free |
+| π0 | `best` | whole_capture (inference) | 0.139 | 1.16× if every kernel became free |
+| SmolVLA | `best` | ae_step (denoising step) | 0.206 | 1.26× if every kernel became free |
+| SmolVLA | `best` | whole_capture (inference) | 0.306 | 1.44× if every kernel became free |
+| SmolVLA | `eager` | ae_step (denoising step) | 0.889 | 9.04× if every kernel became free |
+| SmolVLA | `eager` | whole_capture (inference) | 0.644 | 2.81× if every kernel became free |
 
 The right-hand column is Amdahl's law with the idle time as the serial part: even a kernel-side change that made every kernel take **zero** time would leave the idle share untouched **if the kernel count is unchanged**. For π0's eager `ae_step` — 84.3 % idle — that ceiling is 6.4×, reached only in the limit of free kernels. For the whole eager inference at N=10 it is 2.2×, because the two phases that are not dispatch-bound make up the rest of the frame. A design that also removes launches is not bound by these numbers.
 

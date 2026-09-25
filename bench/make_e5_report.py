@@ -81,6 +81,75 @@ def runs(pattern: str) -> list[dict]:
     return out
 
 
+
+# ---- the corrected idle fraction -------------------------------------------------------
+#
+# nsys stretches the gaps, not the kernels, so a raw idle fraction from a profiled capture
+# overstates idleness. The correction, verified against the recorded values in E11f's
+# gpu_idle.csv (which carries both), is
+#
+#     corrected_idle_ms  = idle_ms - (profiled_wall - unprofiled_wall)
+#     corrected_frac     = corrected_idle_ms / unprofiled_wall
+#
+# i.e. every millisecond of profiling overhead is charged to idle. E5's own captures have no
+# unprofiled reference -- they are pure nsys runs -- which is why this column printed "—" for
+# every row. Part B's ladder rows DO carry an unprofiled ae_total_ms per model per rung, and
+# that is the matched reference.
+#
+# Verified before being trusted: pi0 eager N=10 gives profiled 855.41 against Part B's
+# unprofiled 573.48, an inflation of x1.4917, and a corrected fraction of 0.7639 -- against
+# the 0.756 recorded for pi0 from E11f's own unprofiled loop. Within 1 %, and the residual is
+# the different reference rather than a different method.
+#
+# Deliberately NOT applied where the reference is not a match, because a corrected number
+# computed from the wrong configuration is worse than an honest blank:
+#   * N=4 rows -- Part B's ladder ran at N=10.
+#   * GR00T -- its E5 eager used --tf32 off, which is the eager_fp32 rung rather than
+#     eager_tf32, and its best is a multi-flag combination; mapping those correctly needs
+#     care I have not taken, and getting it wrong would publish a wrong ratio.
+LADDER = {
+    "pi0":     ("results/20260922_E4c_pi0_opt_ladder",     "eager_tf32", "bf16_both"),
+    "pi05":    ("results/20260922_E4c_pi05_opt_ladder",    "eager_tf32", "bf16_both_graphs"),
+    "smolvla": ("results/20260922_E4c_smolvla_opt_ladder", "eager_tf32", "vlm_graphs"),
+}
+
+
+def _unprofiled_ae_ms(model: str, mode: str) -> float | None:
+    """Part B's unprofiled ae_total_ms for this model in this configuration, at N=10."""
+    ent = LADDER.get(model)
+    if ent is None:
+        return None
+    root, eager_rung, best_rung = ent
+    rung = eager_rung if mode == "eager" else best_rung
+    for f in sorted(glob.glob(f"{root}/raw/rows/*{rung}*.json")):
+        try:
+            v = json.load(open(f)).get("ae_total_ms")
+        except (OSError, ValueError):
+            continue
+        if isinstance(v, (int, float)) and v > 0:
+            return float(v)
+    return None
+
+
+def corrected_frac(model: str, mode: str, n, row) -> tuple[str, str]:
+    """(printable corrected fraction, why it is absent). One of the two is empty."""
+    have = row.get("gpu_idle_frac_corrected")
+    if have not in (None, ""):
+        return f"{float(have):.4f}", ""
+    if str(n) != "10":
+        return "", "N=4: Part B's unprofiled reference is N=10 only"
+    if model not in LADDER:
+        return "", "no matched unprofiled reference (GR00T rung mapping not established)"
+    u = _unprofiled_ae_ms(model, mode)
+    wall, idle = num(row.get("wall_ms")), num(row.get("gpu_idle_ms"))
+    if not (u and wall and idle) or u >= wall:
+        return "", "unprofiled reference missing or not smaller than the profiled wall"
+    c = (idle - (wall - u)) / u
+    if not 0.0 <= c <= 1.0:
+        return "", f"correction out of range ({c:.3f}); reference is not comparable"
+    return f"{c:.4f}", ""
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--glob", default="results/*_E5_*")
@@ -116,7 +185,8 @@ def main() -> int:
             reg = row.get("region", "")
             if reg not in PHASES:
                 continue
-            corr = row.get("gpu_idle_frac_corrected", "")
+            corr, _why = corrected_frac(r["model"], r["mode"], r["n"], row)
+            corr = corr or "—"
             L.append(
                 f"| {LABEL.get(r['model'], r['model'])} | `{r['mode']}` | {r['n']} | "
                 f"{reg} | {row.get('unit', '')} | "
@@ -167,14 +237,20 @@ def main() -> int:
           "the wrong number for \"this kernel stops existing\". A processing-in-memory "
           "proposal can be either, and which one it is has to be stated before this "
           "table is applied to it.", "",
-          "| model | mode | region | idle frac (corrected where available) | "
+          "| model | mode | region | idle frac (corrected where a matched unprofiled "
+          "reference exists, else raw) | "
           "ceiling on any kernel-side speedup |", "|---|---|---|---:|---:|"]
     for r in rs:
         for row in r["rows"]:
             if row.get("region") not in ("inference", "whole_capture", "ae_step",
                                          "ae_step_0"):
                 continue
-            f = num(row.get("gpu_idle_frac_corrected")) or num(row.get("gpu_idle_frac"))
+            # This table is headed "corrected where available", so it must actually use the
+            # corrected value where one exists. It previously read only the CSV field, which
+            # E5 captures do not carry, so every row showed the RAW fraction under a
+            # corrected label -- a table asserting something false about its own numbers.
+            _c, _ = corrected_frac(r["model"], r["mode"], r["n"], row)
+            f = float(_c) if _c else num(row.get("gpu_idle_frac"))
             if f is None:
                 continue
             L.append(f"| {LABEL.get(r['model'], r['model'])} | `{r['mode']}` | "
