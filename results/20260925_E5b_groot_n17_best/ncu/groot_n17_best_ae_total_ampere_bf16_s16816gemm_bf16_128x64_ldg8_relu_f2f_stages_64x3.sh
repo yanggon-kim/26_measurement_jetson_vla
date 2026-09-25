@@ -1,0 +1,21 @@
+HOME=/home/yanggon
+HF_HOME=/home/yanggon/.cache/huggingface
+HF_HUB_OFFLINE=1
+TRANSFORMERS_OFFLINE=1
+TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon
+TRITON_CACHE_DIR=/home/yanggon/.cache/triton_groot
+export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR
+. /home/yanggon/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1
+cd /home/yanggon/00_VLA/26_measurement_jetson_vla
+exec /usr/local/cuda/bin/ncu \
+  --profile-from-start off --nvtx --nvtx-include "ae_total/" \
+  --kernel-name regex:ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn \
+  -c 20 \
+  --section SpeedOfLight --section WarpStateStats --section Occupancy \
+  --section InstructionStats \
+  --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps \
+  --export "results/20260925_E5b_groot_n17_best/ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3" --force-overwrite \
+  /home/yanggon/venvs/groot/bin/python bench/groot_phases.py \
+    --outdir results/20260925_E5b_groot_n17_best/raw/groot_phases_groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3 --checkpoint nvidia/GR00T-N1.7-3B --version n17 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T \
+     --embodiment-tag oxe_droid_relative_eef_relative_joint --warmup 8 --timed 1 --rung ncu_ae_total \
+    --ncu-region ae_total --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs

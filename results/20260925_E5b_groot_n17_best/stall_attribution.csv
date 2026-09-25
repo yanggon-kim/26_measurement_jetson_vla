@@ -1,0 +1,29 @@
+model,mode,region,kernel,duration_us,launches,sm_throughput_pct,launch_bound_s1,stall_reason,share_of_all_stalls_pct,share_of_waiting_pct,above_5pct,instruction_class,documented_in_s7,cause,pipe_lsu_pct,pipe_fma_pct,pipe_alu_pct
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,wait,22.36,24.59,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,mio_throttle,16.68,18.34,yes,LSU,yes,LSU issue queue full: too many loads or stores in flight,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,barrier,15.04,16.54,yes,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,long_scoreboard,14.22,15.64,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,selected,9.05,,yes,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,math_pipe_throttle,8.08,8.89,yes,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,lg_throttle,6.31,6.94,yes,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,short_scoreboard,5.79,6.37,yes,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,imc_miss,1.09,1.2,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,no_instruction,0.62,0.68,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,dispatch_stall,0.49,0.53,,control,yes,pipe imbalance — normally small,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,membar,0.17,0.19,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,drain,0.09,0.1,,control,yes,pipeline drain after a barrier or branch — normally small,12.53,1.16,8.14
+groot_n17,best,ae_total,Kernel2,2563.68,16,50.57,,misc,0.0,0.0,,control,yes,pipe imbalance — normally small,12.53,1.16,8.14
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,long_scoreboard,55.92,60.99,yes,LSU,yes,global-memory load (LDG / LD.E) issued; the dependent instruction cannot fire until the data returns,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,wait,21.5,23.45,yes,ALU/XU,yes,"fixed-latency operation in flight (transcendental, integer divide, FP64), DEPBAR",14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,selected,8.3,,yes,—,yes,"the warp was READY and another was issued — a sign of ample warp-level parallelism, NOT a problem (§7)",14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,math_pipe_throttle,5.33,5.81,yes,FMA,yes,FMA / tensor-core pipe full: back-pressure from compute,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,barrier,4.59,5.01,,control,yes,"BAR.SYNC / WARPSYNC: waiting for the other warps — load imbalance, or too few warps to hide it",14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,imc_miss,0.97,1.05,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,short_scoreboard,0.95,1.03,,LSU/XU,yes,"shared-memory load (LDS), constant-cache miss, SHFL, MUFU",14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,dispatch_stall,0.89,0.97,,control,yes,pipe imbalance — normally small,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,no_instruction,0.7,0.77,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,mio_throttle,0.54,0.59,,LSU,yes,LSU issue queue full: too many loads or stores in flight,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,lg_throttle,0.3,0.32,,LSU,yes,"load/store address calculation, or a shared-memory bank conflict",14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,drain,0.01,0.01,,control,yes,pipeline drain after a barrier or branch — normally small,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,membar,0.0,0.0,,?,no,cause not documented in docs/03 §7 — reported under its exported name rather than given a guessed cause,14.55,0.39,8.62
+groot_n17,best,ae_total,ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn,2907.98,20,41.46,,misc,0.0,0.0,,control,yes,pipe imbalance — normally small,14.55,0.39,8.62
