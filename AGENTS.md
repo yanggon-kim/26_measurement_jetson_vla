@@ -9,14 +9,16 @@ everything the other side needs must be in a committed file.
 
 ## Read first, in this order
 1. `docs/00_context.md` — why these measurements matter and exactly which numbers they replace.
-2. `docs/01_measurement_plan.md` — the experiments (E0–E12 and E5b), sweeps, priorities and the **task order**.
+2. `docs/01_measurement_plan.md` — the experiments (E0–E12, E5b and E12b), sweeps, priorities and the **task order**.
 3. `docs/02_protocol.md` — the measurement rules, tool commands (`nsys`, `ncu`), the result schema, and §13: the
    methods of E11 and the `model_inputs.csv` hand-off format. It is
    binding; where any other guide or habit differs, the protocol wins.
 4. `docs/03_instruction_level_analysis.md` — the procedure for E5b (read it when you reach an E5b task).
 5. `docs/E12_corun/README.md` — the specification of E12 (task T014); read it when you reach T014.
-6. `docs/04_research_answers.md` — the research side's answers to your `STATUS.md` questions, newest first.
-7. `tasks/` — the work queue. Then `STATUS.md` — your own notes from earlier sessions.
+6. `docs/E12b_compiled_corun/README.md` — the specification of E12b (task T015), the follow-up that finishes what
+   T014 left open; read it when you reach T015.
+7. `docs/04_research_answers.md` — the research side's answers to your `STATUS.md` questions, newest first.
+8. `tasks/` — the work queue. Then `STATUS.md` — your own notes from earlier sessions.
 
 ## Prerequisites the human sets up once (check them first; if one is missing, say so in `STATUS.md`)
 - **JetPack 6.x (L4T r36.x, CUDA 12.x, Python 3.10 system)**. JetPack 5 cannot run `torch.compile`; do not

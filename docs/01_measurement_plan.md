@@ -3,7 +3,8 @@
 Priorities: **P0** = E0, E3, E4 for π0 · **P1** = **E11 for π0** (inputs for the hybrid GPU + PIM model — right
 after E3 / E4, because it reuses their harness and fixture), then E5 (nsys + ncu), E5b, E6, E7 for π0, and E2, E1, and
 **E12 for π0** (co-running the prefix and the action expert on one GPU; T014, placed right after T004 in the
-order table) · **P2** = π0.5 and SmolVLA through E3, E4, **E11**, **E5, E5b, E6, E7**, and E8 · **P3** = GR00T N1.7 through the
+order table) and its follow-up **E12b** (the compiled co-run, whole GPU and inside green-context partitions; T015,
+right after T014) · **P2** = π0.5 and SmolVLA through E3, E4, **E11**, **E5, E5b, E6, E7**, and E8 · **P3** = GR00T N1.7 through the
 same set including **E11**, E9, E10. The profiling experiments (E5, E5b, E6, E7) **and E11** are **required for
 every model that runs**, not only for π0;
 π0 goes first. First deliverable (end of P0): the ladder table for π0 —
@@ -24,6 +25,7 @@ task whose dependencies are done:
 | 4 | **T010** | **E11 π0** | P1 | T003 |
 | 5 | T004 | E5, E6, E7 π0 | P1 | T003 |
 | 6 | **T014** | **E12 π0 co-run: prefix ∥ expert on one GPU** (Steps 1–3, 5 at MAXN; Step 4 inside T004's `MODE_30W` session) | P1 | T004 (E7 at MAXN — done) |
+| 6b | **T015** | **E12b π0 compiled co-run: fair expert, whole GPU, and both stages together in green-context partitions** (MAXN only) | P1 | T014 (MAXN part — results exist) |
 | 7 | T005 | E1, E2 | P1 | T001 |
 | 8 | T007 | E5b π0 | P1 | T004, T005 |
 | 9 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
@@ -36,6 +38,13 @@ task whose dependencies are done:
 are executing when you read this, then take T014 before any other open MAXN work (T012 if not yet under way, the
 remaining E5 / E5b, `MODE_50W`). Its Step 4 is not a separate session: it runs in the `MODE_30W` session of T004
 step 4b (protocol §1). The research side considers E12 the most decisive measurement of the current thread.
+
+**T015 (added 2026-09-25) goes next.** T014 did not answer its question (no compiled co-run; the eager co-run is
+host-bound; green contexts were timed one stage at a time — `analysis/E12_review.md`). Finish the queue stage or
+task you are executing when you read this, then take T015 before any other open MAXN work; if the device is in a
+capped mode when you read this, finish the capped queues first and take T015 once MAXN is restored (never ask for
+a reboot for it). If the human owner has given you a different order directly, the owner's order wins; say in
+`STATUS.md` where T015 sits. T015 takes over T014's open MAXN items; T014 Step 4 stays with the `MODE_30W` session.
 
 ## E0 — Platform record
 Everything in protocol §1, plus `nvidia-smi` (if present), `free -h`, storage, `tegrastats` idle snapshot, the list
@@ -298,3 +307,12 @@ streams as a steady-state pipeline with a fresh KV cache per frame, and measure 
 the reason from an nsys timeline, every software mitigation available on Orin (priorities, graphs, green contexts,
 `libsmctrl`, MPS, two processes), the 8-SM case in `MODE_30W`, N = 4, and energy per frame against serial.
 Result directories `results/<date>_E12_pi0_*`; report `reports/E12_pi0_corun.md`.
+
+## E12b — The compiled co-run, whole GPU and inside green-context partitions (π0)
+**Specification: `docs/E12b_compiled_corun/README.md`** (the problem T014 left open, purpose, definitions,
+non-negotiables, measurements M0–M5, dated pre-registered thresholds and outcomes, outputs, acceptance); binding
+rules in protocol §15 and §14; task T015. In one line: establish the fair GPU expert (`bf16_both` + timestep hoist,
+compiled, equivalence-checked), repair the compiled two-stream co-run, then run both stages **together** inside
+green-context SM partitions against each alone in the same partition — separating memory-side coupling from SM
+sharing — with an in-process bandwidth-hog control, DRAM / EMC attribution and whole-frame energy per frame, all at
+MAXN. Result directories `results/<date>_E12b_pi0_*`; report `reports/E12b_pi0_compiled_corun.md`.

@@ -400,3 +400,11 @@ then the self-review of protocol §11.
   and the `check_model_inputs.py` `MODELS` change are recorded on the research side and **not approved**.
   Do not run or implement them as part of E12.
 - Other models. This is π0 only; if it is informative the research side will ask for others by task.
+
+## 13. Follow-up (appended 2026-09-25; §9 above is unchanged)
+
+The MAXN return of T014 was reviewed in `analysis/E12_review.md`: the only co-run measured is eager (host-bound,
+`T_pipe` = `A_iso + B_iso`), the compiled co-run corrupted silently and was not repaired, and green contexts were
+timed one stage at a time. The open MAXN items of this experiment are taken over by **E12b**,
+`docs/E12b_compiled_corun/README.md` (task T015), which carries its own dated pre-registration. Step 4 stays here,
+with the `MODE_30W` session.

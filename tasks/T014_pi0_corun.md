@@ -4,6 +4,11 @@
 the definitions, the five non-negotiables, the steps, the outputs and the acceptance criteria.** Binding rules:
 `docs/02_protocol.md`, including §14 (E12) and §1 (the capped-mode session). This file only schedules the work.
 
+> **Research-side note, 2026-09-25:** the open MAXN items of this task (the compiled co-run, the nsys timeline,
+> the Step-3 mechanisms, `equivalence.*`, `mechanisms.csv`, compiled co-run energy) are taken over by **T015**
+> (`docs/E12b_compiled_corun/README.md`; review of this task's return: `analysis/E12_review.md`). Step 4 stays
+> here, with the `MODE_30W` session.
+
 The research side considers this the most decisive measurement in the current thread. The single number that
 decides the question is **`s` = the expert's stage time under co-run ÷ its isolated stage time**, against
 `A_iso / B_iso` ≈ 1.50 (E7, π0 `bf16_both`, N = 10, MAXN). **The result may go against the research side;

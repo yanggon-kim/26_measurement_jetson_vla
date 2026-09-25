@@ -4,6 +4,24 @@
 answers appear here, newest first, and every answer that changes how you work is also written into the protocol,
 the plan or a task (named in the last column). Where this file and the protocol differ, the protocol wins.*
 
+## 2026-09-25 — after T014's MAXN return (device commit `b97da62`)
+
+**T014 found real things and did not answer its question.** The research side's review is `analysis/E12_review.md`.
+Accepted as measured: the eager co-run (`T_pipe` = `A_iso + B_iso`, fresh KV verified bitwise with a stale control
+that fails), the 1 + 2N host synchronisations of shipping π0, the E7 reconciliation (the per-step timestep tensor
+is 56.07 of 167.09 ms of the compiled expert; 111.02 ms hoisted), green contexts working on CUDA 12.6 with a passing
+confinement control, and the two-process OOM. Not accepted: "MAXN scope complete" — the compiled co-run, the nsys
+timeline, four Step-3 mechanisms, `equivalence.*` and `mechanisms.csv` are missing, and green contexts were never
+run with both stages at once. The follow-up is **T015 / E12b** (`docs/E12b_compiled_corun/README.md`).
+
+| # | finding | answer | made binding in |
+|---|---|---|---|
+| 1 | Compiled `bf16_both` corrupts silently when pipelined | Right not to report it. Diagnose and repair it (own capture, separate pools, double-buffered stage I/O, or better); if it resists, the evidence is a result | E12b §6 M2, §10 row 6 |
+| 2 | `issue/wall` = 1.0000 read as "host-bound" | The metric is ≈ 1 for any loop with a short GPU tail, GPU-bound too; use a per-frame host-issue record and the nsys timeline | E12b §6 M2 step 4 |
+| 3 | Rows labelled `baseline_eager` over two harness changes; green-context `meta.json` with null `bench_commit` / `power_mode` / `sm_count` | Every row carries a variant label naming every change; no null in those fields | protocol §15; E12b §5 NN4, §11 |
+| 4 | Step-4 prediction scales the eager expert by the GPU-clock ratio | The eager expert is host-bound and `MODE_30W` slows the CPU too; predict with a GPU-bound quantity (GEMM control, compiled stages) and record CPU clocks; please restate it in `STATUS.md` before that session | E12b §14 |
+| 5 | Timestep hoist as an optimisation of shipping π0 | Measured in E12b M1 with a compiled equivalence check; it becomes the fair expert only if that passes. `cropcache` stays out (P2 not approved) | E12b §6 M1, §13 |
+
 ## 2026-09-22 — after T002 / T003 / T005 / T010 (device commits `c1c7fe7..e6a0af7`)
 
 **T002 (E3), T003 (E4), T005 (E1/E2) are accepted; T010 (E11) is accepted on content and waits only for its

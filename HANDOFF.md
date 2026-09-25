@@ -1,8 +1,63 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-24 (E12 issued) by jetson-owner*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last updated: 2026-09-25 (T015 / E12b issued) by jetson-owner*
 
 ## Current status
+
+### 2026-09-25, later: T015 / E12b issued and pushed — the follow-up that should give E12 a clear conclusion
+
+User-approved push (via main). **E12b = compiled co-run, MAXN only**: spec `docs/E12b_compiled_corun/README.md`
+(problem T014 left open, why, definitions, 5 NNs, M0–M5, **pre-registration §10 dated 2026-09-25**, outputs,
+acceptance §12, relation to T014 + Step-4 note §14); task `tasks/T015_pi0_compiled_corun.md`; order-table row 6b
++ note (after the stage in progress, before other MAXN work; after capped queues if already rebooted; owner's
+direct order wins); protocol **§15**; AGENTS / README read lists; E12 README §13 pointer (§9 untouched); T014 body
+note (open MAXN items → T015); `docs/04_research_answers.md` 2026-09-25 entry (5 answers incl. Step-4 correction).
+
+Design: M1 fair expert = `bf16_both` + timestep hoist (stock vs hoist, compiled equivalence, prefix/ae/full
+bracketed). **User removed `cropcache` from this task mid-drafting (2026-09-25): P2 back to not approved.** M2
+diagnose + repair corruption (own capture, separate pools, double-buffered I/O), whole-GPU co-run, host-issue
+record replacing `issue/wall`, nsys. M3 both stages together in ≥ 3 green splits (12/4, 8/8 + one) vs alone-in-
+partition → `p_part`, `s_part`; **in-process** bandwidth-hog positive control (`p_hog`, ≥ 2 rates) so a null is
+meaningful; graph-replay confinement control (M0). M4 EMC_FREQ calibrated against the hog, mem rail, nsys
+(GPU-metrics tried); ncu serialises, isolation only. M5 whole-frame energy: stock full, fair full, best co-run.
+Decisive number moved from `s` (r ≈ 2.25 with the hoisted expert) to **`O = T_pipe / max(A_iso, B_iso)`** and `p`.
+Thresholds: O ≤ 1.05 near-ideal / ≥ 1.15 poor; p_part, s_part < 1.03 none / ≥ 1.10 material; p_hog ≥ 1.03 control
+has power. Rows: near-ideal (frame-rate argument gone); SM-partitioned bandwidth coupling; partition cost only;
+unpartitioned HoL fixed by partitioning; s > r; corruption unfixable (time box ≈ 1 device day); **fair B ≤ 93.1 ms
+beats the 16-ch in-memory expert** (≤ 58.7 also 32 ch); 93.1–102.4 < 1.10×; hoist fails equivalence; co-run energy
+≤ 0.95 × serial.
+
+**Next:** on each pull look for `results/*_E12b_pi0_*`, `reports/E12b_pi0_compiled_corun.md`, T015 status lines,
+and the restated Step-4 prediction in `STATUS.md`. Check against spec §12 item by item; hand `O`, `p_part`,
+`s_part`, `p_hog`, fair `B` to main as "for microarch-owner / brainstorm-owner (case 001) / evaluation-owner" with
+dir, device commit, power mode, n. Still unapproved: P1, P2 (cropcache), `check_model_inputs.py` MODELS.
+
+### 2026-09-25: E12 / T014 MAXN results reviewed — `analysis/E12_review.md`, commit `c2e45db` (`049f569` before rebasing onto device commits; pushed with T015)
+
+Pulled to device `b97da62`. Full review, with every number and its source, in `analysis/E12_review.md`.
+Headlines (MAXN, π0 LeRobot, n = 100/condition):
+- **Eager only** (`corun_N10/N4_MAXN_eager_nosync`): `T_pipe` = `A_iso + B_iso` (994.88 vs 997.83; N=4 666.77 vs
+  667.88) — no overlap; s 0.996 / p 0.998 / r 0.905 (N=10). **No `bf16_both` co-run exists**: the stock
+  CUDA-graph-tree path corrupts silently when pipelined; two full processes OOM at load; own-`CUDAGraph`
+  remedy (spec §7) not attempted.
+- Fresh-KV: eager pass (6/6 bitwise, stale control 5/5 detected); compiled check has power, pipeline fails.
+  No `equivalence.*`, `mechanisms.csv`, nsys timeline or `raw/` committed.
+- Step 3: green contexts **work on CUDA 12.6**, measured per stage in isolation only: bf16 expert 1.049× at 4 SM,
+  prefix 1.08× at 12 SM → derived 12/4 period 271.26 ms = 1.080 × A_iso (not measured). Priority −3, graphs-both,
+  libsmctrl, MAX_CONNECTIONS untested; MPS probed only (log uncommitted).
+- **E7 reconciled**: stock per-step timestep tensor (pageable H2D drain) = 56.07 of 167.09 ms (**33.6 %**); hoisted
+  111.02. r = 1.50 correct for shipping π0. Looks cropcache-class (OD-1 baseline side, undecided). If it enters
+  the baseline: PIM latency gain 1.21–1.23× → 1.03–1.07× (16 ch) [derived] — the biggest consequence of this pull.
+- Rows vs report: `issue/wall` cannot discriminate host- from GPU-bound (loop-level metric); issue order is
+  expert-first; "cannot be blocked" unmeasured; rows labelled `baseline_eager`, hoist unlabelled.
+- Pre-registered rows landed: `T_pipe ≥ T_serial` (marginal, eager) and the N=4 row (read as harness). Nothing
+  falsified by a valid co-run; "no SM-partitioning mechanism" ruled out.
+
+**Owed / next — superseded the same day by T015 (above):** the decisive co-run (`bf16_both` via own-`CUDAGraph`, green 12/4 and
+8/8 concurrently, priority −3, prefix-first issue, one nsys) needs user approval; a compiled-path equivalence
+check + whole-frame `full` for the hoist before any baseline use; note to the device that its Step-4 prediction
+(eager expert × GPU-clock ratio) is confounded by the CPU slowdown in MODE_30W; missing deliverables list
+(review §8). Step 4 waits for the capped-mode session (device's business — do not escalate).
 
 ### 2026-09-24, later: E12 / T014 issued and pushed (`88ad91a`) — the co-run experiment, pre-registered
 

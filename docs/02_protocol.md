@@ -746,3 +746,29 @@ rules below are binding; the specification elaborates them and leaves everything
   call and the error, committed under `raw/` and summarised in `mechanisms.csv`.
 - **Power modes.** MAXN for everything except E12 Step 4, which runs in the `MODE_30W` session of §1 alongside
   the E7 / E3 points (no extra reboot).
+
+## 15. E12b — the compiled co-run, whole GPU and inside green-context partitions (added 2026-09-25)
+The full specification is `docs/E12b_compiled_corun/README.md` (task T015); it follows E12, and §14 still applies.
+The rules below are binding; the specification elaborates them and leaves everything else to the agent's judgement.
+- **Definitions.** As §14, for the **fair** configuration: `bf16_both` + the timestep hoist (the N timestep tensors
+  built once), once its compiled equivalence check against stock `bf16_both` has passed. New: `A_part`, `B_part` (a
+  stage alone in a green-context partition), `A_co,part`, `B_co,part`, `T_pipe,part` (both stages co-running, each
+  in its own partition), `p_part = A_co,part / A_part`, `s_part = B_co,part / B_part`,
+  `O = T_pipe / max(A_iso, B_iso)`, `φ = (T_serial − T_pipe) / (T_serial − max(A_iso, B_iso))`, `p_hog`.
+- **Compiled path.** Every co-run number is from the compiled path. A harness change needed to make it correct
+  (own CUDA-graph capture, separate pools, double-buffered stage I/O, …) is a labelled variant with its own
+  in-session isolated times and its own equivalence check.
+- **No silent NaN.** Every action tensor of every timed, checked and energy run is tested for finiteness without
+  adding a host synchronisation inside the timed loop; a run with any non-finite value is invalid, and it is
+  reported with its timings marked invalid, never dropped.
+- **Partitions.** The partition sizes the driver actually grants are recorded per run; confinement is verified
+  through the launch path that is timed (graph replay on a green-context stream). A bandwidth hog used as a
+  control runs in the same process on a green-context stream, never as a separate process (separate contexts
+  time-slice).
+- **Labels and provenance.** Every row and `meta.json` carry a variant label naming every change from E7's
+  `bf16_both`; `meta.json` has no null in `bench_commit`, model and checkpoint commits, rung, variant,
+  `power_mode`, `sm_count`, granted partition sizes, clocks or `throttled`.
+- **Completion.** A task is marked done only when every acceptance item of the specification holds, or the status
+  line names the item that does not and why.
+- **Power modes.** MAXN only; E12b adds nothing to the capped-mode sessions. P1, P2 (`bf16_both + cropcache`) and
+  the `check_model_inputs.py` `MODELS` change are not approved.
