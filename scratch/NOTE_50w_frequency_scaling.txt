@@ -68,3 +68,43 @@ Three things to say plainly:
 Two points of twelve. pi0.5, SmolVLA and GR00T x3 are still running. Do not generalise the
 1.46x or the 0.90x until the set is complete -- SmolVLA in particular behaved unlike the
 others in E7 (energy-to-time ratio 0.45 against pi0's 0.80).
+
+
+## UPDATE 23:36, five points of twelve: the "~20 %" does NOT generalise, and why
+
+    model/mode       t x    P x    E x   E-above-idle x   EDP x   clock-insensitive
+    pi0     eager   1.461  0.616  0.900      0.765         1.315       22.3 %
+    pi0     best    1.474  0.612  0.901      0.792         1.328       20.2 %
+    pi0.5   eager   1.545  0.564  0.872      0.741         1.347        8.2 %
+    pi0.5   best    1.429  0.606  0.866      0.778         1.238       27.7 %
+    SmolVLA eager   1.407  0.706  0.994      0.826         1.399       31.4 %
+
+I reported ~20-22 % clock-insensitive from pi0's two points. Across models it is 8.2 % to
+31.4 %. The two-point figure was not a constant of the device.
+
+**SmolVLA saves essentially no energy at 50W (x0.994).** Its power fell only to 0.706 where
+the others fell to 0.56-0.62, so the longer frame ate the entire saving. For SmolVLA,
+dropping the clock is a pure latency loss.
+
+**EDP is worse at 50W in all five points** (1.24-1.40x). That result is robust so far: if
+latency matters at all, MAXN wins.
+
+## The relationship that does hold, and it is monotonic
+
+Clock-insensitive fraction against the EAGER ae_step GPU-idle fraction measured by E5,
+which is an independent experiment with a different tool:
+
+    pi0.5   eager   idle 0.6429   clock-insensitive  8.2 %
+    pi0     eager   idle 0.8417   clock-insensitive 22.3 %
+    SmolVLA eager   idle 0.9273   clock-insensitive 31.4 %
+
+Monotonic, and physically expected: idle time is waiting, and waiting does not get shorter
+when the clock goes up. A model whose expert region is mostly gaps cannot convert clock into
+latency, and cannot convert a clock reduction into energy either -- which is exactly why
+SmolVLA, the most idle-dominated of the three, is the one whose energy does not move.
+
+This is a better-supported claim than the energy-to-time hypothesis falsified earlier
+tonight: three models, two independent measurements, monotonic, with a mechanism. It should
+still be checked against GR00T, whose compiled head has ~0 idle and would predict a very LOW
+clock-insensitive fraction. Those six points are running now, and GR00T is the test that
+could break it -- state it as a hypothesis until they land.
