@@ -1,0 +1,52 @@
+{
+  "_schema": "protocol \u00a75, BACK-FILLED -- read _backfill before using this file",
+  "_backfill": {
+    "backfilled": true,
+    "backfilled_at": "2026-09-25T13:42:16Z",
+    "by": "bench/backfill_meta.py",
+    "why": "this directory was written before the \u00a75 meta.json requirement was enforced on every experiment. The 2026-09-25 audit found 33 such directories.",
+    "reliability": "Fields under `recovered` are sourced from evidence in this directory or from git, each with a `_how`/`_source`. Fields under `_unrecoverable` were never recorded and are null. NOTHING here was inferred from expectation."
+  },
+  "run": "20260923_E8q_pi05_libero_fp32",
+  "recovered": {
+    "date": {
+      "date_utc": "2026-09-24T01:52:50Z",
+      "_how": "summary.json's own date_utc field"
+    },
+    "command": {
+      "commands": [
+        {
+          "capture": "summary.json",
+          "command": "bench/libero_eval.py --model pi05 --prep none --suite libero_spatial --tasks 10 --episodes 3 --outdir results/20260923_E8q_pi05_libero_fp32"
+        }
+      ],
+      "_source": [
+        "summary.json"
+      ]
+    },
+    "git_added": {
+      "commit": "a5a5125eb94fcc9a520d9cdf7307b3dbefc6a96e",
+      "committed_at": "2026-09-23T18:53:39-07:00",
+      "subject": "Accuracy validation, pi0.5: NOT VALIDATED \u2014 the fp32 baseline scores zero",
+      "_how": "git log --diff-filter=A on this directory: the commit that first added its files. Bounds the run from above; it is not the run's own recorded code commit."
+    },
+    "files": [
+      {
+        "path": "episodes.csv",
+        "bytes": 2501,
+        "sha256": "a0bd95d110b0db07fa6c71305ef13451b3de2e120d37fef2aa43a00d2a981f41"
+      },
+      {
+        "path": "summary.json",
+        "bytes": 787,
+        "sha256": "1d8537ba53006e78674b7e88f013c72e4ec1b173f8e1dcc30d85cb8f2a36f0d5"
+      }
+    ],
+    "file_count": 2,
+    "total_bytes": 3288
+  },
+  "_unrecoverable": {
+    "device_state": "Power mode, GPU/CPU clock frequencies, temperature and throttling state were not recorded by the run that wrote this directory and are not derivable from its contents. Per AGENTS.md a latency without its power mode is not a result: this field is left null rather than filled from the campaign-wide assumption that the device was at MAXN. Runs from 2026-09-24 onward carry a protocol \u00a71 gate block.",
+    "software_versions": "Not recorded per-run. env/ documents the campaign's environment, but copying it here would assert that this run observed those versions, which was never checked."
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "_schema": "protocol \u00a75, BACK-FILLED -- read _backfill before using this file",
+  "_backfill": {
+    "backfilled": true,
+    "backfilled_at": "2026-09-25T13:42:16Z",
+    "by": "bench/backfill_meta.py",
+    "why": "this directory was written before the \u00a75 meta.json requirement was enforced on every experiment. The 2026-09-25 audit found 33 such directories.",
+    "reliability": "Fields under `recovered` are sourced from evidence in this directory or from git, each with a `_how`/`_source`. Fields under `_unrecoverable` were never recorded and are null. NOTHING here was inferred from expectation."
+  },
+  "run": "20260923_E8q_pi0_libero_bf16both",
+  "recovered": {
+    "date": {
+      "date_utc": "2026-09-24T00:53:28Z",
+      "_how": "summary.json's own date_utc field"
+    },
+    "command": {
+      "commands": [
+        {
+          "capture": "summary.json",
+          "command": "bench/libero_eval.py --model pi0 --prep bf16_both --suite libero_spatial --tasks 10 --episodes 3 --outdir results/20260923_E8q_pi0_libero_bf16both"
+        }
+      ],
+      "_source": [
+        "summary.json"
+      ]
+    },
+    "git_added": {
+      "commit": "f3f0d3a84b18175da968c61d5a5d0cf19f4fee6b",
+      "committed_at": "2026-09-23T17:56:52-07:00",
+      "subject": "Accuracy validation, pi0: bf16 not shown to degrade the policy",
+      "_how": "git log --diff-filter=A on this directory: the commit that first added its files. Bounds the run from above; it is not the run's own recorded code commit."
+    },
+    "files": [
+      {
+        "path": "episodes.csv",
+        "bytes": 2499,
+        "sha256": "0e54c6b75d0d516a4eb30093e0ecb94cab477bbffd5a3afd1f18e6e7970ec320"
+      },
+      {
+        "path": "summary.json",
+        "bytes": 923,
+        "sha256": "40e40c7c443d3e51aa3b1d17f37c5f02465d4af13b45654bf184941659548c2b"
+      }
+    ],
+    "file_count": 2,
+    "total_bytes": 3422
+  },
+  "_unrecoverable": {
+    "device_state": "Power mode, GPU/CPU clock frequencies, temperature and throttling state were not recorded by the run that wrote this directory and are not derivable from its contents. Per AGENTS.md a latency without its power mode is not a result: this field is left null rather than filled from the campaign-wide assumption that the device was at MAXN. Runs from 2026-09-24 onward carry a protocol \u00a71 gate block.",
+    "software_versions": "Not recorded per-run. env/ documents the campaign's environment, but copying it here would assert that this run observed those versions, which was never checked."
+  }
+}

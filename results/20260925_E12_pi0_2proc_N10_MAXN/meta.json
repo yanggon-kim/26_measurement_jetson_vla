@@ -1,0 +1,98 @@
+{
+  "_schema": "protocol \u00a75, BACK-FILLED -- read _backfill before using this file",
+  "_backfill": {
+    "backfilled": true,
+    "backfilled_at": "2026-09-25T13:42:16Z",
+    "by": "bench/backfill_meta.py",
+    "why": "this directory was written before the \u00a75 meta.json requirement was enforced on every experiment. The 2026-09-25 audit found 33 such directories.",
+    "reliability": "Fields under `recovered` are sourced from evidence in this directory or from git, each with a `_how`/`_source`. Fields under `_unrecoverable` were never recorded and are null. NOTHING here was inferred from expectation.",
+    "note_failed_run": "This meta.json was back-filled for a run that FAILED. See _run_outcome. The file exists so the directory is not silently absent from the \u00a75 inventory; it does not assert that the run produced a usable measurement."
+  },
+  "run": "20260925_E12_pi0_2proc_N10_MAXN",
+  "recovered": {
+    "date": {
+      "date_utc": "2026-09-25T12:28:14Z",
+      "_how": "MTIME-DERIVED from the newest file, not a recorded run timestamp. A later rewrite of any file would move it."
+    },
+    "command": {
+      "commands": [],
+      "_source": []
+    },
+    "git_added": {
+      "commit": "ffccd18a869f99b2616b4ec3fa094a135fc4f06f",
+      "committed_at": "2026-09-25T06:36:44-07:00",
+      "subject": "E12: reconcile E7's ae time -- cause found, r=1.50 validated, 33.6% pi0 optimisation",
+      "_how": "git log --diff-filter=A on this directory: the commit that first added its files. Bounds the run from above; it is not the run's own recorded code commit."
+    },
+    "files": [
+      {
+        "path": "expert_iso_post.json",
+        "bytes": 14045,
+        "sha256": "ca08b8f80a229966621dd85804ffa3c6a2f6e6c5e28cf04868c5d6e45a68b51c"
+      },
+      {
+        "path": "expert_iso_pre.json",
+        "bytes": 14064,
+        "sha256": "d9ba5a8009bb9c3f9d6345371dda40dab1aef83a56014d9f1ddb536449605ab4"
+      },
+      {
+        "path": "prefix_corun.json",
+        "bytes": 6840,
+        "sha256": "22b98cd9f1b8fc13339b8807a99af8974158e51520f05a89da50cadbd76b7a1c"
+      },
+      {
+        "path": "prefix_iso_post.json",
+        "bytes": 6824,
+        "sha256": "c89ede018ed62981218479dcda7536a5bc1bc3e9efceff2982dd7f3ee7fd2b9d"
+      },
+      {
+        "path": "prefix_iso_pre.json",
+        "bytes": 6824,
+        "sha256": "d80de0c5169a00fa5617e52c9086251e55c7c1ff494f8a0f2f1015df3bbda6ec"
+      },
+      {
+        "path": "raw/expert_corun.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "raw/expert_iso_post.log",
+        "bytes": 1739,
+        "sha256": "a20777de3a66e8911e5eb00d0d7ccb448976ff34d20de7b3ed3ad35d901e2982"
+      },
+      {
+        "path": "raw/expert_iso_pre.log",
+        "bytes": 1738,
+        "sha256": "be29db026c65f72d3da20213b985c50e9053e77a7d42b397deb6fcb9dec14aea"
+      },
+      {
+        "path": "raw/prefix_corun.log",
+        "bytes": 1918,
+        "sha256": "483105ef84d62dcca4cc0f9c24d77b342343da23656c56ae808952e670a3167e"
+      },
+      {
+        "path": "raw/prefix_iso_post.log",
+        "bytes": 1739,
+        "sha256": "89a4d6bebef0e0d85ceda3414892224fa88a3ddc7301b6352ebfdf33c0282037"
+      },
+      {
+        "path": "raw/prefix_iso_pre.log",
+        "bytes": 1738,
+        "sha256": "9124e5ba25cd5481e674b71eeb49413710eca0248eea256b80a65750a9ce5827"
+      }
+    ],
+    "file_count": 11,
+    "total_bytes": 57469
+  },
+  "_unrecoverable": {
+    "device_state": "Power mode, GPU/CPU clock frequencies, temperature and throttling state were not recorded by the run that wrote this directory and are not derivable from its contents. Per AGENTS.md a latency without its power mode is not a result: this field is left null rather than filled from the campaign-wide assumption that the device was at MAXN. Runs from 2026-09-24 onward carry a protocol \u00a71 gate block.",
+    "software_versions": "Not recorded per-run. env/ documents the campaign's environment, but copying it here would assert that this run observed those versions, which was never checked."
+  },
+  "_run_outcome": {
+    "status": "FAILED -- do not use any number from this directory",
+    "what_happened": "The two-process co-run window (E12 Step 3) was killed. The expert process exited 137 = 128+9 = SIGKILL, and dmesg records the kernel OOM-killer with anon-rss 15.25 GB. Orin has unified memory: 62 GB shared between CPU and GPU, and one pi0 process at bf16_both is about 15 GB, so two concurrent processes do not fit. The prefix process exited 2, which is bench/corun_2proc.py's deliberate non-zero exit for `peer_ready_seen == False`: it refused to report a co-run median for a window in which its peer was not running, rather than measuring anyway.",
+    "why_no_corun_ratios_csv": "bench/e12_2proc_ratios.py refuses to derive s, p or r when peer_ready_seen is False or a file is missing. Both held here. The absence of corun_ratios.csv is the harness working as designed, not an incomplete analysis.",
+    "how_it_is_labelled_elsewhere": "bench/watchdog.sh reports this directory as BROKEN in its E12 line and annotates EXIT=137 with the dmesg OOM lines. That label is keyed on corun_ratios.csv being absent, so back-filling this meta.json does not turn it green.",
+    "consequence": "Two-process co-run without MPS is not measurable on this device at bf16_both by running two full policies. E12's remaining Step 3 routes -- green contexts and libsmctrl -- partition SMs WITHIN one process and are unaffected by this limit."
+  }
+}
