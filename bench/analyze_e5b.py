@@ -147,6 +147,22 @@ def rows_for(path: Path, model: str, mode: str, region: str) -> list[dict]:
                 "duration_us": round(k["dur_us"], 3),
                 "launches": mg["n"],
                 "sm_throughput_pct": round(k["sm_pct"], 2),
+                # docs/03 §1 excludes a kernel under 5 % SM throughput whose duration is
+                # comparable to the launch gap: it is launch-bound and its instruction mix
+                # explains nothing about why the phase is slow.
+                #
+                # Such kernels are NOT targets, but they still appear here, because the ncu
+                # capture matches a regex on the short name and several short names are
+                # substrings of one another -- the capture named `elementwise_kernel` for
+                # pi0/eager holds 14 distinct kernels, among them vectorized_ and
+                # unrolled_elementwise_kernel and elementwise_kernel_with_index. The
+                # per-kernel attribution is still correct, since rows merge by _short_name,
+                # but without this flag a launch-bound kernel's stall mix sits in the report
+                # looking like an explanation. Marked rather than dropped: the data is real
+                # and someone may want it, they just must not reason from it.
+                "launch_bound_s1": ("yes" if (k["sm_pct"] < 5.0 and
+                                              k["dur_us"] / max(mg["n"], 1) < 62.0)
+                                    else ""),
                 "stall_reason": reason,
                 "share_of_all_stalls_pct": round(share, 2),
                 "share_of_waiting_pct": wshare,
