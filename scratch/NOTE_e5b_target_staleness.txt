@@ -1,0 +1,57 @@
+E5b: why pi0.5/best captured nothing, and why E5 cannot supply the replacement target
+2026-09-24 22:30. For reports/E5b_*.md and the T007 status block.
+
+## What happened
+
+results/20260924_E5b_pi05_best/ holds a .sh and a .stdout and nothing else. ncu ran, matched
+no kernel, and exited 0. The target was `internal::kernel`, carrying 96.4 % of that
+configuration's ae_step kernel time according to the C1 capture the picker reads -- the most
+concentrated single measurement in E5b.
+
+The stdout lists what ncu DID see inside the ae_step NVTX range: 24 kernels, every one a
+`triton_poi_fused_*` or `triton_per_fused_*`. No `internal::kernel`.
+
+## Two separate facts, both checked
+
+**1. E5b's "best" is NOT E5's "best".** bench/run_ncu_e5b.sh:37 maps mode=best to
+`--compile-mode reduce-overhead`, matching C1. E5's best is the ladder RUNG (pi0.5:
+bf16_both_graphs), applied through nsys_target --rung. Those are different configurations:
+--compile-mode compiles sample_actions as one unit, the rung compiles embed_image,
+container.forward and denoise_step individually.
+
+It shows in the kernels. E5's ae_step for pi0.5 best is gemms --
+internal::gemvx::kernel 25.5 %, ampere_bf16_s16816gemm 17.0 %, cutlass::Kernel2 11.6 % --
+while E5b's reduce-overhead ae_step is Triton.
+
+So **E5's kernels_per_region.csv must NOT be used to pick E5b targets.** I was one step from
+doing exactly that, which would have aimed ncu at kernels the E5b configuration never
+launches -- the same failure in the other direction.
+
+**2. Within one configuration, the kernel choice is not stable across runs.** C1's own
+pi0.5/best ae_step details CSV contains BOTH `internal::kernel` (1474 rows, dominant) AND
+triton_poi_fused_* kernels. Tonight's run of the same --compile-mode reduce-overhead path
+launched only the Triton ones. Same flag, same model, different kernels, a day apart.
+
+That is the root cause of the miss, and it is not a typo to be corrected once: any target
+list derived from an EARLIER capture can name a kernel the current run does not launch.
+
+## What to do
+
+* DONE: bench/run_ncu_e5b.sh now exits 3 when ncu matches no kernel, instead of 0, and
+  prints the kernel list plus the reason. Previously only the watchdog's artefact check
+  noticed a capture that did nothing.
+* TODO, needs the GPU: re-derive pi0.5/best's target from a capture of the SAME
+  configuration taken now -- an nsys run through ncu_target/nsys_target at
+  --compile-mode reduce-overhead, then read its ae_step kernel breakdown. Do NOT reuse E5's
+  rung numbers and do NOT reuse C1's.
+* Worth raising as a method point: picking targets from a stored capture is only sound if
+  the kernel selection is reproducible, and it is not. The durable fix is a cheap listing
+  pass inside the same run that will be profiled, which is a change to the E5b procedure
+  rather than to one target list.
+
+## Scope of the damage
+
+One configuration of six. pi0/eager, pi0/best, pi0.5/eager, smolvla/eager and smolvla/best
+all captured (3, 3, 3, 4 and 7 details CSVs respectively, 23 captures, 0 non-zero exits).
+pi0.5/best is the only gap and it is the one that mattered most, because its 96.4 %
+concentration made it the cleanest single-kernel case in the study.
