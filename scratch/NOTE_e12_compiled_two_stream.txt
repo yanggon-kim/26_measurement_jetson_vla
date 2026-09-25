@@ -1,0 +1,63 @@
+E12: the stock bf16_both compiled path CANNOT be pipelined across two CUDA streams
+2026-09-25 03:00. Found by the §6 equivalence check before any timing was taken.
+
+## What was measured
+
+    condition                        pipelined vs serial actions
+    eager, pipelined                 BITWISE IDENTICAL (6/6, max|d| = 0.000e+00)
+    compiled bf16_both, serial       correct (consecutive frames differ by ~5, as they must)
+    compiled bf16_both, pipelined    CORRUPTED, non-deterministically:
+                                       run 1  max|d| = 1.273
+                                       run 2  max|d| = NaN   (all frames NaN)
+
+Same code both runs; only a diagnostic print was added between them. **The corruption is
+not deterministic**, which makes it a race rather than a mis-wiring.
+
+The negative control detected a deliberately stale cache in 5/5 applicable frames in both
+paths, so the check has power in the compiled path too -- the compiled pipeline is failing a
+test that works.
+
+## What it is NOT
+
+* **Not late cloning into static graph buffers.** That was the first hypothesis: bf16_both
+  graphs denoise_step under reduce-overhead, so its outputs live in static buffers, and
+  run_pipeline clones at the end of the loop. The diagnostic reports
+  `shared_tensor_objects=False` and per-frame values of NaN rather than a repeated last
+  frame. Hypothesis refuted by measurement.
+* **Not the model or the schedule.** Compiled SERIAL is correct, and EAGER PIPELINED is
+  bitwise identical to serial. The two-stream schedule introduces no numerical difference
+  of its own; it is specifically interleaving the GRAPHED callables across two streams.
+* **Not something torch reports.** TORCH_LOGS=cudagraphs emitted no re-record, fallback or
+  warning line. It fails silently.
+
+## Why this was predictable, and was predicted
+
+docs/E12_corun/README.md §7: "torch.compile's CUDA-graph trees were designed for one
+sequential call stream. Interleaving the graphed embed_image and denoise_step across two
+streams may trigger re-recording, fallback to non-graph execution, output-overwrite errors,
+or hidden synchronisation." The rung graphs pg.embed_image@reduce-overhead+clone on the
+prefix side and model.denoise_step@reduce-overhead on the expert side, so both stages are
+replaying graphs from one shared CUDAGraphTrees pool while running on different streams.
+
+## What follows
+
+The spec prescribes the remedy in the same paragraph: "If the stock path cannot run
+pipelined, capturing the same compiled functions yourself (torch.cuda.CUDAGraph, separate
+memory pools) is an acceptable labelled harness change -- same kernels, same equivalence
+check, isolated stages re-measured through it."
+
+So:
+1. **EAGER Step 1 is measurable now** and its equivalence is already verified bitwise. It
+   answers KerColle's question for the eager configuration, with an in-session r of its own.
+2. The **compiled** baseline needs the own-CUDAGraph harness before any of its numbers may
+   be reported. Until then no compiled co-run number exists, and that is stated rather than
+   filled with the stock path's output.
+3. **This is itself a result worth reporting**: on JetPack 6.2 / CUDA 12.6 / torch 2.8, the
+   stock torch.compile reduce-overhead path cannot be safely pipelined across two streams,
+   and it corrupts silently rather than raising. Anyone proposing "just use two streams" as
+   the cheap answer to co-run contention has to deal with that first.
+
+## Do not
+
+Do not report timings from the stock compiled pipeline. They run, they produce plausible
+per-frame milliseconds, and the actions are NaN.

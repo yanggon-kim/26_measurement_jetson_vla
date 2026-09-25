@@ -325,6 +325,23 @@ def equivalence(frames, num_steps: int, stream_p, stream_e, path: str) -> list[d
     # judging it would turn a correct run into EQUIV_FAIL.
     staled = {r["frame"] for r in bad_rows if r.get("used_stale")}
 
+    # DIAGNOSTIC, before judging anything: are the pipeline's own frames distinct from
+    # each other? The compiled rung graphs denoise_step with reduce-overhead, so its
+    # outputs live in STATIC buffers that each replay overwrites. If every frame's action
+    # tensor is the same object or the same values, the fault is this harness cloning too
+    # late -- not the device corrupting a cache. Those two have identical symptoms in the
+    # equivalence table and completely different fixes, so the distinction is measured.
+    ks = sorted(got)
+    same_obj = len({id(got[k]) for k in ks}) < len(ks)
+    pair_diffs = [ (got[a] - got[b]).abs().max().item()
+                   for a, b in zip(ks, ks[1:]) ] if len(ks) > 1 else []
+    print(f"  [{path}] pipeline self-distinctness: shared_tensor_objects={same_obj}  "
+          f"consecutive max|d|={[f'{d:.3e}' for d in pair_diffs]}", flush=True)
+    ref_diffs = [ (ref[a] - ref[b]).abs().max().item()
+                  for a, b in zip(ks, ks[1:]) if ref[a] is not None and ref[b] is not None ]
+    print(f"  [{path}] serial   self-distinctness: consecutive max|d|="
+          f"{[f'{d:.3e}' for d in ref_diffs]}", flush=True)
+
     rows = []
     for fr in frames:
         k = fr["k"]
