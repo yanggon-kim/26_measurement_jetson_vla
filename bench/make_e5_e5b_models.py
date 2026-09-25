@@ -75,9 +75,12 @@ def e6_row(model: str, rung: str):
 
 
 def e5_idle(model: str, mode: str):
-    for run in E5R.runs(f"results/*_E5_{model}_{mode}*"):
-        if str(run["n"]) not in ("10", ""):
-            continue
+    runs = E5R.runs(f"results/*_E5_{model}_{mode}*")
+    # Prefer the N=10 capture (Part B's unprofiled reference is N=10); GR00T's E5 runs are at
+    # its own N=4, and skipping them reported "no E5 capture" when one exists -- the real
+    # reason the cell is empty is the one corrected_frac gives.
+    runs.sort(key=lambda r: str(r["n"]) != "10")
+    for run in runs:
         for row in run["rows"]:
             if row.get("region") in ("ae_step", "ae_total"):
                 c, why = E5R.corrected_frac(model, mode, run["n"] or 10, row)
