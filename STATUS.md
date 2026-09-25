@@ -68,6 +68,94 @@ The agent never confirms a reboot prompt and never uses `nvpmodel --force` (`AGE
 After each reboot: `sudo jetson_clocks && sudo jetson_clocks --fan`, then re-run the E7
 power points. Write "next: resume E7 at mode <id>" here before any switch (protocol §1).
 
+## 2026-09-24 (night) — E11 complete for six models, E5 complete, and my registered hypothesis is FALSIFIED
+
+### The hypothesis E7 registered is falsified as a general claim
+
+`reports/E7_power_energy.md` registered that the action expert's energy-to-time ratio
+tracks its GPU-idle fraction, and named E5 as the test. E5 is now complete and the verdict
+is negative.
+
+| model | expert-region idle, eager → best | drop | E7 energy/time ratio |
+|---|---|---:|---:|
+| π0.5 | 0.6429 → 0.4453 | 0.198 | 0.96 |
+| π0 N=10 | 0.8417 → 0.4714 | 0.370 | 0.80 |
+| SmolVLA | 0.9273 → 0.3795 | 0.548 | 0.45 |
+| GR00T N1.5 | 0.5258 → 0.0008 | 0.525 | **1.05** |
+| GR00T N1.7 | 0.7153 → 0.0008 | 0.715 | 0.88 |
+| GR00T N1.6 | 0.7224 → 0.0010 | 0.721 | 0.66 |
+
+Within the three LeRobot models it is monotonic, which is why it looked like support
+earlier. It does not survive GR00T: SmolVLA and N1.5 have almost the same drop (0.548 vs
+0.525) and the two extreme ratios (0.45 vs 1.05). **Do not write it up as confirmed.** The
+family-specific version is true and the general one is not.
+
+### The finding that replaces it, and it is stronger
+
+**GR00T's compiled DiT action head has essentially no GPU idle**: 0.0008 / 0.0010 / 0.0008
+for N1.5 / N1.6 / N1.7, gap median 0.0 µs, `kernel_union_ms` equal to `wall_ms` within
+0.1 ms. The LeRobot experts retain **38–47 %** idle after the same class of optimisation.
+
+So CUDA graphs remove launch starvation *completely* in a DiT head and only *partly* in a
+flow-matching expert. That splits the PIM argument by architecture: GR00T's compiled head
+is genuinely saturated, so its bound is real work — the regime a memory-side accelerator is
+for — while the LeRobot experts are still gap-bound and Amdahl limits what faster memory can
+do there until the launches are addressed.
+
+Caveat: `ae_step` (per denoising step, LeRobot) and `ae_total` (per inference, GR00T) are
+different regions. The idle *fraction* compares; the wall times do not.
+
+### The 84 % idle figure is π0-specific
+
+π0's 84 % eager `ae_step` idle has been the motivating number for the idle-time argument.
+It does not generalise: π0.5 is **64.3 %** while running *more* kernels per step (1102.7 vs
+968.7), which also rules out kernel count alone setting the idle fraction. Compiled, the
+three converge (0.4714 / 0.4453 / 0.3795).
+
+### E11: complete for six models
+
+| model | run | rows | parts_missing |
+|---|---|---:|---|
+| π0 | `20260924_E11_pi0_inputs` | 1564 | `[]` |
+| π0.5 | `20260924_E11_pi05_inputs` | 1159 | `[]` |
+| SmolVLA | `20260924_E11_smolvla_inputs` | 860 | `[]` |
+| GR00T ×3 | `20260924_E11a_groot_n1{5,6,7}_hostseg` | E11a only | — |
+
+`reports/E11_models.md`. T011 and T012 both carry `status: done` with every deviation
+listed. Measured P per model: π0 816, π0.5 968, SmolVLA 177 — π0's literal carries over to
+neither.
+
+### E5: complete, 14/14
+
+`reports/E5_timeline.md`, now with the **corrected** idle fraction computed from Part B's
+unprofiled `ae_total_ms` and cross-checked two ways (π0 eager 0.7639 against the documented
+0.756; SmolVLA eager 0.8894 against 0.8854 derived from E11f's `ae_total`). The compiled
+half exists: `--rung` keeps the NVTX regions, so the abandoned
+`20260922_E5_pi0_reduce-overhead_N4` is superseded by `20260924_E5_pi0_best_N4`.
+
+π0 compiled vs eager: `ae_step` idle 0.8417 → 0.4714, kernels/step 968.7 → 372.7.
+
+### Questions for the research side (new)
+
+1. **`check_model_inputs.py`'s `MODELS` set has no `groot_n16` or `groot_n15`**, so their
+   `model_inputs.csv` is rejected. The rows are written and each `meta.json` records it.
+   Relabelling the `model` field to pass the checker would be falsifying it, so it was not
+   done. Please extend the set.
+2. **Two E11 quantities are absent under compiled modes and need not be.** See the
+   correction notice above and `scratch/NOTE_e11f_compiled_idle_is_obtainable.txt`: E5
+   measures the same quantity per region via `--rung`. Closing it is a consolidation change
+   — say whether you want it sourced from the E5 run with `from=<E5 dir>` in `variant`.
+
+### In flight
+
+E5b (T007) instruction-level for six configurations. π0.5 eager cannot reach §5's 60 %
+coverage: **eight of its kernels are launch-bound** (SM 0.1–2.5 %, a few µs each against a
+62 µs gap), carrying ~57 % of its `ae_step` time. The shortfall is reported at 43.4 % rather
+than the bar being lowered — and it is itself a finding, since a memory-side accelerator
+cannot help a phase waiting on launches.
+
+bench commit `d2797536f055`.
+
 ## 2026-09-24 — E7 energy begins, and the expert is the CHEAP phase
 
 The owner's instruction: run the rest of the campaign, with everything needing a reboot
