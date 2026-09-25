@@ -357,6 +357,67 @@ else:
     print("  every E5 run carries an expert region (ae_step or ae_total)")
 PYR
 echo
+echo "--- 1e. ACCEPTANCE COVERAGE: does every task's OWN named deliverable exist?"
+# Added 2026-09-25 after E6 was found undelivered for all six models while T004 -- titled
+# "E5, E6, E7" -- was marked `done` with a status block that never mentions E6. Every audit
+# section above checks experiments I named by hand (E5, E5b, E7, E11, E12), so an experiment
+# absent from those lists could not be missed loudly: the checker's scope excluded it. This
+# section takes its scope from the TASK FILES instead, so a deliverable nobody remembered is
+# still reported. Same failure family as the §2c glob that saw 7 of 33 missing meta.json.
+python3 - <<'PYA'
+import glob, os, re
+from pathlib import Path
+
+rows = []
+unexpandable = []
+for tf in sorted(glob.glob("tasks/T0*.md")):
+    txt = Path(tf).read_text(errors="replace")
+    # The named deliverables are the backticked reports/*.md paths in the task body.
+    want = sorted(set(re.findall(r"`(reports/[A-Za-z0-9_.+-]+\.(?:md|csv))`", txt)))
+    # Some tasks name deliverables with a placeholder -- T008 writes
+    # `reports/E5_<m>_timeline.md` for m in {pi05, smolvla}. A literal-path check silently
+    # skips those, which would be this section committing the very error it exists to catch.
+    # Expand the placeholder over the models the task names; if it cannot be expanded, say so
+    # rather than drop it.
+    tmpl = sorted(set(re.findall(r"`(reports/[A-Za-z0-9_.+<>-]*<[a-z]+>[A-Za-z0-9_.+-]*\.(?:md|csv))`", txt)))
+    models = re.findall(r"`(pi0|pi05|smolvla|groot_n1[567])`", txt)
+    seen, order = set(), []
+    for m in models:
+        if m not in seen:
+            seen.add(m); order.append(m)
+    for t in tmpl:
+        if order:
+            want += [re.sub(r"<[a-z]+>", m, t) for m in order]
+        else:
+            unexpandable.append((os.path.basename(tf), t))
+    want = sorted(set(want))
+    if not want:
+        continue
+    status = [ln for ln in txt.splitlines() if ln.startswith("status:")]
+    last = status[-1][:60] if status else "NO STATUS BLOCK"
+    missing = [w for w in want if not os.path.exists(w)]
+    rows.append((os.path.basename(tf), last, want, missing))
+
+bad = [r for r in rows if r[3]]
+for name, last, want, missing in rows:
+    mark = "***" if missing else "   "
+    print(f"  {mark} {name:38s} {len(want)-len(missing)}/{len(want)} present   {last}")
+    for m in missing:
+        print(f"        MISSING {m}")
+if bad:
+    closed = [r for r in bad if r[1].startswith("status: done")]
+    if closed:
+        print(f"  *** {len(closed)} task(s) marked DONE with a named deliverable MISSING -- a "
+              f"green label over incomplete work: {[r[0] for r in closed]}")
+    else:
+        print(f"  ({len(bad)} task(s) have missing deliverables; none of them is marked done)")
+else:
+    print("  every task's named deliverables exist")
+if unexpandable:
+    print(f"  *** templated deliverable names this check could NOT expand, so they are NOT "
+          f"verified: {unexpandable}")
+PYA
+echo
 echo "--- 2. RUNNING NOW (from /proc; pgrep -f matches itself)"
 $HOME/venvs/pi0/bin/python - <<'PYC'
 import os

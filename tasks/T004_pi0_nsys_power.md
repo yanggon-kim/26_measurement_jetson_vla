@@ -133,3 +133,44 @@ the ~2 GB stop-and-ask threshold.
 **Step 4b (MODE_30W, MODE_15W) is a handoff**, at the top of `STATUS.md` with exact
 commands and `bench/queues/queue_e7_capped.sh`. Both change `TPC_PG_MASK`, which is applied
 at boot, so they need a human reboot; the agent never confirms one.
+
+status: CORRECTION 2026-09-25 — the `done` above was WRONG: E6 was never delivered
+
+**This task is titled "E5, E6, E7". E5 and E7 are complete and reported. E6 was neither
+measured nor disclosed as deferred, and the `done` block above does not mention it.**
+Re-opening rather than leaving a green label over a missing P1 deliverable.
+
+**What is missing.** This task's own acceptance names `results/<date>_E6_pi0/` and
+`reports/E6_pi0_roofline.md`. Neither exists — and no `results/*_E6_*` directory exists for
+any of the six models.
+
+**Checked before claiming it missing:** whether E6's substance shipped under another name.
+It did not. `results/20260923_E4g_c1_summary/c1_bounds.csv` carries
+`model, mode, region, n_kernels, total_us, sm_pct, mem_pct, occupancy_pct, l2_hit_pct,
+verdict, long_scoreboard, long_scoreboard_share, top_stall` — an ncu bottleneck
+classification. E6 (plan lines 139–149) requires
+`model, region_or_kernel, flops, bytes, ms, intensity, achieved_TFLOPps, achieved_GBps,
+pct_peak_compute, pct_peak_bw, source ∈ {analytic, ncu}` plus the §9 floor and gap ratio.
+None of those columns exist in C1. Substituting C1 would also commit the specific error E6
+warns against: its `mem_pct` is ncu's Memory Throughput, i.e. **L2** throughput, which the
+plan states in as many words "is *not* a roofline x- or y-value". Off-chip bytes must come
+from L2 sysmem-miss sectors (protocol §3.3), and time from nsys or §2 region time, never
+ncu `Duration`.
+
+**Why it matters more than its position suggests.** Achieved GB/s, % of peak bandwidth and
+arithmetic intensity per region are the most direct evidence for or against a memory-side
+accelerator, which is the study's thesis. E1/E2 already measured the roofs it is plotted
+against: 187.47 GB/s, 33.85 TFLOP/s bf16, ridge 180.57 FLOP/B. The inputs exist; the
+experiment was skipped.
+
+**How this happened, since the pattern matters more than the instance.** The task was
+executed step by step and closed on the steps that were executed. Nothing re-read the task
+title against the delivered artefacts, and my own watchdog audits E5/E5b/E7/E11/E12 by name
+— E6 is in no audit line, so no audit could miss it loudly. Same failure family as the
+watchdog §2c glob that examined only `*_E7_*`/`*_E11*`/`*_E5*` and so reported 7 missing
+`meta.json` where there were 33: **a checker whose scope silently excludes the thing being
+checked reports green.** Fix applied: E6 added to the watchdog's acceptance-coverage audit
+so an undelivered experiment is reported on every wake, not discovered by reading a title.
+
+E6 is also unmet for T008 (π0.5, SmolVLA) and T009 (GR00T), whose acceptance names
+`reports/E6_<m>_roofline.md`. It needs no reboot and blocks on nothing.
