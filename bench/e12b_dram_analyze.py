@@ -25,7 +25,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 FRAMES = {"prefix_alone": 5, "expert_alone": 5}
 N = 10
-UNIT = {"byte": 1, "Kbyte": 1e3, "Mbyte": 1e6, "Gbyte": 1e9, "KB": 1e3, "MB": 1e6, "GB": 1e9,
+UNIT = {"sector": 32, "byte": 1, "Kbyte": 1e3, "Mbyte": 1e6, "Gbyte": 1e9, "KB": 1e3, "MB": 1e6, "GB": 1e9,
         "nsecond": 1e-9, "usecond": 1e-6, "msecond": 1e-3, "ns": 1e-9, "us": 1e-6, "ms": 1e-3}
 
 
@@ -52,19 +52,24 @@ def main() -> int:
     hdr, units, data = rows[0], rows[1], rows[2:]
     col = {h: i for i, h in enumerate(hdr)}
     nv = next(i for i, h in enumerate(hdr) if "Push/Pop_Range" in h or h.startswith("thread Domain"))
-    need = ["dram__bytes_read.sum", "dram__bytes_write.sum", "gpu__time_duration.sum"]
-    agg = {k: {"kernels": 0, "read": 0.0, "write": 0.0, "dur_s": 0.0} for k in FRAMES}
+    # Orin has no dram__ counters: DRAM reads = L2 fills from memory, writes <= L2 write sectors
+    need = ["lts__d_sectors_fill_device.sum", "lts__d_sectors_fill_sysmem.sum",
+            "lts__t_sectors_op_read.sum", "lts__t_sectors_op_write.sum", "gpu__time_duration.sum"]
+    agg = {k: {"kernels": 0, "read": 0.0, "write": 0.0, "l2_read": 0.0, "dur_s": 0.0}
+           for k in FRAMES}
     unattributed = 0
     for r in data:
         rng = next((k for k in FRAMES if k in r[nv]), None)
         if rng is None:
             unattributed += 1
             continue
-        v = {m: float(r[col[m]].replace(",", "")) * UNIT.get(units[col[m]], float("nan")) for m in need}
+        v = {m: float(r[col[m]].replace(",", "") or 0) * UNIT.get(units[col[m]], float("nan"))
+             for m in need}
         a = agg[rng]
         a["kernels"] += 1
-        a["read"] += v["dram__bytes_read.sum"]
-        a["write"] += v["dram__bytes_write.sum"]
+        a["read"] += v["lts__d_sectors_fill_device.sum"] + v["lts__d_sectors_fill_sysmem.sum"]
+        a["write"] += v["lts__t_sectors_op_write.sum"]
+        a["l2_read"] += v["lts__t_sectors_op_read.sum"]
         a["dur_s"] += v["gpu__time_duration.sum"]
     e6, ms = e6_bytes(), stage_ms()
     table = []
@@ -73,9 +78,11 @@ def main() -> int:
         meas = (a["read"] + a["write"]) / f
         emc = EMC_GBPS[k] * 1e9 * ms[k] / 1e3
         table.append({
-            "stage": k, "kernels_per_frame": a["kernels"] / f,
+            "stage": k, "workloads_per_frame": a["kernels"] / f,
+            "L2_read_requests_GB_per_frame": round(a["l2_read"] / f / 1e9, 4),
+            "L2_read_hit_share": round(1 - a["read"] / a["l2_read"], 3) if a["l2_read"] else None,
             "measured_read_GB_per_frame": round(a["read"] / f / 1e9, 4),
-            "measured_write_GB_per_frame": round(a["write"] / f / 1e9, 4),
+            "measured_write_GB_per_frame_upper": round(a["write"] / f / 1e9, 4),
             "measured_total_GB_per_frame": round(meas / 1e9, 4),
             "E6_analytic_GB_per_frame": round(e6[k] / 1e9, 4),
             "EMC_implied_GB_per_frame": round(emc / 1e9, 4),
@@ -106,12 +113,12 @@ def main() -> int:
             "gpu_cur_freq_hz": Path("/sys/devices/platform/bus@0/17000000.gpu/devfreq/"
                                     "17000000.gpu/cur_freq").read_text().strip(),
             "config": "graphs_both, whole GPU, N=10, bf16_both rung (bench/e12b_nsys.py)",
-            "ncu": "--graph-profiling node --cache-control none --replay-mode kernel; "
-                   "metrics dram__bytes_read.sum, dram__bytes_write.sum, gpu__time_duration.sum",
-            "caveat": "kernel replay serialises kernels, so each kernel's L2 state is the one the "
-                      "previous kernel left, as in the real serial stage; concurrency inside a "
-                      "stage is lost. Durations are profiled, NOT latencies -- the GB/s columns use "
-                      "the unprofiled stage times.",
+            "ncu": "--graph-profiling graph --cache-control none; L2 metrics (Orin exposes no "
+                   "dram__ counters): reads = lts__d_sectors_fill_{device,sysmem}, writes <= "
+                   "lts__t_sectors_op_write; 32 B per sector",
+            "caveat": "graph-level profiling: one workload per graph launch (whole stage). "
+                      "Writes are an UPPER bound (L2 write sectors, not write-backs). Durations are "
+                      "profiled, NOT latencies -- the GB/s columns use the unprofiled stage times.",
             "bench_commit": subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"],
                                            capture_output=True, text=True).stdout.strip(),
             "command": "bash bench/run_ncu_e12b_dram.sh " + str(out),

@@ -9,9 +9,17 @@
 # `expert_alone` NVTX ranges of bench/e12b_nsys.py (5 frames each, graphs_both, whole GPU --
 # the same configuration and the same code path as M2/M3).
 #
-# --cache-control none: L2 is NOT flushed between kernels, so each kernel sees the cache state
-# the real run leaves it (the default, `all`, flushes and would overcount DRAM reads).
-# Metrics only (dram__bytes_read/write, duration); no sections. One profiler, nothing else.
+# --cache-control none: L2 is NOT flushed between workloads, so each sees the cache state the
+# real run leaves it (the default, `all`, flushes and would overcount DRAM reads).
+#
+# ORIN HAS NO dram__ COUNTERS (first attempt, 2026-09-25 22:47, kept in scratch/failed_runs:
+# ncu silently omitted dram__bytes_* -- `ncu --query-metrics` lists none -- and the per-NODE
+# graph replay then died with "LaunchFailed" after ~480 kernels). So DRAM traffic is measured at
+# the L2 boundary: reads = L2 sector FILLS from memory (lts__d_sectors_fill_device + _sysmem,
+# 32 B each); writes = L2 write sectors (lts__t_sectors_op_write, an UPPER bound on DRAM writes,
+# since a line written twice before eviction is written back once). And --graph-profiling graph:
+# each CUDA-graph launch is ONE workload (the graphs_both prefix and the expert are one graph
+# each), which is the per-stage total wanted and avoids per-node replay.
 set -u
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 OUT=${1:?outdir}
@@ -33,8 +41,8 @@ export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR 
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 exec $(which ncu) --profile-from-start off --nvtx \
   --nvtx-include "prefix_alone/" --nvtx-include "expert_alone/" \
-  --graph-profiling node --cache-control none --replay-mode kernel \
-  --metrics dram__bytes_read.sum,dram__bytes_write.sum,gpu__time_duration.sum \
+  --graph-profiling graph --cache-control none \
+  --metrics lts__d_sectors_fill_device.sum,lts__d_sectors_fill_sysmem.sum,lts__t_sectors_op_read.sum,lts__t_sectors_op_write.sum,lts__t_sectors_op_read_lookup_miss.sum,lts__t_sectors_lookup_miss.sum,gpu__time_duration.sum \
   --export "$OUT/ncu/e12b_dram" --force-overwrite \
   $PY bench/e12b_nsys.py --config graphs_both
 EOR
