@@ -8,11 +8,20 @@
 set -u
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 OUT=${1:?outdir}; FALLBACK=${FALLBACK:-0}
-[ -e "$OUT/ncu/e13d.ncu-rep.zst" ] && { echo "REFUSING: capture exists in $OUT"; exit 2; }
+# CHUNKING (2026-09-26): on this device ncu dies with "LaunchFailed" after 480 profiled kernels in one
+# process -- the rung (vision CUDA graph) and the no-graph fallback both stopped at exactly 480, as E12b's
+# first per-node attempt did. So one frame's ~1205 launches are profiled in chunks of COUNT kernels
+# (--launch-skip SKIP within NVTX range prefix_f<FRAME>), one ncu process per chunk, and stitched.
+FRAME=${FRAME:-}; SKIP=${SKIP:-0}; COUNT=${COUNT:-0}
+
 mkdir -p "$OUT/ncu" "$OUT/raw"
 if pgrep -x ncu >/dev/null || pgrep -x nsys >/dev/null; then echo "REFUSING: another profiler is running"; exit 2; fi
 PY=$HOME/venvs/pi0/bin/python
 if [ "$FALLBACK" = 1 ]; then GP=node; EXTRA=--vision-nograph; TAG=nograph; else GP=node; EXTRA=; TAG=rung; fi
+NVINC="regex:prefix_f.*/"; LIM=""
+if [ -n "$FRAME" ]; then NVINC="prefix_f${FRAME}/"; TAG="${TAG}_f${FRAME}_s${SKIP}"; fi
+if [ "$COUNT" != 0 ]; then LIM="--launch-skip $SKIP --launch-count $COUNT"; fi
+[ -e "$OUT/ncu/e13d_${TAG}.ncu-rep.zst" ] && { echo "REFUSING: capture $TAG exists in $OUT"; exit 2; }
 R="$OUT/ncu/e13d_${TAG}.sh"
 cat > "$R" <<EOR
 HOME=/home/yanggon
@@ -23,7 +32,7 @@ TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon
 TRITON_CACHE_DIR=/tmp/triton_yanggon
 export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
-exec $(which ncu) --profile-from-start off --nvtx --nvtx-include "regex:prefix_f.*/" \
+exec $(which ncu) --profile-from-start off --nvtx --nvtx-include "$NVINC" $LIM \
   --graph-profiling $GP --cache-control none \
   --metrics lts__d_sectors_fill_device.sum,lts__d_sectors_fill_sysmem.sum,lts__t_sectors_op_read.sum,lts__t_sectors_op_write.sum,lts__t_sectors_op_read_lookup_miss.sum,lts__t_sectors_lookup_miss.sum,gpu__time_duration.sum,launch__grid_size,launch__block_size \
   --export "$OUT/ncu/e13d_${TAG}" --force-overwrite \

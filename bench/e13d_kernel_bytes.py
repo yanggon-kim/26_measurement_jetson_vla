@@ -57,8 +57,22 @@ def main() -> int:
     out = Path(sys.argv[1])
     tag = sys.argv[2] if len(sys.argv) > 2 else "rung"
     el = 2                                                     # bf16 rung; fp32 kernels flagged below
-    rows = list(csv.reader(open(out / "ncu" / f"e13d_{tag}_raw.csv")))
-    hdr, units, data = rows[0], rows[1], rows[2:]
+    # chunked captures (ncu dies after 480 kernels per process on this device): stitch
+    # e13d_<tag>_f<frame>_s<skip>_raw.csv in (frame, skip) order; otherwise one e13d_<tag>_raw.csv
+    import re                                                                      # noqa: PLC0415
+    chunks = sorted((out / "ncu").glob(f"e13d_{tag}_f*_s*_raw.csv"),
+                    key=lambda q: tuple(int(x) for x in re.search(r"_f(\d+)_s(\d+)_raw", q.name).groups()))
+    files = chunks or [out / "ncu" / f"e13d_{tag}_raw.csv"]
+    hdr = units = None
+    data = []
+    for q in files:
+        rr = list(csv.reader(open(q)))
+        if hdr is None:
+            hdr, units = rr[0], rr[1]
+        elif rr[0] != hdr:
+            raise SystemExit(f"{q.name}: header differs from the first chunk")
+        data += rr[2:]
+    print(f"  {len(files)} capture file(s), {len(data)} kernel rows", flush=True)
     c = {h: i for i, h in enumerate(hdr)}
     nv = next(i for i, h in enumerate(hdr) if "Push/Pop_Range" in h)
 
