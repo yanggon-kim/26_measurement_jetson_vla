@@ -579,10 +579,12 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--fixtures", default="bench/fixtures/e12")
     ap.add_argument("--outdir", default="")
+    ap.add_argument("--allow-capped", action="store_true",
+                    help="permit a capped power mode (MODE_30W/15W; T014 Step 4). The gate still records the mode, SM count and clocks in meta.json; without this flag anything but MAXN is refused.")
     args = ap.parse_args()
 
     import model_registry as MR                                       # noqa: PLC0415
-    gate = P.gate()
+    gate = P.gate(require_maxn=not args.allow_capped)
     print("gate:", json.dumps(gate), flush=True)
     spec = MR.get("pi0")
     fixtures = REPO / args.fixtures

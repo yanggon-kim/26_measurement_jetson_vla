@@ -142,6 +142,11 @@ def main() -> int:
                          "capped number can never be mistaken for a MAXN one.")
     ap.add_argument("--layers-in-step", type=int, default=0,
                     help="which denoising step carries the ae_layer[j] events")
+    ap.add_argument("--outdir", default="",
+                    help="write the (single-N) run here instead of results/<date>_E3_pi0_eager_N<n>. "
+                         "Capped runs need it: the default name carries no power mode, so a 30W/15W "
+                         "run would look like a MAXN one (found 2026-09-26, the 30W queue passed it "
+                         "and this script had no such flag).")
     args = ap.parse_args()
     steps = [int(x) for x in args.steps.split(",")]
 
@@ -159,7 +164,12 @@ def main() -> int:
     bench_commit = sh_out(f"git -C {REPO} rev-parse HEAD")
 
     for n in steps:
-        run = REPO / "results" / f"{args.date}_E3_pi0_eager_N{n}"
+        run = (REPO / args.outdir) if args.outdir else (
+            REPO / "results" / f"{args.date}_E3_pi0_eager_N{n}")
+        if args.outdir and len(steps) != 1:
+            raise SystemExit("--outdir takes exactly one --steps value")
+        if run.exists() and any(run.iterdir()):
+            raise SystemExit(f"{run} exists and is not empty (protocol §5)")
         (run / "raw").mkdir(parents=True, exist_ok=True)
         print(f"\n=== N={n}  warmup {args.warmup}, timed {args.timed} ===", flush=True)
         t0 = time.time()

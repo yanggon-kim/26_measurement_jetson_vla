@@ -107,6 +107,8 @@ def main() -> int:
     ap.add_argument("--warm", type=int, default=8)
     ap.add_argument("--fixtures", default="bench/fixtures/e12")
     ap.add_argument("--outdir", required=True)
+    ap.add_argument("--allow-capped", action="store_true",
+                    help="permit a capped power mode (MODE_30W/15W; T014 Step 4). The gate still records the mode, SM count and clocks in meta.json; without this flag anything but MAXN is refused.")
     args = ap.parse_args()
 
     out = REPO / args.outdir
@@ -115,7 +117,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     (out / "raw").mkdir(exist_ok=True)
 
-    gate = P.gate()
+    gate = P.gate(require_maxn=not args.allow_capped)
     print(f"  gate: power_mode={gate['power_mode']} sm_count={gate['sm_count']}")
 
     # --- control 1: is the partition real at all? Refuse to time if not.

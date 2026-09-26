@@ -40,6 +40,8 @@
 #     result is wrong and E12 §5's conclusion needs revisiting.
 #   * issue/wall should stay ~1.0000. Fewer SMs does not make the host issue faster.
 # ---------------------------------------------------------------------------------------
+# 2026-09-26: steps 1-4 failed at MODE_30W with 'GATE FAILED ... need MAXN' -- corun.py,
+# corun_green.py and corun_energy.py called the MAXN-only gate. They now take --allow-capped.
 set -u
 cd /home/yanggon/00_VLA/26_measurement_jetson_vla
 DATE=$(date +%Y%m%d)
@@ -102,13 +104,13 @@ run "E12 compiled stages alone $TAG (graphs_both)" \
 #    --nosync and eager match results/20260925_E12_pi0_corun_N10_MAXN_eager_nosync exactly;
 #    changing either would make the capped numbers incomparable with the MAXN ones.
 run "E12 corun N=10 $TAG eager nosync" \
-  $PY bench/corun.py --mode timing --path eager --nosync --steps 10 --frames 100 --warm 20 \
+  $PY bench/corun.py --allow-capped --mode timing --path eager --nosync --steps 10 --frames 100 --warm 20 \
      --outdir "results/${DATE}_E12_pi0_corun_N10_${TAG}_eager_nosync"
 
 # 2. The equivalence gate again. Non-negotiable 1 is not inherited from another power mode:
 #    fewer SMs changes the schedule, and nothing downstream is valid until this passes here.
 run "E12 equivalence $TAG" \
-  $PY bench/corun.py --mode equivalence --path eager --nosync --steps 10 --frames 6 \
+  $PY bench/corun.py --allow-capped --mode equivalence --path eager --nosync --steps 10 --frames 6 \
      --outdir "results/${DATE}_E12_pi0_equiv_${TAG}"
 
 # 3. The green-context SM curve INSIDE the capped mode. At MODE_30W only 8 SMs exist, so the
@@ -116,12 +118,12 @@ run "E12 equivalence $TAG" \
 #    and never assumes it got what it asked for. This is the arm that tests whether a software
 #    partition of 8 SMs behaves like a hardware gate to 8.
 run "E12 green SM curve $TAG eager" \
-  $PY bench/corun_green.py --rung eager --steps 10 --sms 2,4,6,8 --seconds 20 \
+  $PY bench/corun_green.py --allow-capped --rung eager --steps 10 --sms 2,4,6,8 --seconds 20 \
      --outdir "results/${DATE}_E12_pi0_green_N10_${TAG}_eager"
 
 # 4. Energy at the capped mode, same two arms as MAXN.
 run "E12 energy $TAG" \
-  $PY bench/corun_energy.py --steps 10 --frames 10 --seconds 60 \
+  $PY bench/corun_energy.py --allow-capped --steps 10 --frames 10 --seconds 60 \
      --outdir "results/${DATE}_E12_pi0_energy_N10_${TAG}_eager_nosync"
 
 echo "E12_CAPPED_DONE $(date -Is)"

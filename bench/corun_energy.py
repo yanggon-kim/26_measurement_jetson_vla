@@ -55,6 +55,8 @@ def main() -> int:
     ap.add_argument("--nosync", action="store_true", default=True)
     ap.add_argument("--fixtures", default="bench/fixtures/e12")
     ap.add_argument("--outdir", required=True)
+    ap.add_argument("--allow-capped", action="store_true",
+                    help="permit a capped power mode (MODE_30W/15W; T014 Step 4). The gate still records the mode, SM count and clocks in meta.json; without this flag anything but MAXN is refused.")
     args = ap.parse_args()
 
     out = REPO / args.outdir
@@ -62,7 +64,7 @@ def main() -> int:
         raise SystemExit(f"{out} exists and is not empty -- protocol §5 forbids overwriting")
     (out / "raw").mkdir(parents=True, exist_ok=True)
 
-    gate = P.gate()
+    gate = P.gate(require_maxn=not args.allow_capped)
     print(f"  gate: power_mode={gate['power_mode']} sm_count={gate['sm_count']}", flush=True)
 
     # Idle FIRST and in-session, before the model is loaded: an idle baseline taken after a
