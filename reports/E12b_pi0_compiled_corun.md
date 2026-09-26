@@ -258,10 +258,11 @@ So the calibrated EMC GB/s **are bytes**, for both access patterns (the review's
 % over-states bytes for the prefix — is ruled out), and the prefix really moves ~3.7× the DRAM traffic
 of E6's parameter + KV count: its L2 sees 74.0 GB of read requests per frame and 17.8 GB of them miss
 (76 % hit), i.e. activations of an 816-token, 18-layer prefill spill well past the 4 MB L2. The expert,
-a weight stream with 51 tokens, is within 10 % of E6 on reads. Consequences: E6's prefix floor
-(bytes / BW) is too low by ~3.7×, so the prefix's "gap to floor" in `E6_pi0_roofline.md` overstates how
-far it is from the memory roof — **at its real traffic the compiled prefix runs at 87.9 GB/s (47 % of the
-measured bus)**; and in M4 the co-run at 12/4 drew 106.6 GB/s of real bytes, as quoted. For EV-02 (the
+a weight stream with 51 tokens, is within 10 % of E6 on reads. Consequences: E6's prefix
+**memory** floor (analytic bytes / 187.47 GB/s ≈ 31 ms for vision + VLM) rises to ≈ 115 ms at the real
+traffic — as large as its **compute** floor (120.9 ms for `vlm_prefix`, which is what E6's gap ratio
+used, so that ratio stands); the compiled prefix is bound by both roofs at once, and runs at **87.9 GB/s
+of real traffic (47 % of the measured bus)**; and in M4 the co-run at 12/4 drew 106.6 GB/s of real bytes, as quoted. For EV-02 (the
 channel-partition measurement) the prefix's DRAM demand is ~88 GB/s, not ~24.
 
 **2. `e12b_diagnose.py`.** It was an uncommitted scratch file and no longer exists; the harness docstring
