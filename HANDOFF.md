@@ -1,90 +1,93 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last rewritten: 2026-09-25 by jetson-owner.*
-*State only — rewritten, never appended. History (every dated section, the 2026-09-22 block, old decisions and
-issues): `HANDOFF.history.md`. Full reviews: `analysis/E12_review.md`, `analysis/E12b_review.md`.*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last rewritten: 2026-09-26 by jetson-owner.*
+*State only — rewritten, never appended. History (older state, dated blocks, old decisions and issues):
+`HANDOFF.history.md`. Full reviews: `analysis/E12_review.md`, `analysis/E12b_review.md`.*
 
 ## State now
 
-- **Device:** live (20-min `PROGRESS` ticks; last seen 2026-09-25 15:27 PDT). Queue per its `STATUS.md`: the
-  pre-reboot queue (E3/E4 N sweep → GR00T N1.5/N1.6 E6 → E8 LIBERO), then the capped-mode reboot session.
-- **Closed:** T001–T003, T005, T010–T012 done; T007 done 2026-09-25; **T014** (E12, MAXN) done and superseded by
-  **T015** (E12b), done 2026-09-25 and reviewed. T013 withdrawn. **T004 re-opened by the device**: E6 was never
-  delivered (its own correction block, 2026-09-25); E5 and E7 (MAXN, 14/14) are complete.
-- **Still claimed:** T008, T009. T006 has no status line though delivered in substance by the six-model campaign
-  (verify before closing).
-- **Local, not pushed:** `0a08832` (E12b review + E12 review correction), `cdd0bdc` (P1 → EV-02 relabel), and this
-  rewrite. Push only on approval.
+- **Device:** idle except for the reboot session. Its `STATUS.md` head (2026-09-26 ~00:00): all pre-reboot
+  work done; nothing else queued. Last pulled at `567c5d5` (PROGRESS tick 10:50).
+- **Closed:** T001–T003, T005–T012 done (T006 / T008 / T009 closed 2026-09-26); T014 MAXN superseded by T015
+  (done, reviewed); T013 withdrawn. **T004**: re-opened by the device for missing E6; `reports/E6_pi0_roofline.md`
+  and `results/20260925_E6_pi0/` now exist but the task file has no closing status line — verify and ask it to close.
+- **Pushed:** everything of ours up to `abd8368` is on origin. This rewrite is local (commit, not pushed).
 - **Standing item — capped power modes (user's decision 2026-09-24: the device's business, never escalate):**
-  `MODE_30W` (id 2) and `MODE_15W` (id 1) each need one human reboot; they come last in the device's order. T014
-  Step 4 and the E7 capped points ride that session (`bench/queues/queue_e7_capped.sh`,
-  `queue_e12_capped.sh`). Carry this row on every pull; raise it only if the device marks it `blocked` or asks.
+  `MODE_30W` (id 2) and `MODE_15W` (id 1) each need one human reboot; they are now the **only** remaining work
+  (`bench/queues/queue_e7_capped.sh`, `queue_e12_capped.sh`; step 0c measures compiled stages at 30W). The device
+  never confirms a reboot prompt itself (`STATUS.md` "NEXT, needs you"). Carry this row on every pull.
 
-## Current numbers (π0 LeRobot `lerobot @ f0d2b37beb`, MAXN, bf16) — sources, not re-derived here
+## Current numbers (π0 LeRobot `lerobot @ f0d2b37beb`, ckpt `45dcc8fc`, MAXN, bf16) — sources, not re-derived
 
 | quantity | value | source |
 |---|---|---|
-| best frame, `bf16_both`, N = 10 | 424.46 ms; split 13.4 / 45.4 / 39.7 % (vis / prefix / ae) | `results/20260922_E4c_pi0_opt_ladder/opt_ladder.csv`, `reports/E4d_phase_balance.md` |
+| best frame, `bf16_both`, N = 10 | 424.46 ms; split 13.4 / 45.4 / 39.7 % (vis / prefix / ae) | `results/20260922_E4c_pi0_opt_ladder/opt_ladder.csv` |
 | E7 loops: prefix / ae / full | 251.28 / 167.36 / 424.68 ms; 6395.8 / 3112.5 / 13 666.2 mJ | `reports/E7_power_energy.md` |
-| expert per step, best | 10.37 ms (`reduce-overhead` + crop-not-clone KV); floor 3.115 spec / 3.403 meas. | `results/20260921_E4_pi0_summary.csv` |
-| fair expert (hoist, bitwise = stock) | 110.95 ms; fair serial frame 354.74 ms, 17 552 mJ | E12b, review §1 |
-| `owngraph_expert` (loop as one graph) | 101.21 ms — baseline membership is the user's call | E12b |
-| best GPU co-run `O` | 1.247 (green 12/4); whole GPU 1.29–1.40 | E12b; `results/20260925_E12b_pi0_*` |
-| 12/4 coupling | `p_part` 1.075, `s_part` 1.197, `p_hog` 1.043 | E12b review |
-| co-run energy | +2.0 % per frame vs fair serial | E12b M5 |
-| stock timestep tensor cost | 56.07 of 167.09 ms (33.6 %) of the expert | `analysis/E12_review.md` |
+| expert per step, best | 10.37 ms; floor 3.115 spec / 3.403 meas. | `results/20260921_E4_pi0_summary.csv` |
+| fair expert (hoist) / fair serial frame | 110.95 / 354.74 ms, 17 552 mJ | E12b, review §1 |
+| compiled stages alone, whole GPU (n = 60) | prefix 246.79, expert 101.48, serial 348.73 ms | `results/20260925_E12_pi0_compiled_stages_N10_MAXN/stages.csv` (bench `352f14f`) |
+| same, green 8/8 (n = 60) | prefix 327.70, expert 149.41, serial 478.61 ms | `…_MAXN_green8_8/stages.csv`; reproduces E12b M3 within 0.25 % |
+| best GPU co-run `O` | 1.247 (green 12/4); whole GPU 1.29–1.40 | E12b |
+| DRAM bytes per frame (L2 fills + writes ≤) | prefix 21.64 GB (3.70× E6 analytic 5.85), expert 8.21 GB (1.29× E6) | `results/20260925_E12b_pi0_dram_bytes_MAXN/dram_bytes.csv` (bench `9df5628`) |
+| real DRAM draw alone | prefix 87.85 GB/s (reads only 72.3), expert 81.03 GB/s; EMC-calibrated 84.6 / 80.6 | same; EMC / measured 0.963 / 0.995 |
+| prefix floors | memory ≈ 115 ms at real traffic ≈ compute 120.9 ms (both roofs) | `reports/E12b_pi0_compiled_corun.md` addendum |
+| LIBERO success, stock vs `bf16_both` N = 10 | 252 vs 249 / 400 pooled (McNemar p 0.87); per suite ≤ 2 ep. apart | `reports/E8_libero.md` (bench `d51ccc6`) |
+| LIBERO spatial, `bf16_both` N = 10 / 4 / 2 | 62 / 74 / 85 of 100; forward 430.7 / 329.2 / 294.7 ms | same |
+| LIBERO run-to-run (stock spatial twice) | 63 vs 56 / 100, 65 % episode agreement | same §4 |
 
-Verdict (case 001): framing I did not happen on Orin; PIM frame-rate gain over the best GPU co-run ≤ 1.247×
-`[derived]`, and only if the prefix loses nothing to the PIM → EV-02 is the next question. Device commits,
-dirs and n: `analysis/E12b_review.md` §1.
-
-Standing reading of the campaign (details in `HANDOFF.history.md`, "What contradicts…"): the expert dominates only
-the eager baseline in all six models; it is memory-bound only after compilation; latency is not an energy proxy
-(saving ratio 1.05–0.45); quote GPU idle 75.6 % of `ae_step` (nsys-corrected), not 84 %.
+Readings: `bf16_both` is accuracy-neutral within noise (gaps 1–3 ep. vs a 7-point self-repeat; per-arm 95 % CI
+±9–10 pts). N = 2 beating N = 10 by 23 pts (p = 0.0002) exceeds the noise; N = 4 (+12, p = 0.096) does not.
+π0's flow noise is unseeded torch RNG, so arms are not paired in policy noise. EV-02a: the prefix alone draws
+~88 GB/s ≈ 94 % of an 8-channel half (~94 GB/s), not ~26 % — the E6-bytes premise of EV-02 was wrong.
+Case 001: PIM frame-rate gain over the best GPU co-run ≤ 1.247× `[derived]`, and only if the prefix loses
+nothing to the PIM — which a ~90 %-of-half-bus prefix makes unlikely.
 
 ## Open issues
 
-- **(blocks energy claims) E7 residuals:** stage loops 418.64 vs `full` 424.68 ms (6.04 ms unplaced) and 9509 vs
-  13 666 mJ (30 %). No GPU-vs-PIM energy until reconciled; latency unaffected. Fix = a question in `docs/04`
-  about loop definitions / idle subtraction, not a re-measurement.
-- **Undiagnosed corruption of the stock compiled co-run** (E12b M2): fixed, but the cause is a two-suspect list
-  (shared graph-tree pool; next prefix replay overwriting the expert's KV); evidence script
-  `e12b_diagnose.py` cited but uncommitted. Numbers stand; diagnosis owed.
-- **Step-4 note owed to the device (not written):** its restated MODE_30W prediction uses the withdrawn unconfined
-  compiled rows (113.70 / 320.71 ms at 8 SMs); confined references are 149.05 / 326.94; memory-bound stages must
-  not be scaled by GPU clock alone.
-- **E12b minor gaps:** hog has one effective rate at 12/4 and 14/2 (fails at 14/2); `variant_tokens` incomplete and
-  its `kv_copy` contradicts the code; no `graphs_both`-prefix vs rung equivalence. T014's compiled green rows are
-  withdrawn (correction block in `analysis/E12_review.md`).
-- **Not approved — never write as tasks without the user's explicit, current approval:** EV-02 (prefix with the
-  GPU on 8 of 16 LPDDR channels; formerly "P1"); P2 (`bf16_both` + `cropcache`, ≈ 60 ms); adding
-  `groot_n16` / `groot_n15` to `MODELS` in `docs/reference_scripts/check_model_inputs.py`.
-- **Open decisions for the user:** does `owngraph_expert` join the GPU baseline; does the timestep hoist (OD-1)
-  enter it (if so the PIM latency gain falls to ≈ 1.03–1.07× at 16 ch `[derived]`).
-- **Carried from 2026-09-22 (user actions, unchanged):** leaked session token in history (`410a535`, nsys files;
-  no rewrite; repo must be private); passwordless sudo not configured on the device; bandwidth peak varies 1.19×
-  between processes (quote floors against the same-session peak); π0 is the LeRobot port, not openpi.
-- **Device-raised, answers owed:** its three Part-C questions (`docs/04`); π0's E11f two-stream rows predate the
-  GIL fix `773d2a9` (re-run queued); four `.ncu-rep` (725 MB) live in private HF dataset `yang-gon/vla-orin-ncu-raw`;
-  GR00T N1.7 `vis_compile` structurally unfixable.
+- **(blocks energy claims) E7 residuals:** stage loops 418.64 vs `full` 424.68 ms and 9509 vs 13 666 mJ (30 %).
+  Fix = a question in `docs/04` about loop definitions / idle subtraction.
+- **E12b M2 corruption cause** stays a two-suspect list (`e12b_diagnose.py` never existed in git); no
+  one-change-at-a-time isolation; no `graphs_both`-prefix vs rung equivalence. `hog_matched` was ~22 % light
+  (matched to E6 bytes).
+- **Corrections to carry downstream:** E5b S-sweep CUDA-event times were +45–75 µs harness overhead
+  (`ae47c79`); GR00T largest DiT projection is 1.17–1.20× its floor (was 1.6×), `to_q` 1.44–1.47× (was
+  3.5–3.7×) — `reports/E5b_groot.md`. `opt_ladder.py` wrote π0's checkpoint into π0.5 / SmolVLA `meta.json`
+  (fixed, data unaffected). E8 no-settle arms (18 / 24 of 100) superseded.
+- **Not approved — never write as tasks without the user's explicit, current approval:** EV-02 (prefix on 8 of
+  16 channels); P2 (`bf16_both` + `cropcache`); `groot_n16` / `groot_n15` in `check_model_inputs.py` `MODELS`;
+  E8 follow-ups (torch-seeded paired episodes, N sweep on other suites / stock).
+- **Open decisions for the user:** does `owngraph_expert` (101.21 ms) join the GPU baseline; does the timestep
+  hoist (OD-1) enter it (PIM latency gain then ≈ 1.03–1.07× at 16 ch `[derived]`).
+- **Device questions, answers owed:** `owngraph_expert` (above); back-fill `model_commit: null` in older
+  `meta.json` or accept per-report citation; E8 seeding / wider N sweep; its three Part-C questions (`docs/04`).
+- **Carried user actions (unchanged since 2026-09-22):** leaked session token in history (`410a535`; repo must stay
+  private); no passwordless sudo on the device; bandwidth peak varies 1.19× between processes; π0 is the LeRobot
+  port, not openpi. Tracked repo 413.9 MB (results 408.6 MB), largest file 13.6 MB.
 
 ## Next steps
 
-1. On each pull: fetch, read `STATUS.md` / `PROGRESS.md`, new `results/` and `reports/`; check repo size
-   (`find results -size +50M`, sample `raw_files` sha256).
-2. Get approval to push `0a08832`, `cdd0bdc` and this rewrite.
-3. When approved: write the Step-4 note and the E7-residual question into `docs/04`; answer the Part-C questions.
-4. When the device reports T004 E6 or the capped-mode session: review against the task's acceptance and the
-   E12 spec's Step 4; hand numbers to main as "for <owner>:" with dir, device commit, power mode, n.
-5. EV-02 / P2 / `MODELS` only after explicit user approval (spec style: `docs/E##_*/README.md` + task + order row +
-   protocol §).
+1. On each pull: fetch, read `STATUS.md` head, new `results/` and `reports/`; repo size check.
+2. Ask the device (a `docs/04` note, on approval) to close T004 against its E6 deliverables, and put the E7
+   residual question and the Part-C answers there.
+3. When the capped-mode session lands: check step 0c against the STATUS bracket (prefix 326.94–326.94×r,
+   expert 149.05–149.05×r, r = 1300.5 / f_GPU,30W); hand numbers to main as "for <owner>:".
+4. EV-02 / P2 / `MODELS` / E8 follow-ups only after explicit user approval (spec style: `docs/E##_*/README.md`
+   + task + order row + protocol §).
+
+## Recent decisions
+
+- 2026-09-26: E8 read as `bf16_both` accuracy-neutral within run-to-run noise; E12b DRAM bytes settle EV-02a on
+  the ~90 % side.
+- 2026-09-25: E12b reviewed against the `5cf1129` pre-registration; T014 compiled green rows withdrawn.
+- 2026-09-25: "P1" relabelled EV-02 (channel partition); CoRe is the ISA name elsewhere.
+- 2026-09-24: capped modes are the device's business; never escalate unless it marks `blocked`.
+- 2026-09-24: the GR00T head restructuring is ours, never in the GPU baseline.
 
 ## Interfaces with other sub-projects
 
-- → microarch-owner: latency / power / kernel data for `host_model.py`, `energy_model.py`, roofline points; hybrid
-  model input `results/<date>_E11_<model>_inputs/model_inputs.csv` (protocol §13.8; mapping in `docs/00_context.md`).
-- → brainstorm-owner: case 001 (co-run framing) — `O`, `p_part`, `s_part`, `p_hog`, fair `B`.
-- → paper-owner: baseline ladder, occupancy and instruction-level evidence, LIBERO results.
+- → microarch-owner: latency / power / kernel / DRAM-bytes data for `host_model.py`, `energy_model.py`, roofline
+  points; hybrid inputs `results/<date>_E11_<model>_inputs/model_inputs.csv` (protocol §13.8).
+- → brainstorm-owner: case 001 and EV-02a (prefix DRAM draw); `O`, `p_part`, `s_part`, `p_hog`, fair `B`.
+- → paper-owner: baseline ladder, occupancy / instruction-level evidence, LIBERO results.
 - Every number leaves through main as "for <owner>:" and reaches paper / site via evaluation-owner.
-- Names: EV-02 = channel-partition measurement (formerly "P1"); the ISA mechanism is CoRe (not in this repo);
-  priority tier "P0–P3" and SASS `@P1` unchanged.
+- Names: EV-02 = channel-partition measurement (formerly "P1"); CoRe = the ISA (not in this repo).

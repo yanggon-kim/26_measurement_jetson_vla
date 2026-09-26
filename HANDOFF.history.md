@@ -4,6 +4,18 @@
 current by default: where this file and `HANDOFF.md` disagree, `HANDOFF.md` wins. Newest first within the first
 block; the "2026-09-22, superseded" block and the decisions / open issues / next steps of that date follow it.*
 
+## Superseded 2026-09-26 (removed from HANDOFF.md)
+
+- "Still claimed: T008, T009. T006 has no status line" — all three closed by the device 2026-09-26.
+- "Local, not pushed: `0a08832`, `cdd0bdc`" — landed on origin as `dafc7e1`, `c4ab879`, `abd8368`.
+- "Step-4 note owed to the device (unconfined 113.70 / 320.71 ms at 8 SMs)" — the device restated its STATUS
+  table itself with the confined 8/8 references (326.94 / 149.05) and a memory/compute bracket.
+- "`variant_tokens` incomplete, `kv_copy` contradicts the code" — all tokens defined in
+  `bench/e12b_common.VARIANT_TOKENS`; `kv_copy` marked stale.
+- "π0's E11f two-stream rows predate the GIL fix `773d2a9` (re-run queued)"; "four `.ncu-rep` (725 MB) in HF
+  dataset `yang-gon/vla-orin-ncu-raw`"; "GR00T N1.7 `vis_compile` structurally unfixable" — device notes, unchanged.
+- Old verdict text: "EV-02 is the next question" — EV-02a answered by E12b DRAM bytes (prefix ~88 GB/s).
+
 ## Current status
 
 ### 2026-09-25, night: "P1" relabelled by meaning in owner-side files (committed, not pushed)
