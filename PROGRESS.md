@@ -63,11 +63,11 @@ sequencing, not a reduction in scope.
 ## Now — updated every 2 min by `bench/progress_monitor.py --mode fast`
 
 <!-- FAST:BEGIN -->
-**Updated 19:46:37** · elapsed **73.19 h** of 26 (282 %) · 42.9 GiB free · 0.66 GiB swap
+**Updated 20:06:38** · elapsed **73.53 h** of 26 (283 %) · 43.4 GiB free · 0.66 GiB swap
 
 | pid | running | for | rss |
 |---|---|---:|---:|
-| 547834 | `bench/libero_eval.py --model pi0 --suite libero_goal --tasks 10 --episodes 10 --steps 10 -` | 21 min | 14.2 GiB |
+| 548392 | `bench/libero_eval.py --model pi0 --suite libero_10 --tasks 10 --episodes 10 --steps 10 --o` | 18 min | 14.7 GiB |
 
 Latest log lines:
 
@@ -82,7 +82,7 @@ Latest log lines:
 ## Results — re-derived from every result CSV every 20 min (`--mode slow`)
 
 <!-- SLOW:BEGIN -->
-**Re-derived from every result CSV on disk at 19:48** (83 configurations)
+**Re-derived from every result CSV on disk at 20:08** (83 configurations)
 
 | model | N | configuration | vision | vlm_prefix | ae_total | e2e | **AE share** |
 |---|---:|---|---:|---:|---:|---:|---:|
