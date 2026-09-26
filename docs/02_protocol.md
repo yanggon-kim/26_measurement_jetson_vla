@@ -781,6 +781,13 @@ it reuses the E12b co-run machinery. The rules below are binding; everything els
   layout with the load absent or replaced by an SM-matched compute-only control, same session, bracketed. The load
   runs in the same process (§15: separate contexts time-slice); its rate is reported alone and during the prefix,
   EMC-calibrated. This is an approximation of a PIM holding channels (§13.5's limits apply) and is reported as one.
+  *(Amended 2026-09-26, T016 Amendment 1.)* The primary load takes **no SMs** (copy engine between pinned host and
+  device buffers, or a CPU-side copy); the same-process rule binds only loads that hold a GPU context — a CPU-side
+  load without one may run in its own threads or process, pinned away from the harness thread. Its reference is the
+  same prefix with no load. A green-context (SM-taking) load is a secondary arm only.
+- **Per-kernel bytes (EV-02c).** On Orin, per-kernel DRAM traffic is captured with explicit `lts__` metrics only
+  (L2 fills = reads, L2 write sectors = writes, an upper bound); never `--set` / `--section`, which request the
+  `dram__` counters Orin lacks. Variant rows (below) report DRAM bytes beside time.
 - **Seeded episodes.** E8-style LIBERO arms that are compared draw the flow noise from a `torch.Generator` seeded per
   (suite, task, episode), the same seed in every arm; the seed is recorded per episode. Unseeded arms are never
   paired with seeded ones.

@@ -1,1 +1,0 @@
-- [Measurement gotchas](measurement-gotchas.md) — no dram__ counters on Orin; E6 bytes undercount prefix 3.7x; LIBERO unseeded noise; event overhead

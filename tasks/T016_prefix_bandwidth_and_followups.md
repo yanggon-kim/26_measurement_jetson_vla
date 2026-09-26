@@ -4,6 +4,10 @@ This file is the whole specification (no separate `docs/` spec). Binding rules: 
 §15 / §14 where a step reuses the E12b co-run machinery. Everything not fixed below is your judgement — choose,
 record the choice in `meta.json` and the report, and move on.
 
+> **Amended 2026-09-26 (Amendment 1, before any T016 measurement)** — read the section "Amendment 1" just above
+> Step 1 first. Where it and the original steps differ, the amendment wins. The pre-registered table (rows 1–7)
+> is unchanged; the amendment adds row 8 for its new step.
+
 ## Why (the part you need of the research design)
 
 The research design runs π0's action expert in **processing-in-memory (PIM) inside the LPDDR5 devices**. It is
@@ -29,6 +33,83 @@ LeRobot π0 `lerobot @ f0d2b37bebddf7e8852cb624712da0ad564601b6`, checkpoint `le
 `results/20260924_E7_pi0_N10_bf16_both_MAXN/meta.json`, batch 1, **MAXN + `jetson_clocks`**. N = 10 except in
 step 2. Harness changes (own CUDA-graph capture such as E12b's `graphs_both`, green contexts, loads) are labelled
 variants named in every row and `meta.json`.
+
+## Amendment 1 (2026-09-26, research side, before any T016 measurement)
+
+Four refinements from the research side's appraisal of the channel partition (brainstorm case 003). The original
+text below is kept as issued; this section overrides it where they differ. Step order becomes **1a → 1b → 1d →
+1c**, then steps 2–5 as before; push step 1's results (1a, 1b, 1d, 1c) before starting step 2.
+
+**A1 — Step 1a: the primary load takes no SMs.** The question is the prefix's slowdown when it keeps **all 16 SMs**
+and loses **only memory bandwidth**, in the regime where it is left roughly **90–130 GB/s** of the bus.
+- **Primary arm:** the unmodified rung prefix (`bf16_both`, as in "Fixed configuration", not `graphs_both`) on the
+  whole GPU, beside a load that uses **no SMs**: a copy-engine load (`cudaMemcpyAsync` between **pinned host** and
+  device buffers — on Orin both are the same LPDDR, so it reads and writes DRAM through the copy engine; a
+  device-to-device `cudaMemcpy` may run as an SM kernel, so do not rely on it unless you show it launches none), or
+  a CPU-side load (multi-threaded `memcpy` / STREAM-style copy on CPU cores pinned away from the harness thread), or
+  both together if one alone cannot reach the rates. Show the load launches no GPU kernel (a kernel list or trace
+  CSV under `raw/`). Say which kind you used and why; name every other resource it shares with the prefix that you
+  know of (e.g. host threads, copy-engine queues, the GPU's memory hub).
+- **Rates.** "Left" = the bus a streaming load sustains alone in the same session (EMC-calibrated as in E12b M4;
+  178.5 GB/s last time) minus the load's rate **during** the prefix; report both. Keep the original points 0, 20, 40,
+  60, 80, 94 GB/s stolen, and put **at least three points with the prefix left 90–130 GB/s** (stolen ≈ 50–90 GB/s
+  against 178.5). If no SM-free load reaches a rate, say the highest it reached and stop the primary arm there.
+- **Reference:** the same prefix with no load (the SM layout is then identical by construction), same session,
+  bracketed (reference → loaded → reference), n ≥ 20 frames per point.
+- **Secondary arm (optional):** the green-context copy kernel of the original 1a, if you judge it adds information
+  (e.g. to reach rates the SM-free load cannot). It keeps every original rule, including the `graphs_both` vs rung
+  equivalence check first. It never replaces the primary arm.
+- Step 1b runs with the primary (SM-free) load.
+
+**A2 — New step 1d (EV-02c): per-kernel DRAM traffic of the compiled prefix.** E12b measured the prefix at 17.80 GB
+of reads + ≤ 3.83 GB of writes per frame against E6's 5.85 GB analytic. Writes bound spills: everything the prefix
+writes is ≤ 3.83 GB, so **≳ 8 GB of the ~11.95 GB excess reads are re-reads**. This step says which: **H1 — weight
+re-reads** (a GEMM's weight tiles fetched again for each token (M) tile or wave) or **H2 — activation re-reads**
+(an activation such as the MLP's 816 × 16 384 intermediate fetched again for each output (N) tile).
+- **Capture:** the compiled prefix, per kernel, with ncu **metrics only** — the E12b set
+  (`lts__d_sectors_fill_device.sum, lts__d_sectors_fill_sysmem.sum, lts__t_sectors_op_read.sum,
+  lts__t_sectors_op_write.sum, lts__t_sectors_op_read_lookup_miss.sum, lts__t_sectors_lookup_miss.sum,
+  gpu__time_duration.sum`), no `--set` /
+  `--section` (those request `dram__` counters Orin lacks — the first per-node attempt died on that). Per kernel:
+  `--graph-profiling node` on the rung, or the prefix compiled without CUDA graphs if node profiling fails (then
+  record that the kernel choice may differ and compare the totals). `--cache-control none` as in E12b; ≥ 2 frames.
+- **Output:** `results/<date>_E13d_pi0_prefix_kernel_bytes_MAXN/kernel_bytes.csv`, one row per kernel launch: launch
+  order, kernel name, grid, block, fills (B), writes (B), read requests (B), duration, the op it belongs to (layer,
+  projection / attention / norm / elementwise) and, for GEMMs, M, N, K and the unique operand bytes (weight, activation,
+  output). Plus the per-frame sum against E12b's 17.80 / 3.83 GB (a gap > 10 % is reported with its cause, not
+  reconciled silently).
+- **The split:** attribute the excess reads (fills minus unique operand bytes, per kernel, summed) to H1, H2 or
+  neither. The method is yours; one that works: for the few GEMM shapes that carry most of the excess, a standalone
+  run of the same kernel (same Inductor / cuBLAS choice) sweeping M at fixed N, K and N at fixed M, K — weight
+  re-reads grow with the M-tile count, activation re-reads with the N-tile count. Record each such kernel's tile
+  shape (from its name or launch config) so the research side can model it.
+- Report it as a section "1d — EV-02c" of `reports/E13_pi0_bandwidth_steal.md`, answering row 8 by number.
+
+**A3 — Step 1c: look at FACIL first.** FACIL (Seo et al., HPCA 2025, "Flexible DRAM Address Mapping for SoC-PIM
+Cooperative On-device LLM Inference") evaluated on an AGX Orin 64 GB and selects a DRAM address map per
+allocation: a MapID in spare PTE bits of 2 MB huge pages. The research side's reading of the paper is that the map
+switch is a **proposed** memory-controller change (multiplexers in the address-translation frontend), not a
+feature of stock Orin — confirm or correct that from the paper and any released code. Report: (a) whether stock
+Orin honours anything like a per-allocation or per-page map (PTE kind / attribute bits, NvMap heap or carveout
+flags) that could keep an allocation off a channel subset; (b) what FACIL states or measured about Orin's
+physical-to-DRAM (channel / bank) mapping and how it realised PIM layouts on the real device; (c) whether its code
+is public. Its answer feeds row 4 as before; if a stock-Orin route exists without a boot change, it is the direct
+measurement (prefix confined to 8 of 16 channels, same bracket). Read-only, no boot or device-tree change, no reboot.
+
+**A4 — Step 3: DRAM bytes are required, not optional.** Every step-3 row (`nopad`, `keep1`, `kvonce`,
+`keep1+kvonce`) reports **DRAM bytes per frame** (E12b method: L2 fills + writes, split into reads and writes) for
+the variant **and** its same-session reference, beside the times. The partition is sized by bytes, not time; a row
+with time but no bytes is incomplete. If step 1d's tooling is ready, add each variant's per-kernel bytes too.
+
+**Row 8 (pre-registered with this amendment, before any measurement; rows 1–7 unchanged).**
+
+| # | quantity | bands and what each means |
+|---|---|---|
+| 8 | share of the prefix's excess reads attributed to **weight** re-reads (1d) | ≥ 2/3: H1 dominates — GEMM tiling / rasterisation order is the lever · ≤ 1/3: H2 dominates — activation re-reads, fusion is the lever · between: mixed; name the top kernels of each |
+
+**Acceptance, added:** step 1a has its primary arm SM-free with ≥ 3 points at 90–130 GB/s left (or the highest
+reachable rate, stated); step 1d has `kernel_bytes.csv`, the sum check and row 8 answered; step 1c states the FACIL
+finding (a)–(c); every step-3 row has DRAM bytes for variant and reference.
 
 ## Step 1 — EV-02: the prefix under stolen bandwidth (highest priority; push its results before starting step 2)
 

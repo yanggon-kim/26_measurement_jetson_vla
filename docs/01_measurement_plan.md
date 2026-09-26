@@ -26,7 +26,7 @@ task whose dependencies are done:
 | 5 | T004 | E5, E6, E7 π0 | P1 | T003 |
 | 6 | **T014** | **E12 π0 co-run: prefix ∥ expert on one GPU** (Steps 1–3, 5 at MAXN; Step 4 inside T004's `MODE_30W` session) | P1 | T004 (E7 at MAXN — done) |
 | 6b | **T015** | **E12b π0 compiled co-run: fair expert, whole GPU, and both stages together in green-context partitions** (MAXN only) | P1 | T014 (MAXN part — results exist) |
-| 6c | **T016** | **E13 π0 prefix under stolen bandwidth (EV-02), E8s seeded LIBERO N sweep, E14 prefix software savings (variants), E7 energy reconciliation, E12b corruption diagnosis** (MAXN only) | P1 | T015 (done) |
+| 6c | **T016** | **E13 π0 prefix under stolen bandwidth (EV-02), E8s seeded LIBERO N sweep, E14 prefix software savings (variants), E7 energy reconciliation, E12b corruption diagnosis** (MAXN only; amended 2026-09-26: SM-free steal, E13d per-kernel bytes, FACIL) | P1 | T015 (done) |
 | 7 | T005 | E1, E2 | P1 | T001 |
 | 8 | T007 | E5b π0 | P1 | T004, T005 |
 | 9 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |

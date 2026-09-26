@@ -6,14 +6,21 @@
 
 ## State now
 
-- **Device:** in the capped-mode session — E7 `MODE_30W` arms landing at `c615ff0` (last pull; not yet reviewed).
-  T016 runs once MAXN is restored (its own "When" clause).
+- **Device:** in the capped-mode session — E7 `MODE_30W` arms (SmolVLA, GR00T) landing at `7970a1b` (last pull; not
+  yet reviewed). T016 runs once MAXN is restored (its own "When" clause); it has not started.
 - **Issued, pushed: T016** (`tasks/T016_prefix_bandwidth_and_followups.md`, order row 6c; protocol §16; `docs/04`
   2026-09-26 entry). Five steps: (1) EV-02 prefix under stolen bandwidth — sweep 0–94 GB/s isolating SM loss,
   37 % duty variant, channel-confinement feasibility probe; (2) seeded LIBERO N ∈ {1,2,3,4,6,10} × 4 suites +
   repeat control; (3) prefix savings as labelled variants: π0 `nopad`, GR00T `keep1`, `kvonce`; (4) E7 energy
   residual; (5) E12b corruption 2 × 2. Pre-registered bands: σ@94 GB/s < 1.04 / 1.04–1.247 / > 1.247 (full and
   37 % duty); N = 2 replicated iff ≥ 3 of 4 suites and pooled McNemar p < 0.05; repeat agreement ≥ 95 %.
+- **T016 Amendment 1 (2026-09-26, pushed before any measurement; from brainstorm case 003):** 1a's primary load is
+  **SM-free** (copy engine pinned-host↔device or CPU-side), prefix unmodified on all 16 SMs, ≥ 3 points with
+  90–130 GB/s left; green-context load demoted to an optional secondary arm. New **1d = EV-02c**
+  (`…_E13d_pi0_prefix_kernel_bytes_MAXN`): per-kernel `lts__` fills / writes split weight re-reads (H1) from
+  activation re-reads (H2); row 8 added (weight share ≥ 2/3 / ≤ 1/3 / mixed). 1c reads FACIL first (our survey: its
+  per-allocation map is proposed MC hardware, not stock Orin — device to confirm). Step 3 rows must carry DRAM bytes.
+  Rows 1–7 unchanged. Protocol §16 and plan row 6c amended to match.
 - **Closed:** T001–T003, T005–T012 done (T006 / T008 / T009 closed 2026-09-26); T014 MAXN superseded by T015
   (done, reviewed); T013 withdrawn. **T004**: re-opened by the device for missing E6; `reports/E6_pi0_roofline.md`
   and `results/20260925_E6_pi0/` now exist but the task file has no closing status line — verify and ask it to close.
@@ -73,16 +80,21 @@ nothing to the PIM — which a ~90 %-of-half-bus prefix makes unlikely.
 ## Next steps
 
 1. On each pull: fetch, read `STATUS.md` head, new `results/` and `reports/`; repo size check. Watch for
-   `results/*_E13*`, `reports/E13_pi0_bandwidth_steal.md` first; review against T016's pre-registration table.
+   `results/*_E13*`, `reports/E13_pi0_bandwidth_steal.md` first; review against T016's pre-registration table
+   (rows 1–8; check 1a's primary arm is SM-free and 1d's per-kernel sum is within 10 % of E12b's).
 2. Ask the device (a `docs/04` note, on approval) to close T004 against its E6 deliverables, and put the E7
    residual question and the Part-C answers there.
 3. When the capped-mode session lands: check step 0c against the STATUS bracket (prefix 326.94–326.94×r,
    expert 149.05–149.05×r, r = 1300.5 / f_GPU,30W); hand numbers to main as "for <owner>:".
-4. When E13 lands: hand σ(x) and the duty result to main "for brainstorm-owner / microarch-owner:" (case 001, EV-02).
+4. When E13 lands: hand σ(x), the duty result and EV-02c's H1/H2 split with tile shapes to main "for
+   brainstorm-owner / microarch-owner:" (cases 001, 003; EV-02b/c; microarch's EV-17 re-read estimate).
 5. P2 / `MODELS` only after explicit user approval (task + order row + protocol §).
 
 ## Recent decisions
 
+- 2026-09-26: T016 Amendment 1 — SM-free steal primary, EV-02c per-kernel bytes, FACIL in 1c, bytes required in
+  step 3; dated amendment, pre-registered rows 1–7 untouched. Stray `.claude/agent-memory/` removed from this repo
+  and ignored (canonical store is the workspace's).
 - 2026-09-26: T016 issued (user-approved EV-02 + seeded E8 + prefix-savings variants + EV-10 + EV-13); self-contained
   task file instead of a `docs/E##` spec; prefix-savings variants are never the baseline.
 - 2026-09-26: E8 read as `bf16_both` accuracy-neutral within run-to-run noise; E12b DRAM bytes settle EV-02a on
