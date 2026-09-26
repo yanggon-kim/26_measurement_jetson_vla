@@ -797,3 +797,21 @@ it reuses the E12b co-run machinery. The rules below are binding; everything els
 - **No boot changes.** Probing the memory-channel mapping is read-only: no boot-configuration or device-tree change,
   no reboot.
 - §15's finite check and provenance rules (no null in `meta.json`) apply to every T016 run; MAXN only.
+
+## 17. T017 — π0 prefix padding trim, decomposed (E14b) (added 2026-09-26)
+The task file `tasks/T017_pi0_padding_trim.md` is the whole specification; §16 (variants, DRAM bytes) and §15
+(compiled harness, finite checks, provenance) apply. The rules below are binding; everything else is the agent's
+judgement.
+- **Order.** Strictly after T016; never interleaved with a T016 step. MAXN only, no reboot.
+- **Labels.** `pad` (reference), `nocam`, `trimprompt`, `nopad` (= `nocam` + `trimprompt`), each appended to the
+  E12b harness label. `nocam` never creates the empty camera: no dummy image, no image-encoder call, no prefix
+  tokens. Variants are never called baseline (§16).
+- **Gate before timing.** Each variant first matches `pad` in the shipped precision (eager): relative error
+  ‖Δ‖₂ / ‖a_pad‖₂ ≤ 1 × 10⁻⁴ on every input of the fixed set. No variant is timed or profiled before it passes.
+- **Same session, bracketed.** Every variant's times and DRAM bytes (§16's `lts__` method) come from the session
+  of its `pad` reference, in the bracket order the task fixes.
+- **Pass criterion, fixed in advance.** Compiled `bf16_both`, variant vs `pad`, same inputs and seeded noise: bitwise;
+  or PASS when the max-abs and relative differences are no larger than those between the shipped model and
+  `bf16_both` on the same inputs; otherwise FAIL, which is reported and triggers a seeded, paired LIBERO check
+  (§16). The input set and seeds are fixed before the first compiled run.
+- **No edits to installed model sources.** Variants are harness-level overrides committed in `bench/`.

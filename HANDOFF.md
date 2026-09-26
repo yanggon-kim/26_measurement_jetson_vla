@@ -6,8 +6,18 @@
 
 ## State now
 
-- **Device:** in the capped-mode session — E7 `MODE_30W` arms (SmolVLA, GR00T) landing at `7970a1b` (last pull; not
-  yet reviewed). T016 runs once MAXN is restored (its own "When" clause); it has not started.
+- **Device:** `MODE_30W` session done (E7 capped arms, T014 Step 4: the compiled `graphs_both` prefix slows 2.68× at
+  30W vs a 2.125× clock ratio — prediction falsified for that stage; not yet reviewed here). Owner order B: back to
+  MAXN, **T016 claimed** (`5107ddd`), then the MODE_15W session (two owner reboots), then T017.
+- **Issued, committed, NOT pushed (awaiting the user's push approval): T017** (`tasks/T017_pi0_padding_trim.md`,
+  order row 6d strictly after T016, protocol §17, AGENTS read list). E14b: π0 padding trim decomposed into `nocam`
+  (empty camera never created, so no SigLIP pass), `trimprompt`, `nopad` vs `pad`, on the E12b compiled-prefix
+  harness, one bracketed session; per variant vision / `vlm_prefix` / prefix / expert / serial time, DRAM bytes
+  (`lts__`), K/V bytes (expected 15 040 512 / 10 321 920 / 14 542 848 / 9 824 256 B). fp32 eager gate
+  (REL ≤ 1e-4) before any timing; compiled verdict on 64 inputs (≥ 4 prompt lengths): bitwise / PASS (MAXABS and
+  REL ≤ the stock-vs-`bf16_both` floor) / FAIL (→ seeded paired LIBERO spatial). Pre-registered rows 1–9 (nopad
+  ρ 0.64–0.74 = the ~164–183 ms `[BRAINSTORM]` bracket; prompt trim alone ≥ 0.99 if tile-quantised; bytes ratio
+  0.72–0.80 = case 003's 0.742).
 - **Issued, pushed: T016** (`tasks/T016_prefix_bandwidth_and_followups.md`, order row 6c; protocol §16; `docs/04`
   2026-09-26 entry). Five steps: (1) EV-02 prefix under stolen bandwidth — sweep 0–94 GB/s isolating SM loss,
   37 % duty variant, channel-confinement feasibility probe; (2) seeded LIBERO N ∈ {1,2,3,4,6,10} × 4 suites +
@@ -24,10 +34,10 @@
 - **Closed:** T001–T003, T005–T012 done (T006 / T008 / T009 closed 2026-09-26); T014 MAXN superseded by T015
   (done, reviewed); T013 withdrawn. **T004**: re-opened by the device for missing E6; `reports/E6_pi0_roofline.md`
   and `results/20260925_E6_pi0/` now exist but the task file has no closing status line — verify and ask it to close.
-- **Pushed:** everything of ours, including T016 and this rewrite.
+- **Pushed:** everything of ours up to T016 Amendment 1; T017 is local only.
 - **Standing item — capped power modes (user's decision 2026-09-24: the device's business, never escalate):**
-  `MODE_30W` (id 2) and `MODE_15W` (id 1) each need one human reboot; they are now the **only** remaining work
-  (`bench/queues/queue_e7_capped.sh`, `queue_e12_capped.sh`; step 0c measures compiled stages at 30W). The device
+  `MODE_30W` is done; `MODE_15W` (id 1) remains, after T016 by the owner's order B (MAXN → 15W → MAXN, owner
+  reboots; queues `bench/queues/queue_e7_capped.sh`, `queue_e12_capped.sh`, fixed for capped modes). The device
   never confirms a reboot prompt itself (`STATUS.md` "NEXT, needs you"). Carry this row on every pull.
 
 ## Current numbers (π0 LeRobot `lerobot @ f0d2b37beb`, ckpt `45dcc8fc`, MAXN, bf16) — sources, not re-derived
@@ -88,10 +98,17 @@ nothing to the PIM — which a ~90 %-of-half-bus prefix makes unlikely.
    expert 149.05–149.05×r, r = 1300.5 / f_GPU,30W); hand numbers to main as "for <owner>:".
 4. When E13 lands: hand σ(x), the duty result and EV-02c's H1/H2 split with tile shapes to main "for
    brainstorm-owner / microarch-owner:" (cases 001, 003; EV-02b/c; microarch's EV-17 re-read estimate).
-5. P2 / `MODELS` only after explicit user approval (task + order row + protocol §).
+5. When T017 lands (`results/*_E14b_*`, `reports/E14b_pi0_padtrim.md`): check the gate log, the bracket drift, the
+   `pad` reproduction (246.79 ms ± 2 %, 21.64 GB ± 3 %) and rows 1–9; hand ρ, bytes and the verdicts to main "for
+   brainstorm-owner / microarch-owner:" (case 004 / 003, OD-1).
+6. Review the MODE_30W results (T014 Step 4 table in `STATUS.md`) when asked.
+7. P2 / `MODELS` only after explicit user approval (task + order row + protocol §).
 
 ## Recent decisions
 
+- 2026-09-26: T017 issued (case 004's EV-07 refinements): camera drop and prompt trim measured separately, camera
+  dropped before SigLIP; the action pass criterion is relative to the stock-vs-`bf16_both` floor, fixed in advance;
+  T016's `nopad` row is kept, not replaced.
 - 2026-09-26: T016 Amendment 1 — SM-free steal primary, EV-02c per-kernel bytes, FACIL in 1c, bytes required in
   step 3; dated amendment, pre-registered rows 1–7 untouched. Stray `.claude/agent-memory/` removed from this repo
   and ignored (canonical store is the workspace's).

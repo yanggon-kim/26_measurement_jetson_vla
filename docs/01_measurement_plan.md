@@ -27,6 +27,7 @@ task whose dependencies are done:
 | 6 | **T014** | **E12 π0 co-run: prefix ∥ expert on one GPU** (Steps 1–3, 5 at MAXN; Step 4 inside T004's `MODE_30W` session) | P1 | T004 (E7 at MAXN — done) |
 | 6b | **T015** | **E12b π0 compiled co-run: fair expert, whole GPU, and both stages together in green-context partitions** (MAXN only) | P1 | T014 (MAXN part — results exist) |
 | 6c | **T016** | **E13 π0 prefix under stolen bandwidth (EV-02), E8s seeded LIBERO N sweep, E14 prefix software savings (variants), E7 energy reconciliation, E12b corruption diagnosis** (MAXN only; amended 2026-09-26: SM-free steal, E13d per-kernel bytes, FACIL) | P1 | T015 (done) |
+| 6d | **T017** | **E14b π0 prefix padding trim, decomposed: empty camera (`nocam`), prompt padding (`trimprompt`), both (`nopad`) — time, vision, DRAM bytes, K/V handover, serial frame, action difference with a pre-stated pass criterion** (MAXN only; variants, never baseline) | P1 | **T016 (done)** — strictly after it |
 | 7 | T005 | E1, E2 | P1 | T001 |
 | 8 | T007 | E5b π0 | P1 | T004, T005 |
 | 9 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
@@ -51,6 +52,11 @@ a reboot for it). If the human owner has given you a different order directly, t
 bandwidth) is the measurement the research side is waiting for. The task file is its whole specification. The
 capped-mode reboot session stays pending as before: if the device is in a capped mode when you read this, finish
 those queues first and take T016 once MAXN is restored (never ask for a reboot for it).
+
+**T017 (added 2026-09-26) comes strictly after T016** — never before it and never interleaved with a T016 step,
+even though T016 step 3 has a `nopad` row: T017 decomposes that trim (empty camera dropped before SigLIP, prompt
+padding, both), measures vision and DRAM bytes per variant, and judges the actions against a pass criterion fixed in
+its task file. The task file is its whole specification; protocol §17 holds its binding rules.
 
 ## E0 — Platform record
 Everything in protocol §1, plus `nvidia-smi` (if present), `free -h`, storage, `tegrastats` idle snapshot, the list

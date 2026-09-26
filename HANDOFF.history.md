@@ -6,6 +6,11 @@ block; the "2026-09-22, superseded" block and the decisions / open issues / next
 
 ## Superseded 2026-09-26 (removed from HANDOFF.md)
 
+- "Device: in the capped-mode session — E7 `MODE_30W` arms landing at `7970a1b`; T016 runs once MAXN is
+  restored; it has not started" — the MODE_30W session finished (STATUS 2026-09-26 11:15–14:09); owner order B put
+  T016 before MODE_15W and the device claimed T016 (`5107ddd`).
+- "Pushed: everything of ours, including T016 and this rewrite" — superseded when T017 was
+  committed on 2026-09-26 without a push (the user approves pushes).
 - "Still claimed: T008, T009. T006 has no status line" — all three closed by the device 2026-09-26.
 - "Local, not pushed: `0a08832`, `cdd0bdc`" — landed on origin as `dafc7e1`, `c4ab879`, `abd8368`.
 - "Step-4 note owed to the device (unconfined 113.70 / 320.71 ms at 8 SMs)" — the device restated its STATUS
