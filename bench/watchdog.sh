@@ -233,12 +233,18 @@ for tag, pat, need, target in (
         # mechanism landed this list was one short and the audit called a finished run
         # BROKEN. Listing them beats a special case per tag, which is how the old hardcoded
         # JOBS allowlist rotted.
+        # + prefix_corun.json (the two-process arm, corun_2proc.py) and stages.csv (the
+        # compiled-stages-alone references for the capped session, 2026-09-25) -- both were
+        # finished, cited runs that this list called BROKEN.
         ("E12 corun",   "results/*_E12_*",
-         ("corun_ratios.csv", "sm_sensitivity.csv", "power.csv"),       5),
+         ("corun_ratios.csv", "sm_sensitivity.csv", "power.csv", "prefix_corun.json",
+          "stages.csv"),                                                5),
         # Pre-reboot queue (2026-09-25). E6 has per-model directories and a matched-rung tree
         # (results/<date>_E6_rungs/<model>_<rung>/); the tree's parent carries no roofline.csv
         # of its own, so it is excluded by the [!r] rather than reported BROKEN.
-        ("E6 roofline", "results/*_E6_[!r]*",  ("roofline.csv",),         6),
+        # GR00T N1.5 / N1.6 directories hold the byte floor only (floor.csv); their roofline
+        # rows are in the matched-rung tree (E6_rungs/groot_n1{5,6}_*), E6_groot_roofline.md.
+        ("E6 roofline", "results/*_E6_[!r]*",  ("roofline.csv", "floor.csv"), 6),
         ("E6 rungs",    "results/*_E6_rungs/*", ("roofline.csv",),       12),
         ("E3E4 sweep",  "results/*_E3E4_*",
          ("opt_ladder.csv", "phase_split.csv", "raw/benchmark_inference.log"), 15),
