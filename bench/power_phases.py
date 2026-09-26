@@ -89,6 +89,16 @@ def stop_tegrastats(proc=None):
 
 
 def measure(fn, seconds, tag, teg_log: Path):
+    # T016 step 4 (EV-10, 2026-09-26): warm up BEFORE the samplers start. The sampler used to
+    # start first, so the power mean included the warm-up -- and a first call that compiles
+    # (pi0 bf16_both prefix: ~45 s of max-autotune at idle-level power) -- which is why E7's
+    # prefix + ae energies summed to 30 % less than `full`. Trimmed to the timed window the
+    # residual is 0.7 % (results/..._E7r_pi0_energy_reconcile_MAXN).
+    if fn is not None:
+        import torch                                                  # noqa: PLC0415
+        for _ in range(5):
+            fn()
+        torch.cuda.synchronize()
     stop_tegrastats()
     if teg_log.exists():
         teg_log.unlink()

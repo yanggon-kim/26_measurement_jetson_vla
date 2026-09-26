@@ -125,6 +125,13 @@ def main() -> int:
                     help="torch.compile mode for backbone.model.visual.forward")
     ap.add_argument("--llm-mode", default=None,
                     help="torch.compile mode for backbone.model.language_model.forward")
+    ap.add_argument("--keep1", action="store_true",
+                    help="T016 step 3 VARIANT: lm_head on the last token only (bench/groot_savings.py)")
+    ap.add_argument("--kvonce", action="store_true",
+                    help="T016 step 3 VARIANT: DiT cross-attention K/V once per frame (bench/groot_savings.py)")
+    ap.add_argument("--save-actions", default="",
+                    help="N:path.npz -- after warm-up, N inferences with torch.manual_seed(5000+i) before "
+                         "each; save action_pred (float32) and exit (T016 step 3 equivalence)")
     ap.add_argument("--rung", default="eager",
                     help="name for this configuration; one row file per rung")
     ap.add_argument("--power", action="store_true",
@@ -212,6 +219,15 @@ def main() -> int:
     n = args.steps or int(getattr(model.action_head.config, "num_inference_timesteps", 4))
     model.action_head.num_inference_timesteps = n
     print(f"N (num_inference_timesteps) = {n}", flush=True)
+    variant_notes = []
+    if args.keep1 or args.kvonce:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import groot_savings as GS                                              # noqa: E402
+        if args.keep1:
+            variant_notes.append("keep1: " + GS.apply_keep1(model))
+        if args.kvonce:
+            variant_notes.append("kvonce: " + GS.apply_kvonce(model))
+        print("variants:", variant_notes, flush=True)
 
     # timing hooks around exactly the two phases, installed on the instance
     spans: dict[str, list] = {"vision": [], "vlm_backbone": [], "ae_total": []}
@@ -356,6 +372,25 @@ def main() -> int:
     if args.power:
         return run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc)
 
+    if args.save_actions:
+        import numpy as np                                                      # noqa: PLC0415
+        cnt, path = args.save_actions.split(":", 1)
+        for _ in range(max(2, args.warmup // 4)):
+            step()
+        acts, nonfinite = [], 0
+        for i in range(int(cnt)):
+            torch.manual_seed(5000 + i)
+            r = step()
+            a = r["action_pred"].float()
+            nonfinite += int((~torch.isfinite(a)).sum())
+            acts.append(a.cpu().numpy())
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        np.savez(path, actions=np.stack(acts), seeds=np.arange(5000, 5000 + int(cnt)),
+                 variant=np.array(";".join(variant_notes) or "reference"),
+                 compiled=np.array(";".join(compiled_desc)), nonfinite=np.array(nonfinite))
+        print(f"saved {cnt} action chunks -> {path}; nonfinite {nonfinite}", flush=True)
+        return 0 if nonfinite == 0 else 4
+
     if args.ncu_region:
         # C1 needs ncu to see ONE instance of one phase. Same shape as
         # bench/ncu_target.py does for the LeRobot models: NVTX ranges on the three wrap
@@ -396,6 +431,7 @@ def main() -> int:
                              "NVTX range on backbone.forward, which contains vision")
         nvtx_wrap(lm, "forward", "vlm_prefix")
         nvtx_wrap(model.action_head, "get_action", "ae_total")
+        nvtx_wrap(model, "get_action", "frame")        # whole frame incl. lm_head (T016 step 3 bytes)
 
         for _ in range(max(2, args.warmup // 4)):
             step()
@@ -500,7 +536,7 @@ def main() -> int:
     rowdir = out / "raw" / "rows"
     rowdir.mkdir(parents=True, exist_ok=True)
     (rowdir / f"{args.rung}.json").write_text(json.dumps({
-        "rung": args.rung, "N": n,
+        "rung": args.rung, "N": n, "variant": ";".join(variant_notes) or "none (reference)",
         "compiled": ";".join(compiled_desc), "compile_s": round(compile_s, 3),
         "e2e_median_ms": round(st["median_ms"], 4),
         "e2e_p5_ms": round(st["p5_ms"], 4), "e2e_p95_ms": round(st["p95_ms"], 4),
@@ -531,6 +567,7 @@ def main() -> int:
         "compile": ";".join(compiled_desc) or "eager",
         "force_gemm_autotune": args.force_gemm_autotune,
         "rung": args.rung, "num_inference_timesteps": n,
+        "variant": ";".join(variant_notes) or "none (reference)",
         "n_warmup": args.warmup, "n_timed": args.timed, "gate": g,
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),

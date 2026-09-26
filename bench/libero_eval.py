@@ -128,6 +128,8 @@ def main() -> int:
                          "bf16_both. --prep applies only the casts; the study's speed-up is "
                          "measured on the full rung, so its accuracy must be too.")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--prefix-variant", default="pad", choices=("pad", "nocam", "trimprompt", "nopad"),
+                    help="pi0 prefix padding trim (bench/pi0_padtrim.py); needs --seed-noise")
     ap.add_argument("--seed-noise", action="store_true",
                     help="T016 step 2: draw pi0's flow noise from a torch.Generator seeded per "
                          "(suite, task, episode) -- the same seed in every N arm -- and pass it to "
@@ -162,6 +164,9 @@ def main() -> int:
     import model_registry as MR
     import opt_ladder as OL
     import pi0_common as P
+    import pi0_padtrim as PT
+    if args.prefix_variant != "pad" and not args.seed_noise:
+        raise SystemExit("--prefix-variant needs --seed-noise (it bypasses select_action)")
     from libero.libero import benchmark, get_libero_path
     from libero.libero.envs import OffScreenRenderEnv
     from lerobot.envs.libero import get_libero_dummy_action
@@ -265,7 +270,10 @@ def main() -> int:
                         if args.seed_noise:
                             noise = torch.randn(nshape, generator=gen, device="cuda",
                                                 dtype=torch.float32)
-                            act = policy.predict_action_chunk(batch, noise=noise)[:, :n_act]
+                            if args.prefix_variant == "pad":
+                                act = policy.predict_action_chunk(batch, noise=noise)[:, :n_act]
+                            else:
+                                act = PT.predict_chunk(policy, batch, args.prefix_variant, noise)[:, :n_act]
                         else:
                             act = policy.select_action(batch)
                     nonfinite_actions += (~torch.isfinite(act)).sum()
@@ -337,6 +345,7 @@ def main() -> int:
                           "predict_action_chunk(noise=); per-episode seed in episodes.csv")
                          if args.seed_noise else "unseeded global torch RNG (select_action)",
         "nonfinite_action_elements": int(nonfinite_actions.item()),
+        "prefix_variant": args.prefix_variant,
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
                             f"few-percent difference in success rate"),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
