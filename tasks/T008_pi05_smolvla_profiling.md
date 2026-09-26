@@ -26,3 +26,23 @@ Raw files committed under each result directory's `raw/` exactly as in T004 / T0
 repository-size lines in `STATUS.md` after each model (§6f). Self-review (§11).
 
 status: claimed 2026-09-24
+
+status: done 2026-09-26
+
+**Deliverables:** `reports/E5_{pi05,smolvla}_timeline.md`, `reports/E5b_{pi05,smolvla}.md`,
+`reports/E6_{pi05,smolvla}_roofline.md`, `reports/E7_{pi05,smolvla}_power.md` (per-model extracts of the
+consolidated reports, with their own tables; the research side was asked in STATUS.md whether extracts
+satisfy "same content as the π0 reports"), and the cross-model `reports/E5_E5b_models.md` with every
+column the task names.
+
+**Step 6 S sweep** (the last open item, run 2026-09-25 23:08–23:20): `results/20260925_E5b_{pi05,smolvla}_ssweep`,
+S ∈ {1, 16, 50, 256} on the expert's largest projection and q projection (SmolVLA also its first
+cross-attention layer's q and k), shapes read from the loaded model; π0.5 swept in fp32 (eager) and bf16
+(compiled rung). **Correction found doing it:** the sweep script's CUDA-event column was per-call harness
+overhead (~45–75 µs); kernel time is taken from the sweeps' own ncu captures (`s_sweep_ncu.csv`,
+`bench/sweep_ncu_table.py`), and GR00T's committed sweep report was corrected the same way (ae47c79).
+
+**Deviations:** E6/E7 per-model files are extracts (above); instrumented per-step not available for
+these models (§2 slope used, `E3_E4_models.md`); the compiled rung for E5b is each model's best Part B rung.
+
+bench commit `ae47c79bda14`.
