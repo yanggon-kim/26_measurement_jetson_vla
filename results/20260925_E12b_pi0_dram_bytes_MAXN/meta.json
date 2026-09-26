@@ -1,0 +1,43 @@
+{
+  "experiment": "E12b follow-up: measured DRAM bytes vs E6 bytes vs EMC-implied bytes (analysis/E12b_review.md, owed question)",
+  "power_mode": "NV Power Mode: MAXN",
+  "gpu_cur_freq_hz": "1300500000",
+  "config": "graphs_both, whole GPU, N=10, bf16_both rung (bench/e12b_nsys.py)",
+  "ncu": "--graph-profiling graph --cache-control none; L2 metrics (Orin exposes no dram__ counters): reads = lts__d_sectors_fill_{device,sysmem}, writes <= lts__t_sectors_op_write; 32 B per sector",
+  "caveat": "graph-level profiling: one workload per graph launch (whole stage). Writes are an UPPER bound (L2 write sectors, not write-backs). Durations are profiled, NOT latencies -- the GB/s columns use the unprofiled stage times.",
+  "bench_commit": "9df56286ae5be4a4955bbd419ec6a5de024c9c91",
+  "command": "bash bench/run_ncu_e12b_dram.sh results/20260925_E12b_pi0_dram_bytes_MAXN",
+  "raw_files": [
+    {
+      "path": "dram_bytes.csv",
+      "bytes": 564,
+      "sha256": "9d7c793cc0a1fac5b899f40515605e6e04c5026b4f64d9d6c85ebc74c82596a8"
+    },
+    {
+      "path": "ncu/e12b_dram.ncu-rep.zst",
+      "bytes": 3230036,
+      "sha256": "3599ea40877633bd49ba7ca40eca8439b5d911a5cf27147bf59eb573a6ad1cb5"
+    },
+    {
+      "path": "ncu/e12b_dram.sh",
+      "bytes": 893,
+      "sha256": "5db889fbfecacf4844e69bc88dee3dda46276fe5819382b29191e89712c364ce"
+    },
+    {
+      "path": "ncu/e12b_dram.stdout",
+      "bytes": 6094,
+      "sha256": "4d1b799f10a161e0f6bf1ce9873b08f301a38b6292eb0fbdd3f8ce520289ca04"
+    },
+    {
+      "path": "ncu/e12b_dram_raw.csv",
+      "bytes": 117175,
+      "sha256": "fe1c6c0a56d72680a73330e18cbbd77559c597a1a8309e5c58cffb64bd9cb4c0"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 1573,
+      "sha256": "ea0eae9c22eb01fc7f3fc016169e40bf905f66306c7e8967080e1e4346427cf0"
+    }
+  ],
+  "date_utc": "2026-09-26T06:29:34Z"
+}

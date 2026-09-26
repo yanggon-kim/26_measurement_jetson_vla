@@ -237,3 +237,47 @@ M2's timeline. Both corrections are at the top of `STATUS.md` and in `reports/E1
 **Not tuned toward an outcome.** The splits, orders and loop lengths were fixed before seeing their
 results except 6/10, added after the first split showed the confined expert needs SMs — which could only
 *improve* overlap, and did not.
+
+---
+
+## Addendum (2026-09-25, after `analysis/E12b_review.md`) — the device's answers to the owed questions
+
+**1. The EMC-vs-bytes gap (review §3) — measured: the EMC reading is right; E6's analytic bytes
+undercount the prefix 3.7×.** `results/20260925_E12b_pi0_dram_bytes_MAXN/` (ncu, `graphs_both`, whole
+GPU, 5 frames per stage, `--graph-profiling graph --cache-control none`). Orin exposes **no `dram__`
+counters** (a first attempt that asked for them got none and died in per-node replay; kept in
+`scratch/failed_runs/`), so DRAM reads are L2 sector **fills** from memory and writes are L2 write
+sectors (an upper bound on write-backs):
+
+| per frame | DRAM reads (L2 fills) | writes (≤) | total | EMC-implied (84.6 / 80.6 GB/s × unprofiled time) | E6 analytic | measured / E6 | EMC / measured |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| prefix (246.3 ms) | 17.80 GB | 3.83 GB | **21.64 GB** | 20.84 GB | 5.85 GB | **3.70×** | **0.96** |
+| expert (101.4 ms) | 7.03 GB | 1.19 GB | **8.21 GB** | 8.17 GB | 6.38 GB | 1.29× | **0.995** |
+
+So the calibrated EMC GB/s **are bytes**, for both access patterns (the review's alternative — that busy
+% over-states bytes for the prefix — is ruled out), and the prefix really moves ~3.7× the DRAM traffic
+of E6's parameter + KV count: its L2 sees 74.0 GB of read requests per frame and 17.8 GB of them miss
+(76 % hit), i.e. activations of an 816-token, 18-layer prefill spill well past the 4 MB L2. The expert,
+a weight stream with 51 tokens, is within 10 % of E6 on reads. Consequences: E6's prefix floor
+(bytes / BW) is too low by ~3.7×, so the prefix's "gap to floor" in `E6_pi0_roofline.md` overstates how
+far it is from the memory roof — **at its real traffic the compiled prefix runs at 87.9 GB/s (47 % of the
+measured bus)**; and in M4 the co-run at 12/4 drew 106.6 GB/s of real bytes, as quoted. For EV-02 (the
+channel-partition measurement) the prefix's DRAM demand is ~88 GB/s, not ~24.
+
+**2. `e12b_diagnose.py`.** It was an uncommitted scratch file and no longer exists; the harness docstring
+now says so (`bench/e12b_corun.py`). The M2 diagnosis stands as the review describes it: two suspects
+removed together, not an isolated cause. A one-change-at-a-time isolation (shared vs own pool × single
+vs double KV buffer) was **not** run.
+
+**3. `variant_tokens`.** Every token in a committed E12b label is now defined in
+`bench/e12b_common.VARIANT_TOKENS` from the code (`dbuf_kv`, `owngraph_prefix`, `memo_681`,
+`serial_full_gpu`, `prio_*`, `maxconn_*`, `hog_max` / `hog_matched` / `hog_<x>GBps`); `kv_copy` is
+marked stale (never in a committed label). Note `hog_matched` was matched to the expert's **E6 bytes**
+rate — which item 1 shows is ~0.78× of its real traffic, so the matched hog was ~22 % light.
+
+**4. `graphs_both` prefix vs rung prefix equivalence** — not run in this round.
+
+**5. T014 Step 4 references** — `STATUS.md` restated with the confined 8/8 values and a bracketed
+prediction; `bench/queues/queue_e12_capped.sh` step 0c now measures the compiled stages at `MODE_30W`
+with `bench/e12_capped_compiled_stages.py`, whose MAXN references
+(`results/20260925_E12_pi0_compiled_stages_N10_MAXN{,_green8_8}`) reproduce M3 within 0.25 %.

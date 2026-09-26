@@ -58,11 +58,21 @@ def main() -> int:
     agg = {k: {"kernels": 0, "read": 0.0, "write": 0.0, "l2_read": 0.0, "dur_s": 0.0}
            for k in FRAMES}
     unattributed = 0
+    # e12b_corun.Harness.run("expert_alone") fills BOTH KV buffers first by issuing prefix(0) and
+    # prefix(1) INSIDE the same NVTX range -- the first two graph workloads of expert_alone are
+    # those prefix graphs (~250 ms each, r2 capture), not expert frames. Excluded by construction.
+    kn = col["Kernel Name"]
+    fill_skipped, graphs_seen = 0, 0
     for r in data:
         rng = next((k for k in FRAMES if k in r[nv]), None)
         if rng is None:
             unattributed += 1
             continue
+        if rng == "expert_alone" and r[kn] == "graph":
+            graphs_seen += 1
+            if graphs_seen <= 2:
+                fill_skipped += 1
+                continue
         v = {m: float(r[col[m]].replace(",", "") or 0) * UNIT.get(units[col[m]], float("nan"))
              for m in need}
         a = agg[rng]
@@ -97,6 +107,7 @@ def main() -> int:
         w.writeheader()
         w.writerows(table)
     summ = {"rows": table, "unattributed_kernel_rows": unattributed,
+            "expert_alone_prefix_fill_graphs_excluded": fill_skipped,
             "reading": "measured_over_E6 ~ 1 and EMC_over_measured >> 1 => EMC busy % overstates "
                        "bytes for this access pattern; measured_over_E6 >> 1 => the stage moves more "
                        "DRAM traffic than E6's analytic count (activations / spills)."}
