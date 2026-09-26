@@ -2,6 +2,40 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ MODE_30W SESSION DONE (2026-09-26 11:15–14:09) — MODE_15W next (needs the owner's reboot)
+
+Device after the owner's reboot: `MODE_30W`, TPC mask 240 → **8 SMs**, GPU locked **612 MHz**, CPU 8 cores
+@ 1.728 GHz, EMC 3199 MHz, fan max — as `/etc/nvpmodel.conf` defines it. All results `results/20260926_*`.
+
+* **E7 (T004 4b)**: power loops eager + best for π0, π0.5, SmolVLA and GR00T N1.5/1.6/1.7 at N = 10, and π0
+  E3 latency at N = 4 / 10 (eager e2e 2066 / 2457 ms; per-step 67.6 / 66.2 ms, 1.25–1.28× MAXN = the CPU
+  clock ratio 1.27: the eager expert stays host-bound).
+* **T014 Step 4 (E12 at 8 hardware SMs)**, against the MAXN software-partition references:
+
+| GPU-bound quantity | MAXN green 8 SMs @ 1300.5 MHz | MODE_30W 8 SMs @ 612 MHz | ratio | bracket (1.00–2.125×) |
+|---|---:|---:|---:|---|
+| 2048² bf16 GEMM control | 0.8915 ms | 1.9840 ms | **2.23×** | 5 % above the clock ratio |
+| compiled expert (`owngraph_expert`) | 149.41 ms | 286.13 ms | **1.92×** | inside |
+| compiled prefix (`graphs_both`) | 327.70 ms | 876.84 ms | **2.68×** | **ABOVE — prediction falsified for this stage** |
+| eager prefix, 8 / 4 SMs (green curve) | 779.8 / 1425.1 ms | 1789.7 / 3091.6 ms | 2.30× / 2.17× | ~clock ratio |
+
+  Reading: for compute (the GEMM) and for the eager stages a software 8-SM partition matches 8 hardware SMs
+  after clock scaling (≤ 8 % off). **The compiled `graphs_both` prefix does not** — it slows 26 % more than
+  the clock ratio allows. Not explained yet (CPU: its host issue equals its wall time at both modes, so
+  the 1.27× slower CPU is one candidate; not tested). Eager co-run at 30W is serial again (T_pipe 2439.1 vs
+  serial 2437.3 ms) and saves no energy (0.9996); equivalence PASS 6/6 bitwise, stale control 5/5.
+* **Defects found and fixed during the session** (the capped queues were written at MAXN and never
+  exercised): `corun.py`/`corun_green.py`/`corun_energy.py` refused the MAXN-only gate (now
+  `--allow-capped`); `run_e3.py` had no `--outdir` (added — the default name carried no power mode);
+  `corun_green.py`'s verdict was hard-coded 8-vs-16 (read 8-vs-8 at 30W; now half vs whole GPU of the
+  mode); `corun.py` equivalence wrote no `meta.json` (added; 30W back-filled). The failed steps were
+  re-run in the same boot (`scratch/queues/fixup_30w.sh`).
+
+**Next, owner:** `sudo nvpmodel -m 1` (MODE_15W: 6 SMs, GPU 408 MHz, 4 CPU cores @ 1.11 GHz, EMC 2133 MHz),
+confirm the reboot, then `claude --continue`; I run both queues (now fixed) under the 10-minute watchdog.
+
+---
+
 ## ✅ PRE-REBOOT WORK DONE (2026-09-26 ~00:00) — T006, T008, T009 done; E12b review answered; only the reboot session remains
 
 **Closed today** (every item on its task file's status block, one result directory per commit):
