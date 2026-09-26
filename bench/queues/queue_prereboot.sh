@@ -289,6 +289,15 @@ e8_steplog)
   echo "E8_STEPLOG_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+e12b_dram)
+  # analysis/E12b_review.md owed question: measured DRAM bytes of the E12b prefix / expert vs
+  # E6's analytic bytes vs the EMC-implied bytes (the 3.6x gap). One ncu capture, metrics only.
+  gate
+  run "E12b DRAM bytes (ncu, graphs_both prefix_alone + expert_alone)" \
+      bash bench/run_ncu_e12b_dram.sh results/${DATE}_E12b_pi0_dram_bytes_MAXN
+  echo "E12B_DRAM_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 groot_bench)
   # T009 step 1: NVIDIA's own benchmark_inference.py (PyTorch eager + torch.compile modes; no
   # TensorRT engine given, TRT is E10). The 2026-09-25 16:43 attempt failed on a missing
