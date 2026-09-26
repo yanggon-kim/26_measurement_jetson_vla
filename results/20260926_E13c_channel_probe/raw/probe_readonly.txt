@@ -1,0 +1,184 @@
+== /proc/iomem (System RAM, carveouts)
+01700000-0170ffff : 2c00000.memory-controller ch8
+01710000-0171ffff : 2c00000.memory-controller ch9
+01720000-0172ffff : 2c00000.memory-controller ch10
+01730000-0173ffff : 2c00000.memory-controller ch11
+01740000-0174ffff : 2c00000.memory-controller ch12
+01750000-0175ffff : 2c00000.memory-controller ch13
+01760000-0176ffff : 2c00000.memory-controller ch14
+01770000-0177ffff : 2c00000.memory-controller ch15
+02b80000-02b8ffff : 2c00000.memory-controller ch4
+02b90000-02b9ffff : 2c00000.memory-controller ch5
+02ba0000-02baffff : 2c00000.memory-controller ch6
+02bb0000-02bbffff : 2c00000.memory-controller ch7
+02c00000-02c0ffff : 2c00000.memory-controller sid
+02c10000-02c1ffff : 2c00000.memory-controller broadcast
+02c20000-02c2ffff : 2c00000.memory-controller ch0
+02c30000-02c3ffff : 2c00000.memory-controller ch1
+02c40000-02c4ffff : 2c00000.memory-controller ch2
+02c50000-02c5ffff : 2c00000.memory-controller ch3
+0c312000-0c312fff : c310000.mttcan msg-ram
+0c322000-0c322fff : c320000.mttcan msg-ram
+40070000-40070fff : 40000000.sram sram@70000
+40071000-40071fff : 40000000.sram sram@71000
+80000000-fffdffff : System RAM
+  fbfe0000-fffdffff : reserved
+fffe0000-ffffffff : reserved
+100000000-1017c2ffff : System RAM
+  ece670000-ecedfffff : reserved
+  fb5200000-1013ffffff : reserved
+  10140b0000-10140fbfff : reserved
+  10142b0000-10151e0fff : reserved
+1017c30000-101885ffff : reserved
+1018860000-101888ffff : System RAM
+  101886b000-101886dfff : reserved
+1018890000-101889ffff : reserved
+10188a0000-10188effff : System RAM
+10188f0000-1018a7ffff : reserved
+1018a80000-101905ffff : System RAM
+1019060000-101906ffff : reserved
+  1019060000-1019060fff : reserved
+1019070000-102664ffff : System RAM
+
+== reserved-memory in the live device tree (read-only)
+#address-cells
+camdbg_carveout
+framebuffer@0,0
+fsi-carveout
+linux,cma
+name
+pva-carveout
+ramoops_carveout
+ranges
+rce-reservation
+#size-cells
+vpr-carveout
+camdbg_carveout compatible=nvidia,camdbg_carveout 
+framebuffer@0,0 compatible=framebuffer 
+fsi-carveout compatible=nvidia,fsi-carveout 
+linux,cma compatible=shared-dma-pool 
+pva-carveout compatible=nvidia,pva-carveout 
+ramoops_carveout compatible=ramoops 
+/bin/bash: line 7: /proc/device-tree/reserved-memory/rce-reservation//compatible: No such file or directory
+rce-reservation compatible=
+vpr-carveout compatible=nvidia,vpr-carveout 
+
+== nvmap debugfs
+fsi
+handles_by_pid
+iovmm
+max_handle_count
+nvmap_init_time
+pagepool
+stats
+vpr
+-- /sys/kernel/debug/nvmap/fsi/
+all_allocations
+allocations
+base
+clients
+free_size
+maps
+no_cpu_access
+orphan_handles
+size
+-- /sys/kernel/debug/nvmap/handles_by_pid/
+1755
+2349
+-- /sys/kernel/debug/nvmap/iovmm/
+all_allocations
+allocations
+clients
+free_size
+maps
+orphan_handles
+-- /sys/kernel/debug/nvmap/pagepool/
+page_pool_available_big_pages
+page_pool_available_pages
+page_pool_big_page_size
+page_pool_pages_to_zero
+total_big_page_allocs
+total_page_allocs
+-- /sys/kernel/debug/nvmap/stats/
+alloc
+cflush_done
+cflush_rq
+collect
+kalloc
+kcflush_done
+kcflush_rq
+krelease
+release
+reset
+total_memory
+ualloc
+ucflush_done
+ucflush_rq
+urelease
+-- /sys/kernel/debug/nvmap/vpr/
+all_allocations
+allocations
+base
+clients
+free_size
+maps
+no_cpu_access
+orphan_handles
+
+== memory controller / EMC debugfs
+emc
+mc
+memblock
+mmc0
+mmc1
+tegra_camera_platform
+tegra_cbb_err
+tegra_dce
+tegra-host1x
+tegra_mce
+tegra_mc_utils
+tegra_nvgpu_pci_power_stats
+tegra_rtcpu_trace
+tegra-soc-hwpm
+tegra_tsec
+actmon
+adc
+bwmgr
+clk
+cons
+cvc
+dt
+dtb
+dvs
+emc
+ftrace
+gr
+hwwdt
+i2c
+mail
+mods
+patrol_scrubber
+pm
+powergate
+proc
+profile
+regulator
+reset
+rm
+security_perimeter_check
+security_perimeter_raw_check
+soctherm
+speedo
+swderr
+swdtimer
+tag
+uphy
+vrmon
+
+== EMC / MC related sysfs
+/sys/devices/platform/bc00000.rtcpu/supplier:platform:2c60000.external-memory-controller
+/sys/devices/platform/bc00000.rtcpu/supplier:platform:2c00000.memory-controller
+/sys/devices/platform/bus@0/2c00000.memory-controller
+/sys/devices/platform/13800000.display/supplier:platform:2c60000.external-memory-controller
+/sys/devices/platform/13800000.display/supplier:platform:2c00000.memory-controller
+/sys/devices/platform/bpmp/supplier:platform:2c00000.memory-controller
