@@ -310,6 +310,50 @@ e12_compiled_ref)
   echo "E12_COMPILED_REF_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+e5b_lerobot_sweep)
+  # T008 step 6's S sweep, S in {1, 16, 50 (own S), 256}, on the action expert's largest
+  # projection and q projection (+ SmolVLA's first cross-attention q/k), eager dtype and, where
+  # the checkpoint is not bf16, the compiled rung's bf16. Same method as e5b_groot_sweep.
+  gate
+  echo "E5B_LEROBOT_SWEEP_START $(date -Is)"
+  PIPES=""; for q in lsu fma alu xu adu cbu fp16; do PIPES="${PIPES}sm__inst_executed_pipe_${q}.avg.pct_of_peak_sustained_active,"; done
+  STALLS=""; for q in long_scoreboard short_scoreboard wait no_instruction math_pipe_throttle mio_throttle lg_throttle barrier membar drain dispatch_stall imc_miss misc selected; do STALLS="${STALLS}smsp__average_warps_issue_stalled_${q}_per_issue_active.ratio,"; done
+  for m in pi05 smolvla; do
+    OUT=results/${DATE}_E5b_${m}_ssweep
+    [ -s "$OUT/s_sweep.csv" ] && { echo "  done already: $OUT"; continue; }
+    mkdir -p "$OUT/ncu" "$OUT/raw"
+    run "$m sweep shapes (reads the loaded model)" env HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+        $PY bench/micro_proj_sweep.py --lerobot-model $m --emit-shapes $OUT/shapes.json
+    [ -s "$OUT/shapes.json" ] || { echo "REFUSING: no shapes.json for $m"; continue; }
+    run "$m sweep timing (CUDA events)" $PY bench/micro_proj_sweep.py --shapes "$OUT/shapes.json" \
+        --S 1,16,50,256 --reps 200 --outdir "$OUT"
+    for key in $($PY -c "import json,sys;print(' '.join(json.load(open(sys.argv[1]))['targets']))" "$OUT/shapes.json"); do
+      for S in 1 16 50 256; do
+        TAG="sweep_${key}_S${S}"; R="$OUT/ncu/${TAG}.sh"
+        cat > "$R" <<EOR
+HOME=/home/yanggon
+export HOME
+cd /home/yanggon/00_VLA/26_measurement_jetson_vla
+exec $(which ncu) --profile-from-start off --nvtx --nvtx-include "${key}_S${S}/" -c 3 \
+  --section SpeedOfLight --section WarpStateStats --section Occupancy --section InstructionStats \
+  --metrics ${PIPES}${STALLS}launch__grid_size,launch__block_size,launch__registers_per_thread \
+  --export "$OUT/ncu/${TAG}" --force-overwrite \
+  $PY bench/micro_proj_sweep.py --shapes $OUT/shapes.json --ncu-window ${key}:${S}
+EOR
+        echo "########## $(date +%H:%M) ncu $m $TAG"; sweep
+        sudo -n /bin/sh "$R" > "$OUT/ncu/${TAG}.stdout" 2>&1; rc=$?
+        sudo -n chown -R "$(id -u):$(id -g)" "$OUT" /tmp/triton_yanggon /tmp/torchinductor_yanggon 2>/dev/null
+        if [ -f "$OUT/ncu/${TAG}.ncu-rep" ]; then
+          sudo -n "$(which ncu)" --import "$OUT/ncu/${TAG}.ncu-rep" --csv --page details > "$OUT/ncu/${TAG}_details.csv" 2>/dev/null
+          zstd -19 -q -f "$OUT/ncu/${TAG}.ncu-rep" -o "$OUT/ncu/${TAG}.ncu-rep.zst" && rm -f "$OUT/ncu/${TAG}.ncu-rep"
+        else rc=3; echo "  NO REPORT for $TAG"; fi
+        echo "EXIT=$rc ncu $m $TAG"
+      done
+    done
+  done
+  echo "E5B_LEROBOT_SWEEP_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 groot_bench)
   # T009 step 1: NVIDIA's own benchmark_inference.py (PyTorch eager + torch.compile modes; no
   # TensorRT engine given, TRT is E10). The 2026-09-25 16:43 attempt failed on a missing

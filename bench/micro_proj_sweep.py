@@ -75,12 +75,70 @@ def emit_shapes(args) -> int:
     return 0
 
 
+def emit_shapes_lerobot(args) -> int:
+    """T008 step 6: the same S sweep for the LeRobot models (pi05, smolvla; pi0 too). Loads the
+    policy through bench/model_registry.py (pi0 venv) and walks the ACTION EXPERT's layer 0 --
+    and for SmolVLA also layer 1, its first cross-attention layer (the expert alternates self /
+    cross; T008 asks for one of each). `largest` = max in*out of layer 0, `q` = its q_proj.
+    When the checkpoint does not load bf16 (pi05 ships fp32), the same shapes are ALSO emitted in
+    bf16 (`*_bf16`): eager runs the fp32 GEMM (TF32, matmul_precision=high, the eager_tf32 rung),
+    the best compiled rung runs bf16, and docs/03 asks for eager vs compiled."""
+    sys.path.insert(0, str(REPO / "bench"))
+    import torch                                                        # noqa: PLC0415
+    import model_registry as MR                                         # noqa: PLC0415
+    spec = MR.get(args.lerobot_model)
+    policy, cfg, _ = MR.load_policy(spec, n=None, compile_mode=None)
+    layers = spec.resolve(policy, spec.expert_layers_path)
+
+    def linears(mod, prefix):
+        return [{"name": f"{prefix}.{n}", "in": m.in_features, "out": m.out_features,
+                 "bias": m.bias is not None, "dtype": str(m.weight.dtype).replace("torch.", "")}
+                for n, m in mod.named_modules() if isinstance(m, torch.nn.Linear)]
+    l0 = linears(layers[0], "layers[0]")
+    if not l0:
+        raise SystemExit("no nn.Linear in expert layer 0 -- refusing to invent shapes")
+    targets = {"largest": max(l0, key=lambda p: p["in"] * p["out"]),
+               "q": next((p for p in l0 if p["name"].endswith("q_proj")), None)}
+    if targets["q"] is None:
+        raise SystemExit(f"no q_proj in expert layer 0; have {[p['name'] for p in l0]}")
+    l1 = []
+    if args.lerobot_model == "smolvla":
+        l1 = linears(layers[1], "layers[1]")
+        q1 = next((p for p in l1 if p["name"].endswith("q_proj")), None)
+        k1 = next((p for p in l1 if p["name"].endswith("k_proj")), None)
+        if q1:
+            targets["q_cross"] = q1
+        if k1:
+            targets["k_cross"] = k1
+    for k in list(targets):
+        if targets[k]["dtype"] != "bfloat16":
+            targets[k + "_bf16"] = {**targets[k], "dtype": "bfloat16"}
+    own_s = next((int(getattr(cfg, a)) for a in ("chunk_size", "n_action_steps")
+                  if getattr(cfg, a, None)), None)
+    out = {"model": args.lerobot_model, "checkpoint": spec.checkpoint,
+           "model_commit": MR.resolved_commit(spec), "n_layers": len(layers),
+           "own_S_from_config": own_s, "layer0_projections": l0, "layer1_projections": l1,
+           "targets": targets, "largest": targets["largest"], "q": targets["q"],
+           "matmul_precision": "high (TF32 for fp32 GEMMs; the eager_tf32 rung)",
+           "note": "shapes read from the loaded model; *_bf16 targets are the same shapes in "
+                   "the dtype the best compiled rung runs, emitted only when the checkpoint "
+                   "loads another dtype"}
+    Path(args.emit_shapes).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.emit_shapes).write_text(json.dumps(out, indent=2) + "\n")
+    print(json.dumps({"n_layers": out["n_layers"], "own_S": own_s,
+                      "targets": {k: (v["name"], v["in"], v["out"], v["dtype"])
+                                  for k, v in targets.items()}}, indent=2))
+    return 0
+
+
 def sweep(args) -> int:
     import torch                                                        # noqa: PLC0415
     import torch.nn.functional as F                                     # noqa: PLC0415
     sh = json.loads(Path(args.shapes).read_text())
     S_list = [int(s) for s in args.S.split(",")]
-    targets = {"largest": sh["largest"], "q": sh["q"]}
+    targets = sh.get("targets") or {"largest": sh["largest"], "q": sh["q"]}
+    # fp32 targets run as the eager_tf32 rung does; no effect on bf16 GEMMs (GR00T's sweep).
+    torch.set_float32_matmul_precision("high")
 
     def make(p, S):
         dt = getattr(torch, p["dtype"])
@@ -130,6 +188,7 @@ def sweep(args) -> int:
             fcmp = flops / (MEASURED_TFLOPS * 1e12) * 1e6
             rows.append({"model": sh["model"], "proj": key, "proj_name": p["name"],
                          "in": p["in"], "out": p["out"], "dtype": p["dtype"], "S": S,
+                         "matmul_precision": torch.get_float32_matmul_precision(),
                          "median_us": round(us, 3), "p5_us": round(sorted(ts)[len(ts)//20], 3),
                          "p95_us": round(sorted(ts)[min(len(ts)-1, len(ts)*19//20)], 3),
                          "n": len(ts), "flops": flops, "bytes": nbytes,
@@ -167,7 +226,11 @@ def main() -> int:
     ap.add_argument("--gr00t-root", dest="gr00t_root", default="")
     ap.add_argument("--compat-shims", action="store_true")
     ap.add_argument("--steps", type=int, default=4)
+    ap.add_argument("--lerobot-model", dest="lerobot_model", default="",
+                    help="pi05 | smolvla | pi0: emit shapes from the LeRobot policy instead of GR00T")
     args = ap.parse_args()
+    if args.emit_shapes and args.lerobot_model:
+        return emit_shapes_lerobot(args)
     if args.emit_shapes:
         return emit_shapes(args)
     if args.shapes:
