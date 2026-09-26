@@ -15,3 +15,6 @@ metadata:
   torch-seeded episodes before reading small differences.
 - **Per-call CUDA-event + sync timing adds 45–75 µs on Orin** (`ae47c79`): small-GEMM sweep times must come
   from ncu or an amortised loop, not per-call events.
+- **The rung's torch graph tree escapes green-context partitions** (E12b): only a harness-captured prefix
+  (`graphs_both`) can be confined, and its equivalence to the rung prefix was still unchecked on 2026-09-26.
+  **How to apply:** any partitioned-prefix measurement needs that equivalence gate, or an SM-free load instead.
