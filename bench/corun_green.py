@@ -232,10 +232,17 @@ def main() -> int:
     print(f"\n  wrote {csv_p}")
 
     # the interpretation, printed so it cannot be read off the CSV without the caveat
-    print("\n  --- what this says about co-running (per stage, 8 SMs vs 16) ---")
+    # HALF the whole GPU vs the whole GPU. This was hard-coded "8 vs 16": at MODE_30W the whole
+    # GPU IS 8 SMs, so the "8-SM" row was the baseline itself and every stage read 1.000x
+    # SM-INSENSITIVE by construction (2026-09-26). `slowdown_vs_16sm` keeps its name for the
+    # committed CSVs but is relative to THIS session's whole GPU (device_sm_count).
+    half = full // 2
+    print(f"\n  --- what this says about co-running (per stage, {half} SMs vs the whole "
+          f"GPU = {full} SMs) ---")
     for stage in ("prefix", "expert"):
-        r8 = [r for r in rows if r["stage"] == stage and r["granted_sm"] == 8]
+        r8 = [r for r in rows if r["stage"] == stage and r["granted_sm"] == half]
         if not r8:
+            print(f"  {stage:6s} no {half}-SM point measured -- no verdict")
             continue
         sd, eff = r8[0]["slowdown_vs_16sm"], r8[0]["sm_efficiency"]
         verdict = ("SM-HUNGRY: it uses the SMs it is given, so a co-runner taking half "
@@ -243,7 +250,8 @@ def main() -> int:
                    if sd >= 1.5 else
                    "SM-INSENSITIVE: losing half the SMs costs it little, so it was not "
                    "using them and a co-runner could have had them nearly for free")
-        print(f"  {stage:6s} 8 SMs is {sd:.3f}x its 16-SM time (ideal 2.000x, "
+        print(f"  {stage:6s} {half} SMs is {sd:.3f}x its {full}-SM time (ideal "
+              f"{full / half:.3f}x, "
               f"efficiency {eff}) -> {verdict}")
 
     meta = {
@@ -261,8 +269,8 @@ def main() -> int:
                      "equivalence": equiv},
         "measured": ["per-stage wall time per SM count (host-side, with a full sync per "
                      "iteration, matching the rest of E12)"],
-        "derived": ["slowdown_vs_16sm = median / this session's 16-SM median, per stage",
-                    "ideal_slowdown = 16 / granted_sm",
+        "derived": ["slowdown_vs_16sm = median / this session's WHOLE-GPU median (device_sm_count; 16 at MAXN), per stage",
+                    "ideal_slowdown = device_sm_count / granted_sm",
                     "sm_efficiency = (slowdown-1)/(ideal_slowdown-1): 1.0 means the stage "
                     "scales exactly with SM count, 0.0 means it is completely insensitive"],
         "not_measured": [
