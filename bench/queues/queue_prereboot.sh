@@ -298,6 +298,18 @@ e12b_dram)
   echo "E12B_DRAM_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+e12_compiled_ref)
+  # MAXN references for the capped session's step 0c, from the SAME script it will run there
+  # (bench/e12_capped_compiled_stages.py): whole GPU and the confined green 8/8. Also proves the
+  # script works before a reboot session depends on it.
+  gate
+  run "compiled stages alone MAXN whole GPU" $PY bench/e12_capped_compiled_stages.py --frames 60 \
+      --outdir results/${DATE}_E12_pi0_compiled_stages_N10_MAXN
+  run "compiled stages alone MAXN green 8/8" $PY bench/e12_capped_compiled_stages.py --frames 60 \
+      --split 8/8 --outdir results/${DATE}_E12_pi0_compiled_stages_N10_MAXN_green8_8
+  echo "E12_COMPILED_REF_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 groot_bench)
   # T009 step 1: NVIDIA's own benchmark_inference.py (PyTorch eager + torch.compile modes; no
   # TensorRT engine given, TRT is E10). The 2026-09-25 16:43 attempt failed on a missing

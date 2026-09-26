@@ -34,8 +34,34 @@ VARIANT_TOKENS = {
     "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
     "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the "
                        "N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
-    "kv_copy": "each frame's KV / pad / noise copied into the expert graph's static input buffers "
-               "ON THE EXPERT STREAM (counted in the expert stage time)",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each "
+               "frame's KV / pad / noise into the expert graph's static buffers on the EXPERT "
+               "stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of "
+               "prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the "
+               "expert graph captured for that parity reads only that buffer; prefix(k) first "
+               "waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + "
+                       "the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own "
+                       "pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion "
+                "memoised on its contents (a constant per prompt length), because a captured "
+                "graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and "
+                       "graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created "
+                                       "with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work "
+                   "queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x "
+                                           "128 MiB device copies) with no sleep. matched = a "
+                                           "torch.cuda._sleep between copies, binary-searched so "
+                                           "the hog ALONE in the expert's partition moves the "
+                                           "fair expert's average demand by E6 BYTES (638 046 208 "
+                                           "B per step / measured B per step), its rate taken as "
+                                           "bytes copied / graph time (CUDA events), NOT EMC. "
+                                           "<x>GBps (M4 calibration) = that same bytes/time rate "
+                                           "for one sleep setting",
     "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
     "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
     "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; "

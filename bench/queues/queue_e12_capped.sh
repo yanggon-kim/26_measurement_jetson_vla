@@ -22,6 +22,12 @@
 #      16 SMs   prefix 478.08   expert 580.79
 #   so at 8 SMs: prefix 1.631x, expert 1.012x
 #
+# NOTE (2026-09-25, after analysis/E12b_review.md): the eager clock-ratio prediction below is
+# SUPERSEDED as a test of the green-context method -- the eager expert is host-issue-bound and
+# MODE_30W slows the CPU too. The GPU-bound cross-check is step 0b (GEMM control) and step 0c
+# (compiled stages alone, bracketed between no change and the clock ratio); STATUS.md has the
+# restated table. The eager prediction is kept as written, as a CPU+GPU observation.
+#
 # PREDICTION for MODE_30W (8 SMs in hardware), eager N=10:
 #   * IF MODE_30W's GPU clock equals MAXN's 1300.5 MHz, the whole-GPU times at MODE_30W
 #     should match the 8-SM green-context numbers above to within a few percent.
@@ -81,6 +87,16 @@ run() { local l="$1"; shift; echo "########## $(date +%H:%M) $l"; sweep; "$@"; e
 #     value is 0.891 ms/GEMM. This, not the eager expert, is the fair test of whether a software
 #     8-SM partition behaves like 8 hardware SMs, after scaling by the GPU clock alone.
 run "GEMM control $TAG (GPU-bound cross-check)" $PY bench/green_ctx.py
+
+# 0c. The COMPILED stages alone (analysis/E12b_review.md: the restated prediction's compiled rows
+#     were not measured by this queue, so they could be neither tested nor falsified). Same E12b
+#     harness and configuration as the confined MAXN references (graphs_both, bf16_both, N=10):
+#     MAXN whole GPU A 246.28 / B 101.36 ms, MAXN green 8/8 A_part 326.94 / B_part 149.05 ms.
+#     Reading (STATUS.md): each stage should land BETWEEN the green-8 value (memory-bound, no
+#     clock effect) and green-8 x (1300.5 / f_GPU) (compute-bound); the EMC rate is recorded.
+run "E12 compiled stages alone $TAG (graphs_both)" \
+  $PY bench/e12_capped_compiled_stages.py --frames 60 \
+     --outdir "results/${DATE}_E12_pi0_compiled_stages_N10_${TAG}"
 
 # 1. Step 4 proper: the same pipeline measured at MAXN, so s / p / r / T_pipe are comparable.
 #    --nosync and eager match results/20260925_E12_pi0_corun_N10_MAXN_eager_nosync exactly;

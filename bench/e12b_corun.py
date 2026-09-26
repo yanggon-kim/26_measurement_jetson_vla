@@ -1,6 +1,9 @@
 """E12b M2 / M3 -- the compiled co-run: whole GPU, and both stages together in green partitions.
 
-DIAGNOSIS THAT SHAPES THIS HARNESS (see e12b_diagnose.py for the evidence run)
+DIAGNOSIS THAT SHAPES THIS HARNESS. Correction 2026-09-25 (analysis/E12b_review.md): an earlier
+version of this line cited `e12b_diagnose.py` as the evidence run. That script was an
+uncommitted scratch file and no longer exists; the two conditions below are the SUSPECTS the
+fix removes, not an isolated cause -- which one was operative was never tested one at a time.
 T014's compiled pipeline replayed `pg.embed_image@reduce-overhead` (prefix stream) and
 `model.denoise_step@reduce-overhead` (expert stream) out of ONE CUDA-graph-tree pool, a structure
 torch documents as assuming one sequential call stream, and fed the expert a KV cache the next

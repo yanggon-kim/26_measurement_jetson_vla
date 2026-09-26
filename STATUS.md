@@ -64,11 +64,25 @@ slows the **CPU** too (8 cores at ≤ 1.73 GHz vs 12 at 2.2016 GHz, recorded 202
 cores at 2 201 600 kHz, GPU 1 300 500 000 Hz). A deviation from it would not have shown the green-context
 result wrong. **The fair cross-check uses GPU-bound quantities, scaled by the GPU clock only:**
 
-| quantity (GPU-bound) | MAXN, green 8 SMs @ 1300.5 MHz | MODE_30W prediction (8 hardware SMs) |
+> **Revised 2026-09-25 evening after `analysis/E12b_review.md`.** The first version of this table
+> (written 24 min before M0) quoted T014's **unconfined** 8-SM compiled values (prefix 320.71, expert
+> 113.70 ms), which M0 withdrew, and scaled them by the GPU clock alone; and the capped queue did not
+> measure compiled stages at all, so those rows could be neither tested nor falsified. Fixed: the
+> references are E12b M3's **confined** 8/8 values; the prediction is a **bracket** (a memory-bound
+> stage need not slow with the GPU clock); `queue_e12_capped.sh` step 0c now measures the compiled
+> stages through the same harness (`bench/e12_capped_compiled_stages.py`), and the same script is
+> queued at MAXN (whole GPU + green 8/8) as its same-script reference.
+
+| quantity (GPU-bound) | MAXN, green 8 SMs @ 1300.5 MHz (confined) | MODE_30W prediction (8 hardware SMs) |
 |---|---:|---:|
-| 2048² bf16 GEMM control | 0.8909–0.8921 ms/GEMM | ≈ 0.89 × (1300.5 / f_GPU,30W) ms |
-| compiled `bf16_both` prefix | 320.71 ms | ≈ 320.71 × (1300.5 / f_GPU,30W) |
-| compiled `bf16_both` expert (graph replay) | 113.70 ms | ≈ 113.70 × (1300.5 / f_GPU,30W) |
+| 2048² bf16 GEMM control | 0.8909–0.8921 ms/GEMM | ≈ 0.89 × (1300.5 / f_GPU,30W) ms (compute-bound) |
+| compiled prefix (`graphs_both`) | A_part **326.94 ms** | between 326.94 and 326.94 × (1300.5 / f_GPU,30W) |
+| compiled expert (`owngraph_expert`, graph replay) | B_part **149.05 ms** | between 149.05 and 149.05 × (1300.5 / f_GPU,30W) |
+
+Lower end = memory-bound (no GPU-clock effect), upper end = compute-bound (full clock ratio); the
+`MODE_30W` EMC rate is recorded in step 0 / the script's `meta.json`, and a stage **below** the lower end
+or **above** the upper end falsifies the green-8 ≈ hardware-8 equivalence for that stage. Sources:
+`results/20260925_E12b_pi0_green_corun_N10_MAXN/corun_ratios.csv` (split 8/8).
 
 with the CPU clocks recorded in both modes (`/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq`). The
 eager-expert comparison stays in the queue as a CPU+GPU observation, **not** as a test of the green-context
