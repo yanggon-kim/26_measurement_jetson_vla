@@ -68,29 +68,48 @@ head is memory-bound and there is essentially nothing left to take by launch or 
 work. (E6's `ae_step` row uses ae_total/N at N = 4, 19.89 ms → 1.15×, which folds the 7.35 ms
 intercept in; the slope is the §2 primary.)
 
-## 4. NVIDIA's own `scripts/deployment/benchmark_inference.py` — FAILED on this device
+## 4. NVIDIA's own `scripts/deployment/benchmark_inference.py` — measured, compared at N = 4
 
-Run: `results/20260925_E3E4_groot_n17_benchmark_inference/` (`meta.json`, `raw/benchmark_inference.log`).
-It loaded the policy (DiT 1 091 722 240 params, Action Horizon 40, Denoising Steps 4) and then
-stopped while decoding the first episode of `demo_data/droid_sample`:
+First attempt (`results/20260925_E3E4_groot_n17_benchmark_inference/`) **failed** decoding the DROID demo
+video: `ImportError: torchcodec is required for video decoding`. Kept as the record. Fix, a labelled
+environment change (`env/INSTALL_LOG.md`): torchcodec 0.10.0a0 installed `--no-deps` from the repository's
+own Orin wheel, as its `scripts/deployment/orin/install_deps.sh` does; `uv pip freeze` before/after differs
+only by that line, so torch 2.10 and every earlier GR00T number are unaffected. Re-run:
+`results/20260925_E3E4_groot_n17_benchmark_inference_torchcodec/` (MAXN, GPU 1300.5 MHz, 20 iterations,
+5 warm-up, the checkpoint's own N = 4), 2026-09-25 22:45.
 
-```
-ImportError: torchcodec is required for video decoding. Install it via the platform deployment
-script (scripts/deployment/{dgpu,orin,thor,spark}/install_deps.sh) or `uv pip install torchcodec`.
-```
+| component (N = 4, median ms) | NVIDIA eager | ours `eager_tf32` | NVIDIA `torch.compile` | ours `vlm_compile` |
+|---|---:|---:|---:|---:|
+| data processing (CPU) | 14.73 | 9.36 | 14.73 | 9.29 |
+| backbone (vision + VLM) | 192.15 | 157.40 (70.32 + 87.08) | 192.29 | 155.92 (70.81 + 85.11) |
+| action head (4 DiT steps) | **204.42** | **205.72** | 89.25 | 79.93 |
+| E2E | 411.5 | 365.25 ⁵ | 296.2 | 238.07 ⁵ |
 
-The failed run is kept as the record. Fix (a labelled harness change, `env/INSTALL_LOG.md`):
-torchcodec 0.10.0a0 installed `--no-deps` from the repository's own Orin wheel, exactly as its
-`scripts/deployment/orin/install_deps.sh` does; `uv pip freeze` before/after differs only by that
-line, so torch 2.10 and every earlier GR00T number are unaffected. The re-run is queued as stage
-`groot_bench` right after E8 (one GPU job at a time) into
-`results/<date>_E3E4_groot_n17_benchmark_inference_torchcodec/`; **until it lands, the comparison
-T009 asks for is not measured.** Note the script's default is N = 4, the model's own setting; our
-N = 4 points are in §1.
+⁵ ours is the GPU path only (`model.get_action` on collated inputs); NVIDIA's E2E adds its data processing.
+
+**The eager action head agrees to 0.6 %** (204.42 vs 205.72 ms) — the one component both scripts time
+the same way. The others differ by *definition*, read from the script (`benchmark_inference.py:220-290,
+525-564`), not by measurement error:
+
+* **backbone +34–36 ms**: NVIDIA's timer wraps `policy.model.prepare_input(...)` *and* the backbone, with a
+  `torch.cuda.synchronize()` + `perf_counter` pair; ours times `backbone.model.visual` and the backbone with
+  CUDA events and excludes `prepare_input`. NVIDIA's input is a real DROID frame from the demo episode;
+  ours is the checkpoint-shaped fixture (same keys and shapes; pixel values random). Matmul precision:
+  NVIDIA leaves PyTorch's default, ours sets TF32 (`matmul_precision=high`). Which of the three accounts for
+  how much is **not measured**.
+* **compiled action head 89.25 vs 79.93 ms**: NVIDIA compiles only the DiT's
+  `action_head.model.forward` with `mode="max-autotune"` (its own graphs per call) and leaves the rest of
+  `get_action` eager; ours captures the whole `get_action` with `reduce-overhead` (one graph tree for the
+  N-step loop). Its backbone is not compiled at all (192.15 → 192.29 ms).
+* **data processing 14.7 vs 9.4 ms**: real video decode + processor on NVIDIA's side vs our collated fixture.
+
+So NVIDIA's own numbers **confirm** the eager DiT cost and give a compiled DiT 12 % slower than our rung,
+consistent with ours compiling more of the loop. NVIDIA's summary line — `torch.compile` 1.39× E2E,
+2.29× action head — is on its own definitions above.
 
 ## 5. Not measured
 
-* `benchmark_inference.py` comparison (§4) — queued, pending.
+* How much of the backbone's +34 ms is `prepare_input`, the real frame, or TF32 (§4).
 * `ae_step[i]` / `ae_layer[j]` individual events inside the DiT loop: `groot_phases.py` times
   `ae_total` only (the loop lives inside `get_action`); per-step is the slope, which §2 makes
   primary under compilation anyway. Eager instrumented per-step (§2 (a)) is not available.

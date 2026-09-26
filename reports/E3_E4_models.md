@@ -82,7 +82,8 @@ intercepts, r² ≤ 0.49 — flat), so only N = 10 is shown; every N is in the C
 * π0.5's checkpoint is the **base** checkpoint (no LeRobot LIBERO fine-tune exists); latency does
   not depend on that, closed-loop success does (E8).
 * GR00T: `bench/groot_phases.py`, 20 + 50, one process per point; its own
-  `benchmark_inference.py` comparison is pending (`E3_E4_groot.md` §4).
+  `benchmark_inference.py` measured: eager action head agrees to 0.6 % (204.42 vs 205.72 ms at N = 4;
+  `E3_E4_groot.md` §4).
 
 ## 5. Not measured
 
