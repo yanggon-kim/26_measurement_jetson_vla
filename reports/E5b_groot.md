@@ -25,6 +25,31 @@ reaches 83–87 % (`reports/E6_groot_roofline.md`, correction block).
 
 ## The S sweep: at the model's own S, the time is set by weight bytes, not tokens
 
+> **CORRECTION (2026-09-25, late).** The "median µs", "× floor" and "GB/s" columns of the table
+> below came from CUDA events with an event pair **and a synchronize around every single call**,
+> which on Orin adds ~45–75 µs per call (found when the π0.5 / SmolVLA sweeps put every small GEMM
+> at ~90 µs whatever its shape). They measured the timing harness, not the GEMM. The kernel time is
+> in the ncu captures of the same sweep: `results/20260925_E5b_groot_n17_ssweep/s_sweep_ncu.csv`
+> (`bench/sweep_ncu_table.py`). Corrected table:
+>
+> | target | projection (in → out, dtype) | S | kernel µs (ncu) | × floor | GB/s | % measured BW | kernel | events said µs (superseded) |
+> |---|---|---:|---:|---:|---:|---:|---|---:|
+> | `largest` | `ff.net.0.proj` (1536 → 6144, bfloat16) | 1 | **118.6** | 1.18 | 159.4 | 85.0 | `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f` | 166.8 |
+> | `largest` | `ff.net.0.proj` (1536 → 6144, bfloat16) | 16 | **119.3** | 1.17 | 160.4 | 85.6 | `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f` | 166.1 |
+> | `largest` | `ff.net.0.proj` (1536 → 6144, bfloat16) | 41 | **124.8** | 1.20 | 156.3 | 83.4 | `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f` | 170.2 |
+> | `largest` | `ff.net.0.proj` (1536 → 6144, bfloat16) | 256 | **183.1** | 1.28 | 124.6 | 66.5 | `ampere_bf16_s16816gemm_bf16_128x128_ldg8_relu_f2` | 228.4 |
+> | `q` | `attn1.to_q` (1536 → 1536, bfloat16) | 1 | **37.1** | 1.47 | 127.6 | 68.1 | `ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8` | 93.9 |
+> | `q` | `attn1.to_q` (1536 → 1536, bfloat16) | 16 | **37.1** | 1.44 | 129.9 | 69.3 | `ampere_bf16_s16816gemm_bf16_64x64_ldg8_relu_f2f_` | 92.8 |
+> | `q` | `attn1.to_q` (1536 → 1536, bfloat16) | 41 | **38.1** | 1.44 | 130.6 | 69.7 | `ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8` | 93.1 |
+> | `q` | `attn1.to_q` (1536 → 1536, bfloat16) | 256 | **82.0** | 2.30 | 76.8 | 41.0 | `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f` | 128.9 |
+>
+> **Readings that change:** the largest projection is at **1.17–1.20× its memory floor** up to
+> S = 41 (was quoted 1.6×) — 83–86 % of the measured bus bandwidth, i.e. essentially at the
+> weight-streaming limit; the q projection is at **1.44–1.47×** (was 3.5–3.7×), so "too small to
+> reach the bus's stride" overstated it. **Readings that stand:** the largest projection costs the
+> same from S = 1 to S = 41 (118.6 / 119.3 / 124.8 µs); the kernel choices and stall columns come
+> from ncu and are unaffected. The superseded table is kept below as it was written.
+
 DiT block 0's projections were read from the loaded model; the largest is `ff.net.0.proj`
 (1536 → 6144) and the q projection `attn1.to_q` (1536 → 1536), both bf16. Each was run alone
 as `F.linear` at S ∈ {1, 16, 41, 256}. The table gives the median of 200 reps under CUDA
@@ -95,5 +120,5 @@ timings (n = 200 per point).
 **Not measured:**
 - E5b for GR00T N1.5 and N1.6; their C1 captures exist and the scripts take `n15` and `n16`.
 - A sweep of the cross-attention k/v projections (2048-wide input).
-- The S sweep for π0, π0.5 and SmolVLA. docs/03 asks for it and T007/T008 did not run it
-  either (no sweep appears in `E5b_summary.md`); that is recorded in `STATUS.md` as a gap.
+- The S sweep for π0 (T007). π0.5 and SmolVLA were swept on 2026-09-25 (T008 step 6):
+  `E5b_pi05.md`, `E5b_smolvla.md`.

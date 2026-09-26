@@ -1,208 +1,218 @@
 {
-  "experiment": "E5b S sweep (T009 step 3; docs/03 'S sweep (isolated kernels)')",
-  "model": "groot_n17",
-  "checkpoint": "nvidia/GR00T-N1.7-3B",
-  "S_values": [
-    1,
-    16,
-    41,
-    256
-  ],
-  "S_note": "41 is T009's stated S for N1.7. The loaded config's action_horizon is 40 (shapes.json own_S_from_config); recorded, not reconciled -- the DiT may carry one extra (state) token. 40 vs 41 is inside the flat region of every curve here, so it does not change a conclusion.",
-  "shapes_source": "read from the loaded model's DiT block 0 (shapes.json), never typed in",
-  "method": "F.linear on random bf16 activations (S, in) against a random weight of the recorded shape and dtype; CUDA-event timing, 200 reps, median; then one ncu capture per (projection, S) of 3 launches inside cudaProfilerStart/Stop",
-  "commands": [
-    "bash bench/queues/queue_prereboot.sh e5b_groot_sweep"
-  ],
-  "gate": {
-    "power_mode": "NV Power Mode: MAXN",
-    "sm_count": 16,
-    "gpu_cur_freq_hz": 1300500000,
-    "gpu_min_freq_hz": 1300500000,
-    "gpu_max_freq_hz": 1300500000,
-    "jetson_clocks_locked": true,
-    "tpc_pg_mask": "0",
-    "cpu_online": "0-11",
-    "cpu_governor": "schedutil",
-    "cpu_cur_freq_khz": "2201600",
-    "cpu_max_freq_khz": "2201600"
+ "experiment": "E5b S sweep (T009 step 3; docs/03 'S sweep (isolated kernels)')",
+ "model": "groot_n17",
+ "checkpoint": "nvidia/GR00T-N1.7-3B",
+ "S_values": [
+  1,
+  16,
+  41,
+  256
+ ],
+ "S_note": "41 is T009's stated S for N1.7. The loaded config's action_horizon is 40 (shapes.json own_S_from_config); recorded, not reconciled -- the DiT may carry one extra (state) token. 40 vs 41 is inside the flat region of every curve here, so it does not change a conclusion.",
+ "shapes_source": "read from the loaded model's DiT block 0 (shapes.json), never typed in",
+ "method": "F.linear on random bf16 activations (S, in) against a random weight of the recorded shape and dtype; CUDA-event timing, 200 reps, median; then one ncu capture per (projection, S) of 3 launches inside cudaProfilerStart/Stop",
+ "commands": [
+  "bash bench/queues/queue_prereboot.sh e5b_groot_sweep"
+ ],
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_cur_freq_hz": 1300500000,
+  "gpu_min_freq_hz": 1300500000,
+  "gpu_max_freq_hz": 1300500000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "0",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "2201600",
+  "cpu_max_freq_khz": "2201600"
+ },
+ "bench_commit": "01827ad038fa1c57869cc813218c861d92d60131",
+ "files": [
+  {
+   "path": "ncu/sweep_largest_S1.ncu-rep.zst",
+   "bytes": 70140,
+   "sha256": "fe720d162de73da7b40788e6416de9a164637d8a8d37e58b88a800f699691718"
   },
-  "bench_commit": "01827ad038fa1c57869cc813218c861d92d60131",
-  "files": [
-    {
-      "path": "ncu/sweep_largest_S1.ncu-rep.zst",
-      "bytes": 70140,
-      "sha256": "fe720d162de73da7b40788e6416de9a164637d8a8d37e58b88a800f699691718"
-    },
-    {
-      "path": "ncu/sweep_largest_S1.sh",
-      "bytes": 1960,
-      "sha256": "21f7bc892a69a190e3659cb771832c92dbebacb8e5625b58eff2cd77c97beb61"
-    },
-    {
-      "path": "ncu/sweep_largest_S1.stdout",
-      "bytes": 517,
-      "sha256": "601cf72b02f5fa3227819fada193b48b15576159d35096146bb5020ebfe9dc07"
-    },
-    {
-      "path": "ncu/sweep_largest_S16.ncu-rep.zst",
-      "bytes": 70101,
-      "sha256": "ef5e11b462cda01e6e7611017435685bc65cd7c9f4bb63e1252416fe7a30b5f4"
-    },
-    {
-      "path": "ncu/sweep_largest_S16.sh",
-      "bytes": 1963,
-      "sha256": "10f8c036aa005a701f6649ae878027e5175a6587d07de72c24f3b0c895c2af42"
-    },
-    {
-      "path": "ncu/sweep_largest_S16.stdout",
-      "bytes": 518,
-      "sha256": "92e850b675c55fcd6007ad2198976b75dbe556d196c3cffe89cc2c7512ab86fe"
-    },
-    {
-      "path": "ncu/sweep_largest_S16_details.csv",
-      "bytes": 52193,
-      "sha256": "774e2634bc0b45f6990ac3ea0b952ecc890ee58c5ecce679c72ecf063c3c1c17"
-    },
-    {
-      "path": "ncu/sweep_largest_S1_details.csv",
-      "bytes": 52037,
-      "sha256": "286f7972a22d9a662c7c66725d3c7ef9e76fe1fdaf01bca688ae0bbf64cf177b"
-    },
-    {
-      "path": "ncu/sweep_largest_S256.ncu-rep.zst",
-      "bytes": 70966,
-      "sha256": "bb30f79977fc4c7ec32e333983a4b8ef7ae304fa56850a8b1a5d1b75efea68e9"
-    },
-    {
-      "path": "ncu/sweep_largest_S256.sh",
-      "bytes": 1966,
-      "sha256": "49d891662ea18106d6c35b952816ada40da6d5b603c3695437b5dfc91aee5f48"
-    },
-    {
-      "path": "ncu/sweep_largest_S256.stdout",
-      "bytes": 519,
-      "sha256": "2a341188e6685e2d491bed81ca08d343b1bdd4bf35f40cf330d4f0b9bd032f55"
-    },
-    {
-      "path": "ncu/sweep_largest_S256_details.csv",
-      "bytes": 56848,
-      "sha256": "524804c3cda910db3d52a65fff7f5897362d0cf415e8ee620464a532ffff61c3"
-    },
-    {
-      "path": "ncu/sweep_largest_S41.ncu-rep.zst",
-      "bytes": 71735,
-      "sha256": "f1d6723c47aed451bc3504035cb15c75c87e4d422244ad0f99535256de348c61"
-    },
-    {
-      "path": "ncu/sweep_largest_S41.sh",
-      "bytes": 1963,
-      "sha256": "85280f627db364d3ce041af655dc1b8f39c15d461375bbca3410a70ca0c41aa3"
-    },
-    {
-      "path": "ncu/sweep_largest_S41.stdout",
-      "bytes": 518,
-      "sha256": "1f6857f1b0fe89851b74971b5e118ba80e0399155ad39be9e1acbe6492818cf1"
-    },
-    {
-      "path": "ncu/sweep_largest_S41_details.csv",
-      "bytes": 56540,
-      "sha256": "591893b32e217bf8a9c4903dd65d6df69e9b631df98807efdb6f8405b29dbe6a"
-    },
-    {
-      "path": "ncu/sweep_q_S1.ncu-rep.zst",
-      "bytes": 71009,
-      "sha256": "682e623ab81418d82811ad5e3a6cd1482461f2ec24f05f1fc7c7fe8448c64e71"
-    },
-    {
-      "path": "ncu/sweep_q_S1.sh",
-      "bytes": 1942,
-      "sha256": "c47a8cb9bc34eba4669071c9e7199c88a0ab0e3f486d08cf639a0a4c3b3b5d17"
-    },
-    {
-      "path": "ncu/sweep_q_S1.stdout",
-      "bytes": 511,
-      "sha256": "fc2315c79023b2af347eb987beb6d51d5cd88935720d0380e33901a8cab1574a"
-    },
-    {
-      "path": "ncu/sweep_q_S16.ncu-rep.zst",
-      "bytes": 74209,
-      "sha256": "3fa1ec5f6ed765517734bcfa9ad3092251d25b28715d8580747aefed90265abb"
-    },
-    {
-      "path": "ncu/sweep_q_S16.sh",
-      "bytes": 1945,
-      "sha256": "396870fa4b489f263c7f160db07271227c8d50b40073e0b04ab8468066595ebe"
-    },
-    {
-      "path": "ncu/sweep_q_S16.stdout",
-      "bytes": 512,
-      "sha256": "ffd2c7fe16ff46e4f3c279ee5319d98f8d7bfc666740e1bca4ca3dbead8c8be8"
-    },
-    {
-      "path": "ncu/sweep_q_S16_details.csv",
-      "bytes": 54983,
-      "sha256": "181c1d7c7c6efb9375106267ec7f9220eb0c0a7be3313d9b82534e41f7fb67c8"
-    },
-    {
-      "path": "ncu/sweep_q_S1_details.csv",
-      "bytes": 56441,
-      "sha256": "a4f29a8653ddd42b580c411682523253a9d3f2e8f8b7c93c6e72cc57690bbcd2"
-    },
-    {
-      "path": "ncu/sweep_q_S256.ncu-rep.zst",
-      "bytes": 71725,
-      "sha256": "3af74a16fa15b577ed3bc8bc087b48ee56e58f4f824058d0a6fac5141a3f99dd"
-    },
-    {
-      "path": "ncu/sweep_q_S256.sh",
-      "bytes": 1948,
-      "sha256": "65ab4e441bbe497d16cdbfed21cf38ac6f9f95ef42287d16dff32808070f48f3"
-    },
-    {
-      "path": "ncu/sweep_q_S256.stdout",
-      "bytes": 513,
-      "sha256": "7d87a7a9ff18b1ef8786f264fc8ce0d15dd15e2d3ec9048821dd870adf394794"
-    },
-    {
-      "path": "ncu/sweep_q_S256_details.csv",
-      "bytes": 55880,
-      "sha256": "32b14ab34ab0628d4bd95f0decc52b37eae373721ab570e9cf4459eba09fa760"
-    },
-    {
-      "path": "ncu/sweep_q_S41.ncu-rep.zst",
-      "bytes": 70997,
-      "sha256": "4685b1d25d4a8d94ab932a6d7fae2bcc5c0d736fffb758496a5561d6f8bb09a3"
-    },
-    {
-      "path": "ncu/sweep_q_S41.sh",
-      "bytes": 1945,
-      "sha256": "ba582b4ecdbc3fdcdde2de79467269c50d22b8b3c7bf16284d19d33e1c19c411"
-    },
-    {
-      "path": "ncu/sweep_q_S41.stdout",
-      "bytes": 512,
-      "sha256": "1328b57aa7890f2da57abe13f3f94c9ac844ee0db82bada79890640775fba8cd"
-    },
-    {
-      "path": "ncu/sweep_q_S41_details.csv",
-      "bytes": 56603,
-      "sha256": "8e8eeaed1d93a8e761ee71d8379991ea9ef91d52485ad7aacc6dcb5ba4681bc7"
-    },
-    {
-      "path": "s_sweep.csv",
-      "bytes": 1157,
-      "sha256": "9d30738b074e91eb19332eb9da2968ee6cd71ea1a5ad1c579163d5b210ee7cf9"
-    },
-    {
-      "path": "s_sweep_kernels.txt",
-      "bytes": 981,
-      "sha256": "7ca1c9ee0791a0dad581415807a9e2142e0c1a286982b886f3bdecf9f98c28e6"
-    },
-    {
-      "path": "shapes.json",
-      "bytes": 1483,
-      "sha256": "9d291525a2750192c5b3536b66d18dfc33e3043a04a567bd6cc94dc3a238576a"
-    }
-  ]
+  {
+   "path": "ncu/sweep_largest_S1.sh",
+   "bytes": 1960,
+   "sha256": "21f7bc892a69a190e3659cb771832c92dbebacb8e5625b58eff2cd77c97beb61"
+  },
+  {
+   "path": "ncu/sweep_largest_S1.stdout",
+   "bytes": 517,
+   "sha256": "601cf72b02f5fa3227819fada193b48b15576159d35096146bb5020ebfe9dc07"
+  },
+  {
+   "path": "ncu/sweep_largest_S16.ncu-rep.zst",
+   "bytes": 70101,
+   "sha256": "ef5e11b462cda01e6e7611017435685bc65cd7c9f4bb63e1252416fe7a30b5f4"
+  },
+  {
+   "path": "ncu/sweep_largest_S16.sh",
+   "bytes": 1963,
+   "sha256": "10f8c036aa005a701f6649ae878027e5175a6587d07de72c24f3b0c895c2af42"
+  },
+  {
+   "path": "ncu/sweep_largest_S16.stdout",
+   "bytes": 518,
+   "sha256": "92e850b675c55fcd6007ad2198976b75dbe556d196c3cffe89cc2c7512ab86fe"
+  },
+  {
+   "path": "ncu/sweep_largest_S16_details.csv",
+   "bytes": 52193,
+   "sha256": "774e2634bc0b45f6990ac3ea0b952ecc890ee58c5ecce679c72ecf063c3c1c17"
+  },
+  {
+   "path": "ncu/sweep_largest_S1_details.csv",
+   "bytes": 52037,
+   "sha256": "286f7972a22d9a662c7c66725d3c7ef9e76fe1fdaf01bca688ae0bbf64cf177b"
+  },
+  {
+   "path": "ncu/sweep_largest_S256.ncu-rep.zst",
+   "bytes": 70966,
+   "sha256": "bb30f79977fc4c7ec32e333983a4b8ef7ae304fa56850a8b1a5d1b75efea68e9"
+  },
+  {
+   "path": "ncu/sweep_largest_S256.sh",
+   "bytes": 1966,
+   "sha256": "49d891662ea18106d6c35b952816ada40da6d5b603c3695437b5dfc91aee5f48"
+  },
+  {
+   "path": "ncu/sweep_largest_S256.stdout",
+   "bytes": 519,
+   "sha256": "2a341188e6685e2d491bed81ca08d343b1bdd4bf35f40cf330d4f0b9bd032f55"
+  },
+  {
+   "path": "ncu/sweep_largest_S256_details.csv",
+   "bytes": 56848,
+   "sha256": "524804c3cda910db3d52a65fff7f5897362d0cf415e8ee620464a532ffff61c3"
+  },
+  {
+   "path": "ncu/sweep_largest_S41.ncu-rep.zst",
+   "bytes": 71735,
+   "sha256": "f1d6723c47aed451bc3504035cb15c75c87e4d422244ad0f99535256de348c61"
+  },
+  {
+   "path": "ncu/sweep_largest_S41.sh",
+   "bytes": 1963,
+   "sha256": "85280f627db364d3ce041af655dc1b8f39c15d461375bbca3410a70ca0c41aa3"
+  },
+  {
+   "path": "ncu/sweep_largest_S41.stdout",
+   "bytes": 518,
+   "sha256": "1f6857f1b0fe89851b74971b5e118ba80e0399155ad39be9e1acbe6492818cf1"
+  },
+  {
+   "path": "ncu/sweep_largest_S41_details.csv",
+   "bytes": 56540,
+   "sha256": "591893b32e217bf8a9c4903dd65d6df69e9b631df98807efdb6f8405b29dbe6a"
+  },
+  {
+   "path": "ncu/sweep_q_S1.ncu-rep.zst",
+   "bytes": 71009,
+   "sha256": "682e623ab81418d82811ad5e3a6cd1482461f2ec24f05f1fc7c7fe8448c64e71"
+  },
+  {
+   "path": "ncu/sweep_q_S1.sh",
+   "bytes": 1942,
+   "sha256": "c47a8cb9bc34eba4669071c9e7199c88a0ab0e3f486d08cf639a0a4c3b3b5d17"
+  },
+  {
+   "path": "ncu/sweep_q_S1.stdout",
+   "bytes": 511,
+   "sha256": "fc2315c79023b2af347eb987beb6d51d5cd88935720d0380e33901a8cab1574a"
+  },
+  {
+   "path": "ncu/sweep_q_S16.ncu-rep.zst",
+   "bytes": 74209,
+   "sha256": "3fa1ec5f6ed765517734bcfa9ad3092251d25b28715d8580747aefed90265abb"
+  },
+  {
+   "path": "ncu/sweep_q_S16.sh",
+   "bytes": 1945,
+   "sha256": "396870fa4b489f263c7f160db07271227c8d50b40073e0b04ab8468066595ebe"
+  },
+  {
+   "path": "ncu/sweep_q_S16.stdout",
+   "bytes": 512,
+   "sha256": "ffd2c7fe16ff46e4f3c279ee5319d98f8d7bfc666740e1bca4ca3dbead8c8be8"
+  },
+  {
+   "path": "ncu/sweep_q_S16_details.csv",
+   "bytes": 54983,
+   "sha256": "181c1d7c7c6efb9375106267ec7f9220eb0c0a7be3313d9b82534e41f7fb67c8"
+  },
+  {
+   "path": "ncu/sweep_q_S1_details.csv",
+   "bytes": 56441,
+   "sha256": "a4f29a8653ddd42b580c411682523253a9d3f2e8f8b7c93c6e72cc57690bbcd2"
+  },
+  {
+   "path": "ncu/sweep_q_S256.ncu-rep.zst",
+   "bytes": 71725,
+   "sha256": "3af74a16fa15b577ed3bc8bc087b48ee56e58f4f824058d0a6fac5141a3f99dd"
+  },
+  {
+   "path": "ncu/sweep_q_S256.sh",
+   "bytes": 1948,
+   "sha256": "65ab4e441bbe497d16cdbfed21cf38ac6f9f95ef42287d16dff32808070f48f3"
+  },
+  {
+   "path": "ncu/sweep_q_S256.stdout",
+   "bytes": 513,
+   "sha256": "7d87a7a9ff18b1ef8786f264fc8ce0d15dd15e2d3ec9048821dd870adf394794"
+  },
+  {
+   "path": "ncu/sweep_q_S256_details.csv",
+   "bytes": 55880,
+   "sha256": "32b14ab34ab0628d4bd95f0decc52b37eae373721ab570e9cf4459eba09fa760"
+  },
+  {
+   "path": "ncu/sweep_q_S41.ncu-rep.zst",
+   "bytes": 70997,
+   "sha256": "4685b1d25d4a8d94ab932a6d7fae2bcc5c0d736fffb758496a5561d6f8bb09a3"
+  },
+  {
+   "path": "ncu/sweep_q_S41.sh",
+   "bytes": 1945,
+   "sha256": "ba582b4ecdbc3fdcdde2de79467269c50d22b8b3c7bf16284d19d33e1c19c411"
+  },
+  {
+   "path": "ncu/sweep_q_S41.stdout",
+   "bytes": 512,
+   "sha256": "1328b57aa7890f2da57abe13f3f94c9ac844ee0db82bada79890640775fba8cd"
+  },
+  {
+   "path": "ncu/sweep_q_S41_details.csv",
+   "bytes": 56603,
+   "sha256": "8e8eeaed1d93a8e761ee71d8379991ea9ef91d52485ad7aacc6dcb5ba4681bc7"
+  },
+  {
+   "path": "s_sweep.csv",
+   "bytes": 1157,
+   "sha256": "9d30738b074e91eb19332eb9da2968ee6cd71ea1a5ad1c579163d5b210ee7cf9"
+  },
+  {
+   "path": "s_sweep_kernels.txt",
+   "bytes": 981,
+   "sha256": "7ca1c9ee0791a0dad581415807a9e2142e0c1a286982b886f3bdecf9f98c28e6"
+  },
+  {
+   "path": "s_sweep_ncu.csv",
+   "bytes": 1711,
+   "sha256": "86a3530543e3dcdbe67a54a00153192917fed1873887111db666cf2e05f83382"
+  },
+  {
+   "path": "shapes.json",
+   "bytes": 1483,
+   "sha256": "9d291525a2750192c5b3536b66d18dfc33e3043a04a567bd6cc94dc3a238576a"
+  }
+ ],
+ "timing_correction": {
+  "date": "2026-09-25",
+  "what": "CUDA-event column (s_sweep.csv median_us) is SUPERSEDED: it timed each call with its own event pair + synchronize, adding ~45-75 us on Orin. Kernel time per call is in s_sweep_ncu.csv (bench/sweep_ncu_table.py, from this directory's ncu captures).",
+  "primary_time": "s_sweep_ncu.csv per_call_us_ncu"
+ }
 }

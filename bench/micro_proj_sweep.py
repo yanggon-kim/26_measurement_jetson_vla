@@ -171,14 +171,21 @@ def sweep(args) -> int:
             for _ in range(20):
                 F.linear(x, w, b)
             torch.cuda.synchronize()
+            # AMORTISED (fixed 2026-09-25): one event pair around K back-to-back calls. The
+            # first version put an event pair + synchronize around EVERY call, which on Orin
+            # adds ~45-75 us: every small GEMM read ~90 us whatever its shape (ncu: 9-58 us).
+            # Committed sweeps keep that column; bench/sweep_ncu_table.py gives their kernel
+            # time from the ncu captures (s_sweep_ncu.csv).
+            K = 50
             ts = []
-            for _ in range(args.reps):
+            for _ in range(max(1, args.reps // 10)):
                 e0, e1 = torch.cuda.Event(True), torch.cuda.Event(True)
                 e0.record()
-                F.linear(x, w, b)
+                for _ in range(K):
+                    F.linear(x, w, b)
                 e1.record()
                 torch.cuda.synchronize()
-                ts.append(e0.elapsed_time(e1) * 1e3)
+                ts.append(e0.elapsed_time(e1) * 1e3 / K)
             us = statistics.median(ts)
             el = x.element_size()
             flops = 2 * S * p["in"] * p["out"]
@@ -189,6 +196,7 @@ def sweep(args) -> int:
             rows.append({"model": sh["model"], "proj": key, "proj_name": p["name"],
                          "in": p["in"], "out": p["out"], "dtype": p["dtype"], "S": S,
                          "matmul_precision": torch.get_float32_matmul_precision(),
+                         "timing": "CUDA events around 50 back-to-back calls, per-call mean",
                          "median_us": round(us, 3), "p5_us": round(sorted(ts)[len(ts)//20], 3),
                          "p95_us": round(sorted(ts)[min(len(ts)-1, len(ts)*19//20)], 3),
                          "n": len(ts), "flops": flops, "bytes": nbytes,
