@@ -841,21 +841,16 @@ cat <<'ORD'
                                                  byte-identical to the pre-switch record.
                                                  energy-delay WORSE at 50W in all 12
                                                  pairable points (1.196-1.400x).
-      7. T014 / E12 co-run  <- RUNNING. prefix(k) || expert(k-1) on two streams, one GPU.
-         The decisive number is s = B_co/B_iso against r = A_iso/B_iso = 1.50.
-         Phase 0 DONE: bench/fixtures/e12, five real episode-0 frames, so the fresh-KV
-         check has power (one observation would make a stale-KV bug invisible).
-         Next: bench/corun.py harness -> equivalence (eager + compiled, with a negative
-         control that MUST fail) -> Step 1 timings -> nsys -> mechanisms -> energy.
-         NOTHING E12 reports is valid until the equivalence check passes: non-negotiable 1.
-      8. LAST, needs a human reboot: E7 at MODE_30W and MODE_15W, and E12 Step 4 rides the
-         MODE_30W session (no extra reboot). Never confirm the prompt, never use
-         nvpmodel --force. The handoff and exact commands are at the top of STATUS.md and
-         bench/queues/queue_e7_capped.sh is written and tested.
-      Also open, unclaimed: T006 (E8 LIBERO closed loop -- no accuracy validation exists
-         yet for pi0), T008/T009 (floor.csv, E5 ncu per region, E6 roofline; both still
-         at `claimed` and part-done under other tasks -- they need auditing against their
-         own acceptance criteria).
+      7. T014 / E12 DONE at MAXN; T015 / E12b DONE (e4b2725), research review in
+         analysis/E12b_review.md; its owed follow-ups queued 2026-09-25 (DRAM bytes r2,
+         compiled-stage MAXN references for the capped session's step 0c).
+      8. Pre-reboot queue (bench/queues/queue_prereboot.sh) DONE through E8 (T006 done,
+         reports/E8_libero.md) and GR00T (T009 done). Tail: e12_compiled_ref,
+         e5b_lerobot_sweep (T008 step 6 S sweep -- T008 stays `claimed` until it lands),
+         e12b_dram r2.
+      9. LAST, needs a human reboot: E7 at MODE_30W and MODE_15W, and E12 Step 4
+         (bench/queues/queue_e12_capped.sh, now with step 0c) rides the MODE_30W session.
+         Never confirm the prompt, never use nvpmodel --force.
 ORD
 }
 
