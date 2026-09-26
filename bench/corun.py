@@ -697,7 +697,24 @@ def main() -> int:
                 f"| {all(x['bitwise_identical'] for x in rows if x['mechanism']==m and x['path']==p)} "
                 f"| {'PASS' if all(x['verdict']=='PASS' for x in rows if x['mechanism']==m and x['path']==p) else 'FAIL'} |"
                 for m in ("pipeline", "stale_control") for p in paths) + "\n")
-        print(f"  wrote {out}/equivalence.csv and equivalence.md", flush=True)
+        # protocol §5: meta.json per run. The equivalence branch wrote none until 2026-09-26
+        # (found on the MODE_30W run, whose meta.json was back-filled).
+        import hashlib, subprocess, time                              # noqa: PLC0415, E401
+        files = [{"path": str(q.relative_to(out)), "bytes": q.stat().st_size,
+                  "sha256": hashlib.sha256(q.read_bytes()).hexdigest()}
+                 for q in sorted(out.rglob("*")) if q.is_file() and q.name != "meta.json"]
+        (out / "meta.json").write_text(json.dumps({
+            "experiment": "E12 fresh-KV equivalence (spec §6)", "verdict": "PASS" if ok else "EQUIV_FAIL",
+            "n_fail": n_fail, "negative_control_detected": f"{ctrl_detects}/{len(ctrl_rows)}",
+            "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
+            "gpu_clock_hz": gate["gpu_cur_freq_hz"], "gate": gate, "N": args.steps,
+            "frames": args.frames, "paths": list(paths),
+            "command": " ".join([sys.executable, *sys.argv]),
+            "bench_commit": subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,
+                                           capture_output=True, text=True).stdout.strip(),
+            "raw_files": files,
+            "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, indent=2) + "\n")
+        print(f"  wrote {out}/equivalence.csv, equivalence.md and meta.json", flush=True)
     return 0 if ok else 1
 
 

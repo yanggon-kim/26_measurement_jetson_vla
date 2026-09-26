@@ -1,0 +1,40 @@
+{
+  "experiment": "T014 Step 4 step 0b -- GEMM control at MODE_30W (GPU-bound cross-check, E12b spec \u00a714)",
+  "command": "bench/green_ctx.py (queue_e12_capped.sh step 0b)",
+  "power_mode": "NV Power Mode: MODE_30W",
+  "sm_count": 8,
+  "gpu_clock_hz": 612000000,
+  "gate": {
+    "power_mode": "NV Power Mode: MODE_30W",
+    "sm_count": 8,
+    "gpu_cur_freq_hz": 612000000,
+    "gpu_min_freq_hz": 612000000,
+    "gpu_max_freq_hz": 612000000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "240",
+    "cpu_online": "0-7",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "1728000 729600",
+    "cpu_max_freq_khz": "1728000 2201600"
+  },
+  "results_ms_per_gemm": {
+    "4 SMs (green)": 3.9493,
+    "8 SMs (whole GPU)": 1.984
+  },
+  "maxn_reference": {
+    "8 SMs green @1300.5 MHz": "0.8909-0.8921 ms/GEMM (STATUS.md, T014 Step 4 table)"
+  },
+  "ratio_vs_maxn_green8": 2.225,
+  "gpu_clock_ratio": 2.125,
+  "reading": "a compute-bound 2048^2 bf16 GEMM on 8 hardware SMs at 612 MHz is 2.23x its time on an 8-SM green partition at 1300.5 MHz, vs the 2.125x clock ratio: software and hardware 8-SM agree within 5 % after clock scaling",
+  "provenance": "copied from scratch/queues/queue_e12_30w.log (the script prints only); gate read at copy time, same boot and mode",
+  "bench_commit": "3da0d3df87eb0decf5b59f6cf53c1ccabc90f446",
+  "raw_files": [
+    {
+      "path": "raw/green_ctx_stdout.txt",
+      "bytes": 516,
+      "sha256": "14f70ba84205ca72a6a3872a2adb3b5ab9d9078cde1d7a4bf7e0f7486beddd45"
+    }
+  ],
+  "date_utc": "2026-09-26T21:18:06Z"
+}
