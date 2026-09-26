@@ -2,6 +2,14 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ▶ ORDER (owner, 2026-09-26): T016 BEFORE MODE_15W
+
+The owner chose **order B**: reboot MODE_30W → MAXN now, run **T016** (step 1 first, pushed before step 2),
+and do the MODE_15W session afterwards (MAXN → 15W → MAXN, two more owner reboots). T016's own text says to
+finish capped queues first; the owner's direct order wins (T016 "When"). The 15W queues are ready and fixed.
+
+---
+
 ## ✅ MODE_30W SESSION DONE (2026-09-26 11:15–14:09) — MODE_15W next (needs the owner's reboot)
 
 Device after the owner's reboot: `MODE_30W`, TPC mask 240 → **8 SMs**, GPU locked **612 MHz**, CPU 8 cores
