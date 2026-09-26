@@ -2,6 +2,65 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ PRE-REBOOT WORK DONE (2026-09-26 ~00:00) — T006, T008, T009 done; E12b review answered; only the reboot session remains
+
+**Closed today** (every item on its task file's status block, one result directory per commit):
+
+* **T006** — `reports/E3_E4_models.md` (per-step slopes eager → compiled: π0 52.94 → 16.30, π0.5
+  61.60 → 18.40, SmolVLA 61.46 → 4.33, GR00T N1.7 51.75 → 18.13 ms; gap to floor compiled 4.8×, 3.2×,
+  4.0×, **1.05×**) and **`reports/E8_libero.md`**: π0's full compiled `bf16_both` rung succeeds as often as
+  the shipped checkpoint on all four LIBERO suites (**249 vs 252 / 400**, paired p = 0.87) with a 2.45×
+  faster forward; `libero_spatial` N = 10 / 4 / 2 → **62 / 74 / 85** / 100 (fewer steps did not hurt —
+  measured, not explained). The same arm run twice gave 63 and 56: π0's flow noise is on an unseeded
+  torch RNG, so episode outcomes are not seed-determined; arm differences of a few episodes are noise.
+* **T009** — GR00T N1.7 N-sweep + `reports/E3_E4_groot.md`. NVIDIA's own `benchmark_inference.py` first
+  failed (torchcodec missing; kept), then ran after installing torchcodec `--no-deps` from the repo's own
+  Orin wheel (`env/INSTALL_LOG.md`; freeze diff = that one line): its eager action head agrees with ours
+  to **0.6 %**.
+* **T008** — the last item, step 6's S sweep for π0.5 / SmolVLA (`results/20260925_E5b_{pi05,smolvla}_ssweep`).
+
+**Corrections found and made (all disclosed in their reports / commits):**
+
+1. **S-sweep timings were harness overhead** (`bench/micro_proj_sweep.py` put an event pair + sync
+   around every call: +45–75 µs on Orin). Kernel times now come from the sweeps' own ncu captures
+   (`s_sweep_ncu.csv`). **`E5b_groot.md` corrected: GR00T's largest DiT projection is at 1.17–1.20× its
+   memory floor (was quoted 1.6×), `to_q` at 1.44–1.47× (was 3.5–3.7×).**
+2. `bench/opt_ladder.py` wrote π0's checkpoint into every model's `meta.json`; 4 π0.5 / SmolVLA metas
+   corrected with originals kept (data unaffected).
+3. E8's harness wrote no per-step log (T006 requires one); fixed mid-run, the affected arm re-run.
+
+**E12b review — the device's answers** (addendum at the end of `reports/E12b_pi0_compiled_corun.md`):
+
+* **EMC-vs-bytes gap: measured** (`results/20260925_E12b_pi0_dram_bytes_MAXN`; Orin has no `dram__`
+  counters, so L2 fills + writes). **The EMC calibration is bytes** (EMC-implied / measured = 0.96 prefix,
+  0.995 expert). **The prefix really moves 21.6 GB/frame — 3.7× E6's analytic bytes** (activations of the
+  816-token prefill spill past the 4 MB L2; 76 % of its 74 GB of L2 reads hit) — i.e. ~88 GB/s of real
+  demand, which matters for EV-02. The expert: 8.2 GB/frame (1.29× E6, reads alone 1.10×).
+* `e12b_diagnose.py` never existed in git — said so in the harness; the M2 diagnosis stays a suspect
+  list. `variant_tokens` all defined from the code. `hog_matched` was matched to E6 bytes, so ~22 % light.
+* T014 Step 4: STATUS table restated with the confined 8/8 references and a bracketed prediction (block
+  below); `queue_e12_capped.sh` step 0c measures the compiled stages at `MODE_30W`; its script's MAXN
+  references reproduce M3 within 0.25 %.
+* Not done: a one-change-at-a-time M2 isolation; `graphs_both` vs rung-prefix equivalence.
+
+**Questions for the research side (new):**
+
+* The `owngraph_expert` question below is still open.
+* Many older `meta.json` files carry `model_commit: null` under that key (the commit is often recorded
+  under another key, e.g. `checkpoint_commit` / `revision`). Provenance gap, not a wrong value — want a
+  back-fill pass, or is the per-report citation enough?
+* E8: should a follow-up seed torch per episode (paired noise) and extend the N sweep to the other
+  suites / the stock checkpoint? Not done — outside the owner's Core scope.
+
+**Repository (§6f):** tracked files 413.9 MB (results/ 408.6 MB tracked, 1.2 G on disk incl. untracked
+scratch); largest tracked file 13.6 MB (`results/20260922_E4g_pi0_ncu_eager/ncu/ae_step0_details.csv`);
+`git count-objects -vH` size 246.36 MiB loose, size-pack 62.49 KiB.
+
+**What remains:** only the owner's capped-mode reboot session — `bench/queues/queue_e7_capped.sh` and
+`bench/queues/queue_e12_capped.sh` at MODE_30W, then MODE_15W (sections below). Nothing else is queued.
+
+---
+
 ## 🛑 CORRECTION (2026-09-25, from T015 M0/M2/M3) — T014's compiled green-context claims were wrong
 
 **Do not use** T014's "the action expert is SM-independent at `bf16_both` (4 SMs cost 4.9 %)", the
@@ -43,8 +102,7 @@ GPU expert from 110.95 to 101.2 ms at N = 10.
 
 **Repository (§6f):** results/ 372.7 MB tracked, 1.2G on disk; largest E12b file 9.0 MB.
 
-**Queue now:** the pre-reboot queue resumes (E3/E4 N sweep → GR00T N1.5/N1.6 E6 → E8 LIBERO), then the
-owner's capped-mode reboot session.
+**Queue then (2026-09-25 evening):** pre-reboot queue resumed — now DONE, see the block above.
 
 ---
 
