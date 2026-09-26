@@ -277,6 +277,18 @@ e8)
   echo "E8_DONE $(date -Is)"
   ;;
 # ---------------------------------------------------------------------------------------
+e8_steplog)
+  # The first settle10 arm (spatial, stock/"fp32", 63/100) ran before libero_eval.py wrote the
+  # per-step raw log T006 requires. Same command again into a new directory: supplies that log
+  # and doubles as a same-seed repeatability check of the success count.
+  gate
+  LPY=$HOME/venvs/libero/bin/python; export MUJOCO_GL=egl
+  d=results/${DATE}_E8_pi0_libero_spatial_fp32_N10_settle10_steplog
+  [ -s "$d/summary.json" ] || run "E8 libero_spatial fp32 N=10 (step-log re-run)" $LPY bench/libero_eval.py \
+      --model pi0 --suite libero_spatial --tasks 10 --episodes 10 --steps 10 --outdir "$d"
+  echo "E8_STEPLOG_DONE $(date -Is)"
+  ;;
+# ---------------------------------------------------------------------------------------
 groot_bench)
   # T009 step 1: NVIDIA's own benchmark_inference.py (PyTorch eager + torch.compile modes; no
   # TensorRT engine given, TRT is E10). The 2026-09-25 16:43 attempt failed on a missing

@@ -154,6 +154,7 @@ def main() -> int:
 
     import model_registry as MR
     import opt_ladder as OL
+    import pi0_common as P
     from libero.libero import benchmark, get_libero_path
     from libero.libero.envs import OffScreenRenderEnv
     from lerobot.envs.libero import get_libero_dummy_action
@@ -205,6 +206,15 @@ def main() -> int:
     # is the queue-hit cost, not inference -- pi0 at N=10 eager is ~1069 ms. So the calls
     # that actually ran the model are recorded separately.
     rows, t_policy, t_sim, t_infer = [], [], [], []
+    # T006 raw requirement: a per-episode, PER-STEP log (policy ms and simulator ms per control
+    # step). Added 2026-09-25 17:3x after the first settle10 arm (spatial fp32) was found to
+    # have written none -- purely additive, nothing the rollout does changed.
+    step_rows: list[dict] = []
+    ep_wall_s: list[float] = []
+    gate_start = P.gate()
+    dtypes: dict[str, int] = {}
+    for prm in policy.parameters():
+        dtypes[str(prm.dtype)] = dtypes.get(str(prm.dtype), 0) + prm.numel()
     successes = total = 0
     for ti in range(n_tasks):
         task = suite.get_task(ti)
@@ -227,8 +237,10 @@ def main() -> int:
             policy.reset()
             done = False
             steps = 0
+            t_ep = time.perf_counter()
             chunk: list[np.ndarray] = []
             while steps < args.max_steps and not done:
+                fwd, pms = 0, 0.0
                 if not chunk:
                     raw = build_obs(obs, feats, task.language)
                     batch = preprocess(raw)
@@ -238,8 +250,10 @@ def main() -> int:
                     torch.cuda.synchronize()
                     dt = (time.perf_counter() - t0) * 1e3
                     t_policy.append(dt)
+                    pms = dt
                     if dt > 10.0:            # a real forward, not a queue hit
                         t_infer.append(dt)
+                        fwd = 1
                     # select_action returns NORMALISED actions -- it does not
                     # unnormalise (modeling_pi0.py: it just pops the action queue). The
                     # postprocessor is what maps them back to robot units. Feeding the
@@ -254,8 +268,13 @@ def main() -> int:
                     chunk = [a] if a.ndim == 1 else list(a)
                 t0 = time.perf_counter()
                 obs, _, done, _ = env.step(chunk.pop(0))
-                t_sim.append((time.perf_counter() - t0) * 1e3)
+                sms = (time.perf_counter() - t0) * 1e3
+                t_sim.append(sms)
+                step_rows.append({"task": ti, "episode": ep, "step": steps,
+                                  "policy_call_ms": round(pms, 4), "forward": fwd,
+                                  "sim_ms": round(sms, 4), "done": int(bool(done))})
                 steps += 1
+            ep_wall_s.append(time.perf_counter() - t_ep)
             ok = bool(done)
             successes += ok
             total += 1
@@ -279,6 +298,12 @@ def main() -> int:
         "sim_ms_median": round(med(t_sim), 2),
         "achieved_control_hz": round(1000.0 / (med(t_sim) + med(t_policy)), 2)
         if t_sim else None,
+        "achieved_control_hz_note": "1000 / (median sim ms + median policy-call ms): a TYPICAL "
+                                    "step, blind to the forward-pass stalls; see wall_control_hz",
+        "wall_control_hz": round(len(t_sim) / sum(ep_wall_s), 3) if ep_wall_s else None,
+        "wall_control_hz_note": "control steps / wall time of the policy-acting loop, summed over "
+                                "episodes (settle steps and env construction excluded)",
+        "forward_detect": "a select_action call > 10 ms is a forward pass; else a queue hit",
         "max_steps": args.max_steps, "max_steps_source": max_steps_src,
         "num_steps_wait": args.num_steps_wait,
         "num_steps_wait_source": "lerobot.envs.libero default (settle with no-op actions)",
@@ -291,19 +316,38 @@ def main() -> int:
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=1))
     # protocol §5: meta.json per run. E8q's directories had none and needed a back-fill.
-    import pi0_common as P
     meta = {"experiment": "E8 LIBERO closed loop (T006 step 2)", **{k: summary[k] for k in (
                 "model", "prep", "rung", "suite", "N", "max_steps", "max_steps_source",
                 "seed", "command", "date_utc")},
             "checkpoint": spec.checkpoint, "revision": spec.revision,
-            "gate": P.gate(), "torch": torch.__version__,
+            "gate": gate_start, "gate_end": P.gate(),
+            "power_mode": gate_start.get("power_mode"),
+            "gpu_clock_hz": gate_start.get("gpu_cur_freq_hz"),
+            "param_dtype_numel": dtypes, "matmul_precision": torch.get_float32_matmul_precision(),
+            "harness_change": "2026-09-25: per-step raw log (raw/steps.csv.zst), wall_control_hz, "
+                              "param dtypes and gate_end added; rollout logic unchanged",
+            "torch": torch.__version__,
             "bench_commit": __import__("subprocess").run(
                 ["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()}
-    (out / "meta.json").write_text(json.dumps(meta, indent=1))
     with (out / "episodes.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
         w.writerows(rows)
+    import hashlib, subprocess
+    sp = out / "raw" / "steps.csv"
+    with sp.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(step_rows[0].keys()))
+        w.writeheader()
+        w.writerows(step_rows)
+    orig = {"path": "raw/steps.csv", "bytes": sp.stat().st_size,
+            "sha256": hashlib.sha256(sp.read_bytes()).hexdigest()}
+    subprocess.run(["zstd", "-19", "-q", "-f", "--rm", str(sp)], check=True)
+    zp = sp.with_suffix(".csv.zst")
+    meta["raw_files"] = [{"path": "raw/steps.csv.zst", "bytes": zp.stat().st_size,
+                          "sha256": hashlib.sha256(zp.read_bytes()).hexdigest(),
+                          "compression": "zstd -19", "original": orig,
+                          "rows": len(step_rows)}]
+    (out / "meta.json").write_text(json.dumps(meta, indent=1))
     print(f"\n  success {successes}/{total} = {100*sr:.1f}%   "
           f"inference {summary['inference_ms_median']} ms x{summary['inference_calls']}, "
           f"sim {summary['sim_ms_median']} ms")
