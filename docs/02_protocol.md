@@ -770,5 +770,23 @@ The rules below are binding; the specification elaborates them and leaves everyt
   `power_mode`, `sm_count`, granted partition sizes, clocks or `throttled`.
 - **Completion.** A task is marked done only when every acceptance item of the specification holds, or the status
   line names the item that does not and why.
-- **Power modes.** MAXN only; E12b adds nothing to the capped-mode sessions. The channel-partition measurement
-  (EV-02; formerly "P1"), P2 (`bf16_both + cropcache`) and the `check_model_inputs.py` `MODELS` change are not approved.
+- **Power modes.** MAXN only; E12b adds nothing to the capped-mode sessions. P2 (`bf16_both + cropcache`) and the
+  `check_model_inputs.py` `MODELS` change are not approved. The channel-partition measurement (EV-02; formerly
+  "P1") was approved on 2026-09-26 as T016 step 1 (§16).
+
+## 16. T016 — prefix under stolen bandwidth (E13 / EV-02), seeded LIBERO (E8s), prefix savings (E14) (added 2026-09-26)
+The task file `tasks/T016_prefix_bandwidth_and_followups.md` is the whole specification; §15 and §14 apply where
+it reuses the E12b co-run machinery. The rules below are binding; everything else is the agent's judgement.
+- **Bandwidth slowdown.** `σ(x) = A(prefix | load at x GB/s) / A(prefix | reference)`, the reference in the same SM
+  layout with the load absent or replaced by an SM-matched compute-only control, same session, bracketed. The load
+  runs in the same process (§15: separate contexts time-slice); its rate is reported alone and during the prefix,
+  EMC-calibrated. This is an approximation of a PIM holding channels (§13.5's limits apply) and is reported as one.
+- **Seeded episodes.** E8-style LIBERO arms that are compared draw the flow noise from a `torch.Generator` seeded per
+  (suite, task, episode), the same seed in every arm; the seed is recorded per episode. Unseeded arms are never
+  paired with seeded ones.
+- **Variants are never the baseline.** A change to the model's computation (`nopad`, `keep1`, `kvonce`, …) is a
+  labelled variant with its own same-session reference and an equivalence result (bitwise where the change is
+  exact); which variant, if any, enters the GPU baseline is the research side's decision.
+- **No boot changes.** Probing the memory-channel mapping is read-only: no boot-configuration or device-tree change,
+  no reboot.
+- §15's finite check and provenance rules (no null in `meta.json`) apply to every T016 run; MAXN only.

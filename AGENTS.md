@@ -9,7 +9,8 @@ everything the other side needs must be in a committed file.
 
 ## Read first, in this order
 1. `docs/00_context.md` — why these measurements matter and exactly which numbers they replace.
-2. `docs/01_measurement_plan.md` — the experiments (E0–E12, E5b and E12b), sweeps, priorities and the **task order**.
+2. `docs/01_measurement_plan.md` — the experiments (E0–E12, E5b and E12b; T016's E13 / E8s / E14 are specified in
+   the task file itself), sweeps, priorities and the **task order**.
 3. `docs/02_protocol.md` — the measurement rules, tool commands (`nsys`, `ncu`), the result schema, and §13: the
    methods of E11 and the `model_inputs.csv` hand-off format. It is
    binding; where any other guide or habit differs, the protocol wins.

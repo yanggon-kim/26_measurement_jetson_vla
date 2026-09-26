@@ -1,0 +1,168 @@
+# T016 — π0 prefix under stolen memory bandwidth (EV-02), seeded LIBERO N sweep, prefix software savings, and three E7 / E12b loose ends  · priority P1 · depends on: T015 (done) · next MAXN work (order table in `docs/01_measurement_plan.md`)
+
+This file is the whole specification (no separate `docs/` spec). Binding rules: `docs/02_protocol.md` §16, plus
+§15 / §14 where a step reuses the E12b co-run machinery. Everything not fixed below is your judgement — choose,
+record the choice in `meta.json` and the report, and move on.
+
+## Why (the part you need of the research design)
+
+The research design runs π0's action expert in **processing-in-memory (PIM) inside the LPDDR5 devices**. It is
+pipelined: the PIM runs the expert of frame t−1 **while the GPU runs the prefix (vision + VLM prefill) of frame
+t**. While the PIM computes, the LPDDR channels it uses are unavailable to the GPU — in the design, 8 of the 16
+channels, i.e. half the bus (~102 GB/s spec, ~94 GB/s at achievable efficiency), for ~37 % of each frame (the
+expert's ~93 of ~250 ms). The pipeline's period *is* the prefix time, so **how much the prefix slows when it
+loses bandwidth decides the design**:
+
+- Your E12b DRAM capture (`results/20260925_E12b_pi0_dram_bytes_MAXN/`, bench `9df5628`): the compiled prefix
+  moves **21.64 GB per frame in 246.79 ms = 87.85 GB/s** — ~94 % of what 8 channels supply.
+- The research claims break at two prefix slowdowns: **1.04×** (latency parity with the GPU at 16 channels) and
+  **1.247×** (frame-rate gain over the best GPU co-run you measured, green 12 / 4).
+
+A software load that consumes bandwidth is only an approximation of a PIM holding channels (it competes at the
+memory controller instead of taking channels away, and it may take SMs); step 1c asks whether the real thing —
+confining the GPU to a channel subset — is possible at all. Steps 2–5 close questions your own reports left open.
+
+## Fixed configuration (all steps unless a step says otherwise)
+
+LeRobot π0 `lerobot @ f0d2b37bebddf7e8852cb624712da0ad564601b6`, checkpoint `lerobot/pi0_libero_finetuned_v044` @
+`45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f`, rung **`bf16_both`** exactly as in
+`results/20260924_E7_pi0_N10_bf16_both_MAXN/meta.json`, batch 1, **MAXN + `jetson_clocks`**. N = 10 except in
+step 2. Harness changes (own CUDA-graph capture such as E12b's `graphs_both`, green contexts, loads) are labelled
+variants named in every row and `meta.json`.
+
+## Step 1 — EV-02: the prefix under stolen bandwidth (highest priority; push its results before starting step 2)
+
+**1a. Bandwidth-steal sweep.** Time the compiled prefix while an **in-process** load consumes ≈ **0, 20, 40, 60,
+80, 94 GB/s** (add one point above 94 if reachable — the curve's shape matters). Output: prefix slowdown vs stolen
+GB/s. The slowdown must isolate **bandwidth loss from SM loss**. Define it as
+`σ(x) = A(prefix | load at x GB/s) / A(prefix | reference)`, where the reference has the same SM layout with the
+load replaced by nothing or by an SM-matched compute-only control (E12b style), same session, bracketed
+(reference → loaded → reference). Latitude — pick what reaches the rates with the least side effect, and say why:
+- a copy kernel in its own green-context partition, rate set by throttling inside a short period (the prefix then
+  runs as `graphs_both` in the other partition — the rung's graph tree escapes partitions, E12b). E12b's hog gave
+  65 GB/s in 4 SMs; prefer the largest prefix partition that still lets the load reach its rate (the prefix's
+  own bandwidth draw — and so its sensitivity — shrinks with its partition; report its draw in the reference);
+- or a load that takes **no SMs** (a DMA copy-engine `cudaMemcpyAsync`, or a pinned multi-threaded CPU copy),
+  which allows the unmodified rung prefix on the whole GPU — preferred if it reaches ~94 GB/s.
+Report per point: the load's rate alone and **during** the prefix (EMC-calibrated as in E12b M4, `bench/e12b_m4.py`,
+and the load's own byte count), the prefix's median / p5–p95 / n, σ, and which rate is the x-axis (primary:
+the rate during). If `graphs_both` is used, first run the open E12b item: `graphs_both` prefix vs rung prefix
+equivalence (KV and actions, same inputs and noise; bitwise or the max |Δ|).
+
+**1b. Duty-cycle variant.** The same load **on for ~37 % of each prefix frame** (~93 ms of ~250), aligned to the
+frame start (the expert of t−1 starts with prefix t), at the ~94 GB/s point and at one lower point; plus one run
+with the on-window shifted to the frame's end. Use the per-kernel traffic profile
+(`results/20260925_E12b_pi0_dram_bytes_MAXN/ncu/e12b_dram_raw.csv`) to say which prefix kernels and what share of
+the prefix's bytes fall in each window, and compare the measured σ with the derived `1 + f·(σ_full − 1)`, f = that
+byte share (label the prediction derived).
+
+**1c. Feasibility probe (yes / no / unknown, with evidence).** Is there **any** way on this Orin to confine the
+GPU's allocations to a subset of LPDDR channels — the memory controller's address interleaving (granularity and
+hash, e.g. from a stride-vs-bandwidth sweep over a large buffer), carve-outs, NvMap heaps, CUDA allocator pools,
+debugfs / BPMP controls? Probe read-only; **do not change boot configuration or the device tree and never reboot**.
+If the answer is "yes but it needs a boot change", stop there and write what it would take. If it is "yes" without
+one, it becomes the direct measurement: time the prefix confined to 8 of 16 channels, same bracket.
+
+## Step 2 — seeded N sweep, all four LIBERO suites (E8 follow-up; answers your STATUS question)
+
+E8 found `libero_spatial` N = 2 at 85 / 100 vs N = 10 at 62 / 100 (p = 0.0002), with π0's flow noise on the
+unseeded global torch RNG. Replicate or refute it with **paired** arms: `bf16_both`, N ∈ {1, 2, 3, 4, 6, 10}, all
+four suites (`libero_spatial`, `libero_object`, `libero_goal`, `libero_10`), E8's harness and settings
+(`bench/libero_eval.py`, 10 tasks × 10 episodes, `env.seed(seed + episode)`, 10 settle steps), and the flow noise
+drawn from a **`torch.Generator` seeded per (suite, task, episode)** — the same seed in every N arm (the initial
+noise has the same shape at every N, so arms see the same noise). Record each episode's seed in `episodes.csv`.
+Control: N = 10 on `libero_spatial` run **twice with the same seeds**; report episode agreement (it tells us how
+much GPU non-determinism remains after seeding). Order if time is short: N = 10 and N = 2 on all suites, then the
+repeat control, then N = 4, 1, 3, 6. Report per suite and pooled: successes, Wilson 95 % intervals, paired McNemar
+(exact) against N = 10, the paired difference with its 95 % interval, forward time per N.
+
+## Step 3 — prefix software savings, measured (variants, never the baseline)
+
+Three changes that remove prefix work the output never uses. For each: prefix and full-frame time (same session,
+bracketed against the unmodified configuration), DRAM bytes per frame by the E12b method (L2 fills + writes), and
+an equivalence check — **bitwise on actions** with the same inputs and seeded noise where the change is exact;
+where it is not bitwise, the max |Δaction| over ≥ 50 inputs and a seeded, paired LIBERO comparison as in step 2
+(π0; for GR00T the action-level comparison only, unless you have a closed-loop harness for it).
+- **π0 `nopad`**: 283 of the 816 prefix tokens are padding (masked out) — drop them before the prefill and give the
+  expert a KV cache without them. Verify the count on the fixture. Mathematically exact; bitwise is not expected
+  (shapes change). How you handle compilation of prompt-dependent lengths is yours; record it.
+- **GR00T N1.7 `keep1`** (`nvidia/GR00T-N1.7-3B` through Isaac-GR00T @ `376ba890`, record the checkpoint revision,
+  your best committed rung and N = 4 as in `reports/E3_E4_groot.md`): the backbone's `lm_head` runs over every prefix
+  token and its logits are discarded — run it on the last token only (`logits_to_keep=1` or equivalent). Exact.
+- **GR00T `kvonce`**: the DiT's cross-attention projects the (per-frame constant) VLM features to K / V at every
+  denoising step — compute them once per frame and reuse them. Exact. Also `keep1+kvonce` combined.
+Label rows `pi0_bf16_both+nopad`, `groot_n17_<rung>+keep1`, `+kvonce`, `+keep1+kvonce`. **Whether any of these
+enters the GPU baseline is the user's open decision — never call a variant "baseline" or "optimised baseline".**
+
+## Step 4 — energy reconciliation (EV-10)
+
+In `reports/E7_power_energy.md` (π0 `bf16_both`, N = 10) the stage loops do not add up to the full loop:
+prefix 251.28 + ae 167.36 = 418.64 ms vs `full` 424.68 ms (6.04 ms), and above-idle 6395.8 + 3112.5 = 9508.3 mJ vs
+13 666.2 mJ (**~30 % missing**; the full loop draws 32.2 W above idle, more than either stage). Find the cause —
+candidates: loop boundaries (what `full` runs that neither stage loop does), per-run idle baselines and drift,
+clocks / EMC per loop, rail coverage, sampling. Suggested method, yours to change: the three loops interleaved in
+one session under one idle baseline, per rail, with clocks and temperature logged. Deliver the corrected per-stage
+energies and a residual; the goal is a residual under 5 % of the full-frame energy, or the measured reason why not.
+
+## Step 5 — diagnose the E12b compiled co-run corruption (EV-13)
+
+E12b removed two suspects together (one shared CUDA-graph-tree pool; the expert's KV cache overwritten by the next
+prefix replay) and never isolated which one produced T014's NaNs. Run the 2 × 2: {shared pool, own pool} ×
+{single KV buffer, double-buffered KV}, compiled co-run, ≥ 100 frames per cell with distinct observations and noise
+per frame: non-finite count, equivalence failures vs serial, stale control. Commit the script
+(e.g. `bench/e12c_diagnose.py`) — the harness must not claim a script that is not in git.
+
+## Pre-registered outcomes (research side, 2026-09-26, before any T016 measurement; not moved after results)
+
+| # | quantity | bands and what each means |
+|---|---|---|
+| 1 | σ at ~94 GB/s, full-time load (1a) | < 1.04: both claims survive · 1.04–1.247: latency parity at 16 ch lost, throughput claim survives · > 1.247: throughput claim broken too |
+| 2 | σ at ~94 GB/s, 37 % duty (1b) | same three bands; this is the closer approximation of the design |
+| 3 | 1b vs `1 + f·(σ_full − 1)` | within ±0.02: the loss is linear in the bytes exposed · otherwise: burst position matters, name the kernels |
+| 4 | 1c | yes (direct measurement follows) · yes-with-boot-change (stop, describe) · no · unknown (say what was tried) |
+| 5 | seeded N = 2 vs N = 10 (step 2) | **replicated**: N = 2 ≥ N = 10 in ≥ 3 of 4 suites and pooled paired McNemar p < 0.05 in favour of N = 2 · **reversed**: pooled p < 0.05 in favour of N = 10 · **not replicated**: anything else |
+| 6 | seeded repeat control | ≥ 95 % episode agreement: seeding pairs the arms · below: GPU non-determinism dominates; read step 2 with that caveat |
+| 7 | step 3 exact variants (`keep1`, `kvonce`) | bitwise equal actions expected; a mismatch is a finding to report, not to tune away |
+
+The research side's prior, stated so that it can be wrong: row 1 lands in the middle band or above (E12b's green
+co-run already coupled through memory, `s_part` 1.16–1.26). Your job is the measurement, not the prior.
+
+## Non-negotiables
+
+1. **Honesty.** Do not tune loads, partitions, seeds or episode sets toward any band; every run you make is reported,
+   including the ones that went against the prior. References are same-session and bracketed.
+2. **No silent NaN.** Every action tensor of every timed, checked, energy and LIBERO run is finite-checked (without a
+   host sync inside a timed loop); a run with any non-finite value is invalid and reported, never dropped.
+3. **Complete provenance.** `meta.json` has no null: `bench_commit`, model and checkpoint commits (GR00T revision
+   too), rung, variant label, load kind and rate, partition sizes granted, seeds, `power_mode`, `sm_count`, clocks,
+   `throttled`.
+4. **MAXN only, no reboots, no boot-configuration or device-tree change.**
+5. **Still not approved:** `cropcache` (P2) and the `check_model_inputs.py` `MODELS` change. (EV-02 and the seeded
+   E8 follow-up are approved — they are steps 1 and 2.)
+
+## Outputs
+
+`results/<date>_E13a_pi0_bwsteal_<load>_MAXN`, `…_E13b_pi0_bwduty_MAXN`, `…_E13c_channel_probe`,
+`…_E8s_pi0_<suite>_N<n>_seeded` (one per arm; the repeat `…_rep`), `…_E14_<model>_<variant>_MAXN`,
+`…_E7r_pi0_energy_reconcile_MAXN`, `…_E12c_pi0_corruption_diag_MAXN`, each with `raw/` and `meta.json`
+(protocol §5). Reports: `reports/E13_pi0_bandwidth_steal.md` (1a–1c, with the table of rows 1–4 answered first),
+`reports/E8s_libero_seeded.md` (rows 5–6), `reports/E14_prefix_savings.md` (row 7), and step 4 and 5 as dated
+addenda to `reports/E7_power_energy.md` and `reports/E12b_pi0_compiled_corun.md`.
+
+## Acceptance
+
+- Step 1: σ at ≥ 5 rates incl. ~94 GB/s with n ≥ 20 frames per point and bracketed references; the SM-loss
+  isolation stated and its reference measured; the duty-cycle rows and the byte-share comparison; the 1c answer
+  with its evidence committed under `raw/`; rows 1–4 of the pre-registration answered by number.
+- Step 2: at least N = 10 and N = 2 on all four suites plus the repeat control (rows 5–6 answered); the other N as
+  time allows, the missing ones named.
+- Step 3: all three variants (and the combination) with time, bytes and the equivalence result; labelled variants.
+- Step 4: corrected stage energies and the residual, with the cause or the measured reason it remains.
+- Step 5: the 2 × 2 table and the committed script.
+- Mark done only when every item holds, or the status line names the item that does not and why. Push each step's
+  results when they land (step 1 first — it is the one the research side is waiting for).
+
+**When:** take T016 as the next MAXN work. The capped-mode reboot session stays pending as before: if the human has
+rebooted into `MODE_30W` / `MODE_15W` when you read this, finish those queues first and return to T016 once MAXN is
+restored — never ask for a reboot for it. If the human owner gives you a different order directly, the owner's
+order wins; say in `STATUS.md` where T016 sits.

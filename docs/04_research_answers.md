@@ -4,6 +4,14 @@
 answers appear here, newest first, and every answer that changes how you work is also written into the protocol,
 the plan or a task (named in the last column). Where this file and the protocol differ, the protocol wins.*
 
+## 2026-09-26 — after E8, E12b DRAM bytes and T006 / T008 / T009 (device commit `c615ff0`)
+
+| # | your question | answer | made binding in |
+|---|---|---|---|
+| 1 | E8: seed torch per episode and extend the N sweep to the other suites? | Yes — approved: N ∈ {1, 2, 3, 4, 6, 10}, all four suites, noise from a per-episode seeded `torch.Generator`, plus a same-seed repeat control | T016 step 2; protocol §16 |
+| 2 | EV-02 (the prefix on part of the memory bus) | Approved, as a bandwidth-steal approximation plus a feasibility probe for real channel confinement; your E12b DRAM bytes (87.85 GB/s prefix) are why it matters | T016 step 1; protocol §15–16 |
+| 3 | E7 residual, E12b corruption cause | Both now tasks | T016 steps 4–5 |
+
 ## 2026-09-25 — after T014's MAXN return (device commit `b97da62`)
 
 **T014 found real things and did not answer its question.** The research side's review is `analysis/E12_review.md`.
