@@ -1,0 +1,373 @@
+{
+  "experiment": "T016 step 1a (EV-02): prefix under SM-free bandwidth steal",
+  "bench_commit": "1c5cd127dd7ef460df3cb645e8d7f4830a06765a",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "bf16_both",
+  "rung_note": {
+    "rung": "bf16_both",
+    "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
+    "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
+    "matmul_precision": "high",
+    "matches_E7": true
+  },
+  "variant": "bf16_both (unmodified rung prefix, whole GPU) + load_both",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (whole GPU; the load takes no SMs)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "gate_start": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600",
+    "emc_rate_hz": 3199000000,
+    "temps_mC": {
+      "cpu-thermal": 46156,
+      "gpu-thermal": 40968,
+      "soc0-thermal": 42437,
+      "soc1-thermal": 42062,
+      "soc2-thermal": 42281,
+      "tj-thermal": 46406
+    },
+    "t_utc": "2026-09-26T21:59:54Z"
+  },
+  "throttled": false,
+  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 57.3 C (trip threshold used 95 C); temps at end {'cpu-thermal': 57343, 'gpu-thermal': 53281, 'soc0-thermal': 53218, 'soc1-thermal': 52843, 'soc2-thermal': 53187, 'tj-thermal': 57343}",
+  "load": {
+    "kind": "both",
+    "process": "separate (multiprocessing spawn), pinned to cores 4,5,6,7,8,9,10,11",
+    "pids": [
+      9701,
+      9720,
+      9721,
+      9722,
+      9723,
+      9724,
+      9725,
+      9726
+    ],
+    "chunk_MB": 32,
+    "rate_definition": "DRAM traffic = 2 x bytes copied (read + write, host and device memory are the same LPDDR5)",
+    "shared_with_prefix": "LPDDR5 bus + memory controller; GPU memory hub / SMMU (ce); CUDA driver (ce, separate context); CPU L3/DSU (cpu); host cores are disjoint (harness 0-3)"
+  },
+  "harness_cores": "0-3",
+  "N": 10,
+  "frames_per_segment": 30,
+  "reference": "same process, load off, bracketed before and after each loaded segment",
+  "sigma_definition": "loaded median / mean(ref_before median, ref_after median)",
+  "calibration": {
+    "file": "results/20260926_E13a_pi0_bwsteal_ce+cpu_MAXN/calib/emc_calibration.json",
+    "slope_GBps_per_pct": 1.4451727085888004,
+    "intercept_GBps": 15.566669714763407,
+    "stream_max_GBps": 139.81479373173232
+  },
+  "n_nonfinite": 0,
+  "valid": true,
+  "frames_manifest": {
+    "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
+    "dataset": "HuggingFaceVLA/libero",
+    "split": "train",
+    "source_api": "https://datasets-server.huggingface.co/rows",
+    "episode_index": 0,
+    "task_index": 0,
+    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+    "frames": [
+      {
+        "file": "obs_0.json",
+        "row_offset": 0,
+        "frame_index": 0
+      },
+      {
+        "file": "obs_1.json",
+        "row_offset": 25,
+        "frame_index": 25
+      },
+      {
+        "file": "obs_2.json",
+        "row_offset": 50,
+        "frame_index": 50
+      },
+      {
+        "file": "obs_3.json",
+        "row_offset": 75,
+        "frame_index": 75
+      },
+      {
+        "file": "obs_4.json",
+        "row_offset": 99,
+        "frame_index": 99
+      }
+    ]
+  },
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/e13_bwsteal.py --outdir results/20260926_E13a_pi0_bwsteal_ce+cpu_MAXN --mode sweep --load both --rates=0,20,40,60,80,100,120,140,-1 --frames 30 --harness-cores 0-3 --load-cores 4,5,6,7,8,9,10,11",
+  "torch": "2.8.0",
+  "date_utc": "2026-09-26T22:11:33Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "calib/bandwidth.csv",
+      "bytes": 1713,
+      "sha256": "d2c91a605b524be88b068a187049b6d2d395723e32ad3352d300019fa9e92f4e"
+    },
+    {
+      "path": "calib/emc_calibration.csv",
+      "bytes": 171,
+      "sha256": "11a8e3e75d47222199b745c346140c7101c0ac296641e2d21e8754cac7013027"
+    },
+    {
+      "path": "calib/emc_calibration.json",
+      "bytes": 808,
+      "sha256": "f7b05129ba4d01cd53e189b71f782c3444deba606ab7915b7a9ff5f17f5738a6"
+    },
+    {
+      "path": "calib/meta_calib.json",
+      "bytes": 1249,
+      "sha256": "4e45bd5d13466f9da1cc67e09da47f022393c197b205fbd0b56c3351938e9940"
+    },
+    {
+      "path": "calib/raw/teg_hog_0.log",
+      "bytes": 331283,
+      "sha256": "bc213a8735165479b36968c3fe7f5edf415041d60afde94c1f79013fc04a3d94"
+    },
+    {
+      "path": "calib/raw/teg_hog_1500000.log",
+      "bytes": 404383,
+      "sha256": "27973ae6a357f37628667160ad7925574611a689f31d163637485616e342a904"
+    },
+    {
+      "path": "calib/raw/teg_hog_200000.log",
+      "bytes": 316469,
+      "sha256": "538d917d3a668a967c58b35c7c41d566d25144f756884340d4dba88710c790d6"
+    },
+    {
+      "path": "calib/raw/teg_hog_4000000.log",
+      "bytes": 524361,
+      "sha256": "669cb3a57b72052f9c91ea02883d9baf29c4f5bfc7b5aee3a15226d1f84cbf6c"
+    },
+    {
+      "path": "calib/raw/teg_hog_600000.log",
+      "bytes": 332507,
+      "sha256": "1324f68a5fd7aabae92b90ac7e0e14269d4e15d0743a0fbd03596ce813b82920"
+    },
+    {
+      "path": "calib/raw/teg_idle.log",
+      "bytes": 221278,
+      "sha256": "35777b7ee39dbf5e5ce5fc9d455679a98e753548faec0754387a91a033387a1f"
+    },
+    {
+      "path": "raw/latency_samples.csv",
+      "bytes": 15859,
+      "sha256": "1c173f47aa80175a9d1ab9146adc6bdc68dab891f2de47fd1cce8c8898e1a589"
+    },
+    {
+      "path": "raw/teg_p0_0_load.log",
+      "bytes": 117819,
+      "sha256": "c40bbef9db753995080711294742e20a9bb042401d4b26fdec78f7a0915fae22"
+    },
+    {
+      "path": "raw/teg_p0_0_refA.log",
+      "bytes": 117887,
+      "sha256": "93288c4337567d87670914a6d20b874f7d20ab9f24174ea3d1057798b922a55f"
+    },
+    {
+      "path": "raw/teg_p0_0_refB.log",
+      "bytes": 117835,
+      "sha256": "dd41a57aa7aa664990a8978f3fab84767b071778f79b5fa28c21230529197437"
+    },
+    {
+      "path": "raw/teg_p1_20_alone.log",
+      "bytes": 79281,
+      "sha256": "bce2dc88dc84bd1f37a1248a2235096a3cca244ae4395b50fe2dd6ea15030a93"
+    },
+    {
+      "path": "raw/teg_p1_20_load.log",
+      "bytes": 124527,
+      "sha256": "a968aac509c00ac10b38cef921b00e5522b4d52058a6567012a69c963fe01e3e"
+    },
+    {
+      "path": "raw/teg_p1_20_refA.log",
+      "bytes": 117820,
+      "sha256": "3be6363f1de2b3f23860dc1de4c9a2575fdc55eb7982b5729882f57b90f885c6"
+    },
+    {
+      "path": "raw/teg_p1_20_refB.log",
+      "bytes": 117369,
+      "sha256": "0a0c44c360351ab7c19a104e7e5bc355378a33d740646c66d58a7914a91e98ac"
+    },
+    {
+      "path": "raw/teg_p2_40_alone.log",
+      "bytes": 79881,
+      "sha256": "0dd864a538348c2a45caa16e57daa67dea244e7ed9ef9db1cd74bfdd89f0838c"
+    },
+    {
+      "path": "raw/teg_p2_40_load.log",
+      "bytes": 131153,
+      "sha256": "1acaf4e3e70d01d21598a97d6622331bf3f99fbfff1ab951652e2657675589d5"
+    },
+    {
+      "path": "raw/teg_p2_40_refA.log",
+      "bytes": 117382,
+      "sha256": "c86cab8f8f9fad0566839927c4e929b543b2c1673d73154abe1732fb2079174b"
+    },
+    {
+      "path": "raw/teg_p2_40_refB.log",
+      "bytes": 117349,
+      "sha256": "bbec12e96d591e3157fb0d33931b191aa693c9c309ba17d46efa578400df179e"
+    },
+    {
+      "path": "raw/teg_p3_60_alone.log",
+      "bytes": 79545,
+      "sha256": "a64d961aac14b45a99a0fec9f7f11b631c523562fa60e85078fc0cdebe06836b"
+    },
+    {
+      "path": "raw/teg_p3_60_load.log",
+      "bytes": 136914,
+      "sha256": "1061fa9635310fefcbd396667f1d7e071fce72eede5a0cd39fc1b7eb04297b27"
+    },
+    {
+      "path": "raw/teg_p3_60_refA.log",
+      "bytes": 117358,
+      "sha256": "2978aa02a0a4aa18b28277550cc87cd3948f519ff9476be1f89c713ebc185c9d"
+    },
+    {
+      "path": "raw/teg_p3_60_refB.log",
+      "bytes": 117365,
+      "sha256": "5cd4c7731905baabbb8d06529ea204e9002080626e1dea1bee122bc3958d546b"
+    },
+    {
+      "path": "raw/teg_p4_80_alone.log",
+      "bytes": 79912,
+      "sha256": "2de436bbdf492f8d09b2e33e4e8282253fca65100c5388a4512347734c39428f"
+    },
+    {
+      "path": "raw/teg_p4_80_load.log",
+      "bytes": 145434,
+      "sha256": "1e2591c8708824167cf13af155d1a4e2dd21130c65c1c8c7404cddb42e59197a"
+    },
+    {
+      "path": "raw/teg_p4_80_refA.log",
+      "bytes": 117328,
+      "sha256": "ddaad25d437edebebf2e4e2ff81bc8fd6dcea41bd378a403d56bc8760733892f"
+    },
+    {
+      "path": "raw/teg_p4_80_refB.log",
+      "bytes": 116460,
+      "sha256": "644fddc8c0de4c7d4478a7a02727de07a12cb1f5391c7af824e06394fa1c3f2c"
+    },
+    {
+      "path": "raw/teg_p5_100_alone.log",
+      "bytes": 80434,
+      "sha256": "4377d095c8f237a3a8ba32d98d0f7bda9328ea956fd00ed46b75023cc4d9a78a"
+    },
+    {
+      "path": "raw/teg_p5_100_load.log",
+      "bytes": 148946,
+      "sha256": "383c294f67b4f368fc8bb1cee31fc3ff07b763c0838399fceee479cf7179e617"
+    },
+    {
+      "path": "raw/teg_p5_100_refA.log",
+      "bytes": 117339,
+      "sha256": "0146db5be4630cc339cacc1c9992ac64de01808a463add240ff5a332da15c875"
+    },
+    {
+      "path": "raw/teg_p5_100_refB.log",
+      "bytes": 116373,
+      "sha256": "962ec8030003fbae313ef6e30896d076d4838ab6513c321e88af9f8f6a8239fb"
+    },
+    {
+      "path": "raw/teg_p6_120_alone.log",
+      "bytes": 80654,
+      "sha256": "d798982ca1e93a7eeea63e133d474ba6e482e9d1e0bb7310d6ef27ea634d6722"
+    },
+    {
+      "path": "raw/teg_p6_120_load.log",
+      "bytes": 149154,
+      "sha256": "e833038455dafd6292fb8671bab5d7a71fb87605768cff1bfc7b36789234ae01"
+    },
+    {
+      "path": "raw/teg_p6_120_refA.log",
+      "bytes": 117347,
+      "sha256": "8965e0c75de092e2a65e61192c4f020be6c1f42e82b6b8b511113e444fa3c816"
+    },
+    {
+      "path": "raw/teg_p6_120_refB.log",
+      "bytes": 116851,
+      "sha256": "61ea3968723330848ed96bcca31f0383688fca7a3d3c0f77c8f091f8d96085e9"
+    },
+    {
+      "path": "raw/teg_p7_140_alone.log",
+      "bytes": 80745,
+      "sha256": "ab1ac82411b754ce6491496e1612cb491a988f087efd0e3a2e929398ce76287d"
+    },
+    {
+      "path": "raw/teg_p7_140_load.log",
+      "bytes": 149639,
+      "sha256": "d9cf03cda1f19ebc0d95d1d2c268f05f0a85540901453b0a539ce2b609ed27e3"
+    },
+    {
+      "path": "raw/teg_p7_140_refA.log",
+      "bytes": 117352,
+      "sha256": "0054544af614a34912cce2a2cb808a0a88914416eabbba687bf2e6e9faeb9692"
+    },
+    {
+      "path": "raw/teg_p7_140_refB.log",
+      "bytes": 117373,
+      "sha256": "7ded3908eab3d5fee9284fbb024029504273ba4fee4a7d666fac617ba14c25b8"
+    },
+    {
+      "path": "raw/teg_p8_max_alone.log",
+      "bytes": 80799,
+      "sha256": "45294388d7fc633453c908d6c25943e67b04d230106a30b219139962ef554c91"
+    },
+    {
+      "path": "raw/teg_p8_max_load.log",
+      "bytes": 149177,
+      "sha256": "b1049de7f0e1ae664d3ae53a5c8239cca7a89d10705d3724d306dd4b75fff81e"
+    },
+    {
+      "path": "raw/teg_p8_max_refA.log",
+      "bytes": 117326,
+      "sha256": "0a8842f0f49629fcf17dca06c5c4a37d9741c8749f475204e51b6ec8adb0048a"
+    },
+    {
+      "path": "raw/teg_p8_max_refB.log",
+      "bytes": 117261,
+      "sha256": "055079c901c3c3c7146bcdad054138c5008f3899f57f08d17890e8547364ffb6"
+    },
+    {
+      "path": "sigma.csv",
+      "bytes": 1410,
+      "sha256": "51cede4c3e53b260f9580666e5abbb3c28e3071b4a66c3c0fdb1d78597811cf4"
+    }
+  ]
+}

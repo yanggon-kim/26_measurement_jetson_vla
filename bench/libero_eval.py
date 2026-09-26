@@ -50,6 +50,9 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
+SUITE_IDX = {"libero_spatial": 1, "libero_object": 2, "libero_goal": 3, "libero_10": 4}
+
+
 def build_obs(obs: dict, feats: dict, task: str) -> dict:
     """LIBERO observation -> the RAW dict the checkpoint's preprocessor expects.
 
@@ -125,6 +128,10 @@ def main() -> int:
                          "bf16_both. --prep applies only the casts; the study's speed-up is "
                          "measured on the full rung, so its accuracy must be too.")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed-noise", action="store_true",
+                    help="T016 step 2: draw pi0's flow noise from a torch.Generator seeded per "
+                         "(suite, task, episode) -- the same seed in every N arm -- and pass it to "
+                         "predict_action_chunk(noise=...) instead of the unseeded global RNG")
     ap.add_argument("--num-steps-wait", type=int, default=10,
                     help="no-op steps after reset so objects settle (LeRobot's LIBERO default)")
     ap.add_argument("--outdir", required=True)
@@ -210,6 +217,7 @@ def main() -> int:
     # step). Added 2026-09-25 17:3x after the first settle10 arm (spatial fp32) was found to
     # have written none -- purely additive, nothing the rollout does changed.
     step_rows: list[dict] = []
+    nonfinite_actions = torch.zeros((), dtype=torch.int64, device="cuda")  # device-side, no sync
     ep_wall_s: list[float] = []
     gate_start = P.gate()
     dtypes: dict[str, int] = {}
@@ -235,6 +243,14 @@ def main() -> int:
             for _ in range(args.num_steps_wait):
                 obs, _, _, _ = env.step(get_libero_dummy_action())
             policy.reset()
+            nseed = None
+            if args.seed_noise:
+                # seed = f(suite, task, episode) only -- independent of N, rung and run, so every arm
+                # draws the same noise sequence for the same episode
+                nseed = (SUITE_IDX[args.suite] * 1_000_000 + ti * 1_000 + ep) * 7919 + args.seed
+                gen = torch.Generator(device="cuda").manual_seed(nseed)
+                nshape = (1, policy.config.chunk_size, policy.config.max_action_dim)
+                n_act = policy.config.n_action_steps
             done = False
             steps = 0
             t_ep = time.perf_counter()
@@ -246,7 +262,13 @@ def main() -> int:
                     batch = preprocess(raw)
                     t0 = time.perf_counter()
                     with torch.no_grad():
-                        act = policy.select_action(batch)
+                        if args.seed_noise:
+                            noise = torch.randn(nshape, generator=gen, device="cuda",
+                                                dtype=torch.float32)
+                            act = policy.predict_action_chunk(batch, noise=noise)[:, :n_act]
+                        else:
+                            act = policy.select_action(batch)
+                    nonfinite_actions += (~torch.isfinite(act)).sum()
                     torch.cuda.synchronize()
                     dt = (time.perf_counter() - t0) * 1e3
                     t_policy.append(dt)
@@ -279,7 +301,8 @@ def main() -> int:
             successes += ok
             total += 1
             rows.append({"task": ti, "task_name": task.language, "episode": ep,
-                         "success": int(ok), "steps": steps})
+                         "success": int(ok), "steps": steps,
+                         "noise_seed": nseed if nseed is not None else "unseeded (global RNG)"})
             print(f"  task {ti} ep {ep}: {'SUCCESS' if ok else 'fail':7s} "
                   f"{steps:3d} steps   running {successes}/{total}", flush=True)
         env.close()
@@ -309,6 +332,11 @@ def main() -> int:
         "num_steps_wait_source": "lerobot.envs.libero default (settle with no-op actions)",
         "N": n_effective, "rung": args.rung or None, "rung_note": rung_note,
         "seed": args.seed, "seeds": f"env.seed(seed + episode), episodes 0..{args.episodes-1}",
+        "noise_seeding": ("torch.Generator per (suite, task, episode): seed = (suite_idx*1e6 + task*1e3 "
+                          "+ episode)*7919 + seed; noise (1, chunk_size, max_action_dim) passed to "
+                          "predict_action_chunk(noise=); per-episode seed in episodes.csv")
+                         if args.seed_noise else "unseeded global torch RNG (select_action)",
+        "nonfinite_action_elements": int(nonfinite_actions.item()),
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
                             f"few-percent difference in success rate"),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
