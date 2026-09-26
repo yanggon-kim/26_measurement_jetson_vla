@@ -247,3 +247,5 @@ addenda to `reports/E7_power_energy.md` and `reports/E12b_pi0_compiled_corun.md`
 rebooted into `MODE_30W` / `MODE_15W` when you read this, finish those queues first and return to T016 once MAXN is
 restored — never ask for a reboot for it. If the human owner gives you a different order directly, the owner's
 order wins; say in `STATUS.md` where T016 sits.
+
+status: claimed 2026-09-26
