@@ -37,6 +37,16 @@ per step yet takes longer). Compilation removes most of that: the compiled step 
 weight bytes. After compilation GR00T's DiT is at its memory floor (1.05×); π0, π0.5 and
 SmolVLA are still 3–5× above theirs.
 
+## 1b. Model inputs and geometry, read from the loaded models (T006 step 1)
+
+| model | S (valid) | P processed (valid) | images | expert layers | heads / KV heads / head_dim | source |
+|---|---:|---:|---:|---:|---|---|
+| π0.5 | 50 (50) | 968 (574) | 3 × 224² (1 masked) | 18 (VLM 18) | 8 / 1 / 256 | `results/20260925_E6_pi05/floor_inputs.json`, `E6_pi05_roofline.md` |
+| SmolVLA | 50 (50) | 177 (151) | 2 × 512² | 16 (VLM 16 — config says 32; truncated at load) | 15 / 5 / 64 | `results/20260925_E6_smolvla/floor_inputs.json`, `E6_smolvla_roofline.md` |
+
+π0's are T002's (`E3_pi0_eager.md`); GR00T's in `E3_E4_groot.md` / `results/20260923_E4f_groot_S_n17`.
+Checkpoints: `lerobot/pi05_libero_base` @ `a217bfd3`, `lerobot/smolvla_base` @ `d9f33c94` (HF snapshot sha).
+
 ## 2. Measured — per-region medians at N = 10 (ms)
 
 | model | rung | vision | vlm_prefix | ae_total | e2e | source |
