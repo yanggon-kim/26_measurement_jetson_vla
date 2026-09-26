@@ -18,3 +18,4 @@
 - Check: `uv pip freeze` before/after differs by exactly the torchcodec line; `torch 2.10.0` imports,
   `from torchcodec.decoders import VideoDecoder` imports. FFmpeg 4 runtime (`libavcodec.so.58`) was
   already on the system; no apt change.
+py-spy py-spy 0.4.2 installed into ~/venvs/pi0 (pip) 2026-09-26 to diagnose a hung run
