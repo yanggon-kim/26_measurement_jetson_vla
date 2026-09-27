@@ -34,6 +34,10 @@ def main() -> int:
             continue
         A, B = np.load(fa), np.load(fb)
         assert np.array_equal(A["seeds"], B["seeds"]), f"seeds differ {a} vs {b}"
+        if "obs_sha256" not in A.files or "obs_sha256" not in B.files:
+            print(f"  skip {a} vs {b}: no input hash (written before inputs were seeded -- not comparable)")
+            continue
+        assert str(A["obs_sha256"]) == str(B["obs_sha256"]), f"inputs differ {a} vs {b}"
         x, y = A["actions"].astype(np.float64), B["actions"].astype(np.float64)
         per = []
         for i in range(x.shape[0]):

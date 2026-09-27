@@ -318,6 +318,11 @@ def main() -> int:
             "(model/eagle_model x visual/vision_model). Refusing to run: the vision region "
             "would silently report 0.00 ms and the three-way split would be wrong.")
 
+    if args.save_actions:
+        # T016 step 3: the observation's pixel / state VALUES come from np.random. Unseeded, every process
+        # built a DIFFERENT observation, so cross-process action comparisons (variant vs reference, repeat
+        # controls) compared different inputs. Seeded here, and the inputs are hashed into the .npz.
+        __import__("numpy").random.seed(1234)
     if args.api == "old":
         obs, shapes = _build_obs_n15(policy, ckpt_dir)
     else:
@@ -385,7 +390,20 @@ def main() -> int:
             nonfinite += int((~torch.isfinite(a)).sum())
             acts.append(a.cpu().numpy())
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+        import hashlib                                                          # noqa: PLC0415
+        hsh = hashlib.sha256()
+
+        def _walk(v):
+            if isinstance(v, dict):
+                for k in sorted(v):
+                    hsh.update(str(k).encode()); _walk(v[k])
+            elif isinstance(v, np.ndarray):
+                hsh.update(v.tobytes())
+            else:
+                hsh.update(repr(v).encode())
+        _walk(obs)
         np.savez(path, actions=np.stack(acts), seeds=np.arange(5000, 5000 + int(cnt)),
+                 input_seed=np.array(1234), obs_sha256=np.array(hsh.hexdigest()),
                  variant=np.array(";".join(variant_notes) or "reference"),
                  compiled=np.array(";".join(compiled_desc)), nonfinite=np.array(nonfinite))
         print(f"saved {cnt} action chunks -> {path}; nonfinite {nonfinite}", flush=True)
