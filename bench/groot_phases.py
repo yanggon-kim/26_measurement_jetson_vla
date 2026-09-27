@@ -83,6 +83,24 @@ def gate() -> dict:
             if torch.cuda.is_available() else "-"}
 
 
+
+def _provenance(args, g0) -> dict:
+    """T016 non-negotiable 3: bench commit, checkpoint revision, Isaac-GR00T commit, end gate, throttled.
+    The E14 GR00T time metas lacked these and were backfilled; every GR00T meta now carries them."""
+    import subprocess                                                              # noqa: PLC0415
+    repo = Path(__file__).resolve().parent.parent
+    root = args.gr00t_root or "/home/yanggon/00_VLA/Isaac-GR00T"
+    run = lambda c, d: subprocess.run(c, cwd=d, capture_output=True, text=True).stdout.strip()  # noqa: E731
+    dirty = run(["git", "status", "--porcelain", "--", "bench"], repo)
+    org, name = args.checkpoint.split("/", 1)
+    ref = Path.home() / ".cache/huggingface/hub" / f"models--{org}--{name}" / "refs" / "main"
+    g1 = gate()
+    return {"bench_commit": run(["git", "rev-parse", "HEAD"], repo) + (" (+uncommitted bench changes)" if dirty else ""),
+            "checkpoint_revision": ref.read_text().strip() if ref.exists() else "unresolved (no refs/main in HF cache)",
+            "gr00t_root_resolved": root, "model_commit": run(["git", "rev-parse", "HEAD"], root) or "unresolved",
+            "gate_end": g1, "throttled": str(g1.get("gpu_cur_freq_hz")) != str(g0.get("gpu_cur_freq_hz")),
+            "throttled_evidence": f"GPU clock start {g0.get('gpu_cur_freq_hz')} end {g1.get('gpu_cur_freq_hz')}"}
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
@@ -586,11 +604,11 @@ def main() -> int:
         "force_gemm_autotune": args.force_gemm_autotune,
         "rung": args.rung, "num_inference_timesteps": n,
         "variant": ";".join(variant_notes) or "none (reference)",
-        "n_warmup": args.warmup, "n_timed": args.timed, "gate": g,
+        "n_warmup": args.warmup, "n_timed": args.timed, "gate": g, **_provenance(args, g),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),
         "embodiment_tag": args.embodiment_tag,
-        "gr00t_root": args.gr00t_root,
+        "gr00t_root": args.gr00t_root or "default",
         "compat_shims": compat,
         "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()}
                                for k, v in shapes.items()},
@@ -786,10 +804,10 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
         "num_inference_timesteps": n,
         "n_warmup": 5, "n_timed": f"{args.seconds} s loop per phase", "sample_hz": 20,
         "power_mode": g["power_mode"], "sm_count": g.get("sm_count"),
-        "gate": g, "allow_capped": args.allow_capped,
+        "gate": g, "allow_capped": args.allow_capped, **_provenance(args, g),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "command": " ".join(sys.argv),
-        "gr00t_root": args.gr00t_root,
+        "gr00t_root": args.gr00t_root or "default",
         "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()}
                                for k, v in shapes.items()},
         "idle_baseline_mW": {k: round(v, 1) for k, v in idle_means.items()},
