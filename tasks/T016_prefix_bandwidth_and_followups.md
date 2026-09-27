@@ -249,3 +249,39 @@ restored — never ask for a reboot for it. If the human owner gives you a diffe
 order wins; say in `STATUS.md` where T016 sits.
 
 status: claimed 2026-09-26
+
+status: done 2026-09-27
+- **Step 1 (EV-02)** — `reports/E13_pi0_bandwidth_steal.md`. Rows: **1** σ = 1.247 at 77.1 GB/s and 1.278–1.281 at
+  82.9–84.9 GB/s (the SM-free maximum; ~94 GB/s not reachable without SMs) → **> 1.247 band**; **2** 37 % duty σ = 1.125
+  → **1.04–1.247 band**; **3** measured vs 1 + f(σ_full − 1) within ±0.02 (f = 0.433 start / 0.315 end) → **linear**;
+  **4** channel confinement **no** (boot-time BCT; not attempted); **8** H1 share **0.67** (on the 2/3 line; fit
+  residuals 18–55 %). Dirs `results/20260926_E13a_pi0_bwsteal_ce+cpu_MAXN`, `…_E13b_pi0_bwduty_{start,end}_MAXN`,
+  `…_E13c_channel_probe`, `…_E13d_pi0_prefix_kernel_bytes_MAXN`.
+  Deviation: the in-session EMC hog calibration was not reproducible (NOTE.md); "left" uses E12b's 178.5 GB/s and
+  the load's own byte count is the x-axis. The optional green-context secondary arm was not run (row 1 decided).
+- **Step 2** — `reports/E8s_libero_seeded.md`. **Row 5 replicated**: N = 2 ≥ N = 10 in 4 / 4 suites, pooled 300 vs
+  259 / 400, exact McNemar p = 1.3 × 10⁻⁵, +10.2 pp [+5.8, +14.7]. **Row 6**: repeat agreement **95 / 100** (on the
+  line). All N ∈ {1, 2, 3, 4, 6, 10} on all four suites + the repeat: 25 arms, none missing
+  (`results/20260926_E8s_pi0_<suite>_N<n>_seeded`, `…_rep`, summary `…_E8s_pi0_seeded_summary`).
+  **Finding**: the harness supplied the empty camera as an all-zero image (mask 1, attended) in every E8 / E8s arm;
+  paired comparisons unaffected, absolute rates are for that input (question in STATUS.md; E8 / E8s reports carry a
+  correction note; `libero_eval.py --empty-camera masked` added).
+- **Step 3** — `reports/E14_prefix_savings.md`. **Row 7: bitwise** — GR00T `keep1`, `kvonce`, `keep1+kvonce` equal
+  the reference on 50 / 50 inputs, compiled and eager, with bitwise run-to-run controls. Time: GR00T e2e 237.0 →
+  228.9 / 228.2 / 220.0 ms; π0 `nopad` prefix 253.0 → 189.6 ms (0.749), frame 420.5 → 319.5 ms (0.760). DRAM reads
+  per frame: GR00T 20.96 → 19.62 / 19.66 / 18.32 GB; π0 prefix 17.65 → 14.64 GB, expert 7.03 → 6.91 GB. π0 `nopad`
+  not bitwise (REL ≤ 1.7 × 10⁻³ over 50 inputs); seeded paired LIBERO: **70 vs 66 / 100 with the empty camera masked, p = 0.29** (the first nopad arm, with the camera attended, measured trimprompt only).
+  Dirs `results/20260926_E14_pi0_nopad_MAXN/{time,equiv,bytes}`, `…_E14_groot_n17_savings_MAXN` (time_*, bytes,
+  actions_*, equiv; `invalid_unseeded_inputs/` = the first action sets, invalid, NOTE.md),
+  `results/20260926_E8s_pi0_libero_spatial_N10_seeded_nopad` (= `trimprompt`, see report),
+  `results/20260927_E14_pi0_nopad_libero_speed_diag`, `results/20260927_E8s_pi0_libero_spatial_N10_seeded_maskedcam{,_nopad}`.
+  Deviations: GR00T time metas were written without bench commit / revision / throttled and were back-filled
+  (no measured value changed; `groot_phases.py` now writes them); GR00T bytes are one inference per variant
+  (1 643 workloads, chunked 450 per ncu process).
+- **Step 4 (EV-10)** — correction block at the top of `reports/E7_power_energy.md`: cause = the rail sampler started
+  before warm-up / compile; re-measured prefix + ae = full within **0.49–0.71 %** (`results/20260926_E7r_pi0_energy_reconcile_MAXN`);
+  28 of 132 committed E7 phase rows (all compiled) move by ≥ 5 %, listed in `E7_all_dirs_timed_window.csv`; samplers fixed.
+- **Step 5 (EV-13)** — addendum in `reports/E12b_pi0_compiled_corun.md`, script `bench/e12c_diagnose.py`,
+  `results/20260926_E12c_pi0_corruption_diag_MAXN`: own/double 0 failures, own/single 98 / 100 wrong, shared/double
+  0, shared/single HANG → the single KV buffer is the operative cause.
+- bench commit at close: 3b4cea0. Repository: committed results 529 MB; size-pack 158.10 MiB + loose 84.34 MiB.

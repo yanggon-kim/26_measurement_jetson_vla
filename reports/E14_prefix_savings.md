@@ -10,8 +10,8 @@ enters the GPU reference is the user's open decision; nothing here is a baseline
 |---|---|---|---|
 | 7 | step 3 exact variants (`keep1`, `kvonce`) bitwise? | **bitwise: 50 / 50 inputs** for `keep1`, `kvonce` and `keep1+kvonce`, compiled (`vlm_compile`) and eager; the reference repeated in a new process is bitwise too (controls) | **bitwise, as expected** |
 
-π0 `nopad` is not an exact-arithmetic-preserving *kernel* change (shorter GEMMs), so it was not expected bitwise: 0 / 50
-bitwise, REL ≤ 1.7 × 10⁻³; closed-loop success unchanged (§1).
+π0 `nopad` changes GEMM shapes (exact in real arithmetic, not per kernel), so it was not expected bitwise: 0 / 50
+bitwise, REL ≤ 1.7 × 10⁻³; seeded paired LIBERO 70 vs 66 / 100, p = 0.29 — closed-loop success unchanged (§1).
 
 ## 1. π0 `pi0_bf16_both+nopad` (`results/20260926_E14_pi0_nopad_MAXN`)
 
@@ -55,10 +55,17 @@ a large token-independent part (weights streamed once per frame) remains.
 **0 / 50 bitwise**, MAXABS **0.0311**, REL max **1.72 × 10⁻³** (median 1.03 × 10⁻³), 0 non-finite. Not bitwise, as
 expected (shorter GEMMs pick other kernels in bf16).
 
-**Seeded paired LIBERO (`results/20260926_E8s_pi0_libero_spatial_N10_seeded_nopad`, E8s harness):**
-`libero_spatial` N = 10, same seeds as the `pad` arm: **70 / 100** [60.4, 78.1] vs 71 / 100; only-nopad 3 /
-only-pad 4, exact McNemar **p = 1.00**, paired difference −1.0 pp [−6.2, +4.2]; episode agreement **0.93** (the
-`pad` arm against its own repeat: 0.95). Closed-loop success is unchanged within the resolution of 100 episodes.
+**Seeded paired LIBERO, empty camera masked as in training** (`results/20260927_E8s_pi0_libero_spatial_N10_seeded_maskedcam`
+and `…_maskedcam_nopad`; E8s harness, `--empty-camera masked --static-shapes`): `libero_spatial` N = 10, same seeds
+in both arms: **`nopad` 70 / 100** [60.4, 78.1] vs **`pad` 66 / 100** [56.3, 74.5]; only-nopad 6 / only-pad 2,
+exact McNemar **p = 0.29**, paired difference **+4.0 pp [−1.5, +9.5]**; episode agreement **0.92** (repeat control
+of the E8s harness: 0.95). Closed-loop success is unchanged within the resolution of 100 episodes, and **the forward
+in the loop drops 427.5 → 333.7 ms** (0.78; median over ~375 forwards, 0 non-finite) — the saving the timing rows
+predict, now visible where the empty camera is really masked (see the finding below for the first arm).
+
+For completeness, the same `pad` arm with the empty camera **attended** (E8s as run) vs **masked**: 71 vs 66 / 100,
+discordant 12 / 7, p = 0.36, agreement 0.81 — which input the absolute rates refer to matters less than the arm-to-arm
+spread, but it is a different input (question for the research side in `STATUS.md`).
 
 **Finding — that LIBERO arm was `trimprompt`, not `nopad`, and E8 / E8s fed the empty camera as a real image.**
 The arm's forward was 423.3 ms against 427.5 ms (pad), and task 0 alone (one prompt length) was not faster
@@ -70,11 +77,11 @@ the harness: `bench/libero_eval.py build_obs` supplies the checkpoint's `observa
 attended**); left out, LeRobot synthesises it as in training (−1 image, mask 0) — which is what
 `pi0_common.build_batch`, every timing run and the equivalence set above use. `nocam` drops only masked slots, so in
 that LIBERO arm it dropped nothing and the arm measured `trimprompt` (27 tokens, ~4 ms). Consequences:
-(i) that arm is reported as `trimprompt` (70 vs 71 / 100, p = 1.00, agreement 0.93);
+(i) that arm (`results/20260926_E8s_pi0_libero_spatial_N10_seeded_nopad`) is reported as `trimprompt`: 70 vs 71 / 100, only-it 3 / only-pad 4, p = 1.00, agreement 0.93;
 (ii) **every E8 and E8s LIBERO arm ran with the empty camera attended** — the E8s *paired* comparisons are unaffected
 (both arms share it), but absolute success rates are for that input, not the training-time one (question for the
 research side in `STATUS.md`); (iii) `libero_eval.py --empty-camera masked` now leaves the key out, and the nopad
-LIBERO pair is re-run with it (below).
+LIBERO pair was re-run with it (above).
 
 ## 2. GR00T N1.7 `keep1`, `kvonce`, `keep1+kvonce` (`results/20260926_E14_groot_n17_savings_MAXN`)
 

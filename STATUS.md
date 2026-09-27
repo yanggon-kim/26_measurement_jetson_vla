@@ -2,6 +2,50 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ T016 DONE (2026-09-27 ~14:50, MAXN) — T017 claimed and running next; MODE_15W session still pending (owner reboot)
+
+All five steps and rows 1–8 answered; reports `E13_pi0_bandwidth_steal.md`, `E8s_libero_seeded.md`,
+`E14_prefix_savings.md`, and the dated addenda in `E7_power_energy.md` (step 4) and `E12b_pi0_compiled_corun.md`
+(step 5). Status block appended to `tasks/T016_prefix_bandwidth_and_followups.md`.
+
+| row | answer |
+|---|---|
+| 1 | σ = 1.247 at 77 GB/s stolen, 1.28 at the SM-free maximum (84.9 GB/s; ~94 not reachable) → **> 1.247** |
+| 2 | 37 % duty: σ = 1.125 → **1.04–1.247** |
+| 3 | within ±0.02 of 1 + f(σ_full − 1) → **linear in bytes exposed** |
+| 4 | channel confinement: **no** (boot-time BCT) |
+| 5 | seeded N = 2 vs N = 10: **replicated** (4 / 4 suites; pooled 300 vs 259 / 400, p = 1.3e-5) |
+| 6 | repeat agreement **95 / 100** (on the line) |
+| 7 | GR00T `keep1` / `kvonce` / both: **bitwise** (50 / 50, compiled and eager, controls bitwise) |
+| 8 | H1 share of prefix excess reads **0.67** (on the 2/3 line) |
+
+Also: π0 `nopad` prefix 253.0 → 189.6 ms, frame 420.5 → 319.5 ms, prefix DRAM reads 17.65 → 14.64 GB; E7 energy
+residual cause found (sampler before warm-up; 0.49–0.71 % after the fix; 28 committed compiled rows move ≥ 5 %);
+E12b corruption = the single KV buffer.
+
+**Findings that change earlier numbers:**
+* **E8 / E8s LIBERO fed the empty camera as a real image.** `bench/libero_eval.py` supplied
+  `observation.images.empty_camera_0` as an all-zero image, so LeRobot treated it as present (mask 1, 256 tokens
+  attended); in training (and in every fixture / timing run) it is a −1 image with mask 0. Paired comparisons are
+  unaffected; absolute success rates are for that input. Same arm, attended vs masked: 71 vs 66 / 100 (p = 0.36).
+  `--empty-camera masked` added; correction notes in `E8_libero.md` and `E8s_libero_seeded.md`.
+* GR00T's first E14 action sets were invalid (unseeded random observation per process) — re-run, kept as
+  `invalid_unseeded_inputs/`.
+
+**Questions for the research side (new):**
+1. E8 / E8s ran with the empty camera attended (above). Re-run any LIBERO arms with `--empty-camera masked`, or read
+   them as they are? (Most conservative default taken: nothing re-run beyond the T016 nopad pair; all numbers kept
+   with the note.)
+2. π0 `nopad` and GR00T `keep1` / `kvonce` are labelled variants; whether any enters the GPU reference is OD-1 (yours).
+
+Repository (protocol §6f), at close of T016: committed `results/` 529 MB (1.4 GB on disk incl. uncommitted
+scratch-grade files), `git count-objects -vH`: size-pack 158.10 MiB + loose 84.34 MiB; `.git` 245 MB.
+
+**Where things sit:** T017 (π0 padding trim, decomposed) is claimed and runs now at MAXN under the 10-minute
+watchdog. The MODE_15W session still needs the owner's reboot (MAXN → 15W → MAXN) after T017.
+
+---
+
 ## ▶ ORDER (owner, 2026-09-26): T016 BEFORE MODE_15W
 
 The owner chose **order B**: reboot MODE_30W → MAXN now, run **T016** (step 1 first, pushed before step 2),
