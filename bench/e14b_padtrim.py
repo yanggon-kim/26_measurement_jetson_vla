@@ -124,7 +124,7 @@ def mode_gate(a, out):
     P.assert_real_weights(policy, spec=spec)
     torch.set_float32_matmul_precision("highest")
     dt = sorted({str(p.dtype) for p in policy.parameters()})
-    frames, manifest = CR.load_frames(policy, spec, INPUTS, 64, seed0=SEED0)
+    frames, manifest = CR.load_frames(policy, spec, INPUTS, a.n_inputs, seed0=SEED0)
     fin = C.Finite()
     acts, first = run_actions(policy, spec, frames, V, fin, "fp32", out)
     d = env_dim(policy)
@@ -151,7 +151,7 @@ def mode_gate(a, out):
 def mode_equiv(a, out):
     static_shapes()
     policy, spec, cfg, note = C.load_rung(N)
-    frames, manifest = CR.load_frames(policy, spec, INPUTS, 64, seed0=SEED0)
+    frames, manifest = CR.load_frames(policy, spec, INPUTS, a.n_inputs, seed0=SEED0)
     fin = C.Finite()
     c0 = dyn_counters()
     t0 = time.perf_counter()
@@ -432,6 +432,7 @@ def main() -> int:
     ap.add_argument("--mode", choices=("gate", "equiv", "verdict", "time", "ncu"), required=True)
     ap.add_argument("--outdir", default="")
     ap.add_argument("--frames", type=int, default=60)
+    ap.add_argument("--n-inputs", type=int, default=64, help="smoke only: fewer than the 64 fixed inputs")
     a = ap.parse_args()
     g0 = C.gate_full()
     if "MAXN" not in g0["power_mode"] and a.mode != "verdict":
