@@ -5,6 +5,7 @@ import csv
 import json
 import sys
 
+STAGES = ("_prefix", "_expert", "_vision", "_vlm")   # vision / vlm: T017 split_vision graphs
 UNIT = {"sector": 32, "byte": 1, "usecond": 1e-3, "nsecond": 1e-6, "msecond": 1.0, "us": 1e-3, "ms": 1.0}
 
 
@@ -20,10 +21,10 @@ def main():
         return float(x) * UNIT.get(u[c[m]], 1.0) if x not in ("", "n/a") else 0.0
     agg, seen_graph = {}, {}
     for r in data:
-        rng = next((t for t in r[nv].replace('"', " ").split() if t.endswith(("_prefix", "_expert"))), None)
+        rng = next((t for t in r[nv].replace('"', " ").split() if t.endswith(STAGES)), None)
         if rng is None:
             import re
-            m = re.search(r":(\w+_(?:prefix|expert)):", r[nv])
+            m = re.search(r":(\w+_(?:prefix|expert|vision|vlm)):", r[nv])
             rng = m.group(1) if m else None
         if rng is None:
             continue
