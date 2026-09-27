@@ -118,34 +118,52 @@ def cmp(a, b, d):
 
 
 def mode_gate(a, out):
+    """Step 1. Two passes over the same inputs and noise, same process:
+    (1) the SHIPPED model as loaded (checkpoint dtype -- this checkpoint stores part of its parameters in bf16),
+        eager: `stock`. Its variant-vs-pad REL is reported (first gate attempt, 2026-09-27: REL ~2e-3 = bf16
+        arithmetic, not a trim defect), and its pad actions are the noise floor's `stock` side (Step 3);
+    (2) the same model cast to fp32 (`policy.float()`, TF32 off, matmul "highest"), eager: THE fp32 gate,
+        REL <= 1e-4 for every input and variant."""
     import model_registry as MR                                                   # noqa: PLC0415
     spec = MR.get("pi0")
     policy, cfg, _ = MR.load_policy(spec, n=N, compile_mode=None)
     P.assert_real_weights(policy, spec=spec)
     torch.set_float32_matmul_precision("highest")
-    dt = sorted({str(p.dtype) for p in policy.parameters()})
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    dt = {}
+    for p_ in policy.parameters():
+        dt[str(p_.dtype)] = dt.get(str(p_.dtype), 0) + p_.numel()
     frames, manifest = CR.load_frames(policy, spec, INPUTS, a.n_inputs, seed0=SEED0)
     fin = C.Finite()
-    acts, first = run_actions(policy, spec, frames, V, fin, "fp32", out)
     d = env_dim(policy)
+    stock, first_stock = run_actions(policy, spec, frames, V, fin, "stock", out)
+    policy.float()
+    dt32 = sorted({str(p_.dtype) for p_ in policy.parameters()} | {str(b_.dtype) for b_ in policy.buffers()
+                                                                     if b_.is_floating_point()})
+    acts, first = run_actions(policy, spec, frames, V, fin, "fp32", out)
     rows = []
-    for v in V[1:]:
-        for i in range(len(frames)):
-            rows.append({"input": i, "comparison": "fp32_gate", "variant": v, "vs": "pad",
-                         **cmp(acts["pad"][i], acts[v][i], d)})
-    worst = {v: max(r["rel_env"] for r in rows if r["variant"] == v) for v in V[1:]}
-    worst_all = {v: max(r["rel_all"] for r in rows if r["variant"] == v) for v in V[1:]}
+    for tag, A in (("checkpoint_dtype_attempt", stock), ("fp32_gate", acts)):
+        for v in V[1:]:
+            for i in range(len(frames)):
+                rows.append({"input": i, "comparison": tag, "variant": v, "vs": "pad", **cmp(A["pad"][i], A[v][i], d)})
+    worst = {v: max(r["rel_env"] for r in rows if r["variant"] == v and r["comparison"] == "fp32_gate") for v in V[1:]}
+    worst_all = {v: max(r["rel_all"] for r in rows if r["variant"] == v and r["comparison"] == "fp32_gate") for v in V[1:]}
+    worst_stock = {v: max(r["rel_env"] for r in rows if r["variant"] == v and r["comparison"] == "checkpoint_dtype_attempt")
+                   for v in V[1:]}
     nf = fin.read()
     passed = all(x <= 1e-4 for x in worst.values()) and nf == 0
     with (out / "gate.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
     res = {"gate": "PASS" if passed else "FAIL", "threshold_rel": 1e-4, "worst_rel_env": worst,
-           "worst_rel_all": worst_all, "param_dtypes": dt, "nonfinite": nf, "inputs": len(frames),
-           "first_call_s": first}
+           "worst_rel_all": worst_all, "checkpoint_dtype_attempt_worst_rel_env": worst_stock,
+           "checkpoint_param_numel_by_dtype": dt, "gate_dtypes_after_cast": dt32, "nonfinite": nf,
+           "inputs": len(frames), "first_call_s": {"stock": first_stock, "fp32": first}}
     (out / "gate_summary.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1), flush=True)
-    return res, spec, {"stock": "shipped model, eager, checkpoint dtype", "param_dtypes": dt,
-                       "matmul_precision": "highest"}, manifest
+    return res, spec, {"stock": "shipped model as loaded (checkpoint dtype), eager",
+                       "gate": "same model cast to fp32 (policy.float()), eager, TF32 off, matmul highest",
+                       "checkpoint_param_numel_by_dtype": dt}, manifest
 
 
 def mode_equiv(a, out):
@@ -172,18 +190,21 @@ def mode_verdict(a, out):
     d = int(json.loads((out / "equiv_run.json").read_text())["env_action_dims"])
     rows = []
     fp = {v: L(v, "fp32") for v in V}
+    sk = {v: L(v, "stock") for v in V}
     bf = {v: L(v, "bf16") for v in (*V, "pad_rep")}
-    for z in (*fp.values(), *bf.values()):
+    for z in (*fp.values(), *sk.values(), *bf.values()):
         assert np.array_equal(z["seeds"], fp["pad"]["seeds"]), "seed sets differ"
     n = len(fp["pad"]["actions"])
     for i in range(n):
         for v in V[1:]:
             rows.append({"input": i, "comparison": "fp32_gate", "variant": v, "vs": "pad",
                          **cmp(fp["pad"]["actions"][i], fp[v]["actions"][i], d)})
+            rows.append({"input": i, "comparison": "checkpoint_dtype_attempt", "variant": v, "vs": "pad",
+                         **cmp(sk["pad"]["actions"][i], sk[v]["actions"][i], d)})
             rows.append({"input": i, "comparison": "bf16_variant_vs_pad", "variant": v, "vs": "pad",
                          **cmp(bf["pad"]["actions"][i], bf[v]["actions"][i], d)})
         rows.append({"input": i, "comparison": "floor_stock_vs_bf16", "variant": "pad", "vs": "stock_pad",
-                     **cmp(fp["pad"]["actions"][i], bf["pad"]["actions"][i], d)})
+                     **cmp(sk["pad"]["actions"][i], bf["pad"]["actions"][i], d)})
         rows.append({"input": i, "comparison": "control_pad_repeat", "variant": "pad", "vs": "pad",
                      **cmp(bf["pad"]["actions"][i], bf["pad_rep"]["actions"][i], d)})
     with (out / "equiv.csv").open("w", newline="") as f:
@@ -202,6 +223,8 @@ def mode_verdict(a, out):
         summ[f"control_pad_repeat_{lab}"] = agg(lambda r: r["comparison"] == "control_pad_repeat", lab)
         for v in V[1:]:
             summ[f"gate_{v}_{lab}"] = agg(lambda r, v=v: r["comparison"] == "fp32_gate" and r["variant"] == v, lab)
+            summ[f"checkpoint_dtype_{v}_{lab}"] = agg(
+                lambda r, v=v: r["comparison"] == "checkpoint_dtype_attempt" and r["variant"] == v, lab)
             summ[f"bf16_{v}_{lab}"] = agg(lambda r, v=v: r["comparison"] == "bf16_variant_vs_pad" and r["variant"] == v, lab)
     verd = []
     for v in V[1:]:
@@ -459,7 +482,7 @@ def main() -> int:
         return 0
     if a.mode == "gate":
         res, spec, note, manifest = mode_gate(a, out)
-        exp, rung, variant = "T017 step 1: fp32 equivalence gate", "stock (shipped, eager, fp32)", \
+        exp, rung, variant = "T017 step 1: fp32 equivalence gate", "stock (shipped, eager) and its fp32 cast", \
             "pad vs nocam / trimprompt / nopad (stock eager)"
     elif a.mode == "equiv":
         res, spec, note, manifest = mode_equiv(a, out)
