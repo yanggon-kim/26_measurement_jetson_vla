@@ -1,0 +1,492 @@
+{
+  "experiment": "T017 step 1: fp32 equivalence gate",
+  "bench_commit": "63ee4584225e11b5e18d9eb33eacb71ae126b830",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "rung": "stock (shipped, eager) and its fp32 cast",
+  "rung_note": {
+    "stock": "shipped model as loaded (checkpoint dtype), eager",
+    "gate": "same model cast to fp32 (policy.float()), eager, TF32 off, matmul highest",
+    "checkpoint_param_numel_by_dtype": {
+      "torch.float32": 418165520,
+      "torch.bfloat16": 3609853952
+    }
+  },
+  "variant": "pad vs nocam / trimprompt / nopad (stock eager)",
+  "N": 10,
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (whole GPU)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "gate_start": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600",
+    "emc_rate_hz": 3199000000,
+    "temps_mC": {
+      "cpu-thermal": 50000,
+      "gpu-thermal": 45031,
+      "soc0-thermal": 46250,
+      "soc1-thermal": 46000,
+      "soc2-thermal": 46281,
+      "tj-thermal": 50156
+    },
+    "t_utc": "2026-09-27T22:26:32Z"
+  },
+  "throttled": false,
+  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 58.4 C (trip threshold used 95 C); temps at end {'cpu-thermal': 58375, 'gpu-thermal': 54687, 'soc0-thermal': 54406, 'soc1-thermal': 53437, 'soc2-thermal': 54250, 'tj-thermal': 58375}",
+  "inputs": "bench/fixtures/e14b",
+  "noise_seeds": "17000 + input",
+  "compilation": "none (eager)",
+  "implementation": "bench/pi0_padtrim.py (harness-level; LeRobot untouched; shared with T016 step 3 nopad)",
+  "nocam_note": "LeRobot's _preprocess_images builds the -1 dummy for the empty camera outside every timed region; it is removed from the list before the image encoder -- no SigLIP / projector call, no tokens, no mask entry",
+  "inputs_manifest": {
+    "_comment": "T017 step 3 input set, fixed before any T017 run (selection rule in bench/e14b_inputs.py)",
+    "dataset": "HuggingFaceVLA/libero",
+    "split": "train",
+    "source_api": "https://datasets-server.huggingface.co/rows",
+    "tasks": [
+      0,
+      16,
+      10,
+      13,
+      14,
+      21,
+      3,
+      36
+    ],
+    "valid_prompt_tokens": {
+      "0": 21,
+      "16": 6,
+      "10": 8,
+      "13": 9,
+      "14": 11,
+      "21": 12,
+      "3": 14,
+      "36": 17
+    },
+    "noise_seed": "17000 + input",
+    "frames": [
+      {
+        "file": "obs_0.json",
+        "row_offset": 0
+      },
+      {
+        "file": "obs_1.json",
+        "row_offset": 23686
+      },
+      {
+        "file": "obs_2.json",
+        "row_offset": 34432
+      },
+      {
+        "file": "obs_3.json",
+        "row_offset": 51663
+      },
+      {
+        "file": "obs_4.json",
+        "row_offset": 63256
+      },
+      {
+        "file": "obs_5.json",
+        "row_offset": 70945
+      },
+      {
+        "file": "obs_6.json",
+        "row_offset": 84674
+      },
+      {
+        "file": "obs_7.json",
+        "row_offset": 98628
+      },
+      {
+        "file": "obs_8.json",
+        "row_offset": 102876
+      },
+      {
+        "file": "obs_9.json",
+        "row_offset": 109293
+      },
+      {
+        "file": "obs_10.json",
+        "row_offset": 116205
+      },
+      {
+        "file": "obs_11.json",
+        "row_offset": 125288
+      },
+      {
+        "file": "obs_12.json",
+        "row_offset": 130574
+      },
+      {
+        "file": "obs_13.json",
+        "row_offset": 140614
+      },
+      {
+        "file": "obs_14.json",
+        "row_offset": 146280
+      },
+      {
+        "file": "obs_15.json",
+        "row_offset": 152874
+      },
+      {
+        "file": "obs_16.json",
+        "row_offset": 101469
+      },
+      {
+        "file": "obs_17.json",
+        "row_offset": 110475
+      },
+      {
+        "file": "obs_18.json",
+        "row_offset": 117648
+      },
+      {
+        "file": "obs_19.json",
+        "row_offset": 124353
+      },
+      {
+        "file": "obs_20.json",
+        "row_offset": 130950
+      },
+      {
+        "file": "obs_21.json",
+        "row_offset": 134984
+      },
+      {
+        "file": "obs_22.json",
+        "row_offset": 143836
+      },
+      {
+        "file": "obs_23.json",
+        "row_offset": 153499
+      },
+      {
+        "file": "obs_24.json",
+        "row_offset": 102281
+      },
+      {
+        "file": "obs_25.json",
+        "row_offset": 111054
+      },
+      {
+        "file": "obs_26.json",
+        "row_offset": 117541
+      },
+      {
+        "file": "obs_27.json",
+        "row_offset": 124452
+      },
+      {
+        "file": "obs_28.json",
+        "row_offset": 132366
+      },
+      {
+        "file": "obs_29.json",
+        "row_offset": 141669
+      },
+      {
+        "file": "obs_30.json",
+        "row_offset": 147391
+      },
+      {
+        "file": "obs_31.json",
+        "row_offset": 152522
+      },
+      {
+        "file": "obs_32.json",
+        "row_offset": 102393
+      },
+      {
+        "file": "obs_33.json",
+        "row_offset": 107273
+      },
+      {
+        "file": "obs_34.json",
+        "row_offset": 112488
+      },
+      {
+        "file": "obs_35.json",
+        "row_offset": 117754
+      },
+      {
+        "file": "obs_36.json",
+        "row_offset": 123174
+      },
+      {
+        "file": "obs_37.json",
+        "row_offset": 128275
+      },
+      {
+        "file": "obs_38.json",
+        "row_offset": 136604
+      },
+      {
+        "file": "obs_39.json",
+        "row_offset": 152315
+      },
+      {
+        "file": "obs_40.json",
+        "row_offset": 153654
+      },
+      {
+        "file": "obs_41.json",
+        "row_offset": 157992
+      },
+      {
+        "file": "obs_42.json",
+        "row_offset": 173436
+      },
+      {
+        "file": "obs_43.json",
+        "row_offset": 181280
+      },
+      {
+        "file": "obs_44.json",
+        "row_offset": 186799
+      },
+      {
+        "file": "obs_45.json",
+        "row_offset": 196040
+      },
+      {
+        "file": "obs_46.json",
+        "row_offset": 204384
+      },
+      {
+        "file": "obs_47.json",
+        "row_offset": 220475
+      },
+      {
+        "file": "obs_48.json",
+        "row_offset": 1646
+      },
+      {
+        "file": "obs_49.json",
+        "row_offset": 13871
+      },
+      {
+        "file": "obs_50.json",
+        "row_offset": 26437
+      },
+      {
+        "file": "obs_51.json",
+        "row_offset": 49930
+      },
+      {
+        "file": "obs_52.json",
+        "row_offset": 64424
+      },
+      {
+        "file": "obs_53.json",
+        "row_offset": 73182
+      },
+      {
+        "file": "obs_54.json",
+        "row_offset": 81179
+      },
+      {
+        "file": "obs_55.json",
+        "row_offset": 97237
+      },
+      {
+        "file": "obs_56.json",
+        "row_offset": 222692
+      },
+      {
+        "file": "obs_57.json",
+        "row_offset": 231225
+      },
+      {
+        "file": "obs_58.json",
+        "row_offset": 238039
+      },
+      {
+        "file": "obs_59.json",
+        "row_offset": 245633
+      },
+      {
+        "file": "obs_60.json",
+        "row_offset": 251539
+      },
+      {
+        "file": "obs_61.json",
+        "row_offset": 255805
+      },
+      {
+        "file": "obs_62.json",
+        "row_offset": 263226
+      },
+      {
+        "file": "obs_63.json",
+        "row_offset": 271750
+      }
+    ],
+    "episode_ranges_source": {
+      "episodes_parquet": "https://huggingface.co/datasets/HuggingFaceVLA/libero/resolve/main/meta/episodes/chunk-000/file-000.parquet",
+      "sha256": "708573e3caf9f03aed5f572d73ac6a29c0209ce4579bfc794bc6c4b1c1ff68b5",
+      "tasks_parquet": "https://huggingface.co/datasets/HuggingFaceVLA/libero/resolve/main/meta/tasks.parquet",
+      "tasks_sha256": "c01ec32de3ba5f5cd7eb251ce1e6279a60fbe1c80d12df1eeca746927f78df6c"
+    },
+    "fixture_control": "obs_0 = row offset 0: decoded pixels of both cameras bit-identical to bench/fixtures/observation.json (max|d| = 0), state and task equal",
+    "fetched_utc": "2026-09-27"
+  },
+  "result": {
+    "gate": "PASS",
+    "threshold_rel": 0.0001,
+    "worst_rel_env": {
+      "nocam": 1.4821020042799268e-06,
+      "trimprompt": 2.3323841437800956e-07,
+      "nopad": 1.147153563776931e-06
+    },
+    "worst_rel_all": {
+      "nocam": 7.954360066329994e-07,
+      "trimprompt": 1.7116914908414716e-07,
+      "nopad": 5.647060325799337e-07
+    },
+    "checkpoint_dtype_attempt_worst_rel_env": {
+      "nocam": 0.002852325514713473,
+      "trimprompt": 0.047818468532353324,
+      "nopad": 0.008867147511845567
+    },
+    "checkpoint_param_numel_by_dtype": {
+      "torch.float32": 418165520,
+      "torch.bfloat16": 3609853952
+    },
+    "gate_dtypes_after_cast": [
+      "torch.float32"
+    ],
+    "nonfinite": 0,
+    "inputs": 64,
+    "first_call_s": {
+      "stock": {
+        "pad@L48": 1.379,
+        "nocam@L48": 0.911,
+        "trimprompt@L21": 1.062,
+        "nopad@L21": 0.91,
+        "trimprompt@L6": 1.054,
+        "nopad@L6": 0.902,
+        "trimprompt@L8": 1.047,
+        "nopad@L8": 0.901,
+        "trimprompt@L9": 1.057,
+        "nopad@L9": 0.907,
+        "trimprompt@L11": 1.057,
+        "nopad@L11": 0.908,
+        "trimprompt@L12": 1.051,
+        "nopad@L12": 0.905,
+        "trimprompt@L14": 1.05,
+        "nopad@L14": 0.903,
+        "trimprompt@L17": 1.056,
+        "nopad@L17": 0.907
+      },
+      "fp32": {
+        "pad@L48": 2.644,
+        "nocam@L48": 1.953,
+        "trimprompt@L21": 2.568,
+        "nopad@L21": 1.926,
+        "trimprompt@L6": 2.551,
+        "nopad@L6": 1.911,
+        "trimprompt@L8": 2.549,
+        "nopad@L8": 1.907,
+        "trimprompt@L9": 2.549,
+        "nopad@L9": 1.908,
+        "trimprompt@L11": 2.547,
+        "nopad@L11": 1.907,
+        "trimprompt@L12": 2.545,
+        "nopad@L12": 1.911,
+        "trimprompt@L14": 2.549,
+        "nopad@L14": 1.911,
+        "trimprompt@L17": 2.551,
+        "nopad@L17": 1.914
+      }
+    }
+  },
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/e14b_padtrim.py --mode gate --outdir results/20260927_E14b_pi0_padtrim_equiv",
+  "torch": "2.8.0",
+  "date_utc": "2026-09-27T22:46:54Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "raw_files": [
+    {
+      "path": "gate.csv",
+      "bytes": 49121,
+      "sha256": "37776bd83c434d4e4c938f9ba4af62f2f0ec0121e3b6c02b632b88217aa00787"
+    },
+    {
+      "path": "gate_summary.json",
+      "bytes": 1592,
+      "sha256": "b3f4f004cd0822a2fb7e410f2021766ba3afbc29693f1d47d7090bed7bfcfa54"
+    },
+    {
+      "path": "raw/actions_nocam_fp32.npz",
+      "bytes": 412396,
+      "sha256": "5c6efd059cde5de7b6073de9c9901c89c1191df1fa1a41af11e1125c8b7b5ebe"
+    },
+    {
+      "path": "raw/actions_nocam_stock.npz",
+      "bytes": 412396,
+      "sha256": "2a660d92aad47fa559d2e379dcdc3b74ba0a7560c8971777c130d39eb2abe16e"
+    },
+    {
+      "path": "raw/actions_nopad_fp32.npz",
+      "bytes": 412396,
+      "sha256": "c532e7b96081229533e180fb6b10efa551aa856d917a5e309094b4e1b3d6191d"
+    },
+    {
+      "path": "raw/actions_nopad_stock.npz",
+      "bytes": 412396,
+      "sha256": "785554c022ec71ff954ba830461c3d47b566cb7762e388ed9eb6dd708143b4c6"
+    },
+    {
+      "path": "raw/actions_pad_fp32.npz",
+      "bytes": 412396,
+      "sha256": "de5e5f70f34419eb38f634058b17a30af15cdb841fe8fe8e94013f490d9f9ce6"
+    },
+    {
+      "path": "raw/actions_pad_stock.npz",
+      "bytes": 412396,
+      "sha256": "fa959d6300d1136f0729bb73389e8d84e61e61108d773cab8ed076cb2508eff6"
+    },
+    {
+      "path": "raw/actions_trimprompt_fp32.npz",
+      "bytes": 412396,
+      "sha256": "0df73956f9d16853dd292bb1f97dbd21a8183c3fbe720ac54ac2c03f7ddd0e9c"
+    },
+    {
+      "path": "raw/actions_trimprompt_stock.npz",
+      "bytes": 412396,
+      "sha256": "15e73962dcf9995c3336776004713bb0d445b31ec5fc94dd8f7c4e7cff2ba5ef"
+    }
+  ]
+}
