@@ -1,0 +1,75 @@
+{
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "bf16_both",
+  "rung_note": {
+    "rung": "bf16_both",
+    "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
+    "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
+    "matmul_precision": "high",
+    "matches_E7": true
+  },
+  "sm_count": 16,
+  "granted_partitions": "none (whole GPU)",
+  "emc_rate_hz": 3199000000,
+  "gpu_clock_hz": 1300500000,
+  "experiment": "T016 step 3 (A4): pi0_bf16_both+nopad vs pi0_bf16_both (pad) -- DRAM bytes per frame, E12b graph-level ncu method",
+  "bench_commit": "1d6b5e62b688af4bb51471e5f538b8d34892459e",
+  "variant": "pi0_bf16_both+nopad vs pi0_bf16_both (pad)",
+  "power_mode": "NV Power Mode: MAXN",
+  "throttled": "not sampled during the ncu capture (ncu serialises kernels, so clocks do not bear on bytes); jetson_clocks applied immediately before (queue scratch/queues/t016_followup.sh)",
+  "command": "bash bench/run_ncu_e14.sh results/20260926_E14_pi0_nopad_MAXN/bytes pad,nopad 5 (after a no-ncu warm-up: bench/e14_bytes_target.py --variants pad,nopad --frames 2)",
+  "method": "ncu --graph-profiling graph --cache-control none, E12b lts__ metric set; harness graphs_both (prefix = one CUDA graph, expert = one graph), NVTX <variant>_prefix / <variant>_expert, 5 frames per stage; expert range drops the two KV-fill prefix workloads; reads = L2 fills from memory (device+sysmem) x 32 B; writes = L2 write sectors x 32 B (upper bound)",
+  "nonfinite": 0,
+  "date_utc": "2026-09-27T14:57:47Z",
+  "ncu_version": "2024.3.1",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "dram_bytes.csv",
+      "bytes": 406,
+      "sha256": "28288e090c441b05538e1c580989a8fe2421bb58e64bf72a415fccdc15d7c0ab"
+    },
+    {
+      "path": "ncu/e14_pad_nopad.ncu-rep.zst",
+      "bytes": 3742578,
+      "sha256": "82e762ff23d42e424970e544e4280a77461e47fca305e7801f0effe1c27c2ba2"
+    },
+    {
+      "path": "ncu/e14_pad_nopad.sh",
+      "bytes": 894,
+      "sha256": "c6ad0b64b6498f156f061ef9e190247ecc75caf9ec89610c46d2b1c519d1abfd"
+    },
+    {
+      "path": "ncu/e14_pad_nopad.stdout",
+      "bytes": 10335,
+      "sha256": "eed9e019049176b10c621c9869b47f18671fd2ab26dea81ec9651d448c70c7c0"
+    },
+    {
+      "path": "ncu/e14_pad_nopad_raw.csv",
+      "bytes": 222846,
+      "sha256": "e75f4cbaefeea214ee450c16eb0a1071dc6e832af4b683a1a73636f9b5b8ca2d"
+    }
+  ]
+}
