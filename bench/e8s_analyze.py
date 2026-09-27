@@ -104,8 +104,25 @@ def main() -> int:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader(); w.writerows(rows)
     (out / "e8s_summary.json").write_text(json.dumps({"arms": rows, "pooled_vs_N10": pool}, indent=1) + "\n")
+    md = ["| suite | N | successes / 100 [Wilson 95 %] | vs N = 10: only arm / only N10 | exact McNemar p | "
+          "paired diff (pp) [95 %] | agreement | forward ms (median) |", "|---|---:|---|---:|---:|---|---:|---:|"]
     for r in rows:
-        extra = (f"  vs N10: +{r['only_arm']}/-{r['only_N10']} p={r['mcnemar_p']:.3g} diff {r['diff']*100:+.1f} pp "
+        lab = f"{r['N']}" + (f" {r['tag']}" if r["tag"] else "")
+        cmp = (f"{r['only_arm']} / {r['only_N10']} | {r['mcnemar_p']:.3g} | {r['diff']*100:+.1f} "
+               f"[{r['diff_lo']*100:+.1f}, {r['diff_hi']*100:+.1f}] | {r['agreement']:.2f}"
+               if "diff" in r else "— | — | — | —")
+        md.append(f"| {r['suite']} | {lab} | **{r['successes']}** [{r['wilson_lo']*100:.1f}, {r['wilson_hi']*100:.1f}] "
+                  f"| {cmp} | {r['forward_ms_median']} |")
+    md += ["", "| N | suites | successes [Wilson 95 %] | N = 10 | only arm / only N10 | exact McNemar p | "
+           "paired diff (pp) [95 %] |", "|---:|---:|---|---:|---:|---:|---|"]
+    for p in pool:
+        md.append(f"| {p['N']} | {len(p['suites'])} | **{p['successes']}/{p['episodes']}** "
+                  f"[{p['wilson'][0]*100:.1f}, {p['wilson'][1]*100:.1f}] | {p['N10_successes']} | "
+                  f"{p['only_arm']} / {p['only_N10']} | {p['mcnemar_p']:.3g} | {p['diff']*100:+.1f} "
+                  f"[{p['diff_lo']*100:+.1f}, {p['diff_hi']*100:+.1f}] |")
+    (out / "e8s_tables.md").write_text("\n".join(md) + "\n")
+    for r in rows:
+        extra =(f"  vs N10: +{r['only_arm']}/-{r['only_N10']} p={r['mcnemar_p']:.3g} diff {r['diff']*100:+.1f} pp "
                  f"[{r['diff_lo']*100:+.1f}, {r['diff_hi']*100:+.1f}] agree {r['agreement']:.2f} seeds_ok={r['seeds_match_N10']}"
                  if "diff" in r else "")
         print(f"{r['suite']:15s} N={r['N']:2d}{('_'+r['tag']) if r['tag'] else '':5s} {r['successes']:3d}/{r['episodes']} "
