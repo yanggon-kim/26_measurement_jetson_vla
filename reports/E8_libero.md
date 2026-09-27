@@ -12,6 +12,13 @@ Scope: the owner's **Core** choice — π0 only, stock and `bf16_both` at N = 10
 episodes an arm's 95 % interval is ±9–10 points, and the same arm run twice moved by 7 (§4), so this
 resolves a **broken** policy or a large effect, not a few-percent difference.
 
+> **Correction / finding (2026-09-27, T016 step 3).** `bench/libero_eval.py` supplied the checkpoint's
+> `observation.images.empty_camera_0` as an **all-zero image**, so LeRobot's `_preprocess_images` treated it as a
+> present camera (mask 1, its 256 SigLIP tokens attended). Left out — as in training and in `pi0_common.build_batch`
+> — LeRobot synthesises it as a −1 image with **mask 0**. Every arm in this report ran with the empty camera attended.
+> Paired comparisons between arms are unaffected (both arms share the input); absolute success rates are for that
+> input. `--empty-camera masked` now reproduces the training-time input; see `reports/E14_prefix_savings.md` §1.
+
 ## 1. Measured — success
 
 | suite | max steps | stock (as shipped) N=10 | `bf16_both` N=10 | paired: both / only stock / only bf16 / neither | McNemar p |
