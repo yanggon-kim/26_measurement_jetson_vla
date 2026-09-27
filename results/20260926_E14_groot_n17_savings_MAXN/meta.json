@@ -1,0 +1,670 @@
+{
+  "experiment": "T016 step 3 row 7: GR00T N1.7 action equivalence of keep1 / kvonce / keep1+kvonce (compiled and eager) with run-to-run controls",
+  "scope": "this meta.json covers actions_*/ and equiv.csv / equiv_summary.json; time_*/ and bytes/ carry their own; invalid_unseeded_inputs/ is the first, invalid set (NOTE.md)",
+  "bench_commit": "2d81d5922ac1e906a0a81d1f7be8e7a79b1ad286",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7 (Isaac-GR00T)",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_commit": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "rung": "vlm_compile (compiled sets) and eager_tf32 (eager sets)",
+  "variant": "groot_n17_<rung> / +keep1 / +kvonce / +keep1+kvonce",
+  "N": 4,
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (whole GPU)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "throttled": "not applicable to equality of outputs; runs 13:28-13:39 local under jetson_clocks",
+  "inputs": "one observation built by groot_phases.build_observation with np.random.seed(1234) (sha256 77652df3cea3... in every .npz, checked equal per pair)",
+  "noise": "torch.manual_seed(5000 + i) before inference i, i = 0..49",
+  "result": [
+    {
+      "pair": "ref vs ref_rep",
+      "kind": "control",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+      "compiled_b": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs"
+    },
+    {
+      "pair": "eager_ref vs eager_ref_rep",
+      "kind": "control",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "",
+      "compiled_b": ""
+    },
+    {
+      "pair": "ref vs keep1",
+      "kind": "variant",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+      "compiled_b": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs"
+    },
+    {
+      "pair": "ref vs kvonce",
+      "kind": "variant",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+      "compiled_b": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs"
+    },
+    {
+      "pair": "ref vs keep1+kvonce",
+      "kind": "variant",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+      "compiled_b": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs"
+    },
+    {
+      "pair": "eager_ref vs eager_keep1",
+      "kind": "variant",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "",
+      "compiled_b": ""
+    },
+    {
+      "pair": "eager_ref vs eager_kvonce",
+      "kind": "variant",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "",
+      "compiled_b": ""
+    },
+    {
+      "pair": "eager_ref vs eager_keep1+kvonce",
+      "kind": "variant",
+      "inferences": 50,
+      "bitwise": 50,
+      "MAXABS": 0.0,
+      "median_maxabs": 0.0,
+      "REL": 0.0,
+      "median_rel": 0.0,
+      "nonfinite": 0,
+      "compiled_a": "",
+      "compiled_b": ""
+    },
+    {
+      "pair": "eager_ref vs ref",
+      "kind": "floor",
+      "inferences": 50,
+      "bitwise": 0,
+      "MAXABS": 6.75,
+      "median_maxabs": 5.328125,
+      "REL": 1.2733937087891327,
+      "median_rel": 1.2311838120484468,
+      "nonfinite": 0,
+      "compiled_a": "",
+      "compiled_b": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs"
+    }
+  ],
+  "command": "bash scratch/queues/t016_groot_actions_v2.sh (groot_phases.py --save-actions 50:<dir>/actions.npz per set; python bench/e14_groot_equiv.py)",
+  "note_compiled_vs_eager": "eager vs compiled REL 1.27 equals the seed-to-seed spread (1.23): the two paths draw different noise from the same seed, so no eager/compiled floor is defined",
+  "note_recompile": "torch._dynamo recompile_limit (8) warning on transformers wrapped_forward in every compiled GR00T run, including all earlier E3/E4/E7 and T016 timing runs; same configuration",
+  "date_utc": "2026-09-27T20:39:19Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "actions_eager_keep1/actions.npz",
+      "bytes": 1058802,
+      "sha256": "f489ec9aebabfff2c5d0f628acce2a3fddae1c215b8263bd4708df851054f4ae"
+    },
+    {
+      "path": "actions_eager_keep1+kvonce/actions.npz",
+      "bytes": 1059454,
+      "sha256": "33b2dded0bbe9663b5a2756d2dd4220d3e16401193f80fdebd2f9e1c2e304175"
+    },
+    {
+      "path": "actions_eager_kvonce/actions.npz",
+      "bytes": 1059082,
+      "sha256": "dfee8b6734ad0aba93affb36d98d908b5acd9adf3cddb9eff48d7991620b3c43"
+    },
+    {
+      "path": "actions_eager_ref/actions.npz",
+      "bytes": 1058470,
+      "sha256": "da4bb17b930b220ee346e8eb393a1f6e4270a086fbc9a4b3ba91701bdfabbc14"
+    },
+    {
+      "path": "actions_eager_ref_rep/actions.npz",
+      "bytes": 1058470,
+      "sha256": "da4bb17b930b220ee346e8eb393a1f6e4270a086fbc9a4b3ba91701bdfabbc14"
+    },
+    {
+      "path": "actions_keep1/actions.npz",
+      "bytes": 1059234,
+      "sha256": "d971b8a09a41f912a07447505f42f64fcc59abdc64f423833a8587243a9759a1"
+    },
+    {
+      "path": "actions_keep1+kvonce/actions.npz",
+      "bytes": 1059886,
+      "sha256": "2e023dda73030dc95c25ec36789ddd206750ffbf7a73bcf356fcc029d794f271"
+    },
+    {
+      "path": "actions_kvonce/actions.npz",
+      "bytes": 1059514,
+      "sha256": "5eae5cd0b735b38c82726983a70afcd5e7e64a0860af636d67bb79f6a42d8920"
+    },
+    {
+      "path": "actions_ref/actions.npz",
+      "bytes": 1058902,
+      "sha256": "8033226b0b5c478374cd1cbdba8794c6b99948a28d0376f6035339fea94fcd53"
+    },
+    {
+      "path": "actions_ref_rep/actions.npz",
+      "bytes": 1058902,
+      "sha256": "8033226b0b5c478374cd1cbdba8794c6b99948a28d0376f6035339fea94fcd53"
+    },
+    {
+      "path": "bytes/dram_bytes.csv",
+      "bytes": 1067,
+      "sha256": "c6e0864622704f81032711927cd90ee2a10f36b470cbcd3bb2d92439b5cfc866"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s0.ncu-rep.zst",
+      "bytes": 4182291,
+      "sha256": "3ff61f06e750ea3b2dd17c24fc0df618496a77f660c3be85b6f149ee8d3eeff2"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s0.sh",
+      "bytes": 1330,
+      "sha256": "68785d59308ef3534049ac9ead4b9303dad8e46e4692eeaee0842ce1f36ee3a4"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s0.stdout",
+      "bytes": 46697,
+      "sha256": "a8d565f0275523d1203f4550db8d90bb3f9a0bfbff553e139059dfed874579c1"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s0_raw.csv",
+      "bytes": 995320,
+      "sha256": "0e1bdfe9a83fbe05bf09ab19a6d878e2fa558fe781e93d1cfec2f2598abd35c6"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s1350.ncu-rep.zst",
+      "bytes": 5287083,
+      "sha256": "5de4629f1e3b0a406a6a35351d4d89f16105d3b2dcf5fb448dbdca48c7fca4d8"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s1350.sh",
+      "bytes": 1336,
+      "sha256": "8598c1b999c7b2d94df869579094da7a4d9eb4ebb0053c7b8d07b71b0e3f5c6f"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s1350.stdout",
+      "bytes": 32222,
+      "sha256": "3f778d5f7ecda17d5e0df245b9366c637e522fa31c4a8bf28c87ac78b7bc5caf"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s1350_raw.csv",
+      "bytes": 643195,
+      "sha256": "50723ec4fdf738ba84a7c23fb278285e891e01453861ef91d890c38879d92bd7"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s450.ncu-rep.zst",
+      "bytes": 3863487,
+      "sha256": "392431a0952ea682a11b4d73034583b751bd7bdc70d62c96f7e649dd341f3b98"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s450.sh",
+      "bytes": 1334,
+      "sha256": "78780c02f64154d97557060ffb3b26e9d4e307803bd8ee20192ce5fc718d2798"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s450.stdout",
+      "bytes": 46918,
+      "sha256": "1a56970839bf7b183d5869ec0a4d3c0cdec5ec6b25c18ed8c3047fdcfb57089d"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s450_raw.csv",
+      "bytes": 994498,
+      "sha256": "386079305ff2ebb729032acde1d0f07bdf6e93419e3948a83e589df4b2ce2f69"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s900.ncu-rep.zst",
+      "bytes": 3065504,
+      "sha256": "f35888e44d85c1efd9452ef19afefea091e48b8abadb05041419c3073f6af628"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s900.sh",
+      "bytes": 1334,
+      "sha256": "56f1be09b769c258d7bc324954c88ed97881ee675668c94a246072e62938c1c6"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s900.stdout",
+      "bytes": 46811,
+      "sha256": "67afbe262abad8a8557a5a38ae0232497a49be08a1c3790a6c1853488e39d049"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1+kvonce_s900_raw.csv",
+      "bytes": 980262,
+      "sha256": "8f450c3078fe272c0396dd2965995dc9d50457fe7fed7f8541a7298c1390cd61"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s0.ncu-rep.zst",
+      "bytes": 4186021,
+      "sha256": "16a47235b7632884ff93afd06d0d9954691d8909fa9b855d06848e0f490be4d7"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s0.sh",
+      "bytes": 1307,
+      "sha256": "9ebd80dde2f7e40441126c1e6af2419263c45c801a261bfb8f2c755677bd2b8f"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s0.stdout",
+      "bytes": 46524,
+      "sha256": "3b0b939cb5fd0e5719c8234c3eaa3be4af9269ab7e3abe4fd46027774760dd6a"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s0_raw.csv",
+      "bytes": 995336,
+      "sha256": "90b0db01aeebfdee37f3a06580608ba2be1e05e7d3f706e35e3dd9f04d374921"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s1350.ncu-rep.zst",
+      "bytes": 5256937,
+      "sha256": "2ed70381699d2744ef5f5e3cca4564fadb2a83aad4840a49897bb35d6cc2d309"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s1350.sh",
+      "bytes": 1313,
+      "sha256": "4af573495021536e6be37837352e8f2b2d24d6166e30fda3d9632d40eb759cf2"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s1350.stdout",
+      "bytes": 32049,
+      "sha256": "7f52403cb41a52d0a843dcaa991dbdeb65891cfc5939add5ee036b60c2b0fce3"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s1350_raw.csv",
+      "bytes": 643151,
+      "sha256": "b6330f6d12bb11a301c52b7d79ca844386cce3d63c9c39cb8376dd8434e85b1d"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s450.ncu-rep.zst",
+      "bytes": 3864912,
+      "sha256": "e2c5e121cbf9acea55fe8b68f538c0dffdf923d009375ef780dd3a48cf497434"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s450.sh",
+      "bytes": 1311,
+      "sha256": "f4195fa37544fb92a276e77694a0270f9827c702ba0b888882d49d2203b57cec"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s450.stdout",
+      "bytes": 46744,
+      "sha256": "6b1fe309d8cd015c95d860849ed3ddbccc2a5a782d9c3b0871c952ffbdb0324c"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s450_raw.csv",
+      "bytes": 990905,
+      "sha256": "81183cca22c3d3c148473bc1f20b224a407f4c0b6fa2845ee74704381732d5c4"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s900.ncu-rep.zst",
+      "bytes": 3065593,
+      "sha256": "7a386d3b8ae0598279b6cbd0c86ec517ccba26c7f957e04728e2a3a2e72ba9cd"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s900.sh",
+      "bytes": 1311,
+      "sha256": "9dcf73fabe32637115f059808073ba7cf7e0fc8f24ac13e4b327590430861b23"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s900.stdout",
+      "bytes": 46638,
+      "sha256": "7c69eb0fb2f266ff631e2696fcb0cc4f8d05a5ff6694e800e7666626147586b4"
+    },
+    {
+      "path": "bytes/ncu/e14g_keep1_s900_raw.csv",
+      "bytes": 980202,
+      "sha256": "dd63e6e8bcae3c744e091028b25d2a7cbdebd4547b9b6cdd1e6e8832bc3bd5c8"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s0.ncu-rep.zst",
+      "bytes": 4260179,
+      "sha256": "cd5d20d7e06edb543d8b217ca9d6d1c2bd7e0a68e051920d2f39cd21e6b12a6b"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s0.sh",
+      "bytes": 1310,
+      "sha256": "77b59ab6ef68b1324416052536b5541e2519f9663ec7c0f410be5e528a3a99ec"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s0.stdout",
+      "bytes": 46594,
+      "sha256": "1041953383371ed644e98ef569104ad83230f4cea5d571f7d3e487d884cc87ca"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s0_raw.csv",
+      "bytes": 995329,
+      "sha256": "c7c8c81b6e6e872ed53295115e9eac34768040759d3c586aff02c3a0b5015bf5"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s1350.ncu-rep.zst",
+      "bytes": 5277437,
+      "sha256": "1ba72faa553cb5529eb59a5d12a9d9b4408064fbaa19917edab47f402ea1e2d4"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s1350.sh",
+      "bytes": 1316,
+      "sha256": "0c4f3c8232acfe449bda6f107d62ddda890365744d9fd2eb1fd430a30df1cef4"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s1350.stdout",
+      "bytes": 32095,
+      "sha256": "7ee0a7a571caf6044ce700f350efd511bac29e9d3d06f93e131fea03b69f281f"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s1350_raw.csv",
+      "bytes": 643219,
+      "sha256": "7788395b9a7aeb526f799cbcde9c31a5bc936aac86d451e613ab73c6121f39b8"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s450.ncu-rep.zst",
+      "bytes": 3747350,
+      "sha256": "5008e8cbf13fb94dffd05e9274104de40acf84ccdc924fd8df8abfb12ed42458"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s450.sh",
+      "bytes": 1314,
+      "sha256": "ed80cd25266ce72424665bbdcd49a5e9a362f3389a86ece06ea4d917ee108b7e"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s450.stdout",
+      "bytes": 46816,
+      "sha256": "041b4dd718b5b9b44946a794975d16c4c16e095e84c449a0ac69464eece31703"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s450_raw.csv",
+      "bytes": 990905,
+      "sha256": "e00cad26a111e4155311b3ed9fbc6781756c6c545cb37b276caf4c84ff0c82ff"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s900.ncu-rep.zst",
+      "bytes": 3065415,
+      "sha256": "8c455c82d375d3d05fa22d8e3e6170d2a6bd0bd1d7baa73d3c535cc7aa218aab"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s900.sh",
+      "bytes": 1314,
+      "sha256": "58756f77bc14993474015f947adc38fadf01dfbb064f562d0c177a7073f67c02"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s900.stdout",
+      "bytes": 46710,
+      "sha256": "670b98d20b014f8278cc6bdb90853e59e79df5d3b73cd0c8823a22639205d33f"
+    },
+    {
+      "path": "bytes/ncu/e14g_kvonce_s900_raw.csv",
+      "bytes": 983786,
+      "sha256": "86d9921148272f39fca28a070a6c79bb4545647c48b9e7104b94dd2e20cc948c"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s0.ncu-rep.zst",
+      "bytes": 4388502,
+      "sha256": "9619a0046845d0c780befd21da2babbcbb4d0947e73e774e33051b5a5891c62b"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s0.sh",
+      "bytes": 1296,
+      "sha256": "3aab958f288d03d74443c65e7147c531cfdba8c9d1a79b0e8f3de86483cb6a48"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s0.stdout",
+      "bytes": 46397,
+      "sha256": "ef6491d6fe97a310c351d0ded022c3ee08d4327e0b8a0506e7c2ef952d23b557"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s0_raw.csv",
+      "bytes": 994411,
+      "sha256": "2f09ebdd9dfe166358a7fedff641e9bb7ad322b605e67852c7dd2d8b21af3f7f"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s1350.ncu-rep.zst",
+      "bytes": 5248541,
+      "sha256": "51321a0cfdb126915d1550853b9920d23833b8778c8ef325910e54bcf45582e2"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s1350.sh",
+      "bytes": 1302,
+      "sha256": "9fc3b778ed1babd6a715af476ac0397cc0a2bafd06eb579582610995d1f1fb56"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s1350.stdout",
+      "bytes": 31915,
+      "sha256": "4a0a3511f2f34ed9e2669a7b148056e46e24075a222f2d231b489117e920be23"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s1350_raw.csv",
+      "bytes": 643167,
+      "sha256": "204f6ce424ebb22cc6a37bac107f612f71e1c34efc83cb9f389f5bd98b24a1ca"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s450.ncu-rep.zst",
+      "bytes": 3799667,
+      "sha256": "caf354efaff34eae2b9a16cf96df94b4acbd6db0e8fb28fc1652519773dbe387"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s450.sh",
+      "bytes": 1300,
+      "sha256": "0653ec12e0eeba5b06d45f57d1ed3443363c4422c18a067978801a6c81b59deb"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s450.stdout",
+      "bytes": 46618,
+      "sha256": "7284dc32cdb06b622e5f2048c06adac01e77bccb2c5cf7c1ffe207950c572e1a"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s450_raw.csv",
+      "bytes": 993585,
+      "sha256": "c3bd43c2f526ee4b1a41e61c7d0c4b6160eadfdb94ca4bbc3d498b3b143e24ba"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s900.ncu-rep.zst",
+      "bytes": 3064304,
+      "sha256": "f15c3763067643d4568625f4b4a0bb9b1ec75f9a2b455396c7540bd7c77a1f14"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s900.sh",
+      "bytes": 1300,
+      "sha256": "115b542bc87a974aa8265165b62e8f96ec0e1a1a890a4b5c050a9eae9d597aa8"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s900.stdout",
+      "bytes": 46511,
+      "sha256": "3f55c650b30a058521809b2d630b561a12a27b494a665b19a5b8f09caa05b85c"
+    },
+    {
+      "path": "bytes/ncu/e14g_ref_s900_raw.csv",
+      "bytes": 982900,
+      "sha256": "a490bfcb1e7595490951adbc2c2492efcd8250fa7b39a212c7aae6f820a74ede"
+    },
+    {
+      "path": "bytes/summary.json",
+      "bytes": 4804,
+      "sha256": "a513b8e3229e8ed7f517934ac980bab3c8e9681e5037f2dc6c4c138a0a42b563"
+    },
+    {
+      "path": "equiv.csv",
+      "bytes": 23804,
+      "sha256": "8b6df26516672656d33340cf950b1d4d5b96407d1cce50f4a3b5a8e46a1908ff"
+    },
+    {
+      "path": "equiv_summary.json",
+      "bytes": 3105,
+      "sha256": "a4f7a4181a897c8b06f2f52a1b1c93d50e196eb2a78f92dceb604ff8f6d9d8c8"
+    },
+    {
+      "path": "invalid_unseeded_inputs/NOTE.md",
+      "bytes": 1038,
+      "sha256": "111aee1e1e484af8b640a438381b89cbece7e319f085e8eea092f44a18e159fc"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_eager_keep1/actions.npz",
+      "bytes": 1058034,
+      "sha256": "fc38927c71d9522aff8943d16b014d9ad1cb4a12afd589dbfbeb2f1287480c84"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_eager_keep1+kvonce/actions.npz",
+      "bytes": 1058686,
+      "sha256": "d317700b4e8bcd40c7143e1e37167b697bc5fe8d79a634f7c46b3dbf9c88e479"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_eager_kvonce/actions.npz",
+      "bytes": 1058314,
+      "sha256": "3f465e715352c6c9291c33c06ac20812b3519d0e678c0df71b93648fb06849eb"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_eager_ref/actions.npz",
+      "bytes": 1057702,
+      "sha256": "5311a4fb3c6fa5024ebe6f02196cbc0ed51dc306f5e97c6dad5012712e186941"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_eager_ref_rep/actions.npz",
+      "bytes": 1057702,
+      "sha256": "be8272b17f0af909064406658359ac587ff11eaf3e86e148fb9d2c0ab7f75da0"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_keep1/actions.npz",
+      "bytes": 1058466,
+      "sha256": "04b0623a7791049d60c743c278e9af14c12a7e9509466f68694c487d06d68055"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_keep1+kvonce/actions.npz",
+      "bytes": 1059118,
+      "sha256": "9706cc02ed493abfce8623a9fe0482c41a74366ab595bde0ecb075573c7bac20"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_kvonce/actions.npz",
+      "bytes": 1058746,
+      "sha256": "5b3825cf9d9be2372727e7933deab141a1ef18656a18f6b7540b28413e7a6744"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_ref/actions.npz",
+      "bytes": 1058134,
+      "sha256": "c3b96676eb8c8dcb478aee862f32a5e61d83bc8606c1ef66b35ebe4568143688"
+    },
+    {
+      "path": "invalid_unseeded_inputs/actions_ref_rep/actions.npz",
+      "bytes": 1058134,
+      "sha256": "db14ae05660ddeef8ef34031d3d49e95c7e0ed1d358b6196c7ba928974850828"
+    },
+    {
+      "path": "invalid_unseeded_inputs/equiv.csv",
+      "bytes": 33659,
+      "sha256": "b56cd3e13e00208c7b80ef06e0c7e8508a489d2d3237bfaebcae94ef9d4e6151"
+    },
+    {
+      "path": "invalid_unseeded_inputs/equiv_summary.json",
+      "bytes": 3477,
+      "sha256": "fbd44e44fc946cf419bbeaf31700d69bbe3b5bb02cf9bab5a394a86d16b3d89d"
+    },
+    {
+      "path": "time_keep1/phase_split.csv",
+      "bytes": 496,
+      "sha256": "c0f77ed26556e8ec3b3bb6bf7fcbd5bee45fe5146f8ce61c5e687f497b1ac22c"
+    },
+    {
+      "path": "time_keep1/raw/rows/vlm_compile.json",
+      "bytes": 544,
+      "sha256": "b976cacc3cdcbfd887e2c6ea1e8392d1cab0eacb64d4d04fe1ca23cc1b57829b"
+    },
+    {
+      "path": "time_keep1+kvonce/phase_split.csv",
+      "bytes": 496,
+      "sha256": "2a600ea49211bad61acc1ac0c584954ed07e32992a15d3535b5058dff28de58a"
+    },
+    {
+      "path": "time_keep1+kvonce/raw/rows/vlm_compile.json",
+      "bytes": 708,
+      "sha256": "351969cad91ca49b786af564d6e9b357f05453ae7388c0e9551fff95ccc71fb4"
+    },
+    {
+      "path": "time_kvonce/phase_split.csv",
+      "bytes": 501,
+      "sha256": "74891d504dacd97c29855876c8255a466bfdfd533373683fae6ec59a43dc4da0"
+    },
+    {
+      "path": "time_kvonce/raw/rows/vlm_compile.json",
+      "bytes": 616,
+      "sha256": "bddf4dd110ebb421b21738f98aab1afd244326f4ddc14a84853135485875f74e"
+    },
+    {
+      "path": "time_ref/phase_split.csv",
+      "bytes": 496,
+      "sha256": "3badc67a40e12804a5fd8b8ceaaa8a9c9f5ad657aaf961c763e3ff3a545ac252"
+    },
+    {
+      "path": "time_ref/raw/rows/vlm_compile.json",
+      "bytes": 467,
+      "sha256": "9af49791911ec51831fe67d7382ec872230263f72a1d718fe29cfc84b36725aa"
+    },
+    {
+      "path": "time_ref2/phase_split.csv",
+      "bytes": 497,
+      "sha256": "9611ba07b818253d335f588f6882fc9c51b7dddc614526054218775ede3c2dc2"
+    },
+    {
+      "path": "time_ref2/raw/rows/vlm_compile.json",
+      "bytes": 468,
+      "sha256": "38ac562b3d96c34253a7198ceefa0ae13ca593602068e99063e380dbb7df176a"
+    }
+  ]
+}
