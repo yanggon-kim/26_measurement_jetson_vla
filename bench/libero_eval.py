@@ -130,6 +130,10 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--prefix-variant", default="pad", choices=("pad", "nocam", "trimprompt", "nopad"),
                     help="pi0 prefix padding trim (bench/pi0_padtrim.py); needs --seed-noise")
+    ap.add_argument("--static-shapes", action="store_true",
+                    help="torch._dynamo automatic_dynamic_shapes=False before the rung compiles (as "
+                         "bench/e14_pi0_nopad.py): a new prefix length compiles its own static graph "
+                         "instead of a dynamic-shape one")
     ap.add_argument("--seed-noise", action="store_true",
                     help="T016 step 2: draw pi0's flow noise from a torch.Generator seeded per "
                          "(suite, task, episode) -- the same seed in every N arm -- and pass it to "
@@ -181,6 +185,10 @@ def main() -> int:
         max_steps_src = "lerobot.envs.libero.TASK_SUITE_MAX_STEPS"
     else:
         max_steps_src = "--max-steps"
+    import torch._dynamo as _dyn
+    if args.static_shapes:
+        _dyn.config.automatic_dynamic_shapes = False
+        _dyn.config.cache_size_limit = max(64, _dyn.config.cache_size_limit)
     rung_note = ""
     if args.rung:
         if args.prep != "none":
@@ -346,6 +354,8 @@ def main() -> int:
                          if args.seed_noise else "unseeded global torch RNG (select_action)",
         "nonfinite_action_elements": int(nonfinite_actions.item()),
         "prefix_variant": args.prefix_variant,
+        "static_shapes": bool(args.static_shapes),
+        "dynamo_counters": {k: dict(v) for k, v in _dyn.utils.counters.items() if k in ("frames", "stats", "recompiles")},
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
                             f"few-percent difference in success rate"),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
