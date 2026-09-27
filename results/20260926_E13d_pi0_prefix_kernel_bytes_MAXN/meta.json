@@ -1,0 +1,285 @@
+{
+  "experiment": "T016 step 1d (EV-02c): per-kernel DRAM traffic of the pi0 bf16_both rung prefix + H1/H2 split",
+  "bench_commit": "05aad1f43b8845d3f6f2ba2de4259d962b50323b",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "rung": "bf16_both (E7's, unmodified prefix incl. embed_image graph tree)",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_clock_hz": 1300500000,
+  "gate_at_meta": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600"
+  },
+  "capture": "ncu --graph-profiling node --cache-control none, E12b lts__ metric set + launch__grid/block, NVTX prefix_f0/prefix_f1 (2 frames), in chunks of 450 kernels (--launch-skip/--launch-count): on this device ncu dies with LaunchFailed after 480 profiled kernels per process (both first attempts, rung and vision-no-graph, stopped at exactly 480 -- ncu/failed_480_kernel_limit/)",
+  "op_shape_map": "torch.profiler (as root for CUPTI): raw/shapes_rung.csv; vision launches (inside the embed_image CUDA graph, invisible to the profiler) mapped from raw/shapes_nograph.csv (embed_image compiled mode=default) -- shapes_nograph.csv: 831/831 region launches name-matched and mapped",
+  "per_frame": {
+    "prefix_f0": {
+      "launches": 1143,
+      "fills_GB": 17.91188032,
+      "writes_GB": 3.8594072,
+      "read_req_GB": 73.954381472,
+      "duration_ms": 255.09743999999998,
+      "gemm_launches": 651,
+      "gemm_fills_GB": 15.437408672,
+      "gemm_unique_input_GB": 8.077860864,
+      "gemm_excess_GB": 7.359547808
+    },
+    "prefix_f1": {
+      "launches": 1143,
+      "fills_GB": 18.063314432,
+      "writes_GB": 3.859461824,
+      "read_req_GB": 73.968934112,
+      "duration_ms": 257.23126400000007,
+      "gemm_launches": 651,
+      "gemm_fills_GB": 15.509668,
+      "gemm_unique_input_GB": 8.077860864,
+      "gemm_excess_GB": 7.431807136
+    }
+  },
+  "e12b_reference_GB": {
+    "reads": 17.8,
+    "writes_upper": 3.83
+  },
+  "h1_h2_split": {
+    "method": "bench/e13d_split.py (supersedes bench/e13d_gemm_sweep.py's --fit, whose unconstrained fit gave negative coefficients)",
+    "H1_share_weighted_by_in_model_excess": 0.6695401713876703
+  },
+  "raw_files": [
+    {
+      "path": "gemm_excess_by_shape.csv",
+      "bytes": 985,
+      "sha256": "61eb8395d4b5f7ae2b985f2f371be4a90cd040c555a76d454d8d3be5c68285eb"
+    },
+    {
+      "path": "gemm_split.json",
+      "bytes": 7695,
+      "sha256": "e22ea4319ceafcd5c39885c5869e8bf26e63978c76c08265fd103a34077a4519"
+    },
+    {
+      "path": "gemm_sweep_fit.json",
+      "bytes": 2844,
+      "sha256": "3706ce57178f2ab323dc190bb6549202bb619a73120b1886afc84f1eccd09870"
+    },
+    {
+      "path": "kernel_bytes.csv",
+      "bytes": 622279,
+      "sha256": "9f51dc3a9afc3c821df9ed33e0b7ad0e9591d90ee283c6b25030dad50dc82798"
+    },
+    {
+      "path": "kernel_bytes_summary.json",
+      "bytes": 1003,
+      "sha256": "6ee366b8db565ea95dac7c6401d62850fc41111c5e63ced2eb4f89c875191126"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s0.ncu-rep.zst",
+      "bytes": 785153,
+      "sha256": "0167593fc2d60408fdf296f54c51445ae44cd5ac730e206bd7a9e6352c0ec71a"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s0.sh",
+      "bytes": 947,
+      "sha256": "5244a7a2eabf87daf7ce33eaa8190c7c424eb9d7d4d4d845359a1a71082bb0b9"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s0.stdout",
+      "bytes": 46323,
+      "sha256": "13ae5431f13cec0a0612596e01f5a5fa00bfa56b4d047f58d4af74b225242e3b"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s0_raw.csv",
+      "bytes": 973326,
+      "sha256": "111767d7605ff99a5016fcb897b6bf75a189ee23fc5f4f0d82c619b205ea68fd"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s450.ncu-rep.zst",
+      "bytes": 1969452,
+      "sha256": "4d2880bac0c64cb03c64d6f00829d3957698562672a55df3028148f071c832e0"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s450.sh",
+      "bytes": 951,
+      "sha256": "4c255c57e5d62b485649903d5c73b7f05a160c9b527301675d4145423cf2ffdb"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s450.stdout",
+      "bytes": 46241,
+      "sha256": "0c269dc8f7f2e326f4eaaf6bf3aef9880413cd54e25a34515ca9db342fdec3c9"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s450_raw.csv",
+      "bytes": 972433,
+      "sha256": "a4fdd37bc60a90b4e8be4de1fe7a494bfdce833b1ef264f447193d3e19cf70af"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s900.ncu-rep.zst",
+      "bytes": 131807,
+      "sha256": "0ba4192afb3431e16568c646ac4b15e8cd208be9876e7758b35743a9626ddce4"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s900.sh",
+      "bytes": 951,
+      "sha256": "a58abd80c3afbaf2d327754eec40790f807022868a822313ef76add8a7252b78"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s900.stdout",
+      "bytes": 26161,
+      "sha256": "4340f8d07f0326488fa9b77ec0b067e690375d581330166f3819769d1b48f173"
+    },
+    {
+      "path": "ncu/e13d_rung_f0_s900_raw.csv",
+      "bytes": 528753,
+      "sha256": "f159e3b06507a3ad5ac77f0670d88504d087996ea1df5536e0bdcf58c7e89d60"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s0.ncu-rep.zst",
+      "bytes": 781250,
+      "sha256": "9338443b68a0c6d5be2e2e7e651d61c8f73b90ec4e8bad19ff1f5aa6f0f59ef6"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s0.sh",
+      "bytes": 947,
+      "sha256": "e2930a641ea758a9d742dcde3682db13b477e5e01f5d8fecfc1a4fbf0e507648"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s0.stdout",
+      "bytes": 46323,
+      "sha256": "109cf09b8d3d8d7d8c2011a05f242e139efee5ff37720e326816f2434bd3a8f0"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s0_raw.csv",
+      "bytes": 973323,
+      "sha256": "03a9d5bd7973c6d31f3a28752c759dcd302018c403e3e58561dccb7ba5d416d6"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s450.ncu-rep.zst",
+      "bytes": 1768996,
+      "sha256": "51a88f8d5225012aa13b544c8d096b689b3fedc143e3e0c37c533baeb144ef7a"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s450.sh",
+      "bytes": 951,
+      "sha256": "791b29fc6324145d9776bfaa6ff61255fcadeb9ef048e5f9acf22617316d6d01"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s450.stdout",
+      "bytes": 46241,
+      "sha256": "3234a3e8e44c062a6005fab121577606c661cd6b70f9f9389c86fa8d5cc07024"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s450_raw.csv",
+      "bytes": 972470,
+      "sha256": "75dac38288285d8589ee4f70892775c9b46b6959f7150610bc3dc6b0ff4c7850"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s900.ncu-rep.zst",
+      "bytes": 132705,
+      "sha256": "f94ab2f7af41488da8940791b4a7a81ed42ecae05f0a08f1a0a046eaf8038981"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s900.sh",
+      "bytes": 951,
+      "sha256": "45d6a1e237978137424517bf54387d60a0910af7f38d5c5a5058052df664b95f"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s900.stdout",
+      "bytes": 26161,
+      "sha256": "107c7a8147216a961a18174e64f1420e7eb1eb517edbe184d066c4528f200c8b"
+    },
+    {
+      "path": "ncu/e13d_rung_f1_s900_raw.csv",
+      "bytes": 528707,
+      "sha256": "80c6400feb9ba3629416ed568133029b7673dcf7878356e1b41cff23492eba88"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_nograph.ncu-rep.zst",
+      "bytes": 505471,
+      "sha256": "710c47c6c994a678903ee589bc4400a3206657a1355fa287be5367280fddc66f"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_nograph.sh",
+      "bytes": 932,
+      "sha256": "1b87d614fba9ca8b94a2d2c3b3d77a2dd62013cee10bfc1cb434824c78fc6e7e"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_nograph.stdout",
+      "bytes": 44201,
+      "sha256": "eaa88b711116d9f4ea407f4ffa4fa4fe7960b2259d3e6010f1cc40344a4cfe42"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_nograph_raw.csv",
+      "bytes": 1036436,
+      "sha256": "266c6ba12b6491704e504d649fcf360f8f17a6928e0d93fba1efd10e0a1aa071"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_rung.ncu-rep.zst",
+      "bytes": 787388,
+      "sha256": "d10fd18162b3656839d86993702b017cb0b4f36927a7cc1e0eaf088e2df8d9f1"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_rung.sh",
+      "bytes": 913,
+      "sha256": "bcb9e339121cb5f641146f818471841684698d015ff848e3617de35787dddbee"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_rung.stdout",
+      "bytes": 44074,
+      "sha256": "84add4a77ee2f23fa11e40ed2de1ddfbe50a55659374cb8895362722f555b5a9"
+    },
+    {
+      "path": "ncu/failed_480_kernel_limit/e13d_rung_raw.csv",
+      "bytes": 1037158,
+      "sha256": "536d075c41f817d5cc77a2de5612621e08eb6eb02fdd7125f344b918f75653eb"
+    },
+    {
+      "path": "ncu/gemm_sweep.ncu-rep.zst",
+      "bytes": 466342,
+      "sha256": "eab16e6020b75f293cfdfcf6dec576fb51033786739cca3a8f1ad6ac0500b3df"
+    },
+    {
+      "path": "ncu/gemm_sweep_raw.csv",
+      "bytes": 182419,
+      "sha256": "60e5a69134243f08956776a782c0c616188084e9aeb288af5aae32942f45ca02"
+    },
+    {
+      "path": "raw/gemm_sweep.sh",
+      "bytes": 599,
+      "sha256": "5dacfce5a372aaaa0ad9be545677e12c99fb24e00e89945de4161552b80edf6f"
+    },
+    {
+      "path": "raw/shapes_nograph.csv",
+      "bytes": 199720,
+      "sha256": "346196eabd5203fd6c7952507ee6b52c66ce86cdff32eea9abe0f457b53c3ccf"
+    },
+    {
+      "path": "raw/shapes_nograph.sh",
+      "bytes": 507,
+      "sha256": "1ab9359ec9ddc6ef9a92fb60f07879047a02f3a6be9355b50b2dc087a3d2e0dd"
+    },
+    {
+      "path": "raw/shapes_rung.csv",
+      "bytes": 152860,
+      "sha256": "991baaee4f71e1525aedf5ff2c4cea730046486d302950cda39e8756ab3a00b6"
+    },
+    {
+      "path": "raw/shapes_rung.sh",
+      "bytes": 487,
+      "sha256": "4f8ea2db659a7fef5926549644787a355d88e0ce51e81f17d26b0ffbca0672a8"
+    },
+    {
+      "path": "raw/shapes_rung.stdout",
+      "bytes": 1765,
+      "sha256": "84165a0057e1b00370c0d55367323e1317518917e83468c043b3c5a4831d6cab"
+    }
+  ],
+  "date_utc": "2026-09-27T03:16:42Z"
+}
