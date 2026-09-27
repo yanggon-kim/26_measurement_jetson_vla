@@ -1,0 +1,191 @@
+{
+  "experiment": "T016 step 3: pi0_bf16_both+nopad (time)",
+  "bench_commit": "165b4749b4af5cb2e8d10781973432ffacb6e717",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "bf16_both",
+  "rung_note": {
+    "rung": "bf16_both",
+    "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
+    "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
+    "matmul_precision": "high",
+    "matches_E7": true
+  },
+  "variant": "pi0_bf16_both+nopad vs pi0_bf16_both (pad)",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (whole GPU)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "gate_start": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600",
+    "emc_rate_hz": 3199000000,
+    "temps_mC": {
+      "cpu-thermal": 46437,
+      "gpu-thermal": 41468,
+      "soc0-thermal": 42593,
+      "soc1-thermal": 42281,
+      "soc2-thermal": 42500,
+      "tj-thermal": 46437
+    },
+    "t_utc": "2026-09-27T03:12:54Z"
+  },
+  "throttled": false,
+  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 52.9 C (trip threshold used 95 C); temps at end {'cpu-thermal': 52906, 'gpu-thermal': 48625, 'soc0-thermal': 48812, 'soc1-thermal': 48250, 'soc2-thermal': 49031, 'tj-thermal': 52906}",
+  "tokens": {
+    "pad": {
+      "tokens_per_image": 256,
+      "image_slots": 3,
+      "valid_image_slots": 2,
+      "prompt_positions": 48,
+      "valid_prompt_tokens": 21,
+      "prefix_tokens": 816,
+      "prefix_tokens_valid": 533
+    },
+    "nopad": {
+      "tokens_per_image": 256,
+      "image_slots": 2,
+      "valid_image_slots": 2,
+      "prompt_positions": 21,
+      "valid_prompt_tokens": 21,
+      "prefix_tokens": 533,
+      "prefix_tokens_valid": 533
+    }
+  },
+  "compile_wall_s": {
+    "pad": 14.14,
+    "nopad": 15.27
+  },
+  "dynamo_counters": {
+    "frames": {
+      "total": 15,
+      "ok": 15
+    },
+    "stats": {
+      "calls_captured": 6156,
+      "unique_graphs": 7
+    }
+  },
+  "compilation": "automatic_dynamic_shapes=False: each prefix length compiles its own static graph",
+  "implementation": "bench/pi0_padtrim.py (harness-level; LeRobot untouched)",
+  "frames_manifest": {
+    "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
+    "dataset": "HuggingFaceVLA/libero",
+    "split": "train",
+    "source_api": "https://datasets-server.huggingface.co/rows",
+    "episode_index": 0,
+    "task_index": 0,
+    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+    "frames": [
+      {
+        "file": "obs_0.json",
+        "row_offset": 0,
+        "frame_index": 0
+      },
+      {
+        "file": "obs_1.json",
+        "row_offset": 25,
+        "frame_index": 25
+      },
+      {
+        "file": "obs_2.json",
+        "row_offset": 50,
+        "frame_index": 50
+      },
+      {
+        "file": "obs_3.json",
+        "row_offset": 75,
+        "frame_index": 75
+      },
+      {
+        "file": "obs_4.json",
+        "row_offset": 99,
+        "frame_index": 99
+      }
+    ]
+  },
+  "result": {
+    "pad_prefix": {
+      "n": 90,
+      "median_ms": 252.9939,
+      "p5_ms": 250.6764,
+      "p95_ms": 253.7246,
+      "mean_ms": 252.5281
+    },
+    "nopad_prefix": {
+      "n": 60,
+      "median_ms": 189.5956,
+      "p5_ms": 188.4643,
+      "p95_ms": 190.0211,
+      "mean_ms": 189.3983
+    },
+    "ratio_prefix": 0.7494,
+    "pad_full": {
+      "n": 90,
+      "median_ms": 420.5034,
+      "p5_ms": 416.6565,
+      "p95_ms": 422.0304,
+      "mean_ms": 419.6634
+    },
+    "nopad_full": {
+      "n": 60,
+      "median_ms": 319.4855,
+      "p5_ms": 317.1468,
+      "p95_ms": 326.1507,
+      "mean_ms": 319.4235
+    },
+    "ratio_full": 0.7598,
+    "nonfinite": 0
+  },
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/e14_pi0_nopad.py --mode time --frames 30 --outdir results/20260926_E14_pi0_nopad_MAXN/time",
+  "date_utc": "2026-09-27T03:18:54Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "blocks.csv",
+      "bytes": 693,
+      "sha256": "dae57e70cc8f7da41c03e4e9d71212303248b13e97e594491412c00d1a4fec42"
+    },
+    {
+      "path": "raw/latency_samples.csv",
+      "bytes": 7645,
+      "sha256": "54c82368a77b3479cdf3d1b6d99466e4fed1146580b7f3bc6500743cf46d5a3f"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 607,
+      "sha256": "eaa85ae30d3a5c41814a301e29c564c6f8ba7accbd09ee4946a31b90786e87b4"
+    }
+  ]
+}

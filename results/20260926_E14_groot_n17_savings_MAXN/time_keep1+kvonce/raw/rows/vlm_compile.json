@@ -1,0 +1,17 @@
+{
+ "rung": "vlm_compile",
+ "N": 4,
+ "variant": "keep1: backbone.forward: Qwen3VL call with logits_to_keep=1 (lm_head on the last token only);kvonce: action_head: K/V of 16 cross-attention blocks computed once per frame (packed, to_k/to_v -> exact slices); get_action_with_features + DiT forward mirrored",
+ "compiled": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+ "compile_s": 1.202,
+ "e2e_median_ms": 219.9789,
+ "e2e_p5_ms": 219.7124,
+ "e2e_p95_ms": 220.3443,
+ "vision_ms": 70.2673,
+ "vlm_backbone_ms": 145.4876,
+ "vlm_prefix_ms": 75.219,
+ "ae_total_ms": 72.2843,
+ "data_processing_cpu_ms": 9.3811,
+ "matmul_precision": "high",
+ "n": 50
+}
