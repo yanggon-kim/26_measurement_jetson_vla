@@ -1,0 +1,631 @@
+{
+  "experiment": "T016 step 3 (A4): GR00T N1.7 DRAM bytes per frame per savings variant (ncu graph-level, chunked)",
+  "bench_commit": "5400c990bd7700ea3bf5bab5a3370c055d0641be",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7 (Isaac-GR00T)",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_commit": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "rung": "vlm_compile (action_head.get_action@reduce-overhead, language_model.forward@max-autotune-no-cudagraphs, TF32 on)",
+  "variant": "groot_n17_vlm_compile / +keep1 / +kvonce / +keep1+kvonce",
+  "N": 4,
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (whole GPU)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "throttled": "not sampled during the ncu captures (ncu serialises and replays kernels; clocks do not bear on bytes); jetson_clocks applied before the queue",
+  "method": "ncu --graph-profiling graph --cache-control none, E12b lts__ metric set, NVTX range 'frame' = model.get_action (one inference per variant, after 5 warm-up inferences); chunks of <= 450 workloads (--launch-skip/--launch-count, one process each: ncu dies after 480 kernels per process on this device); parts from nested NVTX ranges vision / vlm_prefix (language model) / ae_total (action head), 'other' = the rest of the frame (lm_head, projector, glue); reads = L2 fills (device+sysmem) x 32 B, writes = L2 write sectors x 32 B (upper bound)",
+  "inputs_note": "observation values from unseeded np.random (bytes do not depend on pixel values; shapes are the checkpoint's)",
+  "compile_note": "TORCHINDUCTOR_COMPILE_THREADS=1 and a warm Inductor cache, so no compile worker ran under ncu",
+  "ncu_version": "2024.3.1",
+  "result": [
+    {
+      "variant": "keep1",
+      "part": "other",
+      "workloads": 57,
+      "reads_GB": 0.6513,
+      "writes_upper_GB": 0.0272,
+      "read_req_GB": 0.6613,
+      "kernel_ms": 21.495
+    },
+    {
+      "variant": "keep1",
+      "part": "vision",
+      "workloads": 796,
+      "reads_GB": 4.3051,
+      "writes_upper_GB": 2.3132,
+      "read_req_GB": 13.2199,
+      "kernel_ms": 331.74
+    },
+    {
+      "variant": "keep1",
+      "part": "vlm_prefix",
+      "workloads": 787,
+      "reads_GB": 3.5339,
+      "writes_upper_GB": 0.7109,
+      "read_req_GB": 9.918,
+      "kernel_ms": 281.296
+    },
+    {
+      "variant": "keep1",
+      "part": "ae_total",
+      "workloads": 3,
+      "reads_GB": 11.1261,
+      "writes_upper_GB": 0.6336,
+      "read_req_GB": 20.3007,
+      "kernel_ms": 80.716
+    },
+    {
+      "variant": "keep1",
+      "part": "frame_total",
+      "workloads": 1643,
+      "reads_GB": 19.6164,
+      "writes_upper_GB": 3.685,
+      "read_req_GB": 44.0998,
+      "kernel_ms": 715.247
+    },
+    {
+      "variant": "keep1+kvonce",
+      "part": "other",
+      "workloads": 57,
+      "reads_GB": 0.6513,
+      "writes_upper_GB": 0.0272,
+      "read_req_GB": 0.6613,
+      "kernel_ms": 22.155
+    },
+    {
+      "variant": "keep1+kvonce",
+      "part": "vision",
+      "workloads": 796,
+      "reads_GB": 4.3021,
+      "writes_upper_GB": 2.3132,
+      "read_req_GB": 13.22,
+      "kernel_ms": 310.63
+    },
+    {
+      "variant": "keep1+kvonce",
+      "part": "vlm_prefix",
+      "workloads": 787,
+      "reads_GB": 3.5279,
+      "writes_upper_GB": 0.7109,
+      "read_req_GB": 9.918,
+      "kernel_ms": 300.207
+    },
+    {
+      "variant": "keep1+kvonce",
+      "part": "ae_total",
+      "workloads": 3,
+      "reads_GB": 9.843,
+      "writes_upper_GB": 0.6606,
+      "read_req_GB": 16.0982,
+      "kernel_ms": 72.979
+    },
+    {
+      "variant": "keep1+kvonce",
+      "part": "frame_total",
+      "workloads": 1643,
+      "reads_GB": 18.3242,
+      "writes_upper_GB": 3.712,
+      "read_req_GB": 39.8974,
+      "kernel_ms": 705.972
+    },
+    {
+      "variant": "kvonce",
+      "part": "other",
+      "workloads": 57,
+      "reads_GB": 1.9822,
+      "writes_upper_GB": 0.1099,
+      "read_req_GB": 3.8051,
+      "kernel_ms": 43.135
+    },
+    {
+      "variant": "kvonce",
+      "part": "vision",
+      "workloads": 796,
+      "reads_GB": 4.3047,
+      "writes_upper_GB": 2.3132,
+      "read_req_GB": 13.2196,
+      "kernel_ms": 304.617
+    },
+    {
+      "variant": "kvonce",
+      "part": "vlm_prefix",
+      "workloads": 787,
+      "reads_GB": 3.5314,
+      "writes_upper_GB": 0.7109,
+      "read_req_GB": 9.918,
+      "kernel_ms": 274.613
+    },
+    {
+      "variant": "kvonce",
+      "part": "ae_total",
+      "workloads": 3,
+      "reads_GB": 9.8407,
+      "writes_upper_GB": 0.6606,
+      "read_req_GB": 16.0982,
+      "kernel_ms": 72.955
+    },
+    {
+      "variant": "kvonce",
+      "part": "frame_total",
+      "workloads": 1643,
+      "reads_GB": 19.659,
+      "writes_upper_GB": 3.7946,
+      "read_req_GB": 43.041,
+      "kernel_ms": 695.32
+    },
+    {
+      "variant": "ref",
+      "part": "other",
+      "workloads": 57,
+      "reads_GB": 2.004,
+      "writes_upper_GB": 0.1099,
+      "read_req_GB": 3.8051,
+      "kernel_ms": 29.909
+    },
+    {
+      "variant": "ref",
+      "part": "vision",
+      "workloads": 796,
+      "reads_GB": 4.306,
+      "writes_upper_GB": 2.3132,
+      "read_req_GB": 13.2196,
+      "kernel_ms": 314.391
+    },
+    {
+      "variant": "ref",
+      "part": "vlm_prefix",
+      "workloads": 787,
+      "reads_GB": 3.5169,
+      "writes_upper_GB": 0.7109,
+      "read_req_GB": 9.918,
+      "kernel_ms": 287.878
+    },
+    {
+      "variant": "ref",
+      "part": "ae_total",
+      "workloads": 3,
+      "reads_GB": 11.1365,
+      "writes_upper_GB": 0.6337,
+      "read_req_GB": 20.3007,
+      "kernel_ms": 80.879
+    },
+    {
+      "variant": "ref",
+      "part": "frame_total",
+      "workloads": 1643,
+      "reads_GB": 20.9633,
+      "writes_upper_GB": 3.7677,
+      "read_req_GB": 47.2434,
+      "kernel_ms": 713.057
+    }
+  ],
+  "chunks": {
+    "keep1": [
+      [
+        "e14g_keep1_s0_raw.csv",
+        450
+      ],
+      [
+        "e14g_keep1_s450_raw.csv",
+        450
+      ],
+      [
+        "e14g_keep1_s900_raw.csv",
+        450
+      ],
+      [
+        "e14g_keep1_s1350_raw.csv",
+        293
+      ]
+    ],
+    "keep1+kvonce": [
+      [
+        "e14g_keep1+kvonce_s0_raw.csv",
+        450
+      ],
+      [
+        "e14g_keep1+kvonce_s450_raw.csv",
+        450
+      ],
+      [
+        "e14g_keep1+kvonce_s900_raw.csv",
+        450
+      ],
+      [
+        "e14g_keep1+kvonce_s1350_raw.csv",
+        293
+      ]
+    ],
+    "kvonce": [
+      [
+        "e14g_kvonce_s0_raw.csv",
+        450
+      ],
+      [
+        "e14g_kvonce_s450_raw.csv",
+        450
+      ],
+      [
+        "e14g_kvonce_s900_raw.csv",
+        450
+      ],
+      [
+        "e14g_kvonce_s1350_raw.csv",
+        293
+      ]
+    ],
+    "ref": [
+      [
+        "e14g_ref_s0_raw.csv",
+        450
+      ],
+      [
+        "e14g_ref_s450_raw.csv",
+        450
+      ],
+      [
+        "e14g_ref_s900_raw.csv",
+        450
+      ],
+      [
+        "e14g_ref_s1350_raw.csv",
+        293
+      ]
+    ]
+  },
+  "command": "bash bench/run_ncu_e14_groot.sh results/20260926_E14_groot_n17_savings_MAXN/bytes ref,keep1,kvonce,keep1+kvonce",
+  "date_utc": "2026-09-27T20:09:31Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "dram_bytes.csv",
+      "bytes": 1067,
+      "sha256": "c6e0864622704f81032711927cd90ee2a10f36b470cbcd3bb2d92439b5cfc866"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s0.ncu-rep.zst",
+      "bytes": 4182291,
+      "sha256": "3ff61f06e750ea3b2dd17c24fc0df618496a77f660c3be85b6f149ee8d3eeff2"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s0.sh",
+      "bytes": 1330,
+      "sha256": "68785d59308ef3534049ac9ead4b9303dad8e46e4692eeaee0842ce1f36ee3a4"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s0.stdout",
+      "bytes": 46697,
+      "sha256": "a8d565f0275523d1203f4550db8d90bb3f9a0bfbff553e139059dfed874579c1"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s0_raw.csv",
+      "bytes": 995320,
+      "sha256": "0e1bdfe9a83fbe05bf09ab19a6d878e2fa558fe781e93d1cfec2f2598abd35c6"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s1350.ncu-rep.zst",
+      "bytes": 5287083,
+      "sha256": "5de4629f1e3b0a406a6a35351d4d89f16105d3b2dcf5fb448dbdca48c7fca4d8"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s1350.sh",
+      "bytes": 1336,
+      "sha256": "8598c1b999c7b2d94df869579094da7a4d9eb4ebb0053c7b8d07b71b0e3f5c6f"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s1350.stdout",
+      "bytes": 32222,
+      "sha256": "3f778d5f7ecda17d5e0df245b9366c637e522fa31c4a8bf28c87ac78b7bc5caf"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s1350_raw.csv",
+      "bytes": 643195,
+      "sha256": "50723ec4fdf738ba84a7c23fb278285e891e01453861ef91d890c38879d92bd7"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s450.ncu-rep.zst",
+      "bytes": 3863487,
+      "sha256": "392431a0952ea682a11b4d73034583b751bd7bdc70d62c96f7e649dd341f3b98"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s450.sh",
+      "bytes": 1334,
+      "sha256": "78780c02f64154d97557060ffb3b26e9d4e307803bd8ee20192ce5fc718d2798"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s450.stdout",
+      "bytes": 46918,
+      "sha256": "1a56970839bf7b183d5869ec0a4d3c0cdec5ec6b25c18ed8c3047fdcfb57089d"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s450_raw.csv",
+      "bytes": 994498,
+      "sha256": "386079305ff2ebb729032acde1d0f07bdf6e93419e3948a83e589df4b2ce2f69"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s900.ncu-rep.zst",
+      "bytes": 3065504,
+      "sha256": "f35888e44d85c1efd9452ef19afefea091e48b8abadb05041419c3073f6af628"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s900.sh",
+      "bytes": 1334,
+      "sha256": "56f1be09b769c258d7bc324954c88ed97881ee675668c94a246072e62938c1c6"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s900.stdout",
+      "bytes": 46811,
+      "sha256": "67afbe262abad8a8557a5a38ae0232497a49be08a1c3790a6c1853488e39d049"
+    },
+    {
+      "path": "ncu/e14g_keep1+kvonce_s900_raw.csv",
+      "bytes": 980262,
+      "sha256": "8f450c3078fe272c0396dd2965995dc9d50457fe7fed7f8541a7298c1390cd61"
+    },
+    {
+      "path": "ncu/e14g_keep1_s0.ncu-rep.zst",
+      "bytes": 4186021,
+      "sha256": "16a47235b7632884ff93afd06d0d9954691d8909fa9b855d06848e0f490be4d7"
+    },
+    {
+      "path": "ncu/e14g_keep1_s0.sh",
+      "bytes": 1307,
+      "sha256": "9ebd80dde2f7e40441126c1e6af2419263c45c801a261bfb8f2c755677bd2b8f"
+    },
+    {
+      "path": "ncu/e14g_keep1_s0.stdout",
+      "bytes": 46524,
+      "sha256": "3b0b939cb5fd0e5719c8234c3eaa3be4af9269ab7e3abe4fd46027774760dd6a"
+    },
+    {
+      "path": "ncu/e14g_keep1_s0_raw.csv",
+      "bytes": 995336,
+      "sha256": "90b0db01aeebfdee37f3a06580608ba2be1e05e7d3f706e35e3dd9f04d374921"
+    },
+    {
+      "path": "ncu/e14g_keep1_s1350.ncu-rep.zst",
+      "bytes": 5256937,
+      "sha256": "2ed70381699d2744ef5f5e3cca4564fadb2a83aad4840a49897bb35d6cc2d309"
+    },
+    {
+      "path": "ncu/e14g_keep1_s1350.sh",
+      "bytes": 1313,
+      "sha256": "4af573495021536e6be37837352e8f2b2d24d6166e30fda3d9632d40eb759cf2"
+    },
+    {
+      "path": "ncu/e14g_keep1_s1350.stdout",
+      "bytes": 32049,
+      "sha256": "7f52403cb41a52d0a843dcaa991dbdeb65891cfc5939add5ee036b60c2b0fce3"
+    },
+    {
+      "path": "ncu/e14g_keep1_s1350_raw.csv",
+      "bytes": 643151,
+      "sha256": "b6330f6d12bb11a301c52b7d79ca844386cce3d63c9c39cb8376dd8434e85b1d"
+    },
+    {
+      "path": "ncu/e14g_keep1_s450.ncu-rep.zst",
+      "bytes": 3864912,
+      "sha256": "e2c5e121cbf9acea55fe8b68f538c0dffdf923d009375ef780dd3a48cf497434"
+    },
+    {
+      "path": "ncu/e14g_keep1_s450.sh",
+      "bytes": 1311,
+      "sha256": "f4195fa37544fb92a276e77694a0270f9827c702ba0b888882d49d2203b57cec"
+    },
+    {
+      "path": "ncu/e14g_keep1_s450.stdout",
+      "bytes": 46744,
+      "sha256": "6b1fe309d8cd015c95d860849ed3ddbccc2a5a782d9c3b0871c952ffbdb0324c"
+    },
+    {
+      "path": "ncu/e14g_keep1_s450_raw.csv",
+      "bytes": 990905,
+      "sha256": "81183cca22c3d3c148473bc1f20b224a407f4c0b6fa2845ee74704381732d5c4"
+    },
+    {
+      "path": "ncu/e14g_keep1_s900.ncu-rep.zst",
+      "bytes": 3065593,
+      "sha256": "7a386d3b8ae0598279b6cbd0c86ec517ccba26c7f957e04728e2a3a2e72ba9cd"
+    },
+    {
+      "path": "ncu/e14g_keep1_s900.sh",
+      "bytes": 1311,
+      "sha256": "9dcf73fabe32637115f059808073ba7cf7e0fc8f24ac13e4b327590430861b23"
+    },
+    {
+      "path": "ncu/e14g_keep1_s900.stdout",
+      "bytes": 46638,
+      "sha256": "7c69eb0fb2f266ff631e2696fcb0cc4f8d05a5ff6694e800e7666626147586b4"
+    },
+    {
+      "path": "ncu/e14g_keep1_s900_raw.csv",
+      "bytes": 980202,
+      "sha256": "dd63e6e8bcae3c744e091028b25d2a7cbdebd4547b9b6cdd1e6e8832bc3bd5c8"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s0.ncu-rep.zst",
+      "bytes": 4260179,
+      "sha256": "cd5d20d7e06edb543d8b217ca9d6d1c2bd7e0a68e051920d2f39cd21e6b12a6b"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s0.sh",
+      "bytes": 1310,
+      "sha256": "77b59ab6ef68b1324416052536b5541e2519f9663ec7c0f410be5e528a3a99ec"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s0.stdout",
+      "bytes": 46594,
+      "sha256": "1041953383371ed644e98ef569104ad83230f4cea5d571f7d3e487d884cc87ca"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s0_raw.csv",
+      "bytes": 995329,
+      "sha256": "c7c8c81b6e6e872ed53295115e9eac34768040759d3c586aff02c3a0b5015bf5"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s1350.ncu-rep.zst",
+      "bytes": 5277437,
+      "sha256": "1ba72faa553cb5529eb59a5d12a9d9b4408064fbaa19917edab47f402ea1e2d4"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s1350.sh",
+      "bytes": 1316,
+      "sha256": "0c4f3c8232acfe449bda6f107d62ddda890365744d9fd2eb1fd430a30df1cef4"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s1350.stdout",
+      "bytes": 32095,
+      "sha256": "7ee0a7a571caf6044ce700f350efd511bac29e9d3d06f93e131fea03b69f281f"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s1350_raw.csv",
+      "bytes": 643219,
+      "sha256": "7788395b9a7aeb526f799cbcde9c31a5bc936aac86d451e613ab73c6121f39b8"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s450.ncu-rep.zst",
+      "bytes": 3747350,
+      "sha256": "5008e8cbf13fb94dffd05e9274104de40acf84ccdc924fd8df8abfb12ed42458"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s450.sh",
+      "bytes": 1314,
+      "sha256": "ed80cd25266ce72424665bbdcd49a5e9a362f3389a86ece06ea4d917ee108b7e"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s450.stdout",
+      "bytes": 46816,
+      "sha256": "041b4dd718b5b9b44946a794975d16c4c16e095e84c449a0ac69464eece31703"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s450_raw.csv",
+      "bytes": 990905,
+      "sha256": "e00cad26a111e4155311b3ed9fbc6781756c6c545cb37b276caf4c84ff0c82ff"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s900.ncu-rep.zst",
+      "bytes": 3065415,
+      "sha256": "8c455c82d375d3d05fa22d8e3e6170d2a6bd0bd1d7baa73d3c535cc7aa218aab"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s900.sh",
+      "bytes": 1314,
+      "sha256": "58756f77bc14993474015f947adc38fadf01dfbb064f562d0c177a7073f67c02"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s900.stdout",
+      "bytes": 46710,
+      "sha256": "670b98d20b014f8278cc6bdb90853e59e79df5d3b73cd0c8823a22639205d33f"
+    },
+    {
+      "path": "ncu/e14g_kvonce_s900_raw.csv",
+      "bytes": 983786,
+      "sha256": "86d9921148272f39fca28a070a6c79bb4545647c48b9e7104b94dd2e20cc948c"
+    },
+    {
+      "path": "ncu/e14g_ref_s0.ncu-rep.zst",
+      "bytes": 4388502,
+      "sha256": "9619a0046845d0c780befd21da2babbcbb4d0947e73e774e33051b5a5891c62b"
+    },
+    {
+      "path": "ncu/e14g_ref_s0.sh",
+      "bytes": 1296,
+      "sha256": "3aab958f288d03d74443c65e7147c531cfdba8c9d1a79b0e8f3de86483cb6a48"
+    },
+    {
+      "path": "ncu/e14g_ref_s0.stdout",
+      "bytes": 46397,
+      "sha256": "ef6491d6fe97a310c351d0ded022c3ee08d4327e0b8a0506e7c2ef952d23b557"
+    },
+    {
+      "path": "ncu/e14g_ref_s0_raw.csv",
+      "bytes": 994411,
+      "sha256": "2f09ebdd9dfe166358a7fedff641e9bb7ad322b605e67852c7dd2d8b21af3f7f"
+    },
+    {
+      "path": "ncu/e14g_ref_s1350.ncu-rep.zst",
+      "bytes": 5248541,
+      "sha256": "51321a0cfdb126915d1550853b9920d23833b8778c8ef325910e54bcf45582e2"
+    },
+    {
+      "path": "ncu/e14g_ref_s1350.sh",
+      "bytes": 1302,
+      "sha256": "9fc3b778ed1babd6a715af476ac0397cc0a2bafd06eb579582610995d1f1fb56"
+    },
+    {
+      "path": "ncu/e14g_ref_s1350.stdout",
+      "bytes": 31915,
+      "sha256": "4a0a3511f2f34ed9e2669a7b148056e46e24075a222f2d231b489117e920be23"
+    },
+    {
+      "path": "ncu/e14g_ref_s1350_raw.csv",
+      "bytes": 643167,
+      "sha256": "204f6ce424ebb22cc6a37bac107f612f71e1c34efc83cb9f389f5bd98b24a1ca"
+    },
+    {
+      "path": "ncu/e14g_ref_s450.ncu-rep.zst",
+      "bytes": 3799667,
+      "sha256": "caf354efaff34eae2b9a16cf96df94b4acbd6db0e8fb28fc1652519773dbe387"
+    },
+    {
+      "path": "ncu/e14g_ref_s450.sh",
+      "bytes": 1300,
+      "sha256": "0653ec12e0eeba5b06d45f57d1ed3443363c4422c18a067978801a6c81b59deb"
+    },
+    {
+      "path": "ncu/e14g_ref_s450.stdout",
+      "bytes": 46618,
+      "sha256": "7284dc32cdb06b622e5f2048c06adac01e77bccb2c5cf7c1ffe207950c572e1a"
+    },
+    {
+      "path": "ncu/e14g_ref_s450_raw.csv",
+      "bytes": 993585,
+      "sha256": "c3bd43c2f526ee4b1a41e61c7d0c4b6160eadfdb94ca4bbc3d498b3b143e24ba"
+    },
+    {
+      "path": "ncu/e14g_ref_s900.ncu-rep.zst",
+      "bytes": 3064304,
+      "sha256": "f15c3763067643d4568625f4b4a0bb9b1ec75f9a2b455396c7540bd7c77a1f14"
+    },
+    {
+      "path": "ncu/e14g_ref_s900.sh",
+      "bytes": 1300,
+      "sha256": "115b542bc87a974aa8265165b62e8f96ec0e1a1a890a4b5c050a9eae9d597aa8"
+    },
+    {
+      "path": "ncu/e14g_ref_s900.stdout",
+      "bytes": 46511,
+      "sha256": "3f55c650b30a058521809b2d630b561a12a27b494a665b19a5b8f09caa05b85c"
+    },
+    {
+      "path": "ncu/e14g_ref_s900_raw.csv",
+      "bytes": 982900,
+      "sha256": "a490bfcb1e7595490951adbc2c2492efcd8250fa7b39a212c7aae6f820a74ede"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 4804,
+      "sha256": "a513b8e3229e8ed7f517934ac980bab3c8e9681e5037f2dc6c4c138a0a42b563"
+    }
+  ]
+}
