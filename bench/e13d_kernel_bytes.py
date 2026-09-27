@@ -20,7 +20,7 @@ import json
 import sys
 from pathlib import Path
 
-UNIT = {"sector": 32, "byte": 1, "Kbyte": 1e3, "Mbyte": 1e6, "Gbyte": 1e9,
+UNIT = {"sector": 32, "byte": 1, "Kbyte": 1e3, "Mbyte": 1e6, "Gbyte": 1e9, "": 1.0,
         "nsecond": 1e-3, "usecond": 1.0, "msecond": 1e3, "ns": 1e-3, "us": 1.0, "ms": 1e3}
 GEMM_OPS = ("aten::mm", "aten::addmm", "aten::bmm", "aten::baddbmm", "aten::linear", "aten::matmul",
             "aten::_scaled_mm")
@@ -63,37 +63,63 @@ def main() -> int:
     chunks = sorted((out / "ncu").glob(f"e13d_{tag}_f*_s*_raw.csv"),
                     key=lambda q: tuple(int(x) for x in re.search(r"_f(\d+)_s(\d+)_raw", q.name).groups()))
     files = chunks or [out / "ncu" / f"e13d_{tag}_raw.csv"]
-    hdr = units = None
+    # ncu picks the unit per EXPORT (the same metric is "us" in one chunk and "ms" in another), so
+    # every row carries its own file's units row -- the first stitch applied chunk 0's units to all.
+    hdr = None
     data = []
     for q in files:
         rr = list(csv.reader(open(q)))
         if hdr is None:
-            hdr, units = rr[0], rr[1]
+            hdr = rr[0]
         elif rr[0] != hdr:
             raise SystemExit(f"{q.name}: header differs from the first chunk")
-        data += rr[2:]
+        data += [(row, rr[1]) for row in rr[2:]]
     print(f"  {len(files)} capture file(s), {len(data)} kernel rows", flush=True)
     c = {h: i for i, h in enumerate(hdr)}
     nv = next(i for i, h in enumerate(hdr) if "Push/Pop_Range" in h)
 
-    def v(r, m):
+    def v(ru, m):
+        r, units = ru
         x = r[c[m]].replace(",", "")
-        return float(x) * UNIT.get(units[c[m]], 1.0) if x not in ("", "n/a") else 0.0
+        if x in ("", "n/a"):
+            return 0.0
+        if units[c[m]] not in UNIT:
+            raise SystemExit(f"unknown unit {units[c[m]]!r} for {m}")
+        return float(x) * UNIT[units[c[m]]]
 
     launches = []
-    for r in data:
+    for ru in data:
+        r = ru[0]
         rng = r[nv]
         fr = next((f"prefix_f{k}" for k in range(8) if f"prefix_f{k}" in rng), None)
         if fr is None:
             continue
         launches.append({"frame": fr, "kernel": r[c["Kernel Name"]], "grid": r[c["Grid Size"]],
                          "block": r[c["Block Size"]],
-                         "fills_B": v(r, "lts__d_sectors_fill_device.sum") + v(r, "lts__d_sectors_fill_sysmem.sum"),
-                         "writes_B": v(r, "lts__t_sectors_op_write.sum"),
-                         "read_req_B": v(r, "lts__t_sectors_op_read.sum"),
-                         "read_miss_B": v(r, "lts__t_sectors_op_read_lookup_miss.sum"),
-                         "duration_us": v(r, "gpu__time_duration.sum")})
+                         "fills_B": v(ru, "lts__d_sectors_fill_device.sum") + v(ru, "lts__d_sectors_fill_sysmem.sum"),
+                         "writes_B": v(ru, "lts__t_sectors_op_write.sum"),
+                         "read_req_B": v(ru, "lts__t_sectors_op_read.sum"),
+                         "read_miss_B": v(ru, "lts__t_sectors_op_read_lookup_miss.sum"),
+                         "duration_us": v(ru, "gpu__time_duration.sum")})
     prof = list(csv.DictReader(open(out / "raw" / f"shapes_{tag}.csv")))
+    # The rung's vision encoder is a CUDA graph: torch.profiler sees its kernels only as
+    # "Torch-Compiled Region" launches, without op or shapes. raw/shapes_nograph.csv (the same
+    # prefix with embed_image compiled mode="default", no graph) has them as plain ops in the same
+    # order; the region rows are replaced position by position when the kernel names agree.
+    ng = out / "raw" / "shapes_nograph.csv"
+    vision_map = "none"
+    if ng.exists():
+        nrows = list(csv.DictReader(open(ng)))
+        reg = [i for i, p in enumerate(prof) if p["cpu_op"].startswith("Torch-Compiled Region")]
+        agree = sum(norm(prof[i]["kernel"]) == norm(nrows[j]["kernel"]) for j, i in enumerate(reg) if j < len(nrows))
+        if reg and agree >= 0.95 * len(reg):
+            for j, i in enumerate(reg):
+                if j < len(nrows) and norm(prof[i]["kernel"]) == norm(nrows[j]["kernel"]):
+                    prof[i] = {**prof[i], "cpu_op": nrows[j]["cpu_op"], "input_shapes": nrows[j]["input_shapes"]}
+            vision_map = f"shapes_nograph.csv: {agree}/{len(reg)} region launches name-matched and mapped"
+        else:
+            vision_map = f"shapes_nograph.csv NOT used: only {agree}/{len(reg)} region names agree"
+        print("  vision map:", vision_map, flush=True)
     frames = sorted({x["frame"] for x in launches})
     out_rows, matched = [], 0
     for fr in frames:
@@ -144,6 +170,7 @@ def main() -> int:
                    "gemm_unique_input_GB": sum(r["weight_B"] + r["activation_B"] for r in g) / 1e9,
                    "gemm_excess_GB": sum(r["excess_read_B"] for r in g) / 1e9}
     summ = {"per_frame": per, "matched_launches": matched, "total_launches": len(out_rows),
+            "vision_shape_map": vision_map,
             "e12b_reference_GB": {"reads": 17.80, "writes_upper": 3.83},
             "note": "fills = DRAM reads (L2 fills from memory); writes = L2 write sectors (upper bound)"}
     (out / "kernel_bytes_summary.json").write_text(json.dumps(summ, indent=2) + "\n")
