@@ -450,9 +450,47 @@ def mode_ncu(a):
     return 0
 
 
+
+def mode_visioncheck(a, out):
+    """Row 9 sub-item: with one embed_image call per camera, are the two REAL cameras' vision embeddings
+    bitwise equal between pad (3 slots) and nocam (2 slots)? Split vision graphs of both, replayed on the same
+    5 frames; writes vision_bitwise.csv into the stages directory."""
+    static_shapes()
+    policy, spec, cfg, note = C.load_rung(N)
+    H.recompile_default(policy, spec, "denoise_step")
+    H.recompile_default(policy, spec, "embed_image")
+    H.memo_681(policy)
+    frames, _ = CR.load_frames(policy, spec, REPO / "bench/fixtures/e12", 5, seed0=0)
+    hs, sp = {}, {}
+    with torch.no_grad():
+        for v in ("pad", "nocam"):
+            fr = [{**f, "ctx": PT.ctx_for(f["ctx"], v)} for f in frames]
+            hs[v] = H.Harness(policy, spec, fr, N, config="graphs_both", order="prefix_first")
+            sp[v] = Split(hs[v])
+    rows = []
+    with torch.no_grad():
+        for k in range(5):
+            got = {}
+            for v in ("pad", "nocam"):
+                with hs[v]._on_p():                                               # noqa: SLF001
+                    hs[v]._load_prefix_inputs(hs[v].frames[k]["ctx"])            # noqa: SLF001
+                    sp[v].gv.replay()
+                torch.cuda.synchronize()
+                got[v] = [t.float().cpu().clone() for t in sp[v].vout]
+            for cam in (0, 1):
+                x, y = got["pad"][cam], got["nocam"][cam]
+                rows.append({"frame": k, "camera": cam, "bitwise": bool(torch.equal(x, y)),
+                             "maxabs": float((x - y).abs().max()), "shape": list(x.shape)})
+    with (out / "vision_bitwise.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+    print(f"  real-camera embeddings bitwise pad vs nocam: {sum(r['bitwise'] for r in rows)}/{len(rows)}; "
+          f"max|d| {max(r['maxabs'] for r in rows):.3g}", flush=True)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=("gate", "equiv", "verdict", "time", "ncu"), required=True)
+    ap.add_argument("--mode", choices=("gate", "equiv", "verdict", "time", "ncu", "visioncheck"), required=True)
     ap.add_argument("--outdir", default="")
     ap.add_argument("--frames", type=int, default=60)
     ap.add_argument("--n-inputs", type=int, default=64, help="smoke only: fewer than the 64 fixed inputs")
@@ -462,6 +500,8 @@ def main() -> int:
         raise SystemExit("MAXN only (T017)")
     if a.mode == "ncu":
         return mode_ncu(a)
+    if a.mode == "visioncheck":
+        return mode_visioncheck(a, REPO / a.outdir)
     out = REPO / a.outdir
     (out / "raw").mkdir(parents=True, exist_ok=True)
     if a.mode == "verdict":
