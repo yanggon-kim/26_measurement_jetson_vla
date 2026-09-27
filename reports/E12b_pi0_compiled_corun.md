@@ -282,3 +282,22 @@ rate — which item 1 shows is ~0.78× of its real traffic, so the matched hog w
 prediction; `bench/queues/queue_e12_capped.sh` step 0c now measures the compiled stages at `MODE_30W`
 with `bench/e12_capped_compiled_stages.py`, whose MAXN references
 (`results/20260925_E12_pi0_compiled_stages_N10_MAXN{,_green8_8}`) reproduce M3 within 0.25 %.
+
+---
+
+## Addendum (2026-09-26, T016 step 5 / EV-13) — which suspect corrupted T014's compiled co-run
+
+`results/20260926_E12c_pi0_corruption_diag_MAXN/` (`diag_2x2.md`), script `bench/e12c_diagnose.py` (committed —
+the `e12b_diagnose.py` this report once cited never was). 100 frames per cell, distinct observations and noise,
+pipeline vs the same cell's serial run, device-side finite checks, stale control.
+
+| pool \ KV | double-buffered | single buffer, no wait |
+|---|---|---|
+| own (owngraph_expert) | 0/100 failures, bitwise | **98/100 wrong** (max \|Δ\| 2.01, finite) |
+| shared (rung graph-tree denoise_step) | 0/100 failures, bitwise | **hangs** the GPU (twice, in the concurrent pass) |
+
+**The single KV buffer is the operative cause of the wrong actions; the shared graph-tree pool alone is not.**
+The shared pool with a single buffer does not return NaN here but hangs in `CUDAGraph.replay()` — T014's NaNs came
+from a pipeline that passed caches by reference rather than through one buffer, so this isolates the mechanisms,
+not T014's exact code. E12b's `dbuf_kv` is necessary and sufficient for correctness; `owngraph_expert` is not
+needed for correctness (it matters for partitioning, M0).
