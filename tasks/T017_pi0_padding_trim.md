@@ -198,3 +198,5 @@ first. Your job is the measurement, not the prior.
 with a T016 step. T017 is MAXN work: if the device is in a capped mode when T016 finishes, finish those queues first
 and take T017 once MAXN is restored. Never ask for a reboot for it. If the human owner gives you a different order
 directly, the owner's order wins; say in `STATUS.md` where T017 sits.
+
+status: claimed 2026-09-27
