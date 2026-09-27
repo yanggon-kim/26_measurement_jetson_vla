@@ -53,7 +53,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 SUITE_IDX = {"libero_spatial": 1, "libero_object": 2, "libero_goal": 3, "libero_10": 4}
 
 
-def build_obs(obs: dict, feats: dict, task: str) -> dict:
+def build_obs(obs: dict, feats: dict, task: str, empty_camera: str = "zeros") -> dict:
     """LIBERO observation -> the RAW dict the checkpoint's preprocessor expects.
 
     Deliberately NOT the final batch. The policy needs `observation.language.tokens` and
@@ -80,7 +80,13 @@ def build_obs(obs: dict, feats: dict, task: str) -> dict:
         elif key.endswith("image2"):
             img = wr
         else:
-            # the padded slot this checkpoint always encodes anyway (T010)
+            if empty_camera == "masked":
+                # T016 step 3 finding: supplying this key makes it a PRESENT image (mask 1, its 256 tokens
+                # attended). Left out, LeRobot's _preprocess_images synthesises it as training did: a -1 image
+                # with mask 0 -- the same input as bench/pi0_common.build_batch and every timing / E14 run.
+                continue
+            # the padded slot this checkpoint always encodes anyway (T010) -- as E8 / E8s ran it: an all-zero
+            # image supplied under the key, so the policy treats it as a real camera (mask 1)
             img = np.zeros((h, w, 3), dtype=np.uint8)
         t = torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float() / 255.0
         if t.shape[-2:] != (h, w):
@@ -130,6 +136,10 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--prefix-variant", default="pad", choices=("pad", "nocam", "trimprompt", "nopad"),
                     help="pi0 prefix padding trim (bench/pi0_padtrim.py); needs --seed-noise")
+    ap.add_argument("--empty-camera", choices=("zeros", "masked"), default="zeros",
+                    help="the checkpoint's empty_camera_0 slot: 'zeros' (E8/E8s: an all-zero image supplied, so "
+                         "mask 1 and its tokens attended) or 'masked' (key left out; LeRobot fills -1 with mask 0, "
+                         "as in training and in pi0_common.build_batch)")
     ap.add_argument("--static-shapes", action="store_true",
                     help="torch._dynamo automatic_dynamic_shapes=False before the rung compiles (as "
                          "bench/e14_pi0_nopad.py): a new prefix length compiles its own static graph "
@@ -271,7 +281,7 @@ def main() -> int:
             while steps < args.max_steps and not done:
                 fwd, pms = 0, 0.0
                 if not chunk:
-                    raw = build_obs(obs, feats, task.language)
+                    raw = build_obs(obs, feats, task.language, args.empty_camera)
                     batch = preprocess(raw)
                     t0 = time.perf_counter()
                     with torch.no_grad():
@@ -355,6 +365,7 @@ def main() -> int:
         "nonfinite_action_elements": int(nonfinite_actions.item()),
         "prefix_variant": args.prefix_variant,
         "static_shapes": bool(args.static_shapes),
+        "empty_camera": args.empty_camera,
         "dynamo_counters": {k: dict(v) for k, v in _dyn.utils.counters.items() if k in ("frames", "stats", "recompiles")},
         "resolution_note": (f"{total} episodes resolves a policy that is BROKEN, not a "
                             f"few-percent difference in success rate"),
