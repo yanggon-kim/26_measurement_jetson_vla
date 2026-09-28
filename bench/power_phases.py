@@ -128,6 +128,10 @@ def main() -> int:
     ap.add_argument("--outdir-prefix", required=True)
     ap.add_argument("--model", default="pi0", help="pi0 | pi05 | smolvla")
     ap.add_argument("--seconds", type=float, default=60.0)
+    ap.add_argument("--phases", default="prefix,ae,full",
+                    help="E7v (2026-09-28): add vision,vlm to split the prefix -- vision = the recorded "
+                         "embed_image calls of one prefix pass replayed; vlm = the unchanged prefix with "
+                         "embed_image answered from those outputs; prefix stays as the closure check")
     ap.add_argument("--steps", type=int, default=4)
     ap.add_argument("--modes", default="eager,reduce-overhead",
                     help="compile modes to sweep. A mode is applied to sample_actions "
@@ -194,7 +198,7 @@ def main() -> int:
 
         rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
         rails = sorted(idle_means)
-        for phase in ("prefix", "ae", "full"):
+        for phase in [x for x in args.phases.split(",") if x]:
             fn = PL.make_phase(policy, batch, phase, args.steps, spec)
             means, r, samples = measure(fn, args.seconds, phase,
                                         out / "raw" / f"tegrastats_{phase}.log")
@@ -256,6 +260,11 @@ def main() -> int:
             "batch": 1, "num_denoise_steps": args.steps,
             "action_horizon": getattr(cfg, "chunk_size", None),
             "n_warmup": 5, "n_timed": f"{args.seconds} s loop per phase", "sample_hz": 20,
+            "phases": args.phases,
+            "phase_definitions": {"prefix": "vision + VLM prefill (embed_prefix + forward, fills the KV cache)",
+                                  "vision": "the embed_image calls one prefix pass makes (recorded, replayed; all camera slots the model encodes)",
+                                  "vlm": "the unchanged prefix with embed_image answered from recorded outputs",
+                                  "ae": "N denoise_step on a cache computed once", "full": "predict_action_chunk"},
             "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
             "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
             "emc_hz": int(sh_out("sudo -n sh -c 'cat /sys/kernel/debug/bpmp/debug/clk/emc/rate'") or 0),

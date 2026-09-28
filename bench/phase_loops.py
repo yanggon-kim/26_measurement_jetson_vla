@@ -103,8 +103,56 @@ def effective_exec_style(phase: str, compile_mode) -> str:
     return "compiled" if phase == "full" else "eager_subpath"
 
 
+def record_vision(ctx):
+    """E7v (2026-09-28): the image-encoder calls ONE prefix pass makes, and their outputs.
+
+    `embed_prefix` calls `<container>.embed_image(img)` once per camera slot it encodes (pi0 encodes
+    its empty camera too). Recording instead of re-deriving keeps `vision` + `vlm` faithful to each
+    model's own embed_prefix: the `vision` loop replays exactly these calls; the `vlm` loop runs the
+    unchanged prefix with embed_image answered from the recorded outputs.
+    """
+    pg = getattr(ctx["model"], ctx["spec"].container)
+    real = pg.embed_image
+    calls = []
+
+    def rec(img, *a, **k):
+        out = real(img, *a, **k)
+        calls.append(((img, a, k), out.clone() if torch.is_tensor(out) else out))
+        return out
+    pg.embed_image = rec
+    try:
+        prefix_once(ctx)
+        torch.cuda.synchronize()
+    finally:
+        pg.embed_image = real
+    return pg, calls
+
+
 def make_phase(policy, batch, phase: str, num_steps: int, spec=None):
     ctx = build(policy, batch, spec)
+    if phase in ("vision", "vlm"):
+        pg, calls = record_vision(ctx)
+        if not calls:
+            raise SystemExit("no embed_image call recorded in one prefix pass; the vision / vlm split "
+                             "would be empty")
+        if phase == "vision":
+            def vision_once():
+                with torch.no_grad():
+                    return [pg.embed_image(img, *a, **k) for (img, a, k), _ in calls]
+            vision_once.n_calls = len(calls)
+            return vision_once
+        real = pg.embed_image
+        outs = [o for _, o in calls]
+
+        def vlm_once():
+            it = iter(outs)
+            pg.embed_image = lambda *a, **k: next(it)
+            try:
+                return prefix_once(ctx)
+            finally:
+                pg.embed_image = real
+        vlm_once.n_calls = len(calls)
+        return vlm_once
     if phase == "prefix":
         return lambda: prefix_once(ctx)
     if phase == "ae":

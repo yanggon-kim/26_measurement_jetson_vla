@@ -157,6 +157,8 @@ def main() -> int:
                          "instead of the phase split, using bench/power_core.py")
     ap.add_argument("--seconds", type=float, default=60.0,
                     help="E7 only: wall time per loop and for the idle baseline")
+    ap.add_argument("--phases", default="prefix,ae,full",
+                    help="E7 only; E7v adds vision,vlm (the backbone split; prefix stays as the closure check)")
     ap.add_argument("--allow-capped", action="store_true",
                     help="E7 only: permit a non-MAXN power mode (it is still recorded)")
     args = ap.parse_args()
@@ -782,6 +784,44 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
     # the ae loop's input must be rebuilt per call; see _fresh above
 
     phases = {"prefix": prefix_once, "ae": ae_once, "full": step}
+    want = [x for x in args.phases.split(",") if x]
+    if "vision" in want or "vlm" in want:
+        # E7v (2026-09-28): split the backbone. Record the image-encoder calls one backbone pass makes
+        # (the module's current forward -- the compiled one when --vision-mode is set), then
+        # vision = replay those calls; vlm = the unchanged backbone with the encoder answered from them.
+        vis_m = _vision_module(model)
+        real_fwd = vis_m.forward
+        calls = []
+
+        def _rec(*a, **k):
+            o = real_fwd(*a, **k)
+            calls.append((a, k, clone_graph_outputs(o)))
+            return o
+        vis_m.forward = _rec
+        try:
+            prefix_once()
+            torch.cuda.synchronize()
+        finally:
+            vis_m.forward = real_fwd
+        if not calls:
+            raise SystemExit("no image-encoder call recorded in one backbone pass")
+
+        def vision_once():
+            if hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                torch.compiler.cudagraph_mark_step_begin()
+            with torch.no_grad():
+                return [vis_m.forward(*a, **k) for a, k, _ in calls]
+
+        def vlm_once():
+            it = iter([o for _, _, o in calls])
+            vis_m.forward = lambda *a, **k: next(it)
+            try:
+                return prefix_once()
+            finally:
+                vis_m.forward = real_fwd
+        phases["vision"], phases["vlm"] = vision_once, vlm_once
+        print(f"  E7v: {len(calls)} image-encoder call(s) per backbone pass recorded", flush=True)
+    phases = {k: phases[k] for k in want}
     rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
     for phase, fn in phases.items():
         means, r, samples = PC.measure(fn, args.seconds, phase,
@@ -816,14 +856,17 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
             "ae": "model.action_head.get_action on a backbone output computed once; "
                   "contains the num_inference_timesteps loop",
             "full": "model.get_action(inputs) on already-collated inputs, i.e. the GPU "
-                    "path only -- prepare_input (CPU) is outside all three loops"},
+                    "path only -- prepare_input (CPU) is outside all three loops",
+            "vision": "E7v: the image-encoder calls one backbone pass makes, recorded and replayed",
+            "vlm": "E7v: the unchanged backbone with the image encoder answered from recorded outputs"},
+        "phases_run": args.phases,
         "notes": PC.PROTOCOL_NOTES + [
             "prefix and ae are driven BELOW model.get_action, so if a compile mode was "
             "applied to get_action itself they would not go through it. This run compiled: "
             + (";".join(compiled_desc) or "nothing (eager)") + ".",
             "GR00T's prefix loop includes its vision encoder, as the LeRobot models' "
-            "prefix loop does. Splitting vision out again would need a fourth loop driving "
-            ".visual on inputs the backbone builds internally; it is not attempted here.",
+            "prefix loop does. With --phases vision,vlm (E7v) the encoder is split out: vision replays "
+            "the recorded encoder calls, vlm runs the backbone with them answered from recorded outputs.",
         ],
     }, indent=1))
     print(f"\nwrote {out}", flush=True)
