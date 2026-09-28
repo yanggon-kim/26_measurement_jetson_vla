@@ -1,0 +1,32 @@
+# inner loop PC range 0x86217240-0x86217a80: backward BRA 0x86217a80 -> 0x86217240: of the 2 backward branches, the range whose instructions executed most (ncu per-PC Instructions Executed, §3)
+# Kernel2__cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_32x5_tn_align8 inner loop 0x86217240-0x86217a80
+opcode,count,category,lsu_subclass
+IADD3,9,ALU,
+R2P,4,ALU,
+IADD3.X,4,ALU,
+ISETP.NE.AND,2,ALU,
+ISETP.GT.AND,1,ALU,
+SEL,1,ALU,
+DEPBAR.LE,1,Branch,
+BAR.SYNC.DEFER_BLOCKING,1,Branch,
+BRA,1,Branch,
+IMAD.MOV.U32,2,FMA,
+LDSM.16.M88.4,16,LSU,Load
+LDGSTS.E.BYPASS.LTC128B.128,8,LSU,Load
+LDGDEPBAR,1,LSU,Load
+HMMA.16816.F32.BF16,64,Tensor core,
+UIADD3,6,Uniform,
+UMOV,4,Uniform,
+UISETP.NE.AND,2,Uniform,
+
+category,count,pct_of_total
+LSU,25,19.7%
+Tensor core,64,50.4%
+FMA,2,1.6%
+ALU,21,16.5%
+Uniform,12,9.4%
+Branch,3,2.4%
+TOTAL,127,100.0%
+
+lsu_subclass,count,pct_of_lsu,pct_of_total
+Load,25,100.0%,19.7%

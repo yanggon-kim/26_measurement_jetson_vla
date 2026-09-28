@@ -1,6 +1,6 @@
-# Static-vs-dynamic cross-check (sm_87) — `Kernel2`
+# Static-vs-dynamic cross-check (sm_87) — `Kernel2__cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_32x5_tn_align8`
 
-## Static SASS counts (from `Kernel2_inventory.csv`)
+## Static SASS counts (from `Kernel2__cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_32x5_tn_align8_sm87_total_inventory.csv`)
 
 - LSU        : **634** (11.8%)
 - FMA        : **1956** (36.5%)
@@ -17,9 +17,9 @@ Static ratios:  LSU/FMA = 0.32x,  LSU/ALU = 0.32x,  ALU/FMA = 1.02x
 
 | run | LSU% | FMA% | ALU% | LD% | WR% | LD:WR | dyn LSU/FMA | dyn LSU/ALU |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `(single-run)` | 13.37 | 1.70 | 11.71 | 97.20 | 2.80 | 34.70 | 7.86 | 1.14 |
+| `20260925_E5b_groot_n17_best` | 11.85 | 1.07 | 7.50 | 11.38 | 0.46 | 24.56 | 11.07 | 1.58 |
 
-**Direction agreement check.** Static LSU/FMA = 0.32x; dynamic ranges 7.86x-7.86x. Static counts predict the LSU-heavy character; dynamic ratio is 24.3x amplified — see why below.
+**Direction agreement check.** Static LSU/FMA = 0.32x; dynamic ranges 11.07x-11.07x. Static counts predict the LSU-heavy character; dynamic ratio is 34.2x amplified — see why below.
 
 ## Why static ≠ dynamic
 

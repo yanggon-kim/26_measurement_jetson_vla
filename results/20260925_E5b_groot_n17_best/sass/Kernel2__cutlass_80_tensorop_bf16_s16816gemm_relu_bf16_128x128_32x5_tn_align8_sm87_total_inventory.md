@@ -1,4 +1,4 @@
-# SASS instruction inventory — `Kernel2.sass`
+# SASS instruction inventory — `Kernel2__cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_32x5_tn_align8_sm87.sass`
 
 Total instructions: **5354** (file has 5360 lines; cuobjdump emits ~2 lines per instruction).
 
