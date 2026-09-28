@@ -78,6 +78,7 @@ class SmolVLALayerCapture:
         self.args = None
         self.kind = None
         self.att_output = None
+        self.replay = None
         self._orig = {}
 
     def __enter__(self):
@@ -117,6 +118,18 @@ class SmolVLALayerCapture:
                             "prefix_k": pk, "prefix_v": pv,
                             "layer": layer,
                         }
+                        # 2026-09-28: the call itself, so `attention_whole` can REPLAY the model's
+                        # own attention. Before this fix the segment returned the captured output
+                        # tensor (fn=lambda: ctx) and so timed a Python return, not attention.
+                        # With fill_kv_cache=False the call only reads the cache (:271-276 concat),
+                        # so replaying it on a cloned one-layer cache is side-effect free.
+                        kv = None if pk is None else {layer_idx: {"key_states": pk, "value_states": pv}}
+                        emb = [None, hs.detach().clone()]
+                        cap.replay = lambda _o=orig, _ml=model_layers, _e=emb, _li=layer_idx, \
+                            _pos=cap.args["position_ids"], _m=cap.args["attention_mask"], \
+                            _b=batch_size, _h=head_dim, _u=use_cache, _kv=kv, _kw=dict(kw): \
+                            _o(_ml, _e, _li, _pos, _m, _b, _h, use_cache=_u, fill_kv_cache=False,
+                               past_key_values=_kv, **_kw)
                 out = orig(model_layers, inputs_embeds, layer_idx, position_ids,
                            attention_mask, batch_size, head_dim, use_cache=use_cache,
                            fill_kv_cache=fill_kv_cache, past_key_values=past_key_values,
@@ -219,6 +232,7 @@ def intermediates(policy, cap: SmolVLALayerCapture, spec) -> dict:
             "mlp_out": mlp_out, "resid2": resid2,
             "attn": attn, "layer": layer, "adarms_cond": None,
             "container": c, "kind": cap.kind, "bsz": bsz, "head_dim": hd,
+            "attn_replay": cap.replay,
             "mask_full": a["attention_mask"],
             # not separable for this model -- see the note in intermediates
             "not_separable": ("rope", "softmax", "attention_gpu")}
@@ -285,8 +299,10 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
              notes="no gate, so this is one add per element"),
         dict(segment="attention_whole", order=7, in_model="yes",
              source_ref=f"{SRC}:197 / :274 (forward_attn_layer / forward_cross_attn_layer)",
-             ops=f"{t['kind']}: the whole attention, taken as the MODEL computed it",
-             fn=lambda: t["ctx"],
+             ops=f"{t['kind']}: the model's own forward_{'cross_' if t['kind'] == 'cross_attn' else ''}attn_layer "
+                 "replayed on the captured inputs -- q/k/v projections + RoPE + scores + softmax + context "
+                 "(o_proj is outside, in forward's inlined tail)",
+             fn=t["attn_replay"],
              inputs=f"captured from the model's own call",
              outputs=f"att:{tuple(t['ctx'].shape)}",
              bytes_formula="not decomposed; see notes",
