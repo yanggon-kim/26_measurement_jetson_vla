@@ -323,7 +323,7 @@ def main() -> int:
                                  "not the headline compiled number."),
                 "compile_info": cinfo,
                 "compile_first_call_s": round(first_call, 3),
-                "inductor_sm_gate_patched": forced_names,
+                "inductor_sm_gate_patched": forced_names or "none (variant is not forced)",
                 "deepcopy_hoisted": args.variant == "nodeepcopy",
                 "kv_clone_replaced_by_crop": args.variant == "cropcache",
                 "checkpoint_config_as_shipped": shipped,
