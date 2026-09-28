@@ -2,6 +2,15 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ⏳ 2026-09-28 17:00 — T004 4b(ii) compiled latency: MODE_30W done; next, owner: MODE_15W
+
+* 30W (owner reboot 16:24): `results/20260928_E3_pi0_reduce-overhead_N{4,10}_30W` — e2e 1844.9 / 2061.5 ms
+  (MAXN compiled 497.8 / 597.3; 30W eager 2066.1 / 2457.3); 36.1 ms per denoising step. `bench/run_e4.py` gained
+  `--allow-capped --exp E3 --suffix <mode>`.
+* **Next, owner:** `sudo nvpmodel -m 1` (MODE_15W), reboot; then the same run at 15W; then `sudo nvpmodel -m 0` (MAXN).
+
+---
+
 ## ✅ 2026-09-28 (afternoon) — completeness audit: every task re-checked, gaps measured, one wrong number corrected
 
 The owner asked for a completeness check against the task list. Findings and what was done (all MAXN, one GPU job at a
