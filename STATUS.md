@@ -2,6 +2,26 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ 2026-09-28 — owner-requested analyses and the vision energy split (MAXN); no task open
+
+* **E7v — vision / language / action energy measured separately** (12 runs, 6 models × eager / best, MAXN, fixed
+  sampler): `results/20260928_E7v_*`, summary `results/20260928_E7v_summary`, `reports/SYNTHESIS_all_measurements.md`
+  §2.1. Two new power-loop phases (`bench/phase_loops.py`, `bench/power_phases.py`, `bench/groot_phases.py --phases`):
+  `vision` replays the image-encoder calls of one prefix pass; `vlm` (the language part) runs the unchanged prefix with
+  the encoder answered from recorded outputs. Closures: vision + language vs prefix within 0.4–1.8 %, prefix + action vs
+  full within 0.3–4.9 %. Best-rung energy shares vision / language / action: π0 17 / 59 / 24 %, π0.5 15 / 60 / 26 %,
+  SmolVLA 50 / 11 / 39 %, GR00T 20–31 / 28–45 / 35–41 %.
+* **E5c — the action expert by component** (derived from the committed E5 nsys runs):
+  `results/20260928_E5c_expert_components`, synthesis §3.4. π0's compiled attention products (36 per step, `cutlass_75_wmma`
+  kernels) take 4.19 ms/step ≈ all 126 weight projections (4.54 ms); the whole prefix K/V cache (15.05 MB) is re-copied
+  into the CUDA graph's inputs every denoising step; GR00T's compiled head is 91–94 % weight GEMMs.
+* **Reports:** `reports/SYNTHESIS_all_measurements.md` (all measurements in one place, component shares of latency and
+  energy), `reports/FEASIBILITY_realtime_control.md` (per-frame latency vs robot control requirements from the π0,
+  GR00T N1 and VLA-Perf papers; only SmolVLA meets 10 Hz on Orin).
+* Device left at MAXN, clocks locked, nothing running. New work waits for the research side.
+
+---
+
 ## ✅ MODE_15W SESSION DONE (2026-09-27 18:25–22:57) — the task queue is empty; next, owner: back to MAXN
 
 Device after the owner's reboot: `MODE_15W`, TPC mask 248 → **6 SMs**, GPU locked **408 MHz**, EMC **2133 MHz**, 4 CPUs
@@ -21,8 +41,7 @@ Device after the owner's reboot: `MODE_15W`, TPC mask 248 → **6 SMs**, GPU loc
   microbenchmark and rails-check metas (not applicable there), `shipped_config.*` (the checkpoint's own config values).
 * Task files: T004 and T014 got their missing closing status blocks (T004's E6 correction and step 4b; T014's Step 4).
 
-**Next, owner:** return to MAXN: `sudo nvpmodel -m 0`, confirm the reboot, then `claude --continue` (I apply
-`jetson_clocks` and check the gate reads MAXN / 16 SMs). **No task is open**; new work waits for the research side
+**Next, owner:** done — the device was returned to MAXN on 2026-09-28. **No task is open**; new work waits for the research side
 (and its answers to the T016 questions below).
 
 ---
