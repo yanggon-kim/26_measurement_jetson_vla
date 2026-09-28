@@ -138,7 +138,44 @@ def instrument(policy, rec: Recorder, container: str = "paligemma_with_expert"):
     undo.append(lambda: setattr(model, "denoise_step", orig_denoise))
 
     # ---- ae_layer[j], only inside one representative step (protocol §2)
-    if rec.enable_layers:
+    if rec.enable_layers and hasattr(pg, "forward_attn_layer") and not hasattr(pg, "gemma_expert"):
+        # SmolVLA (2026-09-28): its layer body is INLINED in the container's forward (smolvlm_with_expert.py
+        # :425-470) -- no layer.forward is ever called, so the loop below would record nothing (and
+        # `gemma_expert` does not exist). Layer j is called as forward_attn_layer / forward_cross_attn_layer
+        # (layer_idx = 3rd arg) followed by its inline MLP, so ae_layer[j] is an NVTX range from layer j's
+        # attention call to layer j+1's (the last one closes when the step returns). NVTX only: no timing.
+        state = {"open": 0}
+
+        def _close():
+            while state["open"]:
+                torch.cuda.nvtx.range_pop()
+                state["open"] -= 1
+
+        for meth in ("forward_attn_layer", "forward_cross_attn_layer"):
+            orig_m = getattr(pg, meth)
+
+            def wrapped(self, *a, _orig=orig_m, **kw):
+                if rec.step_idx == rec.layers_in_step:
+                    j = a[2] if len(a) > 2 else kw["layer_idx"]
+                    _close()
+                    torch.cuda.nvtx.range_push(f"ae_layer[{j}]")
+                    torch.cuda.nvtx.range_push(f"ae_layer_{j}")
+                    state["open"] = 2
+                return _orig(*a, **kw)
+
+            setattr(pg, meth, types.MethodType(wrapped, pg))
+            undo.append(lambda m=meth, o=orig_m: setattr(pg, m, o))
+        inner_ds = model.denoise_step
+
+        def denoise_close(self, *a, _orig=inner_ds, **kw):
+            try:
+                return _orig(*a, **kw)
+            finally:
+                _close()
+
+        model.denoise_step = types.MethodType(denoise_close, model)
+        undo.append(lambda: setattr(model, "denoise_step", inner_ds))
+    elif rec.enable_layers:
         layers = pg.gemma_expert.model.layers
         for j, layer in enumerate(layers):
             orig_lf = layer.forward

@@ -63,6 +63,8 @@ for d in Path('/proc').iterdir():
         continue
     if not argv:
         continue
+    if b'--import' in argv:          # `ncu --import` only reads a report file (CPU)
+        continue
     if argv[0].rsplit(b'/', 1)[-1] in (b'ncu', b'nsys') or any(
             a.endswith(b'ncu_target.py') or a.endswith(b'groot_phases.py')
             for a in argv[1:]):
