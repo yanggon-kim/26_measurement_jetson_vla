@@ -103,7 +103,9 @@ Both are raised in `STATUS.md` under questions for the research side.
   all four.
 * **SASS** was exported from the reports (`ncu_sass_dump.py`), i.e. what actually executed.
   These cuBLAS/CUTLASS kernels live in `libcublasLt` and have no `.cubin` on disk. Inventories
-  and static-vs-dynamic cross-checks are in each directory's `inventory/`. Each cross-check is
+  and static-vs-dynamic cross-checks were in each directory's `inventory/` (2026-09-28: moved to
+  the docs/03 §0 paths `sass/<kernel>_sm87_*`, one per SYMBOL, by `bench/e5b_static.py`; see that
+  directory's meta.json `e5b_static`). Each cross-check is
   paired with the details CSV of the **same** kernel. The older queue took the first CSV in the
   directory, which in a multi-target directory would pair a kernel with another's metrics.
 * **Relation to T007's kernels.** GR00T's GEMMs are the `_relu_` epilogue variants, which are

@@ -61,6 +61,12 @@ def main() -> int:
         if not tgt:
             continue
         t = int(tgt.group(1), 16)
+        if pc <= 0xFFFFFFFF:
+            # bench/ncu_sass_dump.py writes each PC masked to its low 32 bits but leaves the
+            # BRA operand as ncu printed it (the full 64-bit address, e.g. 0x42ea00e40 at PC
+            # 2ea00d10). Unmasked, every target looked higher than its source and every
+            # ncu-exported dump reported "0 BACKWARD" (found 2026-09-28). Same mask here.
+            t &= 0xFFFFFFFF
         if t >= pc:
             continue                                   # forward branch: not a loop back-edge
         rows.append({"source_pc": f"0x{pc:x}", "target_pc": f"0x{t:x}",

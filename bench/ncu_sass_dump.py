@@ -59,6 +59,7 @@ def export(rep: Path, outdir: Path, ncu: str) -> dict[str, Path]:
         capture_output=True, text=True, timeout=900).stdout
     outdir.mkdir(parents=True, exist_ok=True)
     written: dict[str, Path] = {}
+    seen: dict[str, set] = {}
     state = {"cur": None, "lines": []}
 
     def flush():
@@ -69,9 +70,17 @@ def export(rep: Path, outdir: Path, ncu: str) -> dict[str, Path]:
         # first is kept and the rest dropped. Appending would double every opcode count.
         f = outdir / f"{short}.sass"
         if f.exists():
+            # Same short name, possibly a DIFFERENT instantiation (pi0/best's `Kernel2` capture holds four
+            # cutlass::Kernel2<...> symbols). Only the first is kept here; bench/e5b_static.py writes one dump
+            # per symbol. Say so instead of dropping it silently (2026-09-28).
+            if state["cur"] not in seen.setdefault(short, set()):
+                print(f"  WARNING: {short}: {state['cur'][:100]} is a different symbol from the one dumped; "
+                      f"not written (use bench/e5b_static.py for per-symbol dumps)", file=sys.stderr)
+                seen[short].add(state["cur"])
             return
         f.write_text("".join(state["lines"]))
         written[short] = f
+        seen.setdefault(short, set()).add(state["cur"])
 
     for row in csv.reader(io.StringIO(txt)):
         if len(row) < 2:
