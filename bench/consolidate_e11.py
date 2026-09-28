@@ -34,12 +34,23 @@ def parts_for(model: str) -> list[str]:
     model would produce the same numbers under a different name and invite someone to
     average them as if they were independent.
     """
+    if model.startswith("groot"):
+        # T012 (2026-09-28): GR00T's parts come from bench/groot_e11.py; its best rung is vlm_compile, and
+        # its pipelining ran per rung.
+        return [f"E11a_{model}_hostseg", f"E11c_{model}_handover", f"E11c_{model}_handover_xfer",
+                f"E11d_{model}_eager_prefixsweep", f"E11d_{model}_vlm_compile_prefixsweep",
+                f"E11e_{model}_eager_mempressure", f"E11e_{model}_vlm_compile_mempressure",
+                f"E11f_{model}_eager_pipelining", f"E11f_{model}_vlm_compile_pipelining"]
     ps = [f"E11a_{model}_hostseg", f"E11c_{model}_handover",
           f"E11d_{model}_eager_prefixsweep",
           f"E11d_{model}_reduce-overhead_prefixsweep",
           f"E11e_{model}_eager_mempressure",
           f"E11e_{model}_reduce-overhead_mempressure",
           f"E11f_{model}_pipelining"]
+    if model != "pi0":
+        # T011 step 2's xfer_exact.csv was measured into its own directory (2026-09-28) so the committed
+        # handover run was not rewritten; before this line it was never consolidated.
+        ps.insert(ps.index(f"E11c_{model}_handover") + 1, f"E11c_{model}_handover_xfer")
     if model == "pi0":
         # pi0's E11b ran as its own part before T011 reshaped this, and its rows are
         # committed. Keeping it for pi0 only preserves that history without implying the
@@ -109,8 +120,17 @@ def main() -> int:
     (out / "raw").mkdir(parents=True, exist_ok=True)
     bench_commit = sh_out(f"git -C {REPO} rev-parse HEAD")
     import model_registry as MR                                       # noqa: PLC0415
-    spec = MR.get(args.model)
     PARTS = parts_for(args.model)
+    if args.model.startswith("groot"):
+        # model_registry has no GR00T entry by design (no LeRobot wrap points); the identity comes from
+        # the handover part's own meta.json instead of being typed here.
+        import types
+        hm = json.loads((pick_run(f"*_E11c_{args.model}_handover") / "meta.json").read_text())
+        spec = types.SimpleNamespace(name=args.model, checkpoint=hm.get("checkpoint", ""),
+                                     revision=None, _commit=hm.get("model_commit", ""))
+        MR.resolved_commit = lambda sp, _f=MR.resolved_commit: getattr(sp, "_commit", None) or _f(sp)
+    else:
+        spec = MR.get(args.model)
     rows, provenance, missing = [], [], []
 
     # --- 1. every part's own rows, with source_file repointed at a restated copy
@@ -175,6 +195,80 @@ def main() -> int:
             provenance.append({"part": f"{tag} N={n_steps}", "run_dir": d.name, "rows": cnt})
             print(f"  {tag + f' N={n_steps}':38s} {cnt:5d} rows from {d.name}")
 
+    # --- 2b. region latencies of T006 (pi05 / smolvla) and T009 (GR00T) -- T011/T012 step 7 (2026-09-28).
+    # Before this, section 2 was skipped for every model but pi0, so their consolidated files lacked the
+    # "restated E3/E4 region latencies" the tasks require.
+    if args.model in ("pi05", "smolvla"):
+        d = pick_run(f"*_E3E4_{args.model}_Nsweep")
+        rel = restate(out, d, "opt_ladder.csv") if d else None
+        if rel is None:
+            missing.append(f"E3E4 {args.model} Nsweep opt_ladder.csv")
+        else:
+            cnt = 0
+            commit = MR.resolved_commit(spec)
+            for r in csv.DictReader((d / "opt_ladder.csv").open()):
+                if r["status"] != "measured" or r["N"] not in ("4", "10"):
+                    continue
+                style = "eager" if r["rung"].startswith("eager") else "compiled"
+                var = f"from={d.name};rung={r['rung']};timing_def=instrumented"
+                for q, col in (("t_vision", "vision_ms"), ("t_vlm_prefix", "vlm_prefix_ms"),
+                               ("t_ae_total", "ae_total_ms"), ("t_e2e", "e2e_median_ms")):
+                    if r.get(col):
+                        rows.append([args.model, commit, bench_commit, q, "", var, f"{float(r[col]):.9g}", "ms",
+                                     "median", r["n"], style, "wall_isolated", "MAXN+jetson_clocks", "bf16",
+                                     "", "", r["N"], rel])
+                        cnt += 1
+                for stat, col in (("p5", "e2e_p5_ms"), ("p95", "e2e_p95_ms")):
+                    if r.get(col):
+                        rows.append([args.model, commit, bench_commit, "t_e2e", "", var, f"{float(r[col]):.9g}",
+                                     "ms", stat, r["n"], style, "wall_isolated", "MAXN+jetson_clocks", "bf16",
+                                     "", "", r["N"], rel])
+                        cnt += 1
+            # t_ae_step as pi0's is defined: the least-squares slope of ae_total over N (section 3 below), here per
+            # rung over every measured N of the same N sweep
+            by = {}
+            for r in csv.DictReader((d / "opt_ladder.csv").open()):
+                if r["status"] == "measured" and r.get("ae_total_ms"):
+                    by.setdefault(r["rung"], []).append((int(r["N"]), float(r["ae_total_ms"])))
+            for rung, pts in by.items():
+                if len({x for x, _ in pts}) < 2:
+                    continue
+                n_ = len(pts); mx = sum(x for x, _ in pts) / n_; my = sum(y for _, y in pts) / n_
+                slope = sum((x - mx) * (y - my) for x, y in pts) / sum((x - mx) ** 2 for x, _ in pts)
+                rows.append([args.model, commit, bench_commit, "t_ae_step", "",
+                             f"from={d.name};rung={rung};N_points={'/'.join(str(x) for x, _ in sorted(pts))}",
+                             f"{slope:.9g}", "ms", "value", n_, "eager" if rung.startswith("eager") else "compiled",
+                             "slope", "MAXN+jetson_clocks", "bf16", "", "", "", rel])
+                cnt += 1
+            provenance.append({"part": "E3/E4 region latencies (T006 N sweep)", "run_dir": d.name, "rows": cnt})
+            print(f"  {'E3/E4 regions':38s} {cnt:5d} rows from {d.name}")
+    if args.model.startswith("groot"):
+        gq = {"vision": "t_vision", "vlm_prefix_excl_vision": "t_vlm_prefix", "ae_total": "t_ae_total",
+              "e2e": "t_e2e", "data_processing_cpu": "t_preprocess"}
+        commit = MR.resolved_commit(spec)
+        for rung, style in (("eager_tf32", "eager"), ("vlm_compile", "compiled")):
+            for n_steps in (4, 10):
+                d = pick_run(f"*_E3E4_{args.model}_N{n_steps}_{rung}")
+                rel = restate(out, d, "phase_split.csv") if d else None
+                if rel is None:
+                    missing.append(f"E3E4 {args.model} N{n_steps} {rung}")
+                    continue
+                cnt = 0
+                for r in csv.DictReader((d / "phase_split.csv").open()):
+                    q = gq.get(r["region"])
+                    if not q:
+                        continue
+                    var = f"from={d.name};rung={rung};region={r['region']};timing_def=instrumented"
+                    for stat, col in (("median", "median_ms"), ("p5", "p5_ms"), ("p95", "p95_ms")):
+                        if r.get(col):
+                            rows.append([args.model, commit, bench_commit, q, "", var, f"{float(r[col]):.9g}",
+                                         "ms", stat, r["n"], style, "wall_isolated", "MAXN+jetson_clocks", "bf16",
+                                         "", "", str(n_steps), rel])
+                            cnt += 1
+                provenance.append({"part": f"E3/E4 phase split N={n_steps} {rung}", "run_dir": d.name,
+                                   "rows": cnt})
+                print(f"  {f'E3/E4 N={n_steps} {rung}':38s} {cnt:5d} rows from {d.name}")
+
     # --- 3. the slope definition of ms/step, restated from the E3/E4 summaries
     # pi0 only, for the same reason as section 2: this summary file is pi0's.
     for name, style, cm in (() if args.model != "pi0"
@@ -227,7 +321,7 @@ def main() -> int:
     sw = software_versions()
     write_json(out / "meta.json", {
         "experiment": "E11 (consolidated)",
-        "task": "T010" if args.model == "pi0" else "T011",
+        "task": "T010" if args.model == "pi0" else ("T012" if args.model.startswith("groot") else "T011"),
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": spec.name,
         "model_repo": spec.checkpoint,
