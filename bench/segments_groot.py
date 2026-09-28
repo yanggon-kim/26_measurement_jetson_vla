@@ -369,3 +369,108 @@ def build_segments(t: dict, S: int, D: int, I: int, H: int, HD: int, T_keys: int
             sd["fn"] = _under_autocast(sd["fn"])
 
     return segs
+
+
+# ----------------------------------------------------------------------------------- per-step extras
+#
+# T012 step 1: "per step the timestep encoder, the state / action encoders, the action decoder and the
+# Euler update as extras (list those that are large linear layers on the S tokens separately and mark
+# them so; they are not host segments)". N1.7's denoising loop is gr00t_n1d7.py:397-431 and the DiT's
+# own head/tail is dit.py:362 (timestep_encoder) and :409-414 (norm_out / proj_out). Every extra below
+# re-runs the MODEL'S OWN module (or the loop's own one-line arithmetic) on arguments captured from one
+# real denoising step; none returns a captured tensor.
+
+class StepExtrasCapture:
+    """Record the first denoising step's arguments of the action head's per-step modules."""
+
+    def __init__(self, model):
+        self.ah = model.action_head
+        self.dit = self.ah.model
+        self.got = {}
+        self._undo = []
+
+    def _wrap(self, owner, attr, key):
+        orig = getattr(owner, attr)
+        got = self.got
+
+        def wrapper(*a, **k):
+            out = orig(*a, **k)
+            if key not in got:
+                got[key] = {"args": tuple(x.detach().clone() if torch.is_tensor(x) else x for x in a),
+                            "kwargs": {kk: (v.detach().clone() if torch.is_tensor(v) else v)
+                                       for kk, v in k.items()},
+                            "out": out.detach().clone() if torch.is_tensor(out) else out}
+            return out
+        setattr(owner, attr, wrapper)
+        self._undo.append(lambda o=owner, a=attr, f=orig: setattr(o, a, f))
+
+    def __enter__(self):
+        self._wrap(self.ah.state_encoder, "forward", "state_encoder")
+        self._wrap(self.ah.action_encoder, "forward", "action_encoder")
+        self._wrap(self.ah.action_decoder, "forward", "action_decoder")
+        self._wrap(self.dit.timestep_encoder, "forward", "timestep_encoder")
+        last = self.dit.transformer_blocks[-1]
+        self._wrap(last, "forward", "last_block")      # its output is what norm_out / proj_out read
+        self._wrap(self.dit, "forward", "dit")
+        return self
+
+    def __exit__(self, *exc):
+        for u in reversed(self._undo):
+            u()
+        return False
+
+
+def build_step_extras(model, cap: StepExtrasCapture, n_steps: int) -> list[tuple]:
+    """[(name, fn, source_ref, ops, large_linear_on_S)] for GR00T N1.7's per-step (and per-inference) extras."""
+    ah, dit, g = cap.ah, cap.dit, cap.got
+    need = ("state_encoder", "action_encoder", "action_decoder", "timestep_encoder", "last_block", "dit")
+    missing = [k for k in need if k not in g]
+    if missing:
+        raise SystemExit(f"per-step extras: {missing} never called during one get_action -- refusing to "
+                         f"time extras built from nothing")
+    GSRC = "gr00t/model/gr00t_n1d7/gr00t_n1d7.py"
+    ts = g["timestep_encoder"]["args"][0]
+    actions, t_tensor, emb_id = g["action_encoder"]["args"][:3]
+    af = g["action_encoder"]["out"]
+    sa = g["dit"]["kwargs"].get("hidden_states", g["dit"]["args"][0] if g["dit"]["args"] else None)
+    state_features = sa[:, : sa.shape[1] - af.shape[1]]
+    af_pos = sa[:, sa.shape[1] - af.shape[1]:]          # the action features AFTER the position add
+    h_last = g["last_block"]["out"]
+    temb = g["timestep_encoder"]["out"]
+    dec_in, dec_emb = g["action_decoder"]["args"][:2]
+    pred = g["action_decoder"]["out"]
+    H = ah.action_horizon if hasattr(ah, "action_horizon") else actions.shape[1]
+    dt = 1.0 / n_steps
+    vel_strength = torch.ones_like(actions)            # :356, created once per inference, as the model does
+    F = torch.nn.functional
+
+    def _final():
+        # dit.py:408-414 exactly: ONE proj_out_1 on silu(temb), chunk into shift/scale, norm, proj_out_2
+        shift, scale = dit.proj_out_1(F.silu(temb)).chunk(2, dim=1)
+        return dit.proj_out_2(dit.norm_out(h_last) * (1 + scale[:, None]) + shift[:, None])
+
+    defs = [
+        ("state_encoder", lambda: ah.state_encoder(*g["state_encoder"]["args"], **g["state_encoder"]["kwargs"]),
+         f"{GSRC}:321", "category-specific MLP on the state; ONCE PER INFERENCE, not per step", True),
+        ("timestep_encoder", lambda: dit.timestep_encoder(ts),
+         "gr00t/model/modules/dit.py:362 (TimestepEncoder, :67-71)",
+         "sinusoidal projection + 2-layer MLP on ONE token (the timestep)", False),
+        ("action_encoder", lambda: ah.action_encoder(actions, t_tensor, emb_id),
+         f"{GSRC}:405", "category-specific MLP on the action_horizon tokens", True),
+    ]
+    if getattr(ah.config, "add_pos_embed", False):
+        pos_ids = torch.arange(af.shape[1], dtype=torch.long, device=af.device)
+        defs.append(("action_pos_embed", lambda: af + ah.position_embedding(pos_ids).unsqueeze(0),
+                     f"{GSRC}:407-410", "learned position embedding added to the action features", False))
+    defs += [
+        ("concat_state_action", lambda: torch.cat((state_features, af_pos), dim=1),
+         f"{GSRC}:413", "sa_embs = cat(state_features, action_features)", False),
+        ("final_norm_out_proj", _final,
+         "gr00t/model/modules/dit.py:408-414", "proj_out_1(silu(temb)) -> shift/scale, LayerNorm, proj_out_2 "
+         "(proj_out_2 is a linear on the S tokens)", True),
+        ("action_decoder", lambda: ah.action_decoder(dec_in, dec_emb),
+         f"{GSRC}:430", "category-specific MLP on the S tokens", True),
+        ("euler_update", lambda: actions + dt * pred[:, -H:] * vel_strength,
+         f"{GSRC}:432-435", "actions + dt * pred_velocity * vel_strength", False),
+    ]
+    return defs

@@ -30,31 +30,21 @@ and calling it "the block" would hide half the architecture.
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import re
-import statistics
 import sys
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import segments_groot as SG                                          # noqa: E402
-from common import REPO, collect_raw, sh_out, software_versions, write_json  # noqa: E402
-from host_segments import (MI_HEADER, ModelInputs, count_kernels,    # noqa: E402
-                           make_style, time_segment)
-
-
-def summarize(xs):
-    s = sorted(xs)
-    n = len(s)
-    q = lambda p: s[0] if n == 1 else s[int(p * (n - 1))] + (
-        s[min(int(p * (n - 1)) + 1, n - 1)] - s[int(p * (n - 1))]) * (
-        p * (n - 1) - int(p * (n - 1)))
-    return {"median_ms": statistics.median(s), "p5_ms": q(0.05), "p95_ms": q(0.95),
-            "n": n}
+import host_segments as HS                                          # noqa: E402
+from common import (REPO, collect_raw, sh_out, software_versions, write_json,  # noqa: E402
+                    write_summary)
+from host_segments import ModelInputs                                # noqa: E402
 
 
 def main() -> int:
@@ -70,13 +60,21 @@ def main() -> int:
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=1000)
     ap.add_argument("--styles", default="eager,compiled,cudagraph")
-    ap.add_argument("--blocks", default="",
-                    help="comma-separated DiT block indices. Default: one self-attention "
-                         "and one cross-attention block, chosen from what the model "
-                         "actually ran — the two kinds alternate and are different")
+    ap.add_argument("--blocks", default="0,1,16,17",
+                    help="DiT block indices. Default: block 0 and a middle block of EACH kind -- N1.7's "
+                         "32 blocks alternate cross-attention (even) and self-attention (odd); the kind "
+                         "each block ran as is read from the capture, not assumed")
+    ap.add_argument("--skip-sequence", action="store_true")
+    ap.add_argument("--mode", choices=("time", "count", "nsys"), default="time",
+                    help="as bench/host_segments.py: `count` (root, CUPTI) writes kernels_per_call.csv and "
+                         "the profiler traces; `nsys` captures 10 host sequences per style under "
+                         "bench/run_nsys.sh; `time` does the timing, with --kernels-csv from `count`")
+    ap.add_argument("--kernels-csv", default=None)
     args = ap.parse_args()
     out = Path(args.outdir)
     (out / "raw").mkdir(parents=True, exist_ok=True)
+    styles = [s for s in args.styles.split(",") if s]
+    kernels_map = HS.load_kernels_map(args.kernels_csv)
 
     # The loader is groot_phases', so this measures the same model the phase split did.
     import groot_phases as GP                                        # noqa: PLC0415
@@ -85,19 +83,15 @@ def main() -> int:
     if g["gpu_cur_freq_hz"] != g["gpu_max_freq_hz"]:
         raise SystemExit(f"clocks not locked: {g}; run sudo jetson_clocks first")
     torch.set_float32_matmul_precision("high")
+    # the observation VALUES come from np.random (groot_phases.build_observation); latency does not depend
+    # on them, but seeding makes the captured tensors reproducible
+    np.random.seed(1234)
 
     policy, ckpt_dir, model, inputs, n, shapes = GP.load_for_segments(args)
     blocks = model.action_head.model.transformer_blocks
     print(f"{len(blocks)} DiT blocks, N={n}", flush=True)
 
-    # Which blocks: one of each kind. `interleave_self_attention` decides, but reading the
-    # config would be an assumption — the capture records what it SAW, and the pair is
-    # chosen from that.
-    # Explicit rather than relying on `A or B if C else D` precedence, which parses as
-    # `(A or B) if C else D` and reads as the opposite.
     want = [int(x) for x in args.blocks.split(",") if x.strip()]
-    if not want:
-        want = [0, 1] if len(blocks) > 1 else [0]
     bad = [b for b in want if b >= len(blocks)]
     if bad:
         raise SystemExit(f"--blocks {bad} out of range: this model has {len(blocks)} "
@@ -109,177 +103,193 @@ def main() -> int:
         if cap.args is None:
             raise SystemExit(
                 f"DiT block {bi} was never called. DiT.forward iterates every block, so "
-                f"this means the denoising pass did not run — refusing to build segments "
+                f"this means the denoising pass did not run -- refusing to build segments "
                 f"from nothing.")
         caps[bi] = cap
         print(f"  block {bi}: {cap.kind}", flush=True)
     kinds = {bi: c.kind for bi, c in caps.items()}
-    if len(set(kinds.values())) < 2 and len(blocks) > 1:
-        print(f"  NOTE: both captured blocks are {next(iter(set(kinds.values())))}; "
-              f"the self/cross alternation did not apply to {want}", flush=True)
+    attn_every = getattr(model.action_head.model, "attend_text_every_n_blocks", None)
+    cross_onto = {bi: ("non-image (text) tokens" if bi % (2 * attn_every) == 0 else "image tokens")
+                  for bi, k in kinds.items() if k == "cross_attn" and attn_every}
+    with SG.StepExtrasCapture(model) as xcap, torch.no_grad():
+        GP_step(model, inputs, args)
+    torch.cuda.synchronize()
 
     cfg = model.action_head.model.config
     H = cfg.num_attention_heads
     HD = cfg.attention_head_dim
     D = H * HD
-    mi = ModelInputs(f"groot_{args.version}", args.checkpoint,
-                     sh_out(f"git -C {REPO} rev-parse HEAD"),
-                     g["power_mode"], "", "", n)
-    styles = [s for s in args.styles.split(",") if s]
-    seg_rows, all_rows, notes = [], [], []
-
-    # Record the autocast context the reconstruction ran under. n1.5 wraps inference in
-    # torch.autocast and n1.7/n1.6 do not, so this differs across the three versions and a
-    # reader comparing their segment dtypes has to be told which.
-    # Tell segments_groot which API this model uses BEFORE any capture is reconstructed.
-    # bench/groot_phases.py:347 keys n1.5's autocast on exactly this flag, and that is the
-    # code path that produced the published n1.5 latencies, so the same condition is reused
-    # rather than a second mechanism invented beside it.
     SG._API[0] = args.api
-    # Into method_notes, NOT into `notes`: line ~252 writes `notes` to meta.json under the
-    # key "not_measured", and the autocast context is a statement about HOW everything was
-    # measured, not about something that was not. Filing it there said the opposite of what
-    # it means, next to genuine entries like "adalayernorm1 block0 compiled: RuntimeError:
-    # Inference tensors cannot be saved for backward".
     method_notes = []
     _ac_note = SG.model_autocast_ctx(args.api)[1]
     if _ac_note:
         method_notes.append(_ac_note)
 
+    t0 = SG.intermediates(caps[want[0]])
+    S = t0["x"].shape[1]
+    P = next((c.args["encoder_hidden_states"].shape[1] for c in caps.values()
+              if c.args["encoder_hidden_states"] is not None), "")
+    prov = GP._provenance(args, g)
+    model_name = f"groot_{args.version}"
+    mi = ModelInputs(model_name, prov["model_commit"], sh_out(f"git -C {REPO} rev-parse HEAD"),
+                     "MAXN+jetson_clocks", P, S, n)
+    seg_rows, all_rows, layer_rows, samples, notes = [], [], [], [], []
+    SEQ_EXCLUDE = ("attention_fused", "feedforward")     # attention + large linears are GPU work (§13.2)
+
     for bi, cap in caps.items():
         t = SG.intermediates(cap)
-        S = t["x"].shape[1]
         ehs = t["encoder_hidden_states"]
         I = getattr(cfg, "ffn_dim", None) or 4 * D      # diffusers FeedForward default
         T_keys = ehs.shape[1] if ehs is not None else S
+        extra = f";kind={cap.kind}"
         print(f"\nblock {bi} ({cap.kind}): x{tuple(t['x'].shape)} S={S} D={D} "
               f"I={I} H={H} head_dim={HD} T={T_keys}", flush=True)
-        for sd in SG.build_segments(t, S, D, I, H, HD, T_keys):
-            row = {"model": f"groot_{args.version}", "segment": sd["segment"],
-                   "order_in_layer": sd["order"], "layer_kind": cap.kind,
-                   "block": bi, "in_model": sd["in_model"],
-                   "source_ref": sd["source_ref"], "ops": sd["ops"],
-                   "inputs": sd["inputs"], "outputs": sd["outputs"],
-                   "bytes_read": sd["bytes_read"], "bytes_written": sd["bytes_written"],
-                   "bytes_formula": sd["bytes_formula"], "flops": sd["flops"],
-                   "flops_formula": sd["flops_formula"], "notes": sd["notes"]}
-            for style in styles:
-                fn, err = make_style(sd["fn"], style, f"{sd['segment']}@block{bi}")
-                if fn is None:
-                    notes.append(f"{sd['segment']} block{bi} {style}: {err}")
-                    row[f"{style}_median_ms"] = ""
-                    continue
-                s = summarize(time_segment(fn, "wall_isolated", 20, args.timed))
-                row[f"{style}_median_ms"] = round(s["median_ms"], 6)
-                all_rows.append({"segment": sd["segment"], "block": bi,
-                                 "layer_kind": cap.kind, "exec_style": style,
-                                 "timing": "wall_isolated", **{
-                                     k: round(v, 6) for k, v in s.items()
-                                     if k != "n"}, "n": s["n"]})
-                # §13.8's `quantity` is a CLOSED table and the segment name goes in
-                # `key`, not into the quantity. An invented quantity like
-                # `t_seg_rmsnorm1` is rejected by the in-place checker, and the whole
-                # point of model_inputs.csv is that one checker validates every model's.
-                mi.add_stats("t_host_segment", s, "ms", s["n"], "host_segments.csv",
-                             key=sd["segment"],
-                             variant=f"block={bi};kind={cap.kind}", exec_style=style,
-                             timing="wall_isolated")
-                if style == "eager":
-                    nk = count_kernels(fn)
-                    row["kernels_eager"] = nk
-                    mi.add("n_kernels_host_segment", nk, "count", "value", 1,
-                           "host_segments.csv", key=sd["segment"],
-                           variant=f"block={bi};kind={cap.kind}", exec_style=style)
-            mi.add("bytes_host_segment", sd["bytes_read"] + sd["bytes_written"],
-                   "bytes", "value", 1, "host_segments.csv", key=sd["segment"],
-                   variant=f"block={bi};kind={cap.kind}", timing="analytic")
-            mi.add("flops_host_segment", sd["flops"], "flops", "value", 1,
-                   "host_segments.csv", key=sd["segment"],
-                   variant=f"block={bi};kind={cap.kind}", timing="analytic")
-            seg_rows.append(row)
-            print(f"  {sd['segment']:20s} "
-                  + "  ".join(f"{s}={row.get(f'{s}_median_ms', '')}" for s in styles),
-                  flush=True)
+        segs = SG.build_segments(t, S, D, I, H, HD, T_keys)
+        for sd in segs:
+            seg_rows.append({
+                "model": model_name, "segment": sd["segment"], "order_in_layer": sd["order"],
+                "layer_kind": cap.kind, "block": bi, "source_ref": sd["source_ref"],
+                "ops": sd["ops"], "inputs": sd["inputs"], "outputs": sd["outputs"],
+                "bytes_read": sd["bytes_read"], "bytes_written": sd["bytes_written"],
+                "flops": sd["flops"], "flops_formula": sd["flops_formula"],
+                "bytes_formula": sd.get("bytes_formula", ""), "in_model_code": sd["in_model"],
+                "large_linear_on_S": "yes" if sd["segment"] == "feedforward" else "no",
+                "in_host_sequence": "no" if sd["segment"] in SEQ_EXCLUDE else "yes",
+                "notes": sd["notes"]})
+            HS.measure_segment_styles(sd, bi, styles, args, out, kernels_map, mi, all_rows, samples,
+                                      notes, variant_extra=extra)
+            mi.add("bytes_host_segment", sd["bytes_read"] + sd["bytes_written"], "bytes", "value", 1,
+                   "segments.csv", key=sd["segment"], variant=f"block={bi}{extra}", timing="analytic")
+            mi.add("flops_host_segment", sd["flops"], "flops", "value", 1, "segments.csv",
+                   key=sd["segment"], variant=f"block={bi}{extra}", timing="analytic")
 
-    with (out / "host_segments.csv").open("w", newline="") as f:
-        keys = sorted({k for r in seg_rows for k in r})
-        w = csv.DictWriter(f, fieldnames=keys)
-        w.writeheader()
-        w.writerows([{k: r.get(k, "") for k in keys} for r in seg_rows])
-    with (out / "raw" / "segment_timings.csv").open("w", newline="") as f:
-        keys = sorted({k for r in all_rows for k in r})
-        w = csv.DictWriter(f, fieldnames=keys)
-        w.writeheader()
-        w.writerows([{k: r.get(k, "") for k in keys} for r in all_rows])
-    mi.write(out / "model_inputs.csv")
+        if not args.skip_sequence and args.mode in ("time", "nsys"):
+            seq_segs = [s_ for s_ in segs if s_["segment"] not in SEQ_EXCLUDE]
 
-    # docs/reference_scripts/check_model_inputs.py is the research side's, is run IN
-    # PLACE and is never edited by this side (AGENTS.md). Its MODELS set is
-    # {pi0, pi05, smolvla, groot_n17, none} -- so a model_inputs.csv for groot_n16 or
-    # groot_n15 will FAIL it with "model 'groot_n16' not in ...". That is a schema
-    # question for the research side, not a defect here and not something to work around
-    # by relabelling the rows. The data is written either way; the run says so loudly and
-    # meta.json records it, so nobody has to rediscover it from a checker failure.
-    schema_note = ""
+            def seq(_segs=seq_segs):
+                # results RETURNED: a compiled callable whose outputs are discarded is DCE'd
+                return tuple(s_["fn"]() for s_ in _segs)
+
+            if args.mode == "nsys":
+                HS.nsys_capture_sequences(seq, bi, args)
+                continue
+            HS.measure_layer_sequence(seq, {s_["segment"] for s_ in seq_segs}, bi, styles, args, mi,
+                                      layer_rows, all_rows, notes, variant_extra=extra,
+                                      n_seg=len(seq_segs))
+
+    if args.mode == "nsys":
+        return 0
+    xdefs = SG.build_step_extras(model, xcap, n)
+    if SG.model_autocast_ctx(args.api)[1]:
+        def _ac(fn):
+            def w():
+                with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                    return fn()
+            return w
+        xdefs = [(a, _ac(f), r, o, ll) for a, f, r, o, ll in xdefs]
+    defs4 = [(name, fn, ref, ops) for name, fn, ref, ops, _ll in xdefs]
+    if args.mode == "count":
+        HS.count_extras_and_write(defs4, styles, out, all_rows)
+        return 0
+
+    print("\n=== per-step extras ===", flush=True)
+    kmap = {k: v for k, v in kernels_map.items() if len(k) == 2}   # extras: (segment, style), as finish()
+    xrows = HS.measure_extra_defs(defs4, args, mi, all_rows, notes, styles, kmap)
+    large = {name: ll for name, _f, _r, _o, ll in xdefs}
+    for r in xrows:
+        r.update({"block": "", "bytes_formula": "", "in_host_sequence": "no",
+                  "large_linear_on_S": "yes" if large.get(r["segment"]) else "no",
+                  "notes": ("per-INFERENCE extra (runs once, before the denoising loop)"
+                            if r["segment"] == "state_encoder" else r["notes"])
+                  + ("; a large linear layer on the S tokens, NOT a host segment (T012 step 1)"
+                     if large.get(r["segment"]) else "")})
+    seg_rows += xrows
+    n_mi = HS.write_e11a_tables(out, seg_rows, all_rows, layer_rows, samples, mi)
+
+    # docs/reference_scripts/check_model_inputs.py is the research side's, run IN PLACE; its MODELS
+    # set has groot_n17 but not groot_n16 / groot_n15. Recorded rather than worked around.
+    schema_note = "none"
     try:
         chk = (REPO / "docs" / "reference_scripts" / "check_model_inputs.py").read_text()
         allowed = set(re.findall(r'"([a-z0-9_]+)"', re.search(
             r"MODELS\s*=\s*\{([^}]*)\}", chk).group(1)))
-        if mi.base["model"] not in allowed:
-            schema_note = (
-                f"model_inputs.csv names model={mi.base['model']!r}, which is NOT in "
-                f"check_model_inputs.py's MODELS set {sorted(allowed)}. The checker will "
-                f"reject this file. The rows are correct; the SCHEMA needs extending, "
-                f"which is the research side's call (AGENTS.md) — raised in STATUS.md "
-                f"under 'Questions for the research side'. The file is written anyway so "
-                f"the measurement is not lost.")
-            print(f"\n  *** {schema_note}\n", flush=True)
+        if model_name not in allowed:
+            schema_note = (f"model_inputs.csv names model={model_name!r}, which is NOT in "
+                           f"check_model_inputs.py's MODELS set {sorted(allowed)}; the checker will "
+                           f"reject it (research side's schema).")
             notes.append(schema_note)
     except (OSError, AttributeError):
         pass
 
     sw = software_versions()
+    cmd = " ".join(sys.argv)
     write_json(out / "meta.json", {
-        "experiment": "E11a (GR00T DiT block)", "task": "T012",
+        "experiment": "E11a (GR00T DiT blocks, T010 step 1 file set)", "task": "T012",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": f"groot_{args.version}", "checkpoint": args.checkpoint,
-        "model_repo": args.checkpoint, "precision": "bfloat16",
-        "num_inference_timesteps": n, "blocks_measured": kinds,
+        "model": model_name, "checkpoint": args.checkpoint, "model_repo": args.checkpoint,
+        "model_commit": prov["model_commit"], "checkpoint_revision": prov["checkpoint_revision"],
+        "gr00t_root": args.gr00t_root or "default", "gr00t_root_resolved": prov["gr00t_root_resolved"],
+        "precision": "bfloat16", "compile_mode": "per exec style (eager / torch.compile default / CUDA graph)",
+        "batch": 1, "num_inference_timesteps": n, "num_denoise_steps": n,
+        "prefix_tokens": P, "suffix_tokens": S,
+        "blocks_measured": {str(k): v for k, v in kinds.items()},
+        "cross_attention_attends_onto": {str(k): v for k, v in cross_onto.items()} or "none",
         "n_blocks": len(blocks), "hidden_dim": D, "heads": H, "head_dim": HD,
+        "host_sequence_segments": [s_ for s_ in ("adaln_cond", "adalayernorm1", "pos_embed", "residual",
+                                                 "layernorm3", "residual_ff")
+                                   if any(r["segment"] == s_ for r in seg_rows)],
         "n_warmup": args.warmup, "n_timed": args.timed, "exec_styles": styles,
-        "power_mode": g["power_mode"], "gate": g,
-        "gr00t_root": args.gr00t_root,
-        "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()}
-                               for k, v in shapes.items()},
-        "torch": sw.get("torch"), "python": sw.get("python"),
-        "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),
-        "command": " ".join(sys.argv),
-        "raw_files": [],
-        "not_measured": notes,
-        "schema_note": schema_note,
+        "compile_seconds_per_callable": HS.COMPILE_S,
+        "compile_seconds_total": round(sum(HS.COMPILE_S), 2),
+        "kernels_csv": args.kernels_csv or "none (kernel counts not supplied)",
+        "power_mode": g["power_mode"], "sm_count": g["sm_count"], "gpu_hz": g["gpu_cur_freq_hz"],
+        "gate": g, "gate_end": prov["gate_end"], "throttled": prov["throttled"],
+        "throttled_evidence": prov["throttled_evidence"],
+        "jetson_clocks": "applied before the run; GPU locked min==max (checked at start)",
+        "observation_shapes": {k: {kk: list(vv) for kk, vv in v.items()} for k, v in shapes.items()},
+        "observation_seed": "np.random.seed(1234) before the observation is built",
+        "cuda": sw.get("torch_cuda") or "unknown", "torch": sw.get("torch") or "unknown",
+        "triton": sw.get("triton") or "unknown", "python": sw.get("python") or "unknown",
+        "venv": sw.get("executable") or "unknown",
+        "bench_commit": prov["bench_commit"], "bench_files_sha256": sw.get("bench_files_sha256") or "none",
+        "command": cmd, "model_inputs_rows": n_mi, "raw_files": [],
+        "not_measured": notes or "none", "schema_note": schema_note,
         "notes": method_notes + [
-            "Both kinds of DiT block are measured. DiT.forward (dit.py:310-326) sends "
-            "encoder_hidden_states only on even indices when interleave_self_attention "
-            "is set, so odd blocks are pure self-attention and even blocks cross-attend "
-            "onto the VLM's tokens. Measuring one and calling it 'the block' would hide "
-            "half the architecture.",
-            "The attention is NOT split into score / softmax / context. attn1 is a "
-            "diffusers Attention running under _sdpa_context(), so those happen inside "
-            "one fused kernel; separating them would mean measuring a different "
-            "implementation than the model's. pi0's eager Gemma path does expose them, "
-            "which is why its segment table has a softmax row and this one does not.",
-            "The feed-forward is reported whole. pi0's table splits act_fn(gate)*up from "
-            "its projections per protocol §13.2; the diffusers FeedForward is a "
-            "Sequential whose pieces would have to be indexed by position, which is "
-            "brittle against a version change.",
-            "The timing engine is bench/host_segments.py's, unchanged, so these numbers "
-            "are comparable with pi0's rather than produced by a second harness.",
+            "The timing engine and file set are bench/host_segments.py's: measure_segment_styles, "
+            "measure_layer_sequence, nsys_capture_sequences, measure_extra_defs, count_extras_and_write and "
+            "write_e11a_tables are the same functions the LeRobot E11a runs call, so the numbers are "
+            "comparable with pi0's rather than produced by a second harness.",
+            "Both kinds of DiT block are measured, first and middle of each: AlternateVLDiT.forward "
+            "(dit.py:381-403) runs odd blocks as self-attention and even blocks as cross-attention onto the "
+            "backbone features (text tokens when idx % (2*attend_text_every_n_blocks) == 0, image tokens "
+            "otherwise). Variants carry block=<i>;kind=<kind>.",
+            "The attention is NOT split into score / softmax / context (one fused SDPA kernel); the "
+            "feed-forward is reported whole. Both are excluded from the host sequence, as the Gemma "
+            "models' attention matmuls and large linears are (protocol §13.2).",
+            "Per-step extras re-run the model's own modules on arguments captured from one real denoising "
+            "step (segments_groot.StepExtrasCapture); state_encoder runs once per inference, the rest once "
+            "per step. Those that are large linear layers on the S tokens are marked large_linear_on_S=yes "
+            "in segments.csv and are not host segments.",
+            "achieved_bw_GBps / achieved_tflops are published from the cudagraph style's gpu_event time "
+            "only, as for the LeRobot models (eager gpu_event brackets a dispatch-bound call).",
         ],
     })
+    rows_by = {}
+    for r in layer_rows:
+        rows_by.setdefault(r["variant"], []).append(f"{r['exec_style']} {r['key']} {r['median_ms']} ms")
+    write_summary(out, f"E11a - {model_name} DiT host segments (T012 step 1)", [
+        ("What", f"{len(caps)} DiT blocks ({', '.join(f'{b}={k}' for b, k in kinds.items())}) x "
+                 f"{len(styles)} exec styles, every segment timed four ways (wall_isolated gap 0 / 2 ms, "
+                 f"gpu_event, wall_launch; n = {args.timed}); host sequence + whole-layer graph per block; "
+                 f"{len(defs4)} per-step extras. P = {P}, S = {S}, N = {n}."),
+        ("Host layer", "\n".join(f"* `{v}`: " + "; ".join(x) for v, x in rows_by.items()) or "not measured"),
+        ("Files", "segments.csv, segment_summary.csv, host_layer_summary.csv, kernels_per_call.csv (count "
+                  "pass), nsys/ (host sequences), raw/segment_samples.csv.zst, raw/profiler/, model_inputs.csv"),
+    ], notes)
     meta = json.loads((out / "meta.json").read_text())
     meta["raw_files"] = collect_raw(out, meta["command"])
     write_json(out / "meta.json", meta)
-    print(f"\nwrote {out}", flush=True)
+    print(f"\nwrote {out} ({n_mi} model_inputs rows, {len(samples)} samples)", flush=True)
     return 0
 
 

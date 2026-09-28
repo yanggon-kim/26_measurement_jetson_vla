@@ -601,6 +601,22 @@ class ModelInputs:
 
 
 
+def load_kernels_map(path) -> dict:
+    """kernels_per_call.csv -> {(segment, layer, style): n, (segment, style): n}.
+
+    Keyed by LAYER too (2026-09-28): SmolVLA's layers 0 and 9 are different kinds (self- vs
+    cross-attention, 63 vs 43 attention kernels); keyed by (segment, style) alone the last layer's
+    count overwrote the first's. The (segment, style) entry stays as the fallback for extras.
+    """
+    kernels_map = {}
+    if path and Path(path).exists():
+        for r in csv.DictReader(Path(path).open()):
+            kernels_map[(r["segment"], int(r["layer"]), r["exec_style"])] = float(r["n_kernels"])
+            kernels_map[(r["segment"], r["exec_style"])] = float(r["n_kernels"])
+        print(f"kernel counts: {len(kernels_map)} entries from {path}")
+    return kernels_map
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", required=True)
@@ -626,15 +642,7 @@ def main() -> int:
     (out / "raw").mkdir(parents=True, exist_ok=True)
     styles = [s for s in args.styles.split(",") if s]
 
-    kernels_map = {}
-    if args.kernels_csv and Path(args.kernels_csv).exists():
-        for r in csv.DictReader(Path(args.kernels_csv).open()):
-            # keyed by LAYER too (2026-09-28): SmolVLA's layers 0 and 9 are different kinds (self- vs
-            # cross-attention, 63 vs 43 attention kernels); keyed by (segment, style) alone the last layer's
-            # count overwrote the first's. The (segment, style) entry stays as the fallback for extras.
-            kernels_map[(r["segment"], int(r["layer"]), r["exec_style"])] = float(r["n_kernels"])
-            kernels_map[(r["segment"], r["exec_style"])] = float(r["n_kernels"])
-        print(f"kernel counts: {len(kernels_map)} entries from {args.kernels_csv}")
+    kernels_map = load_kernels_map(args.kernels_csv)
 
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
@@ -708,78 +716,8 @@ def main() -> int:
                     "flops": sd["flops"], "flops_formula": sd["flops_formula"],
                     "bytes_formula": sd.get("bytes_formula", ""),
                     "in_model_code": sd["in_model"], "notes": sd["notes"]})
-            for style in styles:
-                fn, err = make_style(sd["fn"], style, f"{sd['segment']}@L{li}")
-                if fn is None:
-                    notes_not_measured.append(
-                        f"{sd['segment']} layer={li} exec_style={style}: {err}")
-                    print(f"  {sd['segment']:22s} {style:9s} NOT MEASURED: {err[:70]}")
-                    continue
-                if args.mode == "count":
-                    nk = count_kernels(fn, trace_path=out / "raw" / "profiler" /
-                                       f"{sd['segment']}_L{li}_{style}.json",
-                                       ka_sink=KA_ROWS, ka_id=(sd["segment"], li, style))
-                    all_rows.append({"segment": sd["segment"], "layer": li,
-                                     "exec_style": style, "n_kernels": nk})
-                    print(f"  {sd['segment']:22s} {style:9s} kernels={nk}", flush=True)
-                    continue
-                nk = kernels_map.get((sd["segment"], li, style),
-                                     kernels_map.get((sd["segment"], style), 0.0))
-                for timing, gap in (("wall_isolated", 0.0), ("wall_isolated", 2.0),
-                                    ("gpu_event", 0.0), ("wall_launch", 0.0)):
-                    ms = time_segment(fn, timing, args.warmup, args.timed, gap)
-                    s = summarize(ms)
-                    variant = f"layer={li}"
-                    if timing == "wall_isolated":
-                        variant += f";gap_ms={int(gap)}"
-                    for i, v in enumerate(ms):
-                        samples.append({"segment": sd["segment"], "exec_style": style,
-                                        "timing": timing, "variant": variant,
-                                        "iter": i, "ms": v})
-                    row = {"segment": sd["segment"], "layer": li, "exec_style": style,
-                           "timing": timing, "variant": variant,
-                           "median_ms": round(s["median_ms"], 6),
-                           "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
-                           "min_ms": round(s["min_ms"], 6), "n": s["n"], "n_kernels": nk,
-                           "bytes": sd["bytes_read"] + sd["bytes_written"], "flops": sd["flops"],
-                           "achieved_GBps": "", "achieved_TFLOPps": "",
-                           "gpu_event_is_device_time": ""}
-                    # §13.8 wants achieved_* from `gpu_event` time. On this device the
-                    # eager `gpu_event` median EXCEEDS the fully synchronised wall_isolated
-                    # median for every segment (rmsnorm1 0.4002 vs 0.3927): the events
-                    # bracket a dispatch-bound Python call, so it is not device time, and
-                    # rates derived from it are ~7x off T005's graph-timed measurement of the
-                    # same op. The `cudagraph` style replays one graph launch and IS device
-                    # time, so the rates are published from that and the eager/compiled
-                    # numbers are left out rather than published as device rates.
-                    if timing == "gpu_event" and s["median_ms"] > 0:
-                        sec = s["median_ms"] / 1e3
-                        row["achieved_GBps"] = round(row["bytes"] / sec / 1e9, 3)
-                        row["achieved_TFLOPps"] = round(sd["flops"] / sec / 1e12, 5)
-                        row["gpu_event_is_device_time"] = (style == "cudagraph")
-                        if style == "cudagraph":
-                            mi.add("achieved_bw_GBps", row["achieved_GBps"], "GBps", "median",
-                                   s["n"], "segment_summary.csv", key=sd["segment"],
-                                   variant=variant, exec_style=style, timing="gpu_event")
-                            if sd["flops"]:
-                                mi.add("achieved_tflops", row["achieved_TFLOPps"], "TFLOPps",
-                                       "median", s["n"], "segment_summary.csv",
-                                       key=sd["segment"], variant=variant, exec_style=style,
-                                       timing="gpu_event")
-                    all_rows.append(row)
-                    mi.add_stats("t_host_segment", s, "ms", s["n"], "segment_summary.csv",
-                                 key=sd["segment"], variant=variant, exec_style=style,
-                                 timing=timing)
-                    if timing == "wall_launch" and nk > 0:
-                        mi.add("t_launch_per_kernel", s["median_ms"] / nk, "ms", "median",
-                               s["n"], "segment_summary.csv", key=sd["segment"],
-                               variant=variant, exec_style=style, timing="wall_launch")
-                if nk > 0:
-                    mi.add("n_kernels_host_segment", nk, "count", "value", 1,
-                           "segment_summary.csv", key=sd["segment"],
-                           variant=f"layer={li};exec_style={style}", exec_style=style)
-                print(f"  {sd['segment']:22s} {style:9s} "
-                      f"{[r['median_ms'] for r in all_rows[-4:]]} ms  kernels={nk}", flush=True)
+            measure_segment_styles(sd, li, styles, args, out, kernels_map, mi, all_rows, samples,
+                                   notes_not_measured)
             if li == LAYERS[0]:
                 mi.add("bytes_host_segment", sd["bytes_read"] + sd["bytes_written"], "bytes",
                        "value", 1, "segments.csv", key=sd["segment"], timing="analytic")
@@ -801,114 +739,259 @@ def main() -> int:
                 return tuple(s_["fn"]() for s_ in six)
 
             if args.mode == "nsys":
-                # §13.1: "one small nsys capture of ten consecutive per-layer host sequences
-                # per style". This process is launched by bench/run_nsys.sh, which sets
-                # --capture-range=cudaProfilerApi, so only what is between start() and stop()
-                # lands in the report.
-                built = []
-                for style in ("eager", "compiled", "cudagraph"):
-                    fn, err = make_style(seq, style, f"sequence@L{li}")
-                    if fn is None:
-                        print(f"  nsys: {style} unavailable: {err[:80]}", flush=True)
-                        continue
-                    for _ in range(args.warmup):
-                        fn()
-                    built.append((style, fn))
-                torch.cuda.synchronize()
-                cudart = torch.cuda.cudart()      # same call nsys_target.py uses
-                cudart.cudaProfilerStart()
-                for style, fn in built:
-                    with nvtx(f"host_sequence[{style}]"):
-                        for k in range(10):
-                            with nvtx(f"host_sequence[{style}]#{k}"):
-                                fn()
-                            torch.cuda.synchronize()
-                torch.cuda.synchronize()
-                cudart.cudaProfilerStop()
-                print(f"  nsys: captured 10 sequences x {len(built)} style(s) at layer {li}",
-                      flush=True)
+                nsys_capture_sequences(seq, li, args)
                 if li == LAYERS[0]:
                     continue            # one capture is enough; keep going for layer 9 too
                 return 0
 
-            for style in ("eager", "compiled"):
-                fn, err = make_style(seq, style, f"sequence@L{li}")
-                if fn is None:
-                    notes_not_measured.append(f"sequence layer={li} {style}: {err}")
-                    continue
-                ms = time_segment(fn, "wall_isolated", args.warmup, args.timed)
-                s = summarize(ms)
-                layer_rows.append({"exec_style": style, "key": "sequence",
-                                   "variant": f"layer={li}", "median_ms": round(s["median_ms"], 6),
-                                   "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
-                                   "n": s["n"]})
-                mi.add_stats("t_host_layer", s, "ms", s["n"], "host_layer_summary.csv",
-                             key="sequence", variant=f"layer={li}", exec_style=style,
-                             timing="wall_isolated")
-                print(f"  sequence {style:9s} {s['median_ms']:.4f} ms", flush=True)
-            gfn, err = make_style(seq, "cudagraph", f"whole_layer_graph@L{li}")
-            if gfn is None:
-                notes_not_measured.append(f"whole_layer_graph layer={li}: {err}")
-            else:
-                ms = time_segment(gfn, "wall_isolated", args.warmup, args.timed)
-                s = summarize(ms)
-                layer_rows.append({"exec_style": "cudagraph", "key": "whole_layer_graph",
-                                   "variant": f"layer={li}", "median_ms": round(s["median_ms"], 6),
-                                   "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
-                                   "n": s["n"]})
-                mi.add_stats("t_host_layer", s, "ms", s["n"], "host_layer_summary.csv",
-                             key="whole_layer_graph", variant=f"layer={li}",
-                             exec_style="cudagraph", timing="wall_isolated")
-                print(f"  whole_layer_graph      {s['median_ms']:.4f} ms", flush=True)
-            # sum_of_segments is derived, per style
-            for style in styles:
-                tot = sum(r["median_ms"] for r in all_rows
-                          if r["layer"] == li and r["exec_style"] == style
-                          and r["timing"] == "wall_isolated" and "gap_ms=0" in r["variant"]
-                          and r["segment"] in {s_["segment"] for s_ in six})
-                if tot > 0:
-                    layer_rows.append({"exec_style": style, "key": "sum_of_segments",
-                                       "variant": f"layer={li}", "median_ms": round(tot, 6),
-                                       "p5_ms": "", "p95_ms": "", "n": 6})
-                    mi.add("t_host_layer", tot, "ms", "median", 6, "host_layer_summary.csv",
-                           key="sum_of_segments", variant=f"layer={li}", exec_style=style,
-                           timing="wall_isolated")
+            measure_layer_sequence(seq, {s_["segment"] for s_ in six}, li, styles, args, mi,
+                                   layer_rows, all_rows, notes_not_measured)
     if args.mode == "count":
         # No last-layer capture here either: build_extras captures the final norm's own
         # arguments, and SmolVLA never calls layers[-1].forward (its layer body is
         # inlined in the container's forward), so wrapping it set nothing.
         defs, err = build_extras(policy, batch, args)
-        for name, fn, _ref, _ops in defs:
-            for style in styles:
-                f_, e = make_style(fn, style, name)
-                if f_ is None:
-                    continue
-                nk = count_kernels(f_, trace_path=out / "raw" / "profiler" /
-                                   f"{name}_L-1_{style}.json",
-                                   ka_sink=KA_ROWS, ka_id=(name, -1, style))
-                all_rows.append({"segment": name, "layer": -1, "exec_style": style,
-                                 "n_kernels": nk})
-                print(f"  {name:22s} {style:9s} kernels={nk}", flush=True)
-        out.mkdir(parents=True, exist_ok=True)
-        f = out / "kernels_per_call.csv"
-        with f.open("w", newline="") as fh:
-            w = csv.DictWriter(fh, fieldnames=["segment", "layer", "exec_style", "n_kernels"])
-            w.writeheader()
-            w.writerows(all_rows)
-        ka = out / "raw" / "profiler" / "key_averages.csv"
-        ka.parent.mkdir(parents=True, exist_ok=True)
-        with ka.open("w", newline="") as fh:
-            w = csv.DictWriter(fh, fieldnames=KA_FIELDS)
-            w.writeheader()
-            w.writerows(KA_ROWS)
-        print(f"wrote {ka} ({len(KA_ROWS)} rows)")
-        traces = sorted((out / "raw" / "profiler").glob("*.json"))
-        for t in traces:
-            compress_and_record(t)          # §3.5: scan + hash the original, then zstd
-        print(f"\nwrote {f} ({len(all_rows)} rows, {len(traces)} profiler traces)")
+        count_extras_and_write(defs, styles, out, all_rows)
         return 0
     return finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
                   layer_rows, samples, mi, notes_not_measured, styles, Pn, Sn)
+
+
+def measure_segment_styles(sd, li, styles, args, out, kernels_map, mi, all_rows, samples,
+                           notes_not_measured, variant_extra: str = "") -> None:
+    """Every exec style of one segment: count mode (kernels + profiler trace) or the four timings.
+
+    Extracted from main() unchanged (2026-09-28) so bench/groot_segments.py runs the SAME loop;
+    `variant_extra` (empty for the LeRobot models) appends e.g. ";kind=cross_attn" to the variants.
+    """
+    for style in styles:
+        fn, err = make_style(sd["fn"], style, f"{sd['segment']}@L{li}")
+        if fn is None:
+            notes_not_measured.append(
+                f"{sd['segment']} layer={li} exec_style={style}: {err}")
+            print(f"  {sd['segment']:22s} {style:9s} NOT MEASURED: {err[:70]}")
+            continue
+        if args.mode == "count":
+            nk = count_kernels(fn, trace_path=out / "raw" / "profiler" /
+                               f"{sd['segment']}_L{li}_{style}.json",
+                               ka_sink=KA_ROWS, ka_id=(sd["segment"], li, style))
+            all_rows.append({"segment": sd["segment"], "layer": li,
+                             "exec_style": style, "n_kernels": nk})
+            print(f"  {sd['segment']:22s} {style:9s} kernels={nk}", flush=True)
+            continue
+        nk = kernels_map.get((sd["segment"], li, style),
+                             kernels_map.get((sd["segment"], style), 0.0))
+        for timing, gap in (("wall_isolated", 0.0), ("wall_isolated", 2.0),
+                            ("gpu_event", 0.0), ("wall_launch", 0.0)):
+            ms = time_segment(fn, timing, args.warmup, args.timed, gap)
+            s = summarize(ms)
+            variant = f"layer={li}" + variant_extra
+            if timing == "wall_isolated":
+                variant += f";gap_ms={int(gap)}"
+            for i, v in enumerate(ms):
+                samples.append({"segment": sd["segment"], "exec_style": style,
+                                "timing": timing, "variant": variant,
+                                "iter": i, "ms": v})
+            row = {"segment": sd["segment"], "layer": li, "exec_style": style,
+                   "timing": timing, "variant": variant,
+                   "median_ms": round(s["median_ms"], 6),
+                   "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
+                   "min_ms": round(s["min_ms"], 6), "n": s["n"], "n_kernels": nk,
+                   "bytes": sd["bytes_read"] + sd["bytes_written"], "flops": sd["flops"],
+                   "achieved_GBps": "", "achieved_TFLOPps": "",
+                   "gpu_event_is_device_time": ""}
+            # §13.8 wants achieved_* from `gpu_event` time. On this device the
+            # eager `gpu_event` median EXCEEDS the fully synchronised wall_isolated
+            # median for every segment (rmsnorm1 0.4002 vs 0.3927): the events
+            # bracket a dispatch-bound Python call, so it is not device time, and
+            # rates derived from it are ~7x off T005's graph-timed measurement of the
+            # same op. The `cudagraph` style replays one graph launch and IS device
+            # time, so the rates are published from that and the eager/compiled
+            # numbers are left out rather than published as device rates.
+            if timing == "gpu_event" and s["median_ms"] > 0:
+                sec = s["median_ms"] / 1e3
+                row["achieved_GBps"] = round(row["bytes"] / sec / 1e9, 3)
+                row["achieved_TFLOPps"] = round(sd["flops"] / sec / 1e12, 5)
+                row["gpu_event_is_device_time"] = (style == "cudagraph")
+                if style == "cudagraph":
+                    mi.add("achieved_bw_GBps", row["achieved_GBps"], "GBps", "median",
+                           s["n"], "segment_summary.csv", key=sd["segment"],
+                           variant=variant, exec_style=style, timing="gpu_event")
+                    if sd["flops"]:
+                        mi.add("achieved_tflops", row["achieved_TFLOPps"], "TFLOPps",
+                               "median", s["n"], "segment_summary.csv",
+                               key=sd["segment"], variant=variant, exec_style=style,
+                               timing="gpu_event")
+            all_rows.append(row)
+            mi.add_stats("t_host_segment", s, "ms", s["n"], "segment_summary.csv",
+                         key=sd["segment"], variant=variant, exec_style=style,
+                         timing=timing)
+            if timing == "wall_launch" and nk > 0:
+                mi.add("t_launch_per_kernel", s["median_ms"] / nk, "ms", "median",
+                       s["n"], "segment_summary.csv", key=sd["segment"],
+                       variant=variant, exec_style=style, timing="wall_launch")
+        if nk > 0:
+            mi.add("n_kernels_host_segment", nk, "count", "value", 1,
+                   "segment_summary.csv", key=sd["segment"],
+                   variant=f"layer={li}{variant_extra};exec_style={style}", exec_style=style)
+        print(f"  {sd['segment']:22s} {style:9s} "
+              f"{[r['median_ms'] for r in all_rows[-4:]]} ms  kernels={nk}", flush=True)
+
+
+def measure_layer_sequence(seq, seq_names, li, styles, args, mi, layer_rows, all_rows,
+                           notes_not_measured, variant_extra: str = "", n_seg: int = 6) -> None:
+    """The per-layer host sequence (eager, compiled), the whole-layer graph and sum_of_segments.
+
+    Extracted from main() unchanged (2026-09-28); shared with bench/groot_segments.py.
+    """
+    for style in ("eager", "compiled"):
+        fn, err = make_style(seq, style, f"sequence@L{li}")
+        if fn is None:
+            notes_not_measured.append(f"sequence layer={li} {style}: {err}")
+            continue
+        ms = time_segment(fn, "wall_isolated", args.warmup, args.timed)
+        s = summarize(ms)
+        layer_rows.append({"exec_style": style, "key": "sequence",
+                           "variant": f"layer={li}" + variant_extra, "median_ms": round(s["median_ms"], 6),
+                           "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
+                           "n": s["n"]})
+        mi.add_stats("t_host_layer", s, "ms", s["n"], "host_layer_summary.csv",
+                     key="sequence", variant=f"layer={li}" + variant_extra, exec_style=style,
+                     timing="wall_isolated")
+        print(f"  sequence {style:9s} {s['median_ms']:.4f} ms", flush=True)
+    gfn, err = make_style(seq, "cudagraph", f"whole_layer_graph@L{li}")
+    if gfn is None:
+        notes_not_measured.append(f"whole_layer_graph layer={li}: {err}")
+    else:
+        ms = time_segment(gfn, "wall_isolated", args.warmup, args.timed)
+        s = summarize(ms)
+        layer_rows.append({"exec_style": "cudagraph", "key": "whole_layer_graph",
+                           "variant": f"layer={li}" + variant_extra, "median_ms": round(s["median_ms"], 6),
+                           "p5_ms": round(s["p5_ms"], 6), "p95_ms": round(s["p95_ms"], 6),
+                           "n": s["n"]})
+        mi.add_stats("t_host_layer", s, "ms", s["n"], "host_layer_summary.csv",
+                     key="whole_layer_graph", variant=f"layer={li}" + variant_extra,
+                     exec_style="cudagraph", timing="wall_isolated")
+        print(f"  whole_layer_graph      {s['median_ms']:.4f} ms", flush=True)
+    # sum_of_segments is derived, per style
+    for style in styles:
+        tot = sum(r["median_ms"] for r in all_rows
+                  if r.get("layer") == li and r["exec_style"] == style
+                  and r["timing"] == "wall_isolated" and "gap_ms=0" in r["variant"]
+                  and r["segment"] in seq_names)
+        if tot > 0:
+            layer_rows.append({"exec_style": style, "key": "sum_of_segments",
+                               "variant": f"layer={li}" + variant_extra, "median_ms": round(tot, 6),
+                               "p5_ms": "", "p95_ms": "", "n": n_seg})
+            mi.add("t_host_layer", tot, "ms", "median", n_seg, "host_layer_summary.csv",
+                   key="sum_of_segments", variant=f"layer={li}" + variant_extra, exec_style=style,
+                   timing="wall_isolated")
+
+
+def nsys_capture_sequences(seq, li, args) -> None:
+    """Extracted from main() unchanged (2026-09-28); shared with bench/groot_segments.py."""
+    # §13.1: "one small nsys capture of ten consecutive per-layer host sequences
+    # per style". This process is launched by bench/run_nsys.sh, which sets
+    # --capture-range=cudaProfilerApi, so only what is between start() and stop()
+    # lands in the report.
+    built = []
+    for style in ("eager", "compiled", "cudagraph"):
+        fn, err = make_style(seq, style, f"sequence@L{li}")
+        if fn is None:
+            print(f"  nsys: {style} unavailable: {err[:80]}", flush=True)
+            continue
+        for _ in range(args.warmup):
+            fn()
+        built.append((style, fn))
+    torch.cuda.synchronize()
+    cudart = torch.cuda.cudart()      # same call nsys_target.py uses
+    cudart.cudaProfilerStart()
+    for style, fn in built:
+        with nvtx(f"host_sequence[{style}]"):
+            for k in range(10):
+                with nvtx(f"host_sequence[{style}]#{k}"):
+                    fn()
+                torch.cuda.synchronize()
+    torch.cuda.synchronize()
+    cudart.cudaProfilerStop()
+    print(f"  nsys: captured 10 sequences x {len(built)} style(s) at layer {li}",
+          flush=True)
+
+
+def count_extras_and_write(defs, styles, out, all_rows) -> None:
+    """Count mode tail: kernels of the per-step extras, then kernels_per_call.csv, key_averages.csv
+    and the compressed profiler traces. Extracted from main() unchanged (2026-09-28)."""
+    for name, fn, _ref, _ops in defs:
+        for style in styles:
+            f_, e = make_style(fn, style, name)
+            if f_ is None:
+                continue
+            nk = count_kernels(f_, trace_path=out / "raw" / "profiler" /
+                               f"{name}_L-1_{style}.json",
+                               ka_sink=KA_ROWS, ka_id=(name, -1, style))
+            all_rows.append({"segment": name, "layer": -1, "exec_style": style,
+                             "n_kernels": nk})
+            print(f"  {name:22s} {style:9s} kernels={nk}", flush=True)
+    out.mkdir(parents=True, exist_ok=True)
+    f = out / "kernels_per_call.csv"
+    with f.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["segment", "layer", "exec_style", "n_kernels"])
+        w.writeheader()
+        w.writerows(all_rows)
+    ka = out / "raw" / "profiler" / "key_averages.csv"
+    ka.parent.mkdir(parents=True, exist_ok=True)
+    with ka.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=KA_FIELDS)
+        w.writeheader()
+        w.writerows(KA_ROWS)
+    print(f"wrote {ka} ({len(KA_ROWS)} rows)")
+    traces = sorted((out / "raw" / "profiler").glob("*.json"))
+    for t in traces:
+        compress_and_record(t)          # §3.5: scan + hash the original, then zstd
+    print(f"\nwrote {f} ({len(all_rows)} rows, {len(traces)} profiler traces)")
+
+
+def write_e11a_tables(out, seg_rows, all_rows, layer_rows, samples, mi) -> int:
+    """segments.csv, segment_summary.csv, host_layer_summary.csv, raw/segment_samples.csv.zst,
+    ORIGINALS.json, the median eager launch cost and model_inputs.csv. Extracted from finish()
+    unchanged (2026-09-28); shared with bench/groot_segments.py. Returns the model_inputs row count."""
+    with (out / "segments.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(seg_rows[0].keys()))
+        w.writeheader()
+        w.writerows(seg_rows)
+    with (out / "segment_summary.csv").open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(all_rows[0].keys()))
+        w.writeheader()
+        w.writerows(all_rows)
+    if layer_rows:
+        with (out / "host_layer_summary.csv").open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(layer_rows[0].keys()))
+            w.writeheader()
+            w.writerows(layer_rows)
+    sample_csv = out / "raw" / "segment_samples.csv"
+    with sample_csv.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["segment", "exec_style", "timing", "variant",
+                                          "iter", "ms"])
+        w.writeheader()
+        w.writerows(samples)
+    # protocol §3.5: hash and secrets-scan the ORIGINAL, then zstd it
+    orig_entry = compress_and_record(sample_csv)
+    write_json(out / "raw" / "ORIGINALS.json", {
+        "_purpose": "protocol §3.5/§6: committed compressed; records the compression command "
+                    "and the original's sha256, size and pre-compression secrets scan.",
+        "files": [orig_entry]})
+
+    # median launch cost across eager segments
+    launch = [r["median_ms"] / r["n_kernels"] for r in all_rows
+              if r["exec_style"] == "eager" and r["timing"] == "wall_launch"
+              and isinstance(r["n_kernels"], float) and r["n_kernels"] > 0]
+    if launch:
+        launch.sort()
+        mi.add("t_launch_per_kernel", launch[len(launch) // 2], "ms", "median", len(launch),
+               "segment_summary.csv", exec_style="eager", timing="wall_launch")
+
+    n_mi = mi.write(out / "model_inputs.csv")
+    return n_mi
 
 
 # --------------------------------------------------------------------------- per-step extras
@@ -1027,6 +1110,12 @@ def measure_extras(policy, batch, args, mi, all_rows, notes, styles, kernels):
     if err:
         notes.append(err)
         return []
+    return measure_extra_defs(defs, args, mi, all_rows, notes, styles, kernels)
+
+
+def measure_extra_defs(defs, args, mi, all_rows, notes, styles, kernels):
+    """Time the per-step extras `defs` = [(name, fn, source_ref, ops)]. Extracted from measure_extras
+    unchanged (2026-09-28) so bench/groot_segments.py times GR00T's extras with the same loop."""
     rows = []
     for name, fn, ref, ops in defs:
         for style in styles:
@@ -1105,42 +1194,7 @@ def finish(out, args, gate, policy, cfg, shipped, real, tok, seg_rows, all_rows,
             kmap[(r["segment"], r["exec_style"])] = float(r["n_kernels"])
     seg_rows += measure_extras(policy, batch, args, mi, all_rows, notes, styles, kmap)
 
-    with (out / "segments.csv").open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(seg_rows[0].keys()))
-        w.writeheader()
-        w.writerows(seg_rows)
-    with (out / "segment_summary.csv").open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(all_rows[0].keys()))
-        w.writeheader()
-        w.writerows(all_rows)
-    if layer_rows:
-        with (out / "host_layer_summary.csv").open("w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=list(layer_rows[0].keys()))
-            w.writeheader()
-            w.writerows(layer_rows)
-    sample_csv = out / "raw" / "segment_samples.csv"
-    with sample_csv.open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["segment", "exec_style", "timing", "variant",
-                                          "iter", "ms"])
-        w.writeheader()
-        w.writerows(samples)
-    # protocol §3.5: hash and secrets-scan the ORIGINAL, then zstd it
-    orig_entry = compress_and_record(sample_csv)
-    write_json(out / "raw" / "ORIGINALS.json", {
-        "_purpose": "protocol §3.5/§6: committed compressed; records the compression command "
-                    "and the original's sha256, size and pre-compression secrets scan.",
-        "files": [orig_entry]})
-
-    # median launch cost across eager segments
-    launch = [r["median_ms"] / r["n_kernels"] for r in all_rows
-              if r["exec_style"] == "eager" and r["timing"] == "wall_launch"
-              and isinstance(r["n_kernels"], float) and r["n_kernels"] > 0]
-    if launch:
-        launch.sort()
-        mi.add("t_launch_per_kernel", launch[len(launch) // 2], "ms", "median", len(launch),
-               "segment_summary.csv", exec_style="eager", timing="wall_launch")
-
-    n_mi = mi.write(out / "model_inputs.csv")
+    n_mi = write_e11a_tables(out, seg_rows, all_rows, layer_rows, samples, mi)
     sw = software_versions()
     write_json(out / "meta.json", {
         "experiment": "E11a",
