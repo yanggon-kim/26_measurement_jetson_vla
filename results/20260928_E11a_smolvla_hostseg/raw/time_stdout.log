@@ -1,0 +1,87 @@
+kernel counts: 59 entries from results/20260928_E11a_smolvla_hostseg/kernels_per_call.csv
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  41%|████      | 200/489 [00:00<00:00, 1976.22it/s]Loading weights:  90%|████████▉ | 439/489 [00:00<00:00, 2193.95it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 2250.20it/s]
+Reducing the number of VLM layers to 16 ...
+weights: {"checked": 400, "matched": 400, "checkpoint": "lerobot/smolvla_base", "checkpoint_file_sha256_source": "huggingface_hub cache", "verdict": "real weights"}
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+tokens: {"prefix_tokens_P": 177, "prefix_tokens_valid": 151, "suffix_tokens_S": 50, "suffix_tokens_valid": 50, "n_images": 2, "image_shapes": [[1, 3, 512, 512], [1, 3, 512, 512]], "image_masks": [true, true], "language_tokens": 48, "language_tokens_valid": 22, "state_dim_padded": 32, "state_in_prefix": true, "chunk_size": 50}
+
+layer 0: x(1, 50, 720) attention not decomposed; T from the captured output T=50 D=720 I=2048 H=15 head_dim=64
+  rmsnorm1               eager     [0.258455, 0.270631, 0.271648, 0.228089] ms  kernels=6.1
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+    compiled rmsnorm1@L0 in 3.4 s
+  rmsnorm1               compiled  [0.22668, 0.231992, 0.235296, 0.182297] ms  kernels=1.0
+  rmsnorm1               cudagraph [0.037055, 0.034511, 0.027136, 0.006272] ms  kernels=6.0
+  residual_rmsnorm2      eager     [0.390418, 0.39989, 0.400192, 0.354484] ms  kernels=10.0
+    compiled residual_rmsnorm2@L0 in 0.2 s
+  residual_rmsnorm2      compiled  [0.22252, 0.231288, 0.233168, 0.182601] ms  kernels=1.0
+  residual_rmsnorm2      cudagraph [0.048287, 0.04739, 0.031552, 0.006463] ms  kernels=10.0
+  gelu_gate_mul_up       eager     [0.104381, 0.106317, 0.110544, 0.07427] ms  kernels=2.1
+    compiled gelu_gate_mul_up@L0 in 0.1 s
+  gelu_gate_mul_up       compiled  [0.143036, 0.154315, 0.156768, 0.109788] ms  kernels=1.0
+  gelu_gate_mul_up       cudagraph [0.023199, 0.034911, 0.025792, 0.006624] ms  kernels=2.0
+  residual               eager     [0.088765, 0.092636, 0.095104, 0.056926] ms  kernels=2.0
+    compiled residual@L0 in 0.1 s
+  residual               compiled  [0.141259, 0.152571, 0.155392, 0.107613] ms  kernels=1.0
+  residual               cudagraph [0.023231, 0.034623, 0.02624, 0.006335] ms  kernels=2.0
+  attention_whole        eager     [3.509145, 3.535161, 3.555568, 3.440669] ms  kernels=63.1
+    compiled attention_whole@L0 in 1.6 s
+  attention_whole        compiled  [0.939633, 0.953728, 0.946432, 0.884483] ms  kernels=13.0
+  attention_whole        cudagraph [0.260568, 0.262535, 0.2264, 0.006368] ms  kernels=63.0
+  sequence eager     0.7110 ms
+    compiled sequence@L0 in 0.3 s
+  sequence compiled  0.3049 ms
+  whole_layer_graph      0.0664 ms
+
+layer 9: x(1, 50, 720) attention not decomposed; T from the captured output T=50 D=720 I=2048 H=15 head_dim=64
+  rmsnorm1               eager     [0.328181, 0.339828, 0.33792, 0.29351] ms  kernels=8.0
+    compiled rmsnorm1@L9 in 0.2 s
+  rmsnorm1               compiled  [0.224585, 0.230777, 0.234576, 0.183098] ms  kernels=1.0
+  rmsnorm1               cudagraph [0.040254, 0.044063, 0.0272, 0.0064] ms  kernels=8.0
+  residual_rmsnorm2      eager     [0.388899, 0.399203, 0.398224, 0.353013] ms  kernels=10.0
+    compiled residual_rmsnorm2@L9 in 0.2 s
+  residual_rmsnorm2      compiled  [0.222681, 0.230809, 0.233744, 0.18345] ms  kernels=1.0
+  residual_rmsnorm2      cudagraph [0.041871, 0.045598, 0.0288, 0.006464] ms  kernels=10.0
+  gelu_gate_mul_up       eager     [0.104188, 0.106748, 0.1104, 0.073949] ms  kernels=2.1
+    compiled gelu_gate_mul_up@L9 in 0.0 s
+  gelu_gate_mul_up       compiled  [0.143835, 0.155755, 0.15704, 0.110653] ms  kernels=1.0
+  gelu_gate_mul_up       cudagraph [0.0232, 0.034847, 0.026144, 0.006783] ms  kernels=2.0
+  residual               eager     [0.087357, 0.091645, 0.093728, 0.056222] ms  kernels=2.0
+    compiled residual@L9 in 0.0 s
+  residual               compiled  [0.142075, 0.152891, 0.154944, 0.108797] ms  kernels=1.0
+  residual               cudagraph [0.023168, 0.035039, 0.026048, 0.006336] ms  kernels=2.0
+  attention_whole        eager     [2.605437, 2.623885, 2.635664, 2.54064] ms  kernels=43.0
+    compiled attention_whole@L9 in 1.2 s
+  attention_whole        compiled  [0.972945, 0.988385, 0.982928, 0.922612] ms  kernels=14.0
+  attention_whole        cudagraph [0.277255, 0.278551, 0.244, 0.0064] ms  kernels=43.0
+  sequence eager     0.7724 ms
+    compiled sequence@L9 in 0.3 s
+  sequence compiled  0.3058 ms
+  whole_layer_graph      0.0655 ms
+
+=== per-step extras ===
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  suffix_embed           eager     1.2503 ms kernels=23.1
+    compiled suffix_embed in 0.7 s
+  suffix_embed           compiled  0.7009 ms kernels=10.0
+  suffix_embed           cudagraph NOT MEASURED: AcceleratorError: CUDA error: operation failed due to a previous error
+  final_norm_out_proj    eager     0.5202 ms kernels=10.0
+  final_norm_out_proj    compiled  NOT MEASURED: BackendCompilerFailed: backend='inductor' raised:
+RuntimeError: Offset
+  final_norm_out_proj    cudagraph 0.0660 ms kernels=10.0
+  euler_update           eager     0.0993 ms kernels=2.1
+    compiled euler_update in 0.1 s
+  euler_update           compiled  0.1461 ms kernels=1.0
+  euler_update           cudagraph 0.0237 ms kernels=2.0
+
+wrote results/20260928_E11a_smolvla_hostseg  (574 model_inputs rows, 120000 samples)
+  2 not-measured item(s):
+    suffix_embed exec_style=cudagraph: AcceleratorError: CUDA error: operation failed due to a previous error during capture
+Search for `cudaErrorStreamCaptureInvalidated' in https://docs.nvidia.com/cuda/cuda-runtime-
+    final_norm_out_proj exec_style=compiled: BackendCompilerFailed: backend='inductor' raised:
+RuntimeError: Offset increment outside graph capture encountered unexpectedly.
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trac

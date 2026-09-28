@@ -1,0 +1,70 @@
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  39%|███▉      | 191/489 [00:00<00:00, 1903.86it/s]Loading weights:  91%|█████████ | 443/489 [00:00<00:00, 2262.85it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 2256.96it/s]
+Reducing the number of VLM layers to 16 ...
+weights: {"checked": 400, "matched": 400, "checkpoint": "lerobot/smolvla_base", "checkpoint_file_sha256_source": "huggingface_hub cache", "verdict": "real weights"}
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+tokens: {"prefix_tokens_P": 177, "prefix_tokens_valid": 151, "suffix_tokens_S": 50, "suffix_tokens_valid": 50, "n_images": 2, "image_shapes": [[1, 3, 512, 512], [1, 3, 512, 512]], "image_masks": [true, true], "language_tokens": 48, "language_tokens_valid": 22, "state_dim_padded": 32, "state_in_prefix": true, "chunk_size": 50}
+
+layer 0: x(1, 50, 720) attention not decomposed; T from the captured output T=50 D=720 I=2048 H=15 head_dim=64
+  rmsnorm1               eager     [0.289797, 0.365042, 0.303136, 0.25911] ms  kernels=0.0
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+    compiled rmsnorm1@L0 in 4.1 s
+  rmsnorm1               compiled  [0.266822, 0.477054, 0.267712, 0.210776] ms  kernels=0.0
+  rmsnorm1               cudagraph [0.040863, 0.334291, 0.049808, 0.012047] ms  kernels=0.0
+  residual_rmsnorm2      eager     [0.463871, 0.47051, 0.457696, 0.406672] ms  kernels=0.0
+    compiled residual_rmsnorm2@L0 in 0.5 s
+  residual_rmsnorm2      compiled  [0.264742, 0.275781, 0.264288, 0.206008] ms  kernels=0.0
+  residual_rmsnorm2      cudagraph [0.056686, 0.05843, 0.040816, 0.01216] ms  kernels=0.0
+  gelu_gate_mul_up       eager     [0.114668, 0.118235, 0.12, 0.082381] ms  kernels=0.0
+    compiled gelu_gate_mul_up@L0 in 0.6 s
+  gelu_gate_mul_up       compiled  [0.165129, 0.175609, 0.174304, 0.124139] ms  kernels=0.0
+  gelu_gate_mul_up       cudagraph [0.036799, 0.052078, 0.039072, 0.010512] ms  kernels=0.0
+  residual               eager     [0.102892, 0.105324, 0.108144, 0.068253] ms  kernels=0.0
+    compiled residual@L0 in 0.7 s
+  residual               compiled  [0.169114, 0.170905, 0.173824, 0.124683] ms  kernels=0.0
+  residual               cudagraph [0.031871, 0.049166, 0.032352, 0.009168] ms  kernels=0.0
+  attention_whole        eager     [0.012064, 0.014175, 0.016352, 0.000224] ms  kernels=0.0
+    compiled attention_whole@L0 in 0.0 s
+  attention_whole        compiled  [0.028527, 0.039087, 0.033904, 0.006848] ms  kernels=0.0
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/cuda/graphs.py:128: UserWarning: The CUDA Graph is empty. This usually means that the graph was attempted to be captured on wrong device or stream. (Triggered internally at /opt/pytorch/aten/src/ATen/cuda/CUDAGraph.cpp:139.)
+  super().capture_end()
+  attention_whole        cudagraph [0.025695, 0.032943, 0.027168, 0.003904] ms  kernels=0.0
+    compiled sequence@L0 in 1.1 s
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-report-17d3.qdstrm'
+[1/1] [0%                          ] host_sequences.nsys-repProcessing events...
+[1/1] [0%                          ] host_sequences.nsys-rep[1/1] [=16%                        ] host_sequences.nsys-rep[1/1] [====28%                     ] host_sequences.nsys-rep[1/1] [=============60%            ] host_sequences.nsys-rep[1/1] [==============61%           ] host_sequences.nsys-rep[1/1] [==============62%           ] host_sequences.nsys-rep[1/1] [==============63%           ] host_sequences.nsys-rep[1/1] [==============64%           ] host_sequences.nsys-rep[1/1] [===============65%          ] host_sequences.nsys-rep[1/1] [===============66%          ] host_sequences.nsys-rep[1/1] [===============67%          ] host_sequences.nsys-rep[1/1] [================68%         ] host_sequences.nsys-rep[1/1] [================69%         ] host_sequences.nsys-rep[1/1] [========================100%] host_sequences.nsys-rep[1/1] [========================100%] host_sequences.nsys-rep
+  nsys: captured 10 sequences x 3 style(s) at layer 0
+
+layer 9: x(1, 50, 720) attention not decomposed; T from the captured output T=50 D=720 I=2048 H=15 head_dim=64
+  rmsnorm1               eager     [0.473038, 0.480142, 0.482896, 0.428832] ms  kernels=0.0
+    compiled rmsnorm1@L9 in 0.6 s
+  rmsnorm1               compiled  [0.295349, 0.301892, 0.302448, 0.240535] ms  kernels=0.0
+  rmsnorm1               cudagraph [0.056382, 0.066366, 0.059152, 0.015856] ms  kernels=0.0
+  residual_rmsnorm2      eager     [0.576139, 0.577626, 0.580272, 0.521676] ms  kernels=0.0
+    compiled residual_rmsnorm2@L9 in 0.7 s
+  residual_rmsnorm2      compiled  [0.293301, 0.299205, 0.288048, 0.233751] ms  kernels=0.0
+  residual_rmsnorm2      cudagraph [0.063645, 0.064558, 0.060976, 0.016239] ms  kernels=0.0
+  gelu_gate_mul_up       eager     [0.139979, 0.142763, 0.148864, 0.103004] ms  kernels=0.0
+    compiled gelu_gate_mul_up@L9 in 0.0 s
+  gelu_gate_mul_up       compiled  [0.199704, 0.200504, 0.203664, 0.151194] ms  kernels=0.0
+  gelu_gate_mul_up       cudagraph [0.050815, 0.060702, 0.04632, 0.012848] ms  kernels=0.0
+  residual               eager     [0.123531, 0.123707, 0.132272, 0.088957] ms  kernels=0.0
+    compiled residual@L9 in 0.0 s
+  residual               compiled  [0.195657, 0.202889, 0.211008, 0.151866] ms  kernels=0.0
+  residual               cudagraph [0.047278, 0.059742, 0.049856, 0.013296] ms  kernels=0.0
+  attention_whole        eager     [0.014064, 0.020463, 0.022048, 0.000224] ms  kernels=0.0
+    compiled attention_whole@L9 in 0.0 s
+  attention_whole        compiled  [0.028879, 0.044174, 0.049904, 0.006607] ms  kernels=0.0
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/cuda/graphs.py:128: UserWarning: The CUDA Graph is empty. This usually means that the graph was attempted to be captured on wrong device or stream. (Triggered internally at /opt/pytorch/aten/src/ATen/cuda/CUDAGraph.cpp:139.)
+  super().capture_end()
+  attention_whole        cudagraph [0.041182, 0.046286, 0.036528, 0.006576] ms  kernels=0.0
+    compiled sequence@L9 in 1.0 s
+  nsys: captured 10 sequences x 3 style(s) at layer 9
+Generated:
+    /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260928_E11a_smolvla_hostseg_kernels/raw/host_sequences.nsys-rep
+gpu_cur_freq_hz=1300500000
