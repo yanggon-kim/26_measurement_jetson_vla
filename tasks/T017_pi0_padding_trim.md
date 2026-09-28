@@ -200,3 +200,20 @@ and take T017 once MAXN is restored. Never ask for a reboot for it. If the human
 directly, the owner's order wins; say in `STATUS.md` where T017 sits.
 
 status: claimed 2026-09-27
+status: done 2026-09-27
+- Report `reports/E14b_pi0_padtrim.md` (rows 1–9 first). Results `results/20260927_E14b_pi0_padtrim_equiv` (inputs.csv,
+  gate.csv, equiv.csv, verdicts.csv, raw/actions_<variant>_{stock,fp32,bf16}.npz), `…_E14b_pi0_padtrim_stages_MAXN`
+  (stages.csv, blocks.csv, kv_handover.csv, vision_bitwise.csv, raw/latency_samples.csv), `…_E14b_pi0_padtrim_bytes_MAXN`
+  (dram_bytes.csv, ncu/). Input set `bench/fixtures/e14b` (64 obs, 8 tasks × 8 frames, 8 prompt lengths 6–21), fixed
+  and committed before the first run. Code `bench/e14b_padtrim.py`, `bench/e14b_inputs.py`, `bench/run_ncu_e14b.sh`,
+  variants from `bench/pi0_padtrim.py` (shared with T016 step 3's `nopad`; LeRobot untouched).
+- Rows: 1 ρ_prefix(nopad) **0.734** (middle band); 2 ρ_vision(nocam) **0.665**, trimprompt 0.999; 3 ρ_prefix(trimprompt)
+  **1.028** (≥ 0.99 band, a slowdown); 4 **−0.010**, interaction +0.018; 5 prefix bytes **0.792** (0.72–0.80); 6
+  ρ_expert(nopad) **0.653** (< 0.97); 7 serial nopad **248.5 ms** (pad 347.6); 8 K/V bytes **exact** for all four;
+  9 fp32 gate PASS all three (worst REL 1.5e-6), compiled bf16 0/64 bitwise and **PASS** all three (F: MAXABS 0.296,
+  REL 0.0245), pad repeat bitwise 64/64, real-camera embeddings bitwise under nocam 10/10. No FAIL, so no LIBERO run.
+- Deviations / failed attempts: the first gate ran the shipped model as loaded (3.61 B params bf16) and failed at REL
+  ~2e-3 on the 4-input smoke (bf16 arithmetic); re-run with the model cast to fp32 as the step's heading requires, the
+  checkpoint-dtype pass kept as a reported attempt and as the floor's stock side. A duplicate queue launch (two GPU jobs
+  for < 1 min, both killed, smoke outputs discarded) preceded the valid run. kernel_bytes.csv (optional) not made.
+- bench commit at close: fa805b0. Repository: committed results 534M; size-pack 158.10 MiB + loose 88.64 MiB.

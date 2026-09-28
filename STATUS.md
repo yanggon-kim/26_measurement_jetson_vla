@@ -2,6 +2,28 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ T017 DONE (2026-09-27 ~17:10, MAXN) — next: the MODE_15W session (needs the owner's reboot)
+
+π0 padding trim, decomposed (`reports/E14b_pi0_padtrim.md`); all four variants in one bracketed session of the E12b
+`graphs_both` harness, drift 0.03 %. Verdicts: `nocam`, `trimprompt`, `nopad` all **PASS** (not bitwise, inside the
+rung's own floor), fp32 gate passed (REL ≤ 1.5e-6), K/V handover bytes exact.
+
+| variant | prefix ms (ρ) | vision ρ | expert ms (ρ) | serial ms (ρ) | prefix bytes ρ (r+w) |
+|---|---|---:|---|---|---:|
+| `pad` | 245.4 | 1 | 101.6 | 347.6 | 1 (21.60 GB) |
+| `nocam` | 177.8 (0.724) | 0.665 | 88.3 (0.870) | 269.4 (0.775) | 0.801 |
+| `trimprompt` | 252.3 (**1.028**) | 0.999 | 69.8 (**0.687**) | 323.4 (0.930) | 0.999 |
+| `nopad` | 180.1 (0.734) | 0.668 | 66.3 (0.653) | 248.5 (0.715) | 0.792 |
+
+New and unexplained: trimming the 27 prompt tokens slows the Gemma prefill (odd lengths 789 / 533 vs aligned 816 / 560)
+and cuts the expert by 31 % without moving its bytes. Repository after T017: committed results 534 MB, size-pack
+158.10 MiB + loose 88.64 MiB.
+
+**Next, owner:** the MODE_15W session (MAXN → 15W → MAXN; `sudo nvpmodel -m 1`, confirm the reboot, then
+`claude --continue`). Its queues are fixed and use the corrected power sampler. Nothing else is queued at MAXN.
+
+---
+
 ## ✅ T016 DONE (2026-09-27 ~14:50, MAXN) — T017 claimed and running next; MODE_15W session still pending (owner reboot)
 
 All five steps and rows 1–8 answered; reports `E13_pi0_bandwidth_steal.md`, `E8s_libero_seeded.md`,
@@ -41,8 +63,7 @@ E12b corruption = the single KV buffer.
 Repository (protocol §6f), at close of T016: committed `results/` 529 MB (1.4 GB on disk incl. uncommitted
 scratch-grade files), `git count-objects -vH`: size-pack 158.10 MiB + loose 84.34 MiB; `.git` 245 MB.
 
-**Where things sit:** T017 (π0 padding trim, decomposed) is claimed and runs now at MAXN under the 10-minute
-watchdog. The MODE_15W session still needs the owner's reboot (MAXN → 15W → MAXN) after T017.
+**Where things sit:** T017 done (block above). The MODE_15W session still needs the owner's reboot.
 
 ---
 
