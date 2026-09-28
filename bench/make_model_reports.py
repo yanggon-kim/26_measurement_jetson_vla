@@ -34,6 +34,8 @@ LABEL = {"pi0": "π0", "pi05": "π0.5", "smolvla": "SmolVLA", "groot": "GR00T (N
 # (output file, task, source report, model key, what the task asks the file to contain)
 # 2026-09-28: reports/E5b_{pi0,pi05,smolvla}.md are no longer extracts -- they follow docs/03 §10's seven parts and
 # are written by bench/make_e5b_reports.py, so they are NOT in this list (re-running this script cannot overwrite them).
+# 2026-09-28: reports/E11_{pi05,smolvla,groot_n17}_hybrid_inputs.md follow T010's report structure and are written by
+# bench/make_e11_reports.py; their entries are commented out below so this script cannot overwrite them.
 TARGETS = [
     ("E5_pi0_timeline.md", "T004", "E5_timeline.md", "pi0", "kernels executing vs GPU waiting, per mode"),
     ("E7_pi0_power.md", "T004", "E7_power_energy.md", "pi0", "W per rail and phase, energy per inference and per step"),
@@ -43,9 +45,9 @@ TARGETS = [
     ("E7_smolvla_power.md", "T008", "E7_power_energy.md", "smolvla", "as the π0 power report"),
     ("E5_groot_timeline.md", "T009", "E5_timeline.md", "groot", "as T008 step 2"),
     ("E7_groot_power.md", "T009", "E7_power_energy.md", "groot", "as T008 step 5 (MAXN)"),
-    ("E11_pi05_hybrid_inputs.md", "T011", "E11_models.md", "pi05", "the §13.8 hybrid-model inputs"),
-    ("E11_smolvla_hybrid_inputs.md", "T011", "E11_models.md", "smolvla", "the §13.8 hybrid-model inputs"),
-    ("E11_groot_n17_hybrid_inputs.md", "T012", "E11_models.md", "groot_n17", "the §13.8 hybrid-model inputs"),
+    # ("E11_pi05_hybrid_inputs.md", "T011", "E11_models.md", "pi05", "the §13.8 hybrid-model inputs"),
+    # ("E11_smolvla_hybrid_inputs.md", "T011", "E11_models.md", "smolvla", "the §13.8 hybrid-model inputs"),
+    # ("E11_groot_n17_hybrid_inputs.md", "T012", "E11_models.md", "groot_n17", "the §13.8 hybrid-model inputs"),
 ]
 
 

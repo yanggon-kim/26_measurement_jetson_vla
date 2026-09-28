@@ -53,7 +53,11 @@ def load(pattern: str) -> dict[str, list[dict]]:
     """
     by_model: dict[str, tuple[str, list[dict]]] = {}
     pats = [x.strip() for x in pattern.split(",") if x.strip()]
-    for d in sorted(x for pat in pats for x in glob.glob(pat)):
+    # A consolidated `_E11_<m>_inputs` directory must win over an `_E11a_` one for the same model: plain sorting
+    # put `..._E11a_groot_n17_hostseg` AFTER `..._E11_groot_n17_inputs` ('_' < 'a'), so the partial E11a file
+    # would have replaced GR00T's consolidated one (2026-09-28).
+    for d in sorted((x for pat in pats for x in glob.glob(pat)),
+                    key=lambda x: (0 if "_E11a_" in x else 1, Path(x).name)):
         f = Path(d) / "model_inputs.csv"
         if not f.exists() or f.stat().st_size == 0:
             continue
@@ -100,13 +104,10 @@ def main() -> int:
          "has no separable `softmax`; π0's conditioning tensor is `None` so it has no "
          "`adaln_cond`. Printing a zero for any of those would assert something false.",
          "",
-         "**GR00T contributes E11a only, and that is a scope statement rather than a "
-         "gap.** E11c/d/e/f are built on the LeRobot phase loops and on a `transformers` "
-         "KV cache, and GR00T has neither \u2014 its prefix is a whole VLM invoked as one "
-         "unit and its action head takes the backbone output, not a cache. So the GR00T "
-         "rows carry per-segment bytes, FLOPs and times for a DiT block, which is what the "
-         "PIM model needs from a DiT architecture, and the handover, prefix-sweep, "
-         "memory-pressure and pipelining sections are blank for them by design.",
+         "**GR00T N1.7 has every E11 part since 2026-09-28** (T012 steps 2–7, `bench/groot_e11.py`): "
+         "its hand-over object is the backbone's hidden states rather than a KV cache, and its 16 cross-attention "
+         "blocks (of 32) re-project them at every denoising step — see `reports/E11_groot_n17_hybrid_inputs.md`. "
+         "GR00T N1.5 / N1.6 still contribute E11a only.",
          ""]
 
     # ---- conditions --------------------------------------------------------------------
