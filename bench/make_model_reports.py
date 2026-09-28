@@ -32,14 +32,13 @@ LABEL = {"pi0": "π0", "pi05": "π0.5", "smolvla": "SmolVLA", "groot": "GR00T (N
          "groot_n17": "GR00T N1.7"}
 
 # (output file, task, source report, model key, what the task asks the file to contain)
+# 2026-09-28: reports/E5b_{pi0,pi05,smolvla}.md are no longer extracts -- they follow docs/03 §10's seven parts and
+# are written by bench/make_e5b_reports.py, so they are NOT in this list (re-running this script cannot overwrite them).
 TARGETS = [
     ("E5_pi0_timeline.md", "T004", "E5_timeline.md", "pi0", "kernels executing vs GPU waiting, per mode"),
     ("E7_pi0_power.md", "T004", "E7_power_energy.md", "pi0", "W per rail and phase, energy per inference and per step"),
-    ("E5b_pi0.md", "T007", "E5b_summary.md", "pi0", "instruction-level analysis of the dominant expert kernels"),
     ("E5_pi05_timeline.md", "T008", "E5_timeline.md", "pi05", "as the π0 timeline report"),
     ("E5_smolvla_timeline.md", "T008", "E5_timeline.md", "smolvla", "as the π0 timeline report"),
-    ("E5b_pi05.md", "T008", "E5b_summary.md", "pi05", "as the π0 E5b report"),
-    ("E5b_smolvla.md", "T008", "E5b_summary.md", "smolvla", "as the π0 E5b report"),
     ("E7_pi05_power.md", "T008", "E7_power_energy.md", "pi05", "as the π0 power report"),
     ("E7_smolvla_power.md", "T008", "E7_power_energy.md", "smolvla", "as the π0 power report"),
     ("E5_groot_timeline.md", "T009", "E5_timeline.md", "groot", "as T008 step 2"),
