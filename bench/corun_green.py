@@ -169,7 +169,9 @@ def main() -> int:
 
     # --- control 2: do the numerics survive a green-context stream?
     print("  control 2: comparing actions on a green stream against the default stream ...")
-    g8 = GC.GreenCtxStream(8)
+    # 8 SMs where the device has them (MAXN 16, MODE_30W 8 -- unchanged); MODE_15W has 6 and a request for 8
+    # fails with CUDA_ERROR_INVALID_RESOURCE_CONFIGURATION (2026-09-27), so use a 4-SM partition there.
+    g8 = GC.GreenCtxStream(8 if GC.device_sm_count() >= 8 else 4)
     with torch.no_grad():
         ref = CR.expert_stage(ctx, pkv, pad, noise, args.steps).clone()
         torch.cuda.synchronize()
