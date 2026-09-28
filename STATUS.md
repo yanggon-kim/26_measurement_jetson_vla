@@ -2,6 +2,29 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ 2026-09-28 (afternoon) — completeness audit: every task re-checked, gaps measured, one wrong number corrected
+
+The owner asked for a completeness check against the task list. Findings and what was done (all MAXN, one GPU job at a
+time, 10-minute watchdog; ~50 commits, all pushed):
+
+* **Wrong number corrected:** SmolVLA E11a `attention_whole` timed a Python return (0.0156 ms, 0 kernels). Real: 3.56 ms
+  eager (layer 0, self-attention), 2.64 ms (layer 9, cross). Kernel counts are now keyed by layer.
+* **T007:** π0 S sweep (never run) — `results/20260928_E5b_pi0_ssweep`. **T008:** E5 at N = 4 and the ae_layer ncu
+  captures (SmolVLA best not measurable: layer ranges break its CUDA-graph replay).
+* **E5b (T007/T008/T009):** docs/03 §0 file set for all 8 directories; reports in §10's seven parts. Two tool bugs fixed
+  (backward branches never detected; π0 best's dominant `Kernel2` variants never dumped).
+* **T011:** π0.5 / SmolVLA E11a without kernel counts → complete re-runs; xfer_exact measured; consolidated files and
+  reports rebuilt (T010 structure, cross-model table).
+* **T012:** the "E11a only" scope is withdrawn — GR00T N1.7 E11a–f + consolidated + report delivered. GR00T's DiT has
+  32 blocks (16 cross-attention); it hands over backbone features and re-projects cross K/V every step (3.18 ms/step).
+* **Hygiene:** six E11d raw/ stdouts recovered from queue logs; null meta writers fixed in 9 more scripts; watchdog
+  no longer counts CPU-only analysis or `ncu --import` as GPU jobs.
+* **Still open — needs the owner:** T004 4b(ii), compiled E3-style latency at N = 4 / 10 in MODE_30W and MODE_15W, needs
+  two reboots. Not started.
+* Repository: committed results 713 MB; size-pack 158.10 MiB. bench commit e568440.
+
+---
+
 ## ✅ 2026-09-28 — owner-requested analyses and the vision energy split (MAXN); no task open
 
 * **E7v — vision / language / action energy measured separately** (12 runs, 6 models × eager / best, MAXN, fixed
