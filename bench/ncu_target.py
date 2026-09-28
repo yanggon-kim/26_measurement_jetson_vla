@@ -90,11 +90,7 @@ def main() -> int:
                                   compile_mode=None if ladder_style else cm)
     if ladder_style:
         import opt_ladder as _OL
-        # denoise_step's outputs are cloned too when per-layer ranges are requested (2026-09-28): the
-        # layer-range wrappers put graph breaks inside denoise_step, and without the clone the next replay
-        # overwrote a partition's output ("accessing tensor output of CUDAGraphs that has been overwritten").
-        clone_ds = args.region.startswith("ae_layer")
-        for which, attr, clone in (("model", "denoise_step", clone_ds),
+        for which, attr, clone in (("model", "denoise_step", False),
                                    ("pg", "embed_image", True),
                                    ("pg", "forward", True)):
             ownr = _OL.owner_of(policy, which, spec)
