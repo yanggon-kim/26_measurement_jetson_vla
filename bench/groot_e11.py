@@ -512,7 +512,9 @@ T016's `kvonce` variant (bench/groot_savings.py) computes these K/V once per fra
 
 # ----------------------------------------------------------------------------------------------- E11d prefix sweep
 
-PROMPTS = {"short": "pick up the cup",
+# short must be SHORTER than typical (the fixture's "pick up the object", 4 tokens): the first run used
+# "pick up the cup", also 4 tokens, so short and typical were the same point.
+PROMPTS = {"short": "pick",
            "typical": None,
            "long": ("pick up the red cup from the left side of the table, move it carefully over the white plate "
                     "without touching the bowl, place it upright in the center of the plate, then release the "
@@ -577,7 +579,7 @@ def prefixsweep(args, ctx) -> int:
         v["extra_camera_0"] = base["video"][vkeys[0]].copy()
         return v
 
-    rows, samples, refused, first = [], [], [], {}
+    rows, samples, refused, first, img_tok = [], [], [], {}, {}
     finite_bad = 0
     for n_img in (1, 2, 3):
         for plabel, ptext in PROMPTS.items():
@@ -591,9 +593,15 @@ def prefixsweep(args, ctx) -> int:
                 torch.cuda.synchronize()
                 first[label] = round(time.perf_counter() - t0, 3)
                 ps = _ps(model, inp)
+                img_tok.setdefault(n_img, ps["image_tokens"])
+                if n_img > 1 and ps["image_tokens"] <= img_tok.get(n_img - 1, -1):
+                    # the processor accepted the extra key but did not use it: the "3 image" point would be a
+                    # 2-image point with a misleading label (first run, 2026-09-28: 256 image tokens for both)
+                    raise ValueError(f"extra image key(s) silently ignored by the processor: {ps['image_tokens']} "
+                                     f"image tokens with {n_img} images vs {img_tok[n_img - 1]} with {n_img - 1}")
             except Exception as e:                                     # noqa: BLE001
                 refused.append({"point": label, "n_images": n_img, "prompt_label": plabel,
-                                "error": f"{type(e).__name__}: {str(e)[:400]}"})
+                                "error": f"{type(e).__name__}: {str(e).splitlines()[0][:300] if str(e) else ''}"})
                 print(f"  {label:16s} REFUSED: {type(e).__name__}: {str(e)[:120]}", flush=True)
                 continue
             for _ in range(args.warmup):
