@@ -234,6 +234,40 @@ peak compute).
 | **SmolVLA** | the most launch-bound model: expert 89 % idle, prefix 88.5 % idle, 56× floor. | 4.13× floor; GEMMs too small to stream efficiently (largest 2.9 MB at 1.5–1.8× floor; cross-attention K at 8–9× floor = launch + tail). |
 | **GR00T** | expert launch-bound but already 30–48 % of BW (bigger GEMMs). | **the expert is at the memory roofline** (75–87 % BW) — the only model where a faster memory system is the direct lever; N1.7's uncompiled vision and graph-less LLM stay host-idle 42–64 %. |
 
+### 3.4 The action expert by component (E5c, derived from the committed nsys runs) [`results/20260928_E5c_expert_components`]
+
+Kernel time per denoising step (LeRobot) or per whole action head (GR00T, N = 4), under nsys, by model component
+(`bench/e5_expert_components.py`; kernels joined to their NVTX step through the CUDA runtime calls, CUDA-graph replays
+included; classified by kernel name).
+
+| model, config | weight projections (GEMM) | attention scores + values (batched GEMM / fmha) | RoPE | norms | GeGLU | K/V cat & copy kernels | K/V memcpy into graph inputs |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| π0 eager (per step) | 4.81 ms (129) | 4.31 + 0.31 ms | — | 0.09 | 0.12 | 1.25 (204) + 2.32 elementwise (476) | — |
+| **π0 best** (per step) | **4.54 ms** (129) | **4.19 + 0.24 ms** | 0.39 | 0.15 | 0.15 | 0.37 | **15.05 MB, 0.36 ms** |
+| π0.5 best (per step) | 7.64 ms (206) | 2.47 + 0.22 ms | 0.59 | — | 0.12 | 0.37 | 17.85 MB, 0.40 ms |
+| SmolVLA best (per step) | 1.85 ms (118) | 0.72 + 0.17 ms | 0.27 | 0.11 | 0.05 | 0.22 | 3.63 MB, 0.14 ms |
+| GR00T N1.7 best (4 steps) | **72.7 ms, 90.7 %** | 2.4 + 4.0 ms | 0.11 | — | (fused) | 0.84 | — |
+| GR00T N1.6 best (4 steps) | **68.9 ms, 94.4 %** | 3.9 ms | 0.13 | — | (fused) | 0.04 | — |
+| GR00T N1.5 best (4 steps) | **56.3 ms, 93.7 %** | 3.4 ms | 0.07 | — | (fused) | 0.15 | — |
+
+(kernel counts in brackets; GR00T N1.5 / N1.6 GEMMs are Inductor templates with bias / GELU / LayerNorm fused in.)
+
+**Findings.**
+- **π0's compiled expert spends as much GPU time on attention as on all its weights.** The 36 attention matrix products
+  per step (QKᵀ and PV over the 867-token cache, 8 query heads against the single shared K/V head) take **4.19 ms** —
+  next to 4.54 ms for all 126 weight projections. They run in `cutlass_75_wmma` (Turing-generation) kernels at
+  ~110 µs each; derived from their shapes (≈ 3.5 MB and 0.18 GFLOP each) that is ~1.6 TFLOP/s and ~30 GB/s — neither
+  compute- nor bandwidth-bound, a poor kernel choice for this batched shape. The cause of the selection (likely the
+  layout of the one K/V head expanded to 8 heads) is **not verified**.
+- The weight projections themselves are near their floor (4.54 ms in-model vs 4.41 ms replayed alone, 1.33× floor).
+- **The prefix K/V cache is copied into the CUDA graph's input buffers every denoising step** (15.05 MB = the whole
+  cache, 40 `cudaMemcpyAsync` per step): 0.36 ms per step, but ~150 MB of extra memory traffic per frame.
+- The remaining gap between these ~10 ms of kernel time and the unprofiled 16.9 ms step is host / graph-launch
+  overhead outside the kernels (derived; the per-step idle within the graph span is not measurable from these traces
+  because the two graph replays per step execute asynchronously).
+- **GR00T's compiled action head is 91–94 % weight GEMMs** — the weight-streaming picture of §3.2 holds at component
+  level; attention is 5–6 %.
+
 **Bandwidth sensitivity of the compiled π0 prefix** [E13]: taking bandwidth away from it (no SMs used) slows it
 linearly, σ ≈ 1 + 0.0032 × GB/s, while the bus is not saturated (EMC 76 % at the maximum load) — the coupling is memory
 latency / queueing, not a full bus.

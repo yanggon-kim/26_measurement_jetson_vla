@@ -1,0 +1,55 @@
+{
+ "experiment": "E5c (2026-09-28): action-expert time by model component, from the committed E5 nsys runs -- derived, no new measurement",
+ "kind": "derived",
+ "command": "python3 bench/e5_expert_components.py <E5 run>/raw/<run>.sqlite 'ae_step[' | 'ae_total' <out.csv> <label>",
+ "bench_commit": "92d6394648ccc8b361be161930a16a3991e8eb55",
+ "inputs": {
+  "pi0_best": "results/20260924_E5_pi0_best_N10",
+  "pi05_best": "results/20260924_E5_pi05_best_N10",
+  "smolvla_best": "results/20260924_E5_smolvla_best_N10",
+  "groot_n17_best": "results/20260924_E5_groot_n17_best",
+  "groot_n16_best": "results/20260924_E5_groot_n16_best",
+  "groot_n15_best": "results/20260924_E5_groot_n15_best",
+  "pi0_eager_N4": "results/20260922_E5_pi0_eager_N4"
+ },
+ "inputs_note": "the nsys .sqlite exports stay local (never committed, protocol \u00a73.5); their parent run directories and meta are committed",
+ "method": "per NVTX range: CUDA runtime calls in the range joined to their kernels by correlationId (CUDA-graph replays included); each kernel assigned to a component by name (bench/e5_expert_components.py docstring); kernel time per component. Times are under nsys (profiled). The span/idle columns are NOT valid for runs whose graphs execute asynchronously after the range (pi0_best, pi05_best): kernels of other work can fall in the span; use the per-component kernel times.",
+ "files": [
+  {
+   "path": "groot_n15_best.csv",
+   "bytes": 399,
+   "sha256": "f60be95b65da171e5351cb2b5ee014bf78e4ea172859ae220b93d37cbf5e6b59"
+  },
+  {
+   "path": "groot_n16_best.csv",
+   "bytes": 406,
+   "sha256": "ed10f806386965d8b54d89c99a5e9d6765545a36ae41fb2fde231d32f093cd4a"
+  },
+  {
+   "path": "groot_n17_best.csv",
+   "bytes": 455,
+   "sha256": "596cb741cb082c3e8f1fe093764e2f88ba3a01ad73585efed95cbc68685d9307"
+  },
+  {
+   "path": "pi05_best.csv",
+   "bytes": 2573,
+   "sha256": "407796604f9cd2c12e8a3e1b7d894cc1ad5d2c2b017ff49a3fe7472c7fb9b8f3"
+  },
+  {
+   "path": "pi0_best.csv",
+   "bytes": 2765,
+   "sha256": "0c62fb4eb618c8cc390977f336b04dc9729d0af8ace1818308f668de36af0fc6"
+  },
+  {
+   "path": "pi0_eager_N4.csv",
+   "bytes": 1298,
+   "sha256": "11b7cb90f15e6c162f61a9fa52c48869c93ab545373e4769008aa1a501ca6d16"
+  },
+  {
+   "path": "smolvla_best.csv",
+   "bytes": 2827,
+   "sha256": "ba4b84c4be4809fd3617388448eff4f62b43bfd8dbfb547a3b310ca1b87e6dba"
+  }
+ ],
+ "date_utc": "2026-09-28T20:00:00Z"
+}
