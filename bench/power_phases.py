@@ -250,8 +250,9 @@ def main() -> int:
             "checkpoint": spec.checkpoint,
             "precision": ("checkpoint default" if not args.rung
                           else f"rung {args.rung}: {rung_note}"),
-            "compile_mode": None if args.rung else cm,
-            "rung": args.rung, "rung_compiled": ";".join(compiled_desc),
+            # never null (protocol §5): eager runs wrote rung / compile_mode = null until 2026-09-27
+            "compile_mode": (f"set by the rung ({args.rung})" if args.rung else (cm or "none (eager)")),
+            "rung": args.rung or "none (eager)", "rung_compiled": ";".join(compiled_desc) or "none",
             "batch": 1, "num_denoise_steps": args.steps,
             "action_horizon": getattr(cfg, "chunk_size", None),
             "n_warmup": 5, "n_timed": f"{args.seconds} s loop per phase", "sample_hz": 20,
