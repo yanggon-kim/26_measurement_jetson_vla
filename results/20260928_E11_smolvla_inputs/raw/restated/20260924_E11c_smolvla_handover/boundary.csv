@@ -1,0 +1,7 @@
+model,tensor,direction,shape,dtype,bytes,per,notes
+smolvla,prefix_kv_cache,gpu_to_expert,"(16, 2, 177, 177, 64)",bfloat16,3624960,inference,the hand-over object itself
+smolvla,x_t_noisy_actions,into_expert,"(1, 50, 32)",float32,6400,step,current noisy action chunk
+smolvla,state,into_expert,"(1, 32)",float32,128,step,re-embedded every step by embed_suffix
+smolvla,timestep,into_expert,"(1,)",float32,4,step,scalar per step
+smolvla,v_t_velocity,out_of_expert,"(1, 50, 32)",float32,6400,step,"the step's output, consumed by the Euler update"
+smolvla,total,both,,,12932,step,"sum of the per-step tensors; excludes the KV cache, which the model assumes is loaded once"
