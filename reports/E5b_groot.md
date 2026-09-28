@@ -1,5 +1,7 @@
 # E5b — GR00T N1.7's action head at instruction level
 
+**Correction, 2026-09-28 (completeness audit).** A table here is per kernel SHORT name. Where several instantiations share one short name, the stall mix and time are their aggregate — most visibly π0 / best `Kernel2`, which is four different `cutlass::Kernel2<...>` symbols (two wmma bf16 variants carry 22.3 % + 10.2 % of C1 step time; the 256x64 variant whose SASS was the only one dumped until now is 1 of 20 launches, 7 %). Per-symbol SASS, inventories, cross-checks, hot loops and latency budgets are now in each `results/*_E5b_*/sass/` (`bench/e5b_static.py`); `sass/targets.csv` lists every symbol with its own share. Backward-branch counts before 2026-09-28 were all 0 because of a masking bug in `bench/sass_backward_bra.py` (fixed); no report quoted them.
+
 **Task T009 step 3. Binding: `docs/03_instruction_level_analysis.md` (§1 gate, §5 coverage,
 §7 stall mapping, "S sweep (isolated kernels)"). Results:
 `results/20260925_E5b_groot_n17_{eager,best}/` and `results/20260925_E5b_groot_n17_ssweep/`.
