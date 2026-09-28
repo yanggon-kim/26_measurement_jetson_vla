@@ -1,0 +1,54 @@
+{
+ "experiment": "T014 Step 4 step 0b at MODE_15W -- GEMM control (GPU-bound cross-check); MODE_15W is beyond T014 (its Step 4 is 30W), run by the same capped queue",
+ "command": "bench/green_ctx.py (queue_e12_capped.sh step 0b)",
+ "power_mode": "NV Power Mode: MODE_15W",
+ "sm_count": "6",
+ "gpu_clock_hz": "408000000",
+ "emc_rate_hz": "2133000000",
+ "gate": {
+  "power_mode": "NV Power Mode: MODE_15W",
+  "sm_count": 6,
+  "gpu_cur_freq_hz": 408000000,
+  "gpu_min_freq_hz": 408000000,
+  "gpu_max_freq_hz": 408000000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "248",
+  "cpu_online": "0-3",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "1113600 729600",
+  "cpu_max_freq_khz": "1113600 2201600"
+ },
+ "results_ms_per_gemm": {
+  "4 SMs (green)": 5.9126,
+  "6 SMs (whole GPU)": 3.9784,
+  "want 16 -> 6 (whole GPU)": 3.9822
+ },
+ "maxn_reference": {
+  "8 SMs green @1300.5 MHz": "0.8909-0.8921 ms/GEMM"
+ },
+ "mode_30w_reference": {
+  "4 SMs green @612 MHz": 3.9493,
+  "8 SMs whole GPU @612 MHz": 1.984,
+  "source": "results/20260926_E12_pi0_gemm_control_MODE_30W"
+ },
+ "derived": {
+  "15W_4green_vs_30W_4green": 1.4971,
+  "clock_ratio_612_over_408": 1.5,
+  "15W_whole6_vs_30W_whole8": 2.0052,
+  "ideal_sm_x_clock": 2.0,
+  "15W_whole6_vs_MAXN_green8": 4.463,
+  "ideal_vs_MAXN_green8": 4.25
+ },
+ "reading": "compute-bound 2048^2 bf16 GEMM: same 4-SM partition 1.497x slower at 408 vs 612 MHz (clock ratio 1.500); whole GPU 6 SMs @408 vs 8 SMs @612 2.005x (SM x clock 2.000). The EMC cap (2133 MHz) does not touch it. Against the MAXN 8-SM green value the ratio is 4.46x vs 4.25x SM x clock (5 % above, as at 30W)",
+ "provenance": "copied from scratch/queues/queue_e12_15w.log (the script prints only); gate read at copy time, same boot and mode",
+ "bench_commit": "408ada0f729bae31ffe59906731af5b3853bc647",
+ "raw_files": [
+  {
+   "path": "raw/green_ctx_stdout.txt",
+   "bytes": 516,
+   "sha256": "b837945c30ab6ecb2d457e55576881afa74253219f71ac30be2d1c286c5c17f0"
+  }
+ ],
+ "throttled": false,
+ "date_utc": "2026-09-28T03:45:00Z"
+}
