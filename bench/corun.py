@@ -909,7 +909,11 @@ def run_timing(args, spec, gate) -> int:
             "observations": manifest.get("frames"),
             "observation_source": manifest.get("dataset"),
             "torch": sw.get("torch"), "python": sw.get("python"),
-            "cuda": sw.get("cuda"), "jetpack": sw.get("jetpack"), "l4t": sw.get("l4t"),
+            # software_versions() names these torch_cuda etc.; the plain keys were always null (2026-09-27)
+            "cuda": sw.get("cuda") or sw.get("torch_cuda") or "unknown",
+            "jetpack": sw.get("jetpack") or C.sh_out("dpkg-query -W -f='${Version}' nvidia-jetpack") or "unknown",
+            "l4t": sw.get("l4t") or (C.sh_out("head -1 /etc/nv_tegra_release").split()[1] + "."
+                                     + C.sh_out("head -1 /etc/nv_tegra_release").split("REVISION: ")[-1].split(",")[0]),
             "raw_files": [],
             "host_issue_over_wall": round(iss / wal, 6) if wal else None,
             "not_measured": [
