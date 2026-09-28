@@ -1,217 +1,385 @@
 {
-  "_schema": "protocol \u00a75, BACK-FILLED -- read _backfill before using this file",
-  "_backfill": {
-    "backfilled": true,
-    "backfilled_at": "2026-09-25T13:42:16Z",
-    "by": "bench/backfill_meta.py",
-    "why": "this directory was written before the \u00a75 meta.json requirement was enforced on every experiment. The 2026-09-25 audit found 33 such directories.",
-    "reliability": "Fields under `recovered` are sourced from evidence in this directory or from git, each with a `_how`/`_source`. Fields under `_unrecoverable` were never recorded and are null. NOTHING here was inferred from expectation."
+ "_schema": "protocol \u00a75, BACK-FILLED -- read _backfill before using this file",
+ "_backfill": {
+  "backfilled": true,
+  "backfilled_at": "2026-09-25T13:42:16Z",
+  "by": "bench/backfill_meta.py",
+  "why": "this directory was written before the \u00a75 meta.json requirement was enforced on every experiment. The 2026-09-25 audit found 33 such directories.",
+  "reliability": "Fields under `recovered` are sourced from evidence in this directory or from git, each with a `_how`/`_source`. Fields under `_unrecoverable` were never recorded and are null. NOTHING here was inferred from expectation."
+ },
+ "run": "20260924_E5b_pi0_eager",
+ "recovered": {
+  "date": {
+   "date_utc": "2026-09-25T06:06:51Z",
+   "_how": "MTIME-DERIVED from the newest file, not a recorded run timestamp. A later rewrite of any file would move it."
   },
-  "run": "20260924_E5b_pi0_eager",
-  "recovered": {
-    "date": {
-      "date_utc": "2026-09-25T06:06:51Z",
-      "_how": "MTIME-DERIVED from the newest file, not a recorded run timestamp. A later rewrite of any file would move it."
+  "command": {
+   "commands": [
+    {
+     "capture": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
+     "command": "/usr/local/cuda/bin/ncu   --profile-from-start off --nvtx --nvtx-include \"ae_step_0/\"   --kernel-name regex:ampere_sgemm_128x64_tn   -c 20   --section SpeedOfLight --section WarpStateStats --section Occupancy   --section InstructionStats   --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps   --export \"results/20260924_E5b_pi0_eager/ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn\" --force-overwrite   /home/yanggon/venvs/pi0/bin/python bench/ncu_target.py --model pi0 --mode eager --warmup 8       --num-steps 10 --region \"ae_step_0\""
     },
-    "command": {
-      "commands": [
-        {
-          "capture": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
-          "command": "/usr/local/cuda/bin/ncu   --profile-from-start off --nvtx --nvtx-include \"ae_step_0/\"   --kernel-name regex:ampere_sgemm_128x64_tn   -c 20   --section SpeedOfLight --section WarpStateStats --section Occupancy   --section InstructionStats   --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps   --export \"results/20260924_E5b_pi0_eager/ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn\" --force-overwrite   /home/yanggon/venvs/pi0/bin/python bench/ncu_target.py --model pi0 --mode eager --warmup 8       --num-steps 10 --region \"ae_step_0\""
-        },
-        {
-          "capture": "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
-          "command": "/usr/local/cuda/bin/ncu   --profile-from-start off --nvtx --nvtx-include \"ae_step_0/\"   --kernel-name regex:elementwise_kernel   -c 20   --section SpeedOfLight --section WarpStateStats --section Occupancy   --section InstructionStats   --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps   --export \"results/20260924_E5b_pi0_eager/ncu/pi0_eager_ae_step_0_elementwise_kernel\" --force-overwrite   /home/yanggon/venvs/pi0/bin/python bench/ncu_target.py --model pi0 --mode eager --warmup 8       --num-steps 10 --region \"ae_step_0\""
-        },
-        {
-          "capture": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh",
-          "command": "/usr/local/cuda/bin/ncu   --profile-from-start off --nvtx --nvtx-include \"ae_step_0/\"   --kernel-name regex:vectorized_elementwise_kernel   -c 20   --section SpeedOfLight --section WarpStateStats --section Occupancy   --section InstructionStats   --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps   --export \"results/20260924_E5b_pi0_eager/ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel\" --force-overwrite   /home/yanggon/venvs/pi0/bin/python bench/ncu_target.py --model pi0 --mode eager --warmup 8       --num-steps 10 --region \"ae_step_0\""
-        }
-      ],
-      "_source": [
-        "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
-        "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
-        "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh"
-      ]
+    {
+     "capture": "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
+     "command": "/usr/local/cuda/bin/ncu   --profile-from-start off --nvtx --nvtx-include \"ae_step_0/\"   --kernel-name regex:elementwise_kernel   -c 20   --section SpeedOfLight --section WarpStateStats --section Occupancy   --section InstructionStats   --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps   --export \"results/20260924_E5b_pi0_eager/ncu/pi0_eager_ae_step_0_elementwise_kernel\" --force-overwrite   /home/yanggon/venvs/pi0/bin/python bench/ncu_target.py --model pi0 --mode eager --warmup 8       --num-steps 10 --region \"ae_step_0\""
     },
-    "git_added": {
-      "commit": "ffccd18a869f99b2616b4ec3fa094a135fc4f06f",
-      "committed_at": "2026-09-25T06:36:44-07:00",
-      "subject": "E12: reconcile E7's ae time -- cause found, r=1.50 validated, 33.6% pi0 optimisation",
-      "_how": "git log --diff-filter=A on this directory: the commit that first added its files. Bounds the run from above; it is not the run's own recorded code commit."
-    },
-    "files": [
-      {
-        "path": "inventory/ampere_sgemm_128x64_tn_crosscheck.md",
-        "bytes": 2692,
-        "sha256": "602d993d4bfc3ad2d15eb1598cdcdec3b7d525ee920bce394ad3ec4c19837013"
-      },
-      {
-        "path": "inventory/ampere_sgemm_128x64_tn_inventory.csv",
-        "bytes": 1333,
-        "sha256": "0f583b7aee389629756f14e924ccbc6736b7847cb4eed775d7667a759f1201ac"
-      },
-      {
-        "path": "inventory/ampere_sgemm_128x64_tn_inventory.md",
-        "bytes": 2309,
-        "sha256": "8bfe9e9c709ebc4294c03e61fce863391e7f32fb73b43428d678656b0397f715"
-      },
-      {
-        "path": "inventory/elementwise_kernel_crosscheck.md",
-        "bytes": 1973,
-        "sha256": "4ad3a9c9b78ceb69cf862e5631d21ab50fb75bb4368d3a97fec076815f410288"
-      },
-      {
-        "path": "inventory/elementwise_kernel_inventory.csv",
-        "bytes": 1411,
-        "sha256": "e95d4e127254c9a1d2886c8b329735db679d88c631ecad062ce6293977edc7c0"
-      },
-      {
-        "path": "inventory/elementwise_kernel_inventory.md",
-        "bytes": 2466,
-        "sha256": "9ff2fa360c2047fe8debbed63d6d54ef01dce5a0d360a5779531448bed1dd789"
-      },
-      {
-        "path": "inventory/elementwise_kernel_with_index_crosscheck.md",
-        "bytes": 1987,
-        "sha256": "089caa16a9a93f25619eefdc2aa96b07fd81a904507e44633b5a2c78768f6be3"
-      },
-      {
-        "path": "inventory/elementwise_kernel_with_index_inventory.csv",
-        "bytes": 722,
-        "sha256": "f506db1345616dcfb513fc0b3ab79ec14f8ee3f9c76638e60b32ed7fe8472803"
-      },
-      {
-        "path": "inventory/elementwise_kernel_with_index_inventory.md",
-        "bytes": 1392,
-        "sha256": "ceca563652a62a92381effbe75dc0a6ccbefd40e5d0c98765409326ef02c8a6a"
-      },
-      {
-        "path": "inventory/unrolled_elementwise_kernel_crosscheck.md",
-        "bytes": 1991,
-        "sha256": "acd9523ca8438bdb53c0701630afe71f76df94ad8121bbbc32f55dea2f622435"
-      },
-      {
-        "path": "inventory/unrolled_elementwise_kernel_inventory.csv",
-        "bytes": 1638,
-        "sha256": "886a858ffac78fcd2e1c88e325ff2fe1fa515f41dab8108be54678dcabaae74b"
-      },
-      {
-        "path": "inventory/unrolled_elementwise_kernel_inventory.md",
-        "bytes": 2811,
-        "sha256": "b5f6712a38b56870fa9c32d3e56deb392c9a9b9518a398e960f98d828d5416c1"
-      },
-      {
-        "path": "inventory/vectorized_elementwise_kernel_crosscheck.md",
-        "bytes": 1991,
-        "sha256": "db7f7254173c690ab0209408e387f58906af915b699477f603a033d858372aeb"
-      },
-      {
-        "path": "inventory/vectorized_elementwise_kernel_inventory.csv",
-        "bytes": 764,
-        "sha256": "469cf2d03d4e258ed9c543ae7e5c94ce506c87563d0c118cee740677d1fb8129"
-      },
-      {
-        "path": "inventory/vectorized_elementwise_kernel_inventory.md",
-        "bytes": 1451,
-        "sha256": "069f4aed3cd9b47abfa0addad6543c2511e75709176c540d063965489481e9d1"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.ncu-rep.zst",
-        "bytes": 56504,
-        "sha256": "d789516b3581fe40cec43ad425435a47207ad286ecc2fb52ea883226f0221cd8"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
-        "bytes": 2669,
-        "sha256": "ed424ee5438df204e8c00b5ef393673decfb6a90b668b2ea455bef279ea63ef5"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.stdout",
-        "bytes": 2086,
-        "sha256": "6ec22a199456f758d0d9bac6f376d359177ad3b45047c61a606b356a7c0761a7"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn_details.csv",
-        "bytes": 42649,
-        "sha256": "675e246ac76a9c9d8087068bee2919da642ef46043eb637bad754f3c761a4ade"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.ncu-rep.zst",
-        "bytes": 1261470,
-        "sha256": "6aa5f77b5d972bc0f589bc65efad8a3db92eb415703195af1144329af1c03ac3"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
-        "bytes": 2661,
-        "sha256": "65dbff0ae83d44f81d292c37d32b52053ca87ad3b6a82baf0e1aaa711782aa0b"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.stdout",
-        "bytes": 3516,
-        "sha256": "1b351537eed76ec3f02c7c2c4bc7a6118fa91d57d43a2f7b1ca2d0c3f0abb654"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel_details.csv",
-        "bytes": 689795,
-        "sha256": "8f79fbf2040b15726f96dbb4daba47561b836c16e6bcfc15a0f52aa07f379328"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.ncu-rep.zst",
-        "bytes": 719553,
-        "sha256": "e05ddc911503690992831f547a972739f4d7005d2f719fa3ac439e4b1dd432c1"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh",
-        "bytes": 2683,
-        "sha256": "eb8c13369ff951979a5487ba6cff9eeb306d9aa10041fb576065c8672841e19d"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.stdout",
-        "bytes": 3579,
-        "sha256": "75ac58e2613f412210a7a2090dd4ea06a1c0680f28a4e1706fe0b421c2886064"
-      },
-      {
-        "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel_details.csv",
-        "bytes": 618159,
-        "sha256": "316078d9767f546640841841d8bed7383bed6e7d5b94a8235db805ef8186d3cd"
-      },
-      {
-        "path": "raw/sass/ampere_sgemm_128x64_tn.sass",
-        "bytes": 74235,
-        "sha256": "79fb74430bc4bbd578321b0ca75b715b9b4e75218cbb00371de5d7d19e1da241"
-      },
-      {
-        "path": "raw/sass/elementwise_kernel.sass",
-        "bytes": 51139,
-        "sha256": "3f8b0b410c0a9351eb28ba87f41f53a3b26ce2fb904fcbb0bbd4a24695343e2a"
-      },
-      {
-        "path": "raw/sass/elementwise_kernel_with_index.sass",
-        "bytes": 2935,
-        "sha256": "3cb2791722565973450ada49f037c528992278db731e0bea3ae83f6f54a0fd16"
-      },
-      {
-        "path": "raw/sass/unrolled_elementwise_kernel.sass",
-        "bytes": 105343,
-        "sha256": "cf2d7c54e44bbc7c99144795a7ecda0ba368b87713cd8fcca036f0f3d96ab45c"
-      },
-      {
-        "path": "raw/sass/vectorized_elementwise_kernel.sass",
-        "bytes": 9134,
-        "sha256": "5e04ad05d40eac92780b65e62caefd590a0e3971556d17841dd0497a596ff6ae"
-      },
-      {
-        "path": "stall_attribution.csv",
-        "bytes": 20763,
-        "sha256": "861a8b0671bd0ac9a62912319a787f5b4523c35b99519e98afdb5fd254b1cc24"
-      }
-    ],
-    "file_count": 33,
-    "total_bytes": 3695804
+    {
+     "capture": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh",
+     "command": "/usr/local/cuda/bin/ncu   --profile-from-start off --nvtx --nvtx-include \"ae_step_0/\"   --kernel-name regex:vectorized_elementwise_kernel   -c 20   --section SpeedOfLight --section WarpStateStats --section Occupancy   --section InstructionStats   --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps   --export \"results/20260924_E5b_pi0_eager/ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel\" --force-overwrite   /home/yanggon/venvs/pi0/bin/python bench/ncu_target.py --model pi0 --mode eager --warmup 8       --num-steps 10 --region \"ae_step_0\""
+    }
+   ],
+   "_source": [
+    "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
+    "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
+    "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh"
+   ]
   },
-  "_unrecoverable": {
-    "device_state": "Power mode, GPU/CPU clock frequencies, temperature and throttling state were not recorded by the run that wrote this directory and are not derivable from its contents. Per AGENTS.md a latency without its power mode is not a result: this field is left null rather than filled from the campaign-wide assumption that the device was at MAXN. Runs from 2026-09-24 onward carry a protocol \u00a71 gate block.",
-    "software_versions": "Not recorded per-run. env/ documents the campaign's environment, but copying it here would assert that this run observed those versions, which was never checked."
+  "git_added": {
+   "commit": "ffccd18a869f99b2616b4ec3fa094a135fc4f06f",
+   "committed_at": "2026-09-25T06:36:44-07:00",
+   "subject": "E12: reconcile E7's ae time -- cause found, r=1.50 validated, 33.6% pi0 optimisation",
+   "_how": "git log --diff-filter=A on this directory: the commit that first added its files. Bounds the run from above; it is not the run's own recorded code commit."
+  },
+  "files": [
+   {
+    "path": "inventory/ampere_sgemm_128x64_tn_crosscheck.md",
+    "bytes": 2692,
+    "sha256": "602d993d4bfc3ad2d15eb1598cdcdec3b7d525ee920bce394ad3ec4c19837013"
+   },
+   {
+    "path": "inventory/ampere_sgemm_128x64_tn_inventory.csv",
+    "bytes": 1333,
+    "sha256": "0f583b7aee389629756f14e924ccbc6736b7847cb4eed775d7667a759f1201ac"
+   },
+   {
+    "path": "inventory/ampere_sgemm_128x64_tn_inventory.md",
+    "bytes": 2309,
+    "sha256": "8bfe9e9c709ebc4294c03e61fce863391e7f32fb73b43428d678656b0397f715"
+   },
+   {
+    "path": "inventory/elementwise_kernel_crosscheck.md",
+    "bytes": 1973,
+    "sha256": "4ad3a9c9b78ceb69cf862e5631d21ab50fb75bb4368d3a97fec076815f410288"
+   },
+   {
+    "path": "inventory/elementwise_kernel_inventory.csv",
+    "bytes": 1411,
+    "sha256": "e95d4e127254c9a1d2886c8b329735db679d88c631ecad062ce6293977edc7c0"
+   },
+   {
+    "path": "inventory/elementwise_kernel_inventory.md",
+    "bytes": 2466,
+    "sha256": "9ff2fa360c2047fe8debbed63d6d54ef01dce5a0d360a5779531448bed1dd789"
+   },
+   {
+    "path": "inventory/elementwise_kernel_with_index_crosscheck.md",
+    "bytes": 1987,
+    "sha256": "089caa16a9a93f25619eefdc2aa96b07fd81a904507e44633b5a2c78768f6be3"
+   },
+   {
+    "path": "inventory/elementwise_kernel_with_index_inventory.csv",
+    "bytes": 722,
+    "sha256": "f506db1345616dcfb513fc0b3ab79ec14f8ee3f9c76638e60b32ed7fe8472803"
+   },
+   {
+    "path": "inventory/elementwise_kernel_with_index_inventory.md",
+    "bytes": 1392,
+    "sha256": "ceca563652a62a92381effbe75dc0a6ccbefd40e5d0c98765409326ef02c8a6a"
+   },
+   {
+    "path": "inventory/unrolled_elementwise_kernel_crosscheck.md",
+    "bytes": 1991,
+    "sha256": "acd9523ca8438bdb53c0701630afe71f76df94ad8121bbbc32f55dea2f622435"
+   },
+   {
+    "path": "inventory/unrolled_elementwise_kernel_inventory.csv",
+    "bytes": 1638,
+    "sha256": "886a858ffac78fcd2e1c88e325ff2fe1fa515f41dab8108be54678dcabaae74b"
+   },
+   {
+    "path": "inventory/unrolled_elementwise_kernel_inventory.md",
+    "bytes": 2811,
+    "sha256": "b5f6712a38b56870fa9c32d3e56deb392c9a9b9518a398e960f98d828d5416c1"
+   },
+   {
+    "path": "inventory/vectorized_elementwise_kernel_crosscheck.md",
+    "bytes": 1991,
+    "sha256": "db7f7254173c690ab0209408e387f58906af915b699477f603a033d858372aeb"
+   },
+   {
+    "path": "inventory/vectorized_elementwise_kernel_inventory.csv",
+    "bytes": 764,
+    "sha256": "469cf2d03d4e258ed9c543ae7e5c94ce506c87563d0c118cee740677d1fb8129"
+   },
+   {
+    "path": "inventory/vectorized_elementwise_kernel_inventory.md",
+    "bytes": 1451,
+    "sha256": "069f4aed3cd9b47abfa0addad6543c2511e75709176c540d063965489481e9d1"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.ncu-rep.zst",
+    "bytes": 56504,
+    "sha256": "d789516b3581fe40cec43ad425435a47207ad286ecc2fb52ea883226f0221cd8"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
+    "bytes": 2669,
+    "sha256": "ed424ee5438df204e8c00b5ef393673decfb6a90b668b2ea455bef279ea63ef5"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.stdout",
+    "bytes": 2086,
+    "sha256": "6ec22a199456f758d0d9bac6f376d359177ad3b45047c61a606b356a7c0761a7"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn_details.csv",
+    "bytes": 42649,
+    "sha256": "675e246ac76a9c9d8087068bee2919da642ef46043eb637bad754f3c761a4ade"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.ncu-rep.zst",
+    "bytes": 1261470,
+    "sha256": "6aa5f77b5d972bc0f589bc65efad8a3db92eb415703195af1144329af1c03ac3"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
+    "bytes": 2661,
+    "sha256": "65dbff0ae83d44f81d292c37d32b52053ca87ad3b6a82baf0e1aaa711782aa0b"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.stdout",
+    "bytes": 3516,
+    "sha256": "1b351537eed76ec3f02c7c2c4bc7a6118fa91d57d43a2f7b1ca2d0c3f0abb654"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel_details.csv",
+    "bytes": 689795,
+    "sha256": "8f79fbf2040b15726f96dbb4daba47561b836c16e6bcfc15a0f52aa07f379328"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.ncu-rep.zst",
+    "bytes": 719553,
+    "sha256": "e05ddc911503690992831f547a972739f4d7005d2f719fa3ac439e4b1dd432c1"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh",
+    "bytes": 2683,
+    "sha256": "eb8c13369ff951979a5487ba6cff9eeb306d9aa10041fb576065c8672841e19d"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.stdout",
+    "bytes": 3579,
+    "sha256": "75ac58e2613f412210a7a2090dd4ea06a1c0680f28a4e1706fe0b421c2886064"
+   },
+   {
+    "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel_details.csv",
+    "bytes": 618159,
+    "sha256": "316078d9767f546640841841d8bed7383bed6e7d5b94a8235db805ef8186d3cd"
+   },
+   {
+    "path": "raw/sass/ampere_sgemm_128x64_tn.sass",
+    "bytes": 74235,
+    "sha256": "79fb74430bc4bbd578321b0ca75b715b9b4e75218cbb00371de5d7d19e1da241"
+   },
+   {
+    "path": "raw/sass/elementwise_kernel.sass",
+    "bytes": 51139,
+    "sha256": "3f8b0b410c0a9351eb28ba87f41f53a3b26ce2fb904fcbb0bbd4a24695343e2a"
+   },
+   {
+    "path": "raw/sass/elementwise_kernel_with_index.sass",
+    "bytes": 2935,
+    "sha256": "3cb2791722565973450ada49f037c528992278db731e0bea3ae83f6f54a0fd16"
+   },
+   {
+    "path": "raw/sass/unrolled_elementwise_kernel.sass",
+    "bytes": 105343,
+    "sha256": "cf2d7c54e44bbc7c99144795a7ecda0ba368b87713cd8fcca036f0f3d96ab45c"
+   },
+   {
+    "path": "raw/sass/vectorized_elementwise_kernel.sass",
+    "bytes": 9134,
+    "sha256": "5e04ad05d40eac92780b65e62caefd590a0e3971556d17841dd0497a596ff6ae"
+   },
+   {
+    "path": "stall_attribution.csv",
+    "bytes": 20763,
+    "sha256": "861a8b0671bd0ac9a62912319a787f5b4523c35b99519e98afdb5fd254b1cc24"
+   }
+  ],
+  "file_count": 33,
+  "total_bytes": 3695804
+ },
+ "_unrecoverable": {
+  "device_state": "Power mode, GPU/CPU clock frequencies, temperature and throttling state were not recorded by the run that wrote this directory and are not derivable from its contents. Per AGENTS.md a latency without its power mode is not a result: this field is left null rather than filled from the campaign-wide assumption that the device was at MAXN. Runs from 2026-09-24 onward carry a protocol \u00a71 gate block.",
+  "software_versions": "Not recorded per-run. env/ documents the campaign's environment, but copying it here would assert that this run observed those versions, which was never checked."
+ },
+ "raw_files": [
+  {
+   "path": "stall_attribution.csv",
+   "bytes": 20763,
+   "sha256": "861a8b0671bd0ac9a62912319a787f5b4523c35b99519e98afdb5fd254b1cc24"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.ncu-rep.zst",
+   "bytes": 56504,
+   "sha256": "d789516b3581fe40cec43ad425435a47207ad286ecc2fb52ea883226f0221cd8"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.sh",
+   "bytes": 2669,
+   "sha256": "ed424ee5438df204e8c00b5ef393673decfb6a90b668b2ea455bef279ea63ef5"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn.stdout",
+   "bytes": 2086,
+   "sha256": "6ec22a199456f758d0d9bac6f376d359177ad3b45047c61a606b356a7c0761a7"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_ampere_sgemm_128x64_tn_details.csv",
+   "bytes": 42649,
+   "sha256": "675e246ac76a9c9d8087068bee2919da642ef46043eb637bad754f3c761a4ade"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.ncu-rep.zst",
+   "bytes": 1261470,
+   "sha256": "6aa5f77b5d972bc0f589bc65efad8a3db92eb415703195af1144329af1c03ac3"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.sh",
+   "bytes": 2661,
+   "sha256": "65dbff0ae83d44f81d292c37d32b52053ca87ad3b6a82baf0e1aaa711782aa0b"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel.stdout",
+   "bytes": 3516,
+   "sha256": "1b351537eed76ec3f02c7c2c4bc7a6118fa91d57d43a2f7b1ca2d0c3f0abb654"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_elementwise_kernel_details.csv",
+   "bytes": 689795,
+   "sha256": "8f79fbf2040b15726f96dbb4daba47561b836c16e6bcfc15a0f52aa07f379328"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.ncu-rep.zst",
+   "bytes": 719553,
+   "sha256": "e05ddc911503690992831f547a972739f4d7005d2f719fa3ac439e4b1dd432c1"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.sh",
+   "bytes": 2683,
+   "sha256": "eb8c13369ff951979a5487ba6cff9eeb306d9aa10041fb576065c8672841e19d"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel.stdout",
+   "bytes": 3579,
+   "sha256": "75ac58e2613f412210a7a2090dd4ea06a1c0680f28a4e1706fe0b421c2886064"
+  },
+  {
+   "path": "ncu/pi0_eager_ae_step_0_vectorized_elementwise_kernel_details.csv",
+   "bytes": 618159,
+   "sha256": "316078d9767f546640841841d8bed7383bed6e7d5b94a8235db805ef8186d3cd"
+  },
+  {
+   "path": "raw/sass/ampere_sgemm_128x64_tn.sass",
+   "bytes": 74235,
+   "sha256": "79fb74430bc4bbd578321b0ca75b715b9b4e75218cbb00371de5d7d19e1da241"
+  },
+  {
+   "path": "raw/sass/elementwise_kernel.sass",
+   "bytes": 51139,
+   "sha256": "3f8b0b410c0a9351eb28ba87f41f53a3b26ce2fb904fcbb0bbd4a24695343e2a"
+  },
+  {
+   "path": "raw/sass/elementwise_kernel_with_index.sass",
+   "bytes": 2935,
+   "sha256": "3cb2791722565973450ada49f037c528992278db731e0bea3ae83f6f54a0fd16"
+  },
+  {
+   "path": "raw/sass/unrolled_elementwise_kernel.sass",
+   "bytes": 105343,
+   "sha256": "cf2d7c54e44bbc7c99144795a7ecda0ba368b87713cd8fcca036f0f3d96ab45c"
+  },
+  {
+   "path": "raw/sass/vectorized_elementwise_kernel.sass",
+   "bytes": 9134,
+   "sha256": "5e04ad05d40eac92780b65e62caefd590a0e3971556d17841dd0497a596ff6ae"
+  },
+  {
+   "path": "inventory/ampere_sgemm_128x64_tn_crosscheck.md",
+   "bytes": 2692,
+   "sha256": "602d993d4bfc3ad2d15eb1598cdcdec3b7d525ee920bce394ad3ec4c19837013"
+  },
+  {
+   "path": "inventory/ampere_sgemm_128x64_tn_inventory.csv",
+   "bytes": 1333,
+   "sha256": "0f583b7aee389629756f14e924ccbc6736b7847cb4eed775d7667a759f1201ac"
+  },
+  {
+   "path": "inventory/ampere_sgemm_128x64_tn_inventory.md",
+   "bytes": 2309,
+   "sha256": "8bfe9e9c709ebc4294c03e61fce863391e7f32fb73b43428d678656b0397f715"
+  },
+  {
+   "path": "inventory/elementwise_kernel_crosscheck.md",
+   "bytes": 1973,
+   "sha256": "4ad3a9c9b78ceb69cf862e5631d21ab50fb75bb4368d3a97fec076815f410288"
+  },
+  {
+   "path": "inventory/elementwise_kernel_inventory.csv",
+   "bytes": 1411,
+   "sha256": "e95d4e127254c9a1d2886c8b329735db679d88c631ecad062ce6293977edc7c0"
+  },
+  {
+   "path": "inventory/elementwise_kernel_inventory.md",
+   "bytes": 2466,
+   "sha256": "9ff2fa360c2047fe8debbed63d6d54ef01dce5a0d360a5779531448bed1dd789"
+  },
+  {
+   "path": "inventory/elementwise_kernel_with_index_crosscheck.md",
+   "bytes": 1987,
+   "sha256": "089caa16a9a93f25619eefdc2aa96b07fd81a904507e44633b5a2c78768f6be3"
+  },
+  {
+   "path": "inventory/elementwise_kernel_with_index_inventory.csv",
+   "bytes": 722,
+   "sha256": "f506db1345616dcfb513fc0b3ab79ec14f8ee3f9c76638e60b32ed7fe8472803"
+  },
+  {
+   "path": "inventory/elementwise_kernel_with_index_inventory.md",
+   "bytes": 1392,
+   "sha256": "ceca563652a62a92381effbe75dc0a6ccbefd40e5d0c98765409326ef02c8a6a"
+  },
+  {
+   "path": "inventory/unrolled_elementwise_kernel_crosscheck.md",
+   "bytes": 1991,
+   "sha256": "acd9523ca8438bdb53c0701630afe71f76df94ad8121bbbc32f55dea2f622435"
+  },
+  {
+   "path": "inventory/unrolled_elementwise_kernel_inventory.csv",
+   "bytes": 1638,
+   "sha256": "886a858ffac78fcd2e1c88e325ff2fe1fa515f41dab8108be54678dcabaae74b"
+  },
+  {
+   "path": "inventory/unrolled_elementwise_kernel_inventory.md",
+   "bytes": 2811,
+   "sha256": "b5f6712a38b56870fa9c32d3e56deb392c9a9b9518a398e960f98d828d5416c1"
+  },
+  {
+   "path": "inventory/vectorized_elementwise_kernel_crosscheck.md",
+   "bytes": 1991,
+   "sha256": "db7f7254173c690ab0209408e387f58906af915b699477f603a033d858372aeb"
+  },
+  {
+   "path": "inventory/vectorized_elementwise_kernel_inventory.csv",
+   "bytes": 764,
+   "sha256": "469cf2d03d4e258ed9c543ae7e5c94ce506c87563d0c118cee740677d1fb8129"
+  },
+  {
+   "path": "inventory/vectorized_elementwise_kernel_inventory.md",
+   "bytes": 1451,
+   "sha256": "069f4aed3cd9b47abfa0addad6543c2511e75709176c540d063965489481e9d1"
   }
+ ],
+ "raw_files_note": "2026-09-28 completeness audit: raw_files listing added (sha256 of every file in the directory)"
 }

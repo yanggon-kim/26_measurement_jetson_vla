@@ -474,3 +474,9 @@ power-mode queries, `tegrastats` logging, **`ncu` (which needs root on this devi
 reads, `perf_event_paranoid` and `apt`. No password is stored anywhere in this repository.
 
 Verified: `sudo -n` succeeds for all five without a prompt.
+
+## Built artefacts (added 2026-09-28, completeness audit — T010 step 2 asked for this in env/)
+
+| artefact | source | build command | why |
+|---|---|---|---|
+| `bench/managed_alloc.so` | `bench/managed_alloc.cu` | `nvcc -O3 -arch=sm_87 --shared -Xcompiler -fPIC -o bench/managed_alloc.so bench/managed_alloc.cu` | E11b zero-copy / managed-memory allocator for the pluggable CUDA allocator (T010 step 2) |

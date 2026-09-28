@@ -1,131 +1,229 @@
 {
-  "experiment": "E5b (T009 step 3) -- instruction-level analysis, GR00T N1.7 action head",
-  "model": "groot_n17",
-  "checkpoint": "nvidia/GR00T-N1.7-3B",
-  "mode": "best",
-  "mode_meaning": "--tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs (C1's best, copied verbatim)",
-  "region": "ae_total (GR00T's denoising loop has no per-step wrap point)",
-  "target_selection": "bench/pick_e5b_targets.py --only-groot, applying docs/03 \u00a71 (per-launch duration vs the 62 us launch gap, SM < 5 %) and \u00a75 (>= 60 % coverage) to the committed C1 capture results/20260923_E4g_c1_groot_n17_best. Coverage is of C1's CAPTURED window (first 40 kernels of ae_total).",
-  "gate": {
-    "power_mode": "NV Power Mode: MAXN",
-    "sm_count": 16,
-    "gpu_cur_freq_hz": 1300500000,
-    "gpu_min_freq_hz": 1300500000,
-    "gpu_max_freq_hz": 1300500000,
-    "jetson_clocks_locked": true,
-    "tpc_pg_mask": "0",
-    "cpu_online": "0-11",
-    "cpu_governor": "schedutil",
-    "cpu_cur_freq_khz": "2201600",
-    "cpu_max_freq_khz": "2201600"
+ "experiment": "E5b (T009 step 3) -- instruction-level analysis, GR00T N1.7 action head",
+ "model": "groot_n17",
+ "checkpoint": "nvidia/GR00T-N1.7-3B",
+ "mode": "best",
+ "mode_meaning": "--tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs (C1's best, copied verbatim)",
+ "region": "ae_total (GR00T's denoising loop has no per-step wrap point)",
+ "target_selection": "bench/pick_e5b_targets.py --only-groot, applying docs/03 \u00a71 (per-launch duration vs the 62 us launch gap, SM < 5 %) and \u00a75 (>= 60 % coverage) to the committed C1 capture results/20260923_E4g_c1_groot_n17_best. Coverage is of C1's CAPTURED window (first 40 kernels of ae_total).",
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_cur_freq_hz": 1300500000,
+  "gpu_min_freq_hz": 1300500000,
+  "gpu_max_freq_hz": 1300500000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "0",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "2201600",
+  "cpu_max_freq_khz": "2201600"
+ },
+ "runners": [
+  {
+   "capture": "groot_n17_best_ae_total_Kernel2.sh",
+   "runner": "HOME=/home/yanggon\nHF_HOME=/home/yanggon/.cache/huggingface\nHF_HUB_OFFLINE=1\nTRANSFORMERS_OFFLINE=1\nTORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon\nTRITON_CACHE_DIR=/home/yanggon/.cache/triton_groot\nexport HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR\n. /home/yanggon/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1\ncd /home/yanggon/00_VLA/26_measurement_jetson_vla\nexec /usr/local/cuda/bin/ncu \\\n  --profile-from-start off --nvtx --nvtx-include \"ae_total/\" \\\n  --kernel-name regex:Kernel2 \\\n  -c 20 \\\n  --section SpeedOfLight --section WarpStateStats --section Occupancy \\\n  --section InstructionStats \\\n  --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps \\\n  --export \"results/20260925_E5b_groot_n17_best/ncu/groot_n17_best_ae_total_Kernel2\" --force-overwrite \\\n  /home/yanggon/venvs/groot/bin/python bench/groot_phases.py \\\n    --outdir results/20260925_E5b_groot_n17_best/raw/groot_phases_groot_n17_best_ae_total_Kernel2 --checkpoint nvidia/GR00T-N1.7-3B --version n17 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T \\\n     --embodiment-tag oxe_droid_relative_eef_relative_joint --warmup 8 --timed 1 --rung ncu_ae_total \\\n    --ncu-region ae_total --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs\n"
   },
-  "runners": [
-    {
-      "capture": "groot_n17_best_ae_total_Kernel2.sh",
-      "runner": "HOME=/home/yanggon\nHF_HOME=/home/yanggon/.cache/huggingface\nHF_HUB_OFFLINE=1\nTRANSFORMERS_OFFLINE=1\nTORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon\nTRITON_CACHE_DIR=/home/yanggon/.cache/triton_groot\nexport HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR\n. /home/yanggon/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1\ncd /home/yanggon/00_VLA/26_measurement_jetson_vla\nexec /usr/local/cuda/bin/ncu \\\n  --profile-from-start off --nvtx --nvtx-include \"ae_total/\" \\\n  --kernel-name regex:Kernel2 \\\n  -c 20 \\\n  --section SpeedOfLight --section WarpStateStats --section Occupancy \\\n  --section InstructionStats \\\n  --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps \\\n  --export \"results/20260925_E5b_groot_n17_best/ncu/groot_n17_best_ae_total_Kernel2\" --force-overwrite \\\n  /home/yanggon/venvs/groot/bin/python bench/groot_phases.py \\\n    --outdir results/20260925_E5b_groot_n17_best/raw/groot_phases_groot_n17_best_ae_total_Kernel2 --checkpoint nvidia/GR00T-N1.7-3B --version n17 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T \\\n     --embodiment-tag oxe_droid_relative_eef_relative_joint --warmup 8 --timed 1 --rung ncu_ae_total \\\n    --ncu-region ae_total --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs\n"
-    },
-    {
-      "capture": "groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.sh",
-      "runner": "HOME=/home/yanggon\nHF_HOME=/home/yanggon/.cache/huggingface\nHF_HUB_OFFLINE=1\nTRANSFORMERS_OFFLINE=1\nTORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon\nTRITON_CACHE_DIR=/home/yanggon/.cache/triton_groot\nexport HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR\n. /home/yanggon/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1\ncd /home/yanggon/00_VLA/26_measurement_jetson_vla\nexec /usr/local/cuda/bin/ncu \\\n  --profile-from-start off --nvtx --nvtx-include \"ae_total/\" \\\n  --kernel-name regex:ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn \\\n  -c 20 \\\n  --section SpeedOfLight --section WarpStateStats --section Occupancy \\\n  --section InstructionStats \\\n  --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps \\\n  --export \"results/20260925_E5b_groot_n17_best/ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3\" --force-overwrite \\\n  /home/yanggon/venvs/groot/bin/python bench/groot_phases.py \\\n    --outdir results/20260925_E5b_groot_n17_best/raw/groot_phases_groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3 --checkpoint nvidia/GR00T-N1.7-3B --version n17 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T \\\n     --embodiment-tag oxe_droid_relative_eef_relative_joint --warmup 8 --timed 1 --rung ncu_ae_total \\\n    --ncu-region ae_total --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs\n"
-    }
-  ],
-  "bench_commit": "6d2754158a4f400cbbc2d1eb42c60d2368983d40",
-  "files": [
-    {
-      "path": "inventory/Kernel2_crosscheck.md",
-      "bytes": 2666,
-      "sha256": "7f0033f610c5c62498d02051a25e4597686c871b4da0c8eee0f57df701d9531a"
-    },
-    {
-      "path": "inventory/Kernel2_inventory.csv",
-      "bytes": 2397,
-      "sha256": "47ebd61216981d40b81a4fe8554b6c5848a73c0c715971d5970349a66563884c"
-    },
-    {
-      "path": "inventory/Kernel2_inventory.md",
-      "bytes": 3926,
-      "sha256": "00acddc00192c47eaa1ad21bc1617596257e1a1b46f3e3d4da5c2282caf6cc74"
-    },
-    {
-      "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_crosscheck.md",
-      "bytes": 2778,
-      "sha256": "9e7cda08562c984087fdb78de770b091241dc1f414a5cc207a951ca302e0bef5"
-    },
-    {
-      "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_inventory.csv",
-      "bytes": 1762,
-      "sha256": "29c4fb893e41123277f3159051e2a608ed648d7a2bf2119962df0d8c2c5a9236"
-    },
-    {
-      "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_inventory.md",
-      "bytes": 2920,
-      "sha256": "6177d96d091979acc03dc6f1b84d3bee5cc375531e5f4d2901b07256b2c4b0e4"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_Kernel2.ncu-rep.zst",
-      "bytes": 922619,
-      "sha256": "6a8811ff1855c8273c4ad14e37ba82e6db6d58e18fb8ea4d209195a76f4a503b"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_Kernel2.sh",
-      "bytes": 3070,
-      "sha256": "eb8caf8677b6afe9d8eb0f8eb2e93becc6b966845350a5d3afb69125de30cc28"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_Kernel2.stdout",
-      "bytes": 6044,
-      "sha256": "e4ed27d2ece5d2456ba91dc38c4c4342cca2b195dc2af57fbc667d885e7bdbd9"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_Kernel2_details.csv",
-      "bytes": 353362,
-      "sha256": "b582836e01951fd17b9860a28795b1be2357eee2a62f19175d39e3991fc121b9"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.ncu-rep.zst",
-      "bytes": 92646,
-      "sha256": "098b86f6c57c12302026e3fa0b2ed44dfb9bf2041114f814612a3b152ea2923d"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.sh",
-      "bytes": 3232,
-      "sha256": "44d1f8e8a55979d7d92fd50c638014b8df556278af5445beed0f91b4d6bdc68b"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.stdout",
-      "bytes": 7457,
-      "sha256": "a5a5cc53b0c596f0f603514c2d1fa0a36df737608c42cb2cf5de31931efa8b03"
-    },
-    {
-      "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_details.csv",
-      "bytes": 429501,
-      "sha256": "42cf1102b9068c1d4cb3ef2849db522305472edf11465ffa9cb2444452b600cb"
-    },
-    {
-      "path": "raw/cubin/triton_poi_fused__to_copy_unsqueeze_0.cubin",
-      "bytes": 5864,
-      "sha256": "b11159c592eb95531e143da9a0ac9be4a066691e025736f74ab311f6375d00fe"
-    },
-    {
-      "path": "raw/cubin/triton_poi_fused_max_slice_sub_1.cubin",
-      "bytes": 5480,
-      "sha256": "7caac480e3bfa0983f45593ab362349333751eea2f900a72b99d619f60800305"
-    },
-    {
-      "path": "raw/sass/Kernel2.sass",
-      "bytes": 319718,
-      "sha256": "ec463f4b2bddf250ce970ee14dfd87c3a68f7461224f4d1828a8fabf2786f677"
-    },
-    {
-      "path": "raw/sass/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn.sass",
-      "bytes": 61579,
-      "sha256": "8aaeec69f6b945a226d7938d53e7c72f1b70bb0e022a834bb8e3a9a9ec90c1fb"
-    },
-    {
-      "path": "stall_attribution.csv",
-      "bytes": 5948,
-      "sha256": "e6b0d877eebe6017382eaad3abbbfc781cdc67cefcf77c6a35d166a8ef1c7121"
-    }
-  ],
-  "not_committed": "none; .ncu-rep kept only as .ncu-rep.zst (ncu reports do not embed the process environment -- see 20260922_E4g_pi0_ncu_eager/RAW_FILES.md)"
+  {
+   "capture": "groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.sh",
+   "runner": "HOME=/home/yanggon\nHF_HOME=/home/yanggon/.cache/huggingface\nHF_HUB_OFFLINE=1\nTRANSFORMERS_OFFLINE=1\nTORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon\nTRITON_CACHE_DIR=/home/yanggon/.cache/triton_groot\nexport HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR TRITON_CACHE_DIR\n. /home/yanggon/venvs/groot/activate_orin_venv.sh >/dev/null 2>&1\ncd /home/yanggon/00_VLA/26_measurement_jetson_vla\nexec /usr/local/cuda/bin/ncu \\\n  --profile-from-start off --nvtx --nvtx-include \"ae_total/\" \\\n  --kernel-name regex:ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn \\\n  -c 20 \\\n  --section SpeedOfLight --section WarpStateStats --section Occupancy \\\n  --section InstructionStats \\\n  --metrics sm__inst_executed_pipe_lsu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fma.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_alu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_xu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_adu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_cbu.avg.pct_of_peak_sustained_active,sm__inst_executed_pipe_fp16.avg.pct_of_peak_sustained_active,l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_global_op_st.sum,l1tex__t_requests_pipe_lsu_mem_local_op_ld.sum,l1tex__t_requests_pipe_lsu_mem_local_op_st.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum,l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum,smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio,launch__grid_size,launch__block_size,launch__registers_per_thread,launch__occupancy_limit_registers,launch__occupancy_limit_shared_mem,launch__occupancy_limit_warps \\\n  --export \"results/20260925_E5b_groot_n17_best/ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3\" --force-overwrite \\\n  /home/yanggon/venvs/groot/bin/python bench/groot_phases.py \\\n    --outdir results/20260925_E5b_groot_n17_best/raw/groot_phases_groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3 --checkpoint nvidia/GR00T-N1.7-3B --version n17 --gr00t-root /home/yanggon/00_VLA/Isaac-GR00T \\\n     --embodiment-tag oxe_droid_relative_eef_relative_joint --warmup 8 --timed 1 --rung ncu_ae_total \\\n    --ncu-region ae_total --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs\n"
+  }
+ ],
+ "bench_commit": "6d2754158a4f400cbbc2d1eb42c60d2368983d40",
+ "files": [
+  {
+   "path": "inventory/Kernel2_crosscheck.md",
+   "bytes": 2666,
+   "sha256": "7f0033f610c5c62498d02051a25e4597686c871b4da0c8eee0f57df701d9531a"
+  },
+  {
+   "path": "inventory/Kernel2_inventory.csv",
+   "bytes": 2397,
+   "sha256": "47ebd61216981d40b81a4fe8554b6c5848a73c0c715971d5970349a66563884c"
+  },
+  {
+   "path": "inventory/Kernel2_inventory.md",
+   "bytes": 3926,
+   "sha256": "00acddc00192c47eaa1ad21bc1617596257e1a1b46f3e3d4da5c2282caf6cc74"
+  },
+  {
+   "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_crosscheck.md",
+   "bytes": 2778,
+   "sha256": "9e7cda08562c984087fdb78de770b091241dc1f414a5cc207a951ca302e0bef5"
+  },
+  {
+   "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_inventory.csv",
+   "bytes": 1762,
+   "sha256": "29c4fb893e41123277f3159051e2a608ed648d7a2bf2119962df0d8c2c5a9236"
+  },
+  {
+   "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_inventory.md",
+   "bytes": 2920,
+   "sha256": "6177d96d091979acc03dc6f1b84d3bee5cc375531e5f4d2901b07256b2c4b0e4"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2.ncu-rep.zst",
+   "bytes": 922619,
+   "sha256": "6a8811ff1855c8273c4ad14e37ba82e6db6d58e18fb8ea4d209195a76f4a503b"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2.sh",
+   "bytes": 3070,
+   "sha256": "eb8caf8677b6afe9d8eb0f8eb2e93becc6b966845350a5d3afb69125de30cc28"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2.stdout",
+   "bytes": 6044,
+   "sha256": "e4ed27d2ece5d2456ba91dc38c4c4342cca2b195dc2af57fbc667d885e7bdbd9"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2_details.csv",
+   "bytes": 353362,
+   "sha256": "b582836e01951fd17b9860a28795b1be2357eee2a62f19175d39e3991fc121b9"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.ncu-rep.zst",
+   "bytes": 92646,
+   "sha256": "098b86f6c57c12302026e3fa0b2ed44dfb9bf2041114f814612a3b152ea2923d"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.sh",
+   "bytes": 3232,
+   "sha256": "44d1f8e8a55979d7d92fd50c638014b8df556278af5445beed0f91b4d6bdc68b"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.stdout",
+   "bytes": 7457,
+   "sha256": "a5a5cc53b0c596f0f603514c2d1fa0a36df737608c42cb2cf5de31931efa8b03"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_details.csv",
+   "bytes": 429501,
+   "sha256": "42cf1102b9068c1d4cb3ef2849db522305472edf11465ffa9cb2444452b600cb"
+  },
+  {
+   "path": "raw/cubin/triton_poi_fused__to_copy_unsqueeze_0.cubin",
+   "bytes": 5864,
+   "sha256": "b11159c592eb95531e143da9a0ac9be4a066691e025736f74ab311f6375d00fe"
+  },
+  {
+   "path": "raw/cubin/triton_poi_fused_max_slice_sub_1.cubin",
+   "bytes": 5480,
+   "sha256": "7caac480e3bfa0983f45593ab362349333751eea2f900a72b99d619f60800305"
+  },
+  {
+   "path": "raw/sass/Kernel2.sass",
+   "bytes": 319718,
+   "sha256": "ec463f4b2bddf250ce970ee14dfd87c3a68f7461224f4d1828a8fabf2786f677"
+  },
+  {
+   "path": "raw/sass/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn.sass",
+   "bytes": 61579,
+   "sha256": "8aaeec69f6b945a226d7938d53e7c72f1b70bb0e022a834bb8e3a9a9ec90c1fb"
+  },
+  {
+   "path": "stall_attribution.csv",
+   "bytes": 5948,
+   "sha256": "e6b0d877eebe6017382eaad3abbbfc781cdc67cefcf77c6a35d166a8ef1c7121"
+  }
+ ],
+ "not_committed": "none; .ncu-rep kept only as .ncu-rep.zst (ncu reports do not embed the process environment -- see 20260922_E4g_pi0_ncu_eager/RAW_FILES.md)",
+ "raw_files": [
+  {
+   "path": "stall_attribution.csv",
+   "bytes": 5948,
+   "sha256": "e6b0d877eebe6017382eaad3abbbfc781cdc67cefcf77c6a35d166a8ef1c7121"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2.ncu-rep.zst",
+   "bytes": 922619,
+   "sha256": "6a8811ff1855c8273c4ad14e37ba82e6db6d58e18fb8ea4d209195a76f4a503b"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2.sh",
+   "bytes": 3070,
+   "sha256": "eb8caf8677b6afe9d8eb0f8eb2e93becc6b966845350a5d3afb69125de30cc28"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2.stdout",
+   "bytes": 6044,
+   "sha256": "e4ed27d2ece5d2456ba91dc38c4c4342cca2b195dc2af57fbc667d885e7bdbd9"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_Kernel2_details.csv",
+   "bytes": 353362,
+   "sha256": "b582836e01951fd17b9860a28795b1be2357eee2a62f19175d39e3991fc121b9"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.ncu-rep.zst",
+   "bytes": 92646,
+   "sha256": "098b86f6c57c12302026e3fa0b2ed44dfb9bf2041114f814612a3b152ea2923d"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.sh",
+   "bytes": 3232,
+   "sha256": "44d1f8e8a55979d7d92fd50c638014b8df556278af5445beed0f91b4d6bdc68b"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3.stdout",
+   "bytes": 7457,
+   "sha256": "a5a5cc53b0c596f0f603514c2d1fa0a36df737608c42cb2cf5de31931efa8b03"
+  },
+  {
+   "path": "ncu/groot_n17_best_ae_total_ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_details.csv",
+   "bytes": 429501,
+   "sha256": "42cf1102b9068c1d4cb3ef2849db522305472edf11465ffa9cb2444452b600cb"
+  },
+  {
+   "path": "raw/cubin/triton_poi_fused__to_copy_unsqueeze_0.cubin",
+   "bytes": 5864,
+   "sha256": "b11159c592eb95531e143da9a0ac9be4a066691e025736f74ab311f6375d00fe"
+  },
+  {
+   "path": "raw/cubin/triton_poi_fused_max_slice_sub_1.cubin",
+   "bytes": 5480,
+   "sha256": "7caac480e3bfa0983f45593ab362349333751eea2f900a72b99d619f60800305"
+  },
+  {
+   "path": "raw/sass/Kernel2.sass",
+   "bytes": 319718,
+   "sha256": "ec463f4b2bddf250ce970ee14dfd87c3a68f7461224f4d1828a8fabf2786f677"
+  },
+  {
+   "path": "raw/sass/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn.sass",
+   "bytes": 61579,
+   "sha256": "8aaeec69f6b945a226d7938d53e7c72f1b70bb0e022a834bb8e3a9a9ec90c1fb"
+  },
+  {
+   "path": "inventory/Kernel2_crosscheck.md",
+   "bytes": 2666,
+   "sha256": "7f0033f610c5c62498d02051a25e4597686c871b4da0c8eee0f57df701d9531a"
+  },
+  {
+   "path": "inventory/Kernel2_inventory.csv",
+   "bytes": 2397,
+   "sha256": "47ebd61216981d40b81a4fe8554b6c5848a73c0c715971d5970349a66563884c"
+  },
+  {
+   "path": "inventory/Kernel2_inventory.md",
+   "bytes": 3926,
+   "sha256": "00acddc00192c47eaa1ad21bc1617596257e1a1b46f3e3d4da5c2282caf6cc74"
+  },
+  {
+   "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_crosscheck.md",
+   "bytes": 2778,
+   "sha256": "9e7cda08562c984087fdb78de770b091241dc1f414a5cc207a951ca302e0bef5"
+  },
+  {
+   "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_inventory.csv",
+   "bytes": 1762,
+   "sha256": "29c4fb893e41123277f3159051e2a608ed648d7a2bf2119962df0d8c2c5a9236"
+  },
+  {
+   "path": "inventory/ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_inventory.md",
+   "bytes": 2920,
+   "sha256": "6177d96d091979acc03dc6f1b84d3bee5cc375531e5f4d2901b07256b2c4b0e4"
+  }
+ ],
+ "raw_files_note": "2026-09-28 completeness audit: raw_files listing added (sha256 of every file in the directory)"
 }

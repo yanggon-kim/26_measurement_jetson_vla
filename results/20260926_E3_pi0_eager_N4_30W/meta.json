@@ -232,11 +232,33 @@
  "control_frequency_hz": 0.484,
  "max_memory_allocated_bytes": 9036750848,
  "max_memory_reserved_bytes": 9399435264,
- "raw_files": [],
+ "raw_files": [
+  {
+   "path": "floor.csv",
+   "bytes": 1065,
+   "sha256": "def7e14ee17ab3dfb126b01de97e0058b56c40e61de7e0ca3fa8983352fe3773"
+  },
+  {
+   "path": "latency_samples.csv",
+   "bytes": 105528,
+   "sha256": "bdc4f6cd8855786d34ea12d94c08ca8d6b3938cbc10e4472eeb4dbaadbcbed67"
+  },
+  {
+   "path": "latency_summary.csv",
+   "bytes": 3890,
+   "sha256": "266724a7f57acf3d26040cf865eb1089fc73720f0aa1124a9e2e50761516b30c"
+  },
+  {
+   "path": "raw/run_e3.stdout.log",
+   "bytes": 360,
+   "sha256": "b49554ec8b06516c253c3b46eded856fe2483ebf52ceb16088e24efbf8b9baa3"
+  }
+ ],
  "notes": [
   "LeRobot's denoising loop is `for step in range(num_steps)` with a Python float time (flow_matching/euler loop). openpi's is `while time >= -dt/2` on CUDA tensors, which forces a CPU-GPU sync per step \u2014 protocol \u00a72 describes the openpi behaviour; it does NOT apply to this implementation.",
   "Both prefill and denoise force _attn_implementation='eager' (modeling_pi0.py), so no SDPA/flash path is taken.",
   "predict_action_chunk is timed, not select_action: select_action serves 49 of every 50 calls from an action queue without running the model."
  ],
- "backfill_note": "2026-09-27: null compile_mode replaced by its meaning; no measured value changed"
+ "backfill_note": "2026-09-27: null compile_mode replaced by its meaning; no measured value changed",
+ "raw_note": "2026-09-28 completeness audit: raw/run_e3.stdout.log recovered verbatim from scratch/queues/queue_e7_30w.log (the queue's own log); no tegrastats log was taken for this E3 run"
 }
