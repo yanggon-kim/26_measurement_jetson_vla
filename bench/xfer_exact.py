@@ -96,7 +96,11 @@ def zero_copy(sizes: dict[str, int], out: Path, warmup: int, timed: int) -> tupl
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True, choices=sorted(SRC))
+    ap.add_argument("--model", choices=sorted(SRC))
+    ap.add_argument("--sizes-json", default=None,
+                    help="T012 (GR00T): {'sizes': {label: bytes}, 'info': {...}} written by a model's own handover "
+                         "run (bench/groot_e11.py writes xfer_sizes.json); bypasses model_sizes()")
+    ap.add_argument("--model-name", default=None, help="with --sizes-json: the model_inputs.csv model name")
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--timed", type=int, default=200)
@@ -105,7 +109,16 @@ def main() -> int:
     (out / "raw").mkdir(parents=True, exist_ok=True)
     gate = P.gate()
     print("gate:", json.dumps(gate), flush=True)
-    sizes, info = model_sizes(args.model)
+    if args.sizes_json:
+        if not args.model_name:
+            raise SystemExit("--sizes-json needs --model-name")
+        spec_ = json.loads(Path(args.sizes_json).read_text())
+        sizes, info = {k: int(v) for k, v in spec_["sizes"].items()}, spec_["info"]
+        args.model = args.model_name
+    elif args.model:
+        sizes, info = model_sizes(args.model)
+    else:
+        raise SystemExit("--model or --sizes-json is required")
     print("sizes:", json.dumps(sizes), flush=True)
 
     rows = X.measure_transfers(sizes, args.warmup, args.timed)
@@ -160,7 +173,9 @@ def main() -> int:
         "torchvision": sw.get("torchvision"), "triton": sw.get("triton"), "python": sw.get("python"),
         "venv": sw.get("executable"), "bench_commit": bench_commit,
         "bench_files_sha256": sw.get("bench_files_sha256"),
-        "command": f"python bench/xfer_exact.py --model {args.model} --outdir {args.outdir}",
+        "command": (f"python bench/xfer_exact.py --sizes-json {args.sizes_json} --model-name {args.model_name} "
+                    f"--outdir {args.outdir}") if args.sizes_json
+        else f"python bench/xfer_exact.py --model {args.model} --outdir {args.outdir}",
         "sizes": sizes, "size_derivation": {k: v for k, v in info.items() if k not in ("model_commit",)},
         "zero_copy_route": "CUDAPluggableAllocator over cudaMallocManaged (bench/managed_alloc.cu)",
         "zero_copy_error": zc_err or "none",

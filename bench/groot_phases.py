@@ -159,6 +159,12 @@ def main() -> int:
                     help="E7 only: wall time per loop and for the idle baseline")
     ap.add_argument("--phases", default="prefix,ae,full",
                     help="E7 only; E7v adds vision,vlm (the backbone split; prefix stays as the closure check)")
+    ap.add_argument("--e11", default=None,
+                    choices=("handover", "prefixsweep", "mempressure", "pipelining", "contender", "nsys_ae"),
+                    help="T012 (2026-09-28): E11c/d/e/f for GR00T via bench/groot_e11.py, on the model this "
+                         "invocation loaded with its --rung flags. contender / nsys_ae are internal to pipelining.")
+    ap.add_argument("--conc-reps", type=int, default=30, help="E11f only: host-sequence repetitions")
+    ap.add_argument("--pause-ms", type=float, default=2.0, help="E11f only: pause between host segments")
     ap.add_argument("--allow-capped", action="store_true",
                     help="E7 only: permit a non-MAXN power mode (it is still recorded)")
     args = ap.parse_args()
@@ -394,6 +400,11 @@ def main() -> int:
         with torch.no_grad():
             return model.get_action(inputs)
 
+    if args.e11:
+        import groot_e11 as GE                                       # noqa: E402
+        return GE.run(args, dict(policy=policy, ckpt_dir=ckpt_dir, model=model, inputs=inputs,
+                                 obs=obs, step=step, gate=g, out=out, n=n, shapes=shapes,
+                                 compiled_desc=compiled_desc, compile_s=compile_s, spans=spans))
     if args.power:
         return run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc)
 
@@ -666,51 +677,13 @@ def _run_loop(fn, seconds: float, label: str, warmup: int = 5) -> dict:
             "max_ms": round(st.get("max_ms", 0), 4), "n": k}
 
 
-def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> int:
-    """E7 for GR00T: power and energy for the prefix-only, expert-only and full loops.
+def build_phases(args, model, inputs, step, want) -> dict:
+    """The loops run_power measures, as {phase: callable}, for `want` among prefix / ae / full / vision / vlm.
 
-    ## The split is GR00T's own, not an analogy
-
-    `Gr00tN1d7.get_action` (gr00t_n1d7.py:603-612), and identically in N1.6 and N1.5:
-
-        backbone_inputs, action_inputs = self.prepare_input(inputs)
-        backbone_outputs = self.backbone(backbone_inputs)                  # <- prefix
-        action_outputs   = self.action_head.get_action(backbone_outputs, action_inputs)
-
-    so `prefix` is the backbone alone and `ae` is the action head alone on a backbone
-    output computed once -- exactly what `bench/phase_loops.py` does for the LeRobot family
-    by caching the KV cache. The loops therefore mean the same thing in both families, and
-    `full` is `model.get_action` in both.
-
-    ## GR00T's prefix includes vision, and that is not hidden
-
-    In the LeRobot models the `prefix` loop is vision + VLM together too, so the comparison
-    holds. E4d separates vision inside the backbone for the timing split; doing the same
-    here would need a third loop driving `.visual` alone with inputs the backbone builds
-    internally, which is a different measurement and is not attempted. The rows say
-    `prefix = backbone (vision INSIDE)`.
+    Extracted verbatim from run_power (2026-09-28) so the E11 drivers (bench/groot_e11.py) time exactly the
+    same prefix / ae / full definitions as E7. See run_power's docstring for what each loop is.
     """
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import power_core as PC                                          # noqa: E402
-
-    model_name = f"groot_{args.version}"
-    pm = (g.get("power_mode") or "UNKNOWN").split(":")[-1].strip().replace(" ", "")
-    if pm in ("", "?", "UNKNOWN"):
-        raise SystemExit(
-            "the power mode could not be read (nvpmodel -q failed). Protocol §1 requires "
-            "it in every result and E7 is a comparison BETWEEN power modes, so refusing "
-            "to write a power run that cannot name the mode it was taken in.")
-    mode = args.rung
-    base_fields = {"model": model_name, "mode": mode,
-                   "exec_style": "compiled" if compiled_desc else "eager",
-                   "power_mode": pm}
-
-    print(f"\n=== {model_name}/{mode}: {args.seconds:.0f} s idle baseline first "
-          f"(protocol §4) ===", flush=True)
-    idle_means, _, idle_s = PC.measure(None, args.seconds, "idle",
-                                       out / "raw" / "tegrastats_idle.log", _run_loop)
-    print("  idle " + "  ".join(f"{k}={v:.0f}mW" for k, v in idle_means.items()), flush=True)
-
     # prepare_input is the CPU-side collation; doing it once keeps the loops on the GPU
     # path, which is the same choice the phase-split measurement makes.
     backbone_inputs, action_inputs = model.prepare_input(inputs)
@@ -784,7 +757,6 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
     # the ae loop's input must be rebuilt per call; see _fresh above
 
     phases = {"prefix": prefix_once, "ae": ae_once, "full": step}
-    want = [x for x in args.phases.split(",") if x]
     if "vision" in want or "vlm" in want:
         # E7v (2026-09-28): split the backbone. Record the image-encoder calls one backbone pass makes
         # (the module's current forward -- the compiled one when --vision-mode is set), then
@@ -822,6 +794,56 @@ def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> in
         phases["vision"], phases["vlm"] = vision_once, vlm_once
         print(f"  E7v: {len(calls)} image-encoder call(s) per backbone pass recorded", flush=True)
     phases = {k: phases[k] for k in want}
+    return phases
+
+
+def run_power(args, model, inputs, step, g, out, n, shapes, compiled_desc) -> int:
+    """E7 for GR00T: power and energy for the prefix-only, expert-only and full loops.
+
+    ## The split is GR00T's own, not an analogy
+
+    `Gr00tN1d7.get_action` (gr00t_n1d7.py:603-612), and identically in N1.6 and N1.5:
+
+        backbone_inputs, action_inputs = self.prepare_input(inputs)
+        backbone_outputs = self.backbone(backbone_inputs)                  # <- prefix
+        action_outputs   = self.action_head.get_action(backbone_outputs, action_inputs)
+
+    so `prefix` is the backbone alone and `ae` is the action head alone on a backbone
+    output computed once -- exactly what `bench/phase_loops.py` does for the LeRobot family
+    by caching the KV cache. The loops therefore mean the same thing in both families, and
+    `full` is `model.get_action` in both.
+
+    ## GR00T's prefix includes vision, and that is not hidden
+
+    In the LeRobot models the `prefix` loop is vision + VLM together too, so the comparison
+    holds. E4d separates vision inside the backbone for the timing split; doing the same
+    here would need a third loop driving `.visual` alone with inputs the backbone builds
+    internally, which is a different measurement and is not attempted. The rows say
+    `prefix = backbone (vision INSIDE)`.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import power_core as PC                                          # noqa: E402
+
+    model_name = f"groot_{args.version}"
+    pm = (g.get("power_mode") or "UNKNOWN").split(":")[-1].strip().replace(" ", "")
+    if pm in ("", "?", "UNKNOWN"):
+        raise SystemExit(
+            "the power mode could not be read (nvpmodel -q failed). Protocol §1 requires "
+            "it in every result and E7 is a comparison BETWEEN power modes, so refusing "
+            "to write a power run that cannot name the mode it was taken in.")
+    mode = args.rung
+    base_fields = {"model": model_name, "mode": mode,
+                   "exec_style": "compiled" if compiled_desc else "eager",
+                   "power_mode": pm}
+
+    print(f"\n=== {model_name}/{mode}: {args.seconds:.0f} s idle baseline first "
+          f"(protocol §4) ===", flush=True)
+    idle_means, _, idle_s = PC.measure(None, args.seconds, "idle",
+                                       out / "raw" / "tegrastats_idle.log", _run_loop)
+    print("  idle " + "  ".join(f"{k}={v:.0f}mW" for k, v in idle_means.items()), flush=True)
+
+    want = [x for x in args.phases.split(",") if x]
+    phases = build_phases(args, model, inputs, step, want)
     rows, all_samples = [], [{"phase": "idle", **x} for x in idle_s]
     for phase, fn in phases.items():
         means, r, samples = PC.measure(fn, args.seconds, phase,

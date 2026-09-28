@@ -233,13 +233,15 @@ def host_sequence_fn(policy, batch, layers_per_inf: int, pause_ms: float, spec,
 
 
 def emit_model_inputs(out: Path, trows, crows, irows, steps: int,
-                      bench_commit: str, spec, ps: dict) -> int:
+                      bench_commit: str, spec, ps: dict, model_name: str | None = None,
+                      model_commit: str | None = None) -> int:
     """Every model_inputs.csv row E11f is responsible for, from the three CSVs.
 
     Shared by the measuring path and by --from-csv, so a re-emission cannot drift
     from what a fresh run would write.
     """
-    mi = ModelInputs(spec.name, MR.resolved_commit(spec), bench_commit,
+    # model_name / model_commit: for a model without a LeRobot spec (GR00T, bench/groot_e11.py)
+    mi = ModelInputs(model_name or spec.name, model_commit or MR.resolved_commit(spec), bench_commit,
                      "MAXN+jetson_clocks", ps.get("P", ""), ps.get("S", ""), steps)
     qmap = {"prefix": "prefix_throughput", "ae": "ae_throughput", "full": "e2e_throughput"}
     for r in trows:
@@ -320,6 +322,117 @@ def rebuild_from_csv(out: Path, args) -> int:
     return 0
 
 
+def measure_concurrency(out: Path, mode: str, seq_fn, prefix_fn, contender_cmd: list, load_wait_s: float,
+                        sleep_ms: float, conc_reps: int, crows: list, ready_file: Path | None = None):
+    """(c) of the module docstring: the host sequence alone, with the prefix on a second stream from the SAME
+    thread, and with the prefix loop in a second process (`contender_cmd`). Appends to `crows`; returns
+    (contender stream, least priority, prio_ok). Extracted from main() on 2026-09-28 so the GR00T driver
+    (bench/groot_e11.py) measures concurrency with the same code; the LeRobot path is unchanged.
+    """
+    def bench_seq(label, sharing):
+        for _ in range(3):
+            seq_fn()
+        torch.cuda.synchronize()
+        ms = []
+        for _ in range(conc_reps):
+            torch.cuda.synchronize()
+            t0 = time.perf_counter()
+            seq_fn()
+            ms.append((time.perf_counter() - t0) * 1e3)
+        s = summarize(ms)
+        crows.append({"mode": mode, "sharing": sharing, "activity": "host_sequence",
+                      "condition": label, "median_ms": round(s["median_ms"], 4),
+                      "p95_ms": round(s["p95_ms"], 4), "max_ms": round(s["max_ms"], 4),
+                      "n": s["n"], "slowdown": "",
+                      "sleep_ms": round(sleep_ms, 3),
+                      "non_sleep_ms": round(s["median_ms"] - sleep_ms, 4)})
+        return s["median_ms"]
+
+    alone = bench_seq("alone", "none")
+
+    # --- two CUDA streams in ONE process, launched from ONE thread (§13.7).
+    # The first version created a high-priority stream, never used it, and ran the
+    # contender on a second Python THREAD -- so both activities went to the default
+    # stream and the 1.9x it measured was largely GIL contention. Here the contender is
+    # issued onto s_hi from this thread, between chunks of the measured sequence, so the
+    # two really do share the GPU through two streams.
+    # torch returns (least_priority, greatest_priority) and in CUDA a LOWER number is a
+    # HIGHER priority, so on this device (0, -3) means 0 is the DEFAULT and -3 is the
+    # genuinely high-priority stream. The previous line requested `least` while a comment
+    # asserted it was the highest, and reported high_priority_stream_accepted: true --
+    # true, but it had accepted the default. Every committed E11f two-stream number was
+    # therefore measured with NO priority differentiation between the streams.
+    #
+    # The behaviour is deliberately left as the default here, so this file keeps
+    # measuring what its committed results measured. What changes is that it now says so:
+    # the recorded field is the actual priority, not a boolean that reads as a claim.
+    # E12 (docs/E12_corun/README.md §5 Step 3) is where a genuinely high-priority stream
+    # is measured, as its own labelled mechanism.
+    least, greatest = torch.cuda.current_stream().priority_range()
+    s_hi = torch.cuda.Stream(priority=least)
+    prio_ok = (s_hi.priority == least)
+    print(f"  stream priority range (least={least}, greatest={greatest}); "
+          f"contender stream priority={s_hi.priority} "
+          f"({'DEFAULT, not elevated' if s_hi.priority == least else 'elevated'})",
+          flush=True)
+
+    def seq_with_contender():
+        with torch.cuda.stream(s_hi):
+            prefix_fn()
+        seq_fn()
+        torch.cuda.synchronize()
+
+    for _ in range(2):
+        seq_with_contender()
+    torch.cuda.synchronize()
+    ms = []
+    for _ in range(conc_reps):
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        seq_with_contender()
+        ms.append((time.perf_counter() - t0) * 1e3)
+    st = summarize(ms)
+    crows.append({"mode": mode, "sharing": "two_streams", "activity": "host_sequence",
+                  "condition": "with_prefix_loop", "median_ms": round(st["median_ms"], 4),
+                  "p95_ms": round(st["p95_ms"], 4), "max_ms": round(st["max_ms"], 4),
+                  "n": st["n"], "slowdown": ""})
+    med = st["median_ms"]
+    crows[-1]["sleep_ms"] = round(sleep_ms, 3)
+    crows[-1]["non_sleep_ms"] = round(med - sleep_ms, 4)
+    crows[-1]["slowdown"] = round(med / alone, 4)
+    crows[-1]["slowdown_non_sleep"] = round((med - sleep_ms) / (alone - sleep_ms), 4)
+    print(f"  two_streams   host_sequence {med:8.2f} ms  slowdown {med/alone:.3f} "
+          f"(non-sleep {crows[-1]['slowdown_non_sleep']:.3f})", flush=True)
+
+    # two processes
+    proc = subprocess.Popen(
+        contender_cmd,
+        stdout=open(out / "raw" / f"contender_{mode}.log", "w"),
+        stderr=subprocess.STDOUT)
+    if ready_file is None:
+        time.sleep(load_wait_s)                # let it load (and compile) before timing
+    else:
+        # the contender touches `ready_file` when its loop starts (GR00T: load + compile time varies by rung);
+        # load_wait_s is then the timeout
+        t_w = time.perf_counter()
+        while not ready_file.exists():
+            if proc.poll() is not None or time.perf_counter() - t_w > load_wait_s:
+                proc.terminate()
+                raise SystemExit(f"contender never became ready ({ready_file}); see raw/contender_{mode}.log")
+            time.sleep(1)
+        time.sleep(3)
+    med2 = bench_seq("with_prefix_loop", "two_processes")
+    proc.terminate()
+    proc.wait(timeout=30)
+    crows[-1]["sleep_ms"] = round(sleep_ms, 3)
+    crows[-1]["non_sleep_ms"] = round(med2 - sleep_ms, 4)
+    crows[-1]["slowdown"] = round(med2 / alone, 4)
+    crows[-1]["slowdown_non_sleep"] = round((med2 - sleep_ms) / (alone - sleep_ms), 4)
+    print(f"  two_processes host_sequence {med2:8.2f} ms  slowdown {med2/alone:.3f} "
+          f"(non-sleep {crows[-1]['slowdown_non_sleep']:.3f})", flush=True)
+    return s_hi, least, prio_ok
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="pi0",
@@ -393,98 +506,12 @@ def main() -> int:
                                            "gelu_gate_mul_up", "partials_residual")]) \
             * args.pause_ms
 
-        def bench_seq(label, sharing):
-            for _ in range(3):
-                seq_fn()
-            torch.cuda.synchronize()
-            ms = []
-            for _ in range(args.conc_reps):
-                torch.cuda.synchronize()
-                t0 = time.perf_counter()
-                seq_fn()
-                ms.append((time.perf_counter() - t0) * 1e3)
-            s = summarize(ms)
-            crows.append({"mode": mode, "sharing": sharing, "activity": "host_sequence",
-                          "condition": label, "median_ms": round(s["median_ms"], 4),
-                          "p95_ms": round(s["p95_ms"], 4), "max_ms": round(s["max_ms"], 4),
-                          "n": s["n"], "slowdown": "",
-                          "sleep_ms": round(sleep_ms, 3),
-                          "non_sleep_ms": round(s["median_ms"] - sleep_ms, 4)})
-            return s["median_ms"]
-
-        alone = bench_seq("alone", "none")
-
-        # --- two CUDA streams in ONE process, launched from ONE thread (§13.7).
-        # The first version created a high-priority stream, never used it, and ran the
-        # contender on a second Python THREAD -- so both activities went to the default
-        # stream and the 1.9x it measured was largely GIL contention. Here the contender is
-        # issued onto s_hi from this thread, between chunks of the measured sequence, so the
-        # two really do share the GPU through two streams.
-        # torch returns (least_priority, greatest_priority) and in CUDA a LOWER number is a
-        # HIGHER priority, so on this device (0, -3) means 0 is the DEFAULT and -3 is the
-        # genuinely high-priority stream. The previous line requested `least` while a comment
-        # asserted it was the highest, and reported high_priority_stream_accepted: true --
-        # true, but it had accepted the default. Every committed E11f two-stream number was
-        # therefore measured with NO priority differentiation between the streams.
-        #
-        # The behaviour is deliberately left as the default here, so this file keeps
-        # measuring what its committed results measured. What changes is that it now says so:
-        # the recorded field is the actual priority, not a boolean that reads as a claim.
-        # E12 (docs/E12_corun/README.md §5 Step 3) is where a genuinely high-priority stream
-        # is measured, as its own labelled mechanism.
-        least, greatest = torch.cuda.current_stream().priority_range()
-        s_hi = torch.cuda.Stream(priority=least)
-        prio_ok = (s_hi.priority == least)
-        print(f"  stream priority range (least={least}, greatest={greatest}); "
-              f"contender stream priority={s_hi.priority} "
-              f"({'DEFAULT, not elevated' if s_hi.priority == least else 'elevated'})",
-              flush=True)
-
-        def seq_with_contender():
-            with torch.cuda.stream(s_hi):
-                prefix_fn()
-            seq_fn()
-            torch.cuda.synchronize()
-
-        for _ in range(2):
-            seq_with_contender()
-        torch.cuda.synchronize()
-        ms = []
-        for _ in range(args.conc_reps):
-            torch.cuda.synchronize()
-            t0 = time.perf_counter()
-            seq_with_contender()
-            ms.append((time.perf_counter() - t0) * 1e3)
-        st = summarize(ms)
-        crows.append({"mode": mode, "sharing": "two_streams", "activity": "host_sequence",
-                      "condition": "with_prefix_loop", "median_ms": round(st["median_ms"], 4),
-                      "p95_ms": round(st["p95_ms"], 4), "max_ms": round(st["max_ms"], 4),
-                      "n": st["n"], "slowdown": ""})
-        med = st["median_ms"]
-        crows[-1]["sleep_ms"] = round(sleep_ms, 3)
-        crows[-1]["non_sleep_ms"] = round(med - sleep_ms, 4)
-        crows[-1]["slowdown"] = round(med / alone, 4)
-        crows[-1]["slowdown_non_sleep"] = round((med - sleep_ms) / (alone - sleep_ms), 4)
-        print(f"  two_streams   host_sequence {med:8.2f} ms  slowdown {med/alone:.3f} "
-              f"(non-sleep {crows[-1]['slowdown_non_sleep']:.3f})", flush=True)
-
-        # two processes
-        proc = subprocess.Popen(
+        s_hi, least, prio_ok = measure_concurrency(
+            out, mode, seq_fn, prefix_fn,
             [sys.executable, str(REPO / "bench" / "phase_loops.py"), "--phase", "prefix",
              "--seconds", str(args.conc_reps * 2 + 30), "--steps", str(args.steps)]
             + ([] if cm is None else ["--compile-mode", cm]),
-            stdout=open(out / "raw" / f"contender_{mode}.log", "w"),
-            stderr=subprocess.STDOUT)
-        time.sleep(45 if cm else 25)               # let it load (and compile) before timing
-        med2 = bench_seq("with_prefix_loop", "two_processes")
-        proc.terminate()
-        proc.wait(timeout=30)
-        crows[-1]["sleep_ms"] = round(sleep_ms, 3)
-        crows[-1]["non_sleep_ms"] = round(med2 - sleep_ms, 4)
-        crows[-1]["slowdown"] = round(med2 / alone, 4)
-        crows[-1]["slowdown_non_sleep"] = round((med2 - sleep_ms) / (alone - sleep_ms), 4)
-        print(f"  two_processes host_sequence {med2:8.2f} ms  slowdown {med2/alone:.3f} "
-              f"(non-sleep {crows[-1]['slowdown_non_sleep']:.3f})", flush=True)
+            45 if cm else 25, sleep_ms, args.conc_reps, crows)
         # --- (b0) the UNPROFILED baseline for each N, in this same process.
         # nsys inflates wall time: it instruments every CUDA API call, and this workload is
         # launch-bound, so the region it reports is much longer than the same region unprofiled.
