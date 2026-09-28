@@ -538,7 +538,7 @@ for d in Path('/proc').iterdir():
     # nsys' own helpers are not jobs: the agent daemonises (reparenting to init) and
     # nsys-tee is a pipe relay. Counting them as separate work is what produced
     # "MORE THAN ONE GPU JOB LIVE" for a single healthy capture.
-    helper = ('--start-agent' in argv) or exe.startswith('nsys-tee')
+    helper = ('--start-agent' in argv) or exe.startswith('nsys-tee') or ('--import' in argv)  # ncu --import reads a file (CPU)
     if (is_py and named) or (is_prof and not helper):
         hits.append(pid)
 
