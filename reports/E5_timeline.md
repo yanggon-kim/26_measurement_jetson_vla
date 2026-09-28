@@ -68,6 +68,22 @@ A phase can be slow for three different reasons and only one of them is a memory
 | SmolVLA | `eager` | 10 | vision | inference | 46.9 | 29.5 | 17.4 | 0.3712 | — | 464.0 | 15.4 |
 | SmolVLA | `eager` | 10 | vlm_prefix | inference | 98.1 | 11.3 | 86.8 | 0.8846 | — | 1287.0 | 62.0 |
 | SmolVLA | `eager` | 10 | whole_capture | inference | 2171.0 | 218.1 | 1952.9 | 0.8995 | 0.6441 | 13627.0 | 0.0 |
+| π0.5 | `best` | 4 | ae_step | denoising step | 85.6 | 47.2 | 38.4 | 0.4486 | — | 401.2 | 0.1 |
+| π0.5 | `best` | 4 | vision | inference | 57.4 | 56.8 | 0.6 | 0.0113 | — | 837.0 | 0.0 |
+| π0.5 | `best` | 4 | vlm_prefix | inference | 235.0 | 234.7 | 0.2 | 0.0010 | — | 350.0 | 0.0 |
+| π0.5 | `best` | 4 | whole_capture | inference | 773.9 | 678.2 | 95.7 | 0.1237 | — | 2832.0 | 0.0 |
+| π0.5 | `eager` | 4 | ae_step | denoising step | 364.4 | 127.8 | 236.7 | 0.6495 | — | 1102.2 | 52.1 |
+| π0.5 | `eager` | 4 | vision | inference | 240.7 | 238.0 | 2.6 | 0.0110 | — | 1650.0 | 1.4 |
+| π0.5 | `eager` | 4 | vlm_prefix | inference | 2166.3 | 2163.9 | 2.5 | 0.0011 | — | 879.0 | 1.4 |
+| π0.5 | `eager` | 4 | whole_capture | inference | 5556.1 | 5060.0 | 496.1 | 0.0893 | — | 6975.0 | 0.0 |
+| SmolVLA | `best` | 4 | ae_step | denoising step | 22.3 | 14.3 | 8.0 | 0.3596 | — | 355.2 | 0.1 |
+| SmolVLA | `best` | 4 | vision | inference | 31.5 | 29.9 | 1.6 | 0.0496 | — | 288.0 | 0.0 |
+| SmolVLA | `best` | 4 | vlm_prefix | inference | 7.4 | 7.1 | 0.3 | 0.0467 | — | 341.0 | 0.1 |
+| SmolVLA | `best` | 4 | whole_capture | inference | 140.0 | 103.5 | 36.5 | 0.2609 | — | 2089.0 | 0.0 |
+| SmolVLA | `eager` | 4 | ae_step | denoising step | 379.8 | 27.2 | 352.6 | 0.9285 | — | 1183.2 | 65.9 |
+| SmolVLA | `eager` | 4 | vision | inference | 48.1 | 29.5 | 18.6 | 0.3863 | — | 464.0 | 18.2 |
+| SmolVLA | `eager` | 4 | vlm_prefix | inference | 99.4 | 11.3 | 88.1 | 0.8866 | — | 1287.0 | 63.1 |
+| SmolVLA | `eager` | 4 | whole_capture | inference | 1069.7 | 136.7 | 932.9 | 0.8722 | — | 6523.0 | 0.0 |
 
 ## Did the per-region split survive this capture?
 
@@ -89,6 +105,10 @@ A capture taken through `--compile-mode` has no NVTX regions: the context manage
 | `20260924_E5_pi0_best_N4` | 5 | 4 | per-region split intact |
 | `20260924_E5_smolvla_best_N10` | 5 | 4 | per-region split intact |
 | `20260924_E5_smolvla_eager_N10` | 7 | 4 | per-region split intact |
+| `20260928_E5_pi05_best_N4` | 5 | 4 | per-region split intact |
+| `20260928_E5_pi05_eager_N4` | 5 | 4 | per-region split intact |
+| `20260928_E5_smolvla_best_N4` | 5 | 4 | per-region split intact |
+| `20260928_E5_smolvla_eager_N4` | 7 | 4 | per-region split intact |
 
 ## What this means for a memory-side accelerator
 
@@ -123,6 +143,14 @@ So the ceiling below is the right number for "this kernel gets faster" and the w
 | SmolVLA | `best` | whole_capture (inference) | 0.306 | 1.44× if every kernel became free |
 | SmolVLA | `eager` | ae_step (denoising step) | 0.889 | 9.04× if every kernel became free |
 | SmolVLA | `eager` | whole_capture (inference) | 0.644 | 2.81× if every kernel became free |
+| π0.5 | `best` | ae_step (denoising step) | 0.449 | 1.81× if every kernel became free |
+| π0.5 | `best` | whole_capture (inference) | 0.124 | 1.14× if every kernel became free |
+| π0.5 | `eager` | ae_step (denoising step) | 0.649 | 2.85× if every kernel became free |
+| π0.5 | `eager` | whole_capture (inference) | 0.089 | 1.10× if every kernel became free |
+| SmolVLA | `best` | ae_step (denoising step) | 0.360 | 1.56× if every kernel became free |
+| SmolVLA | `best` | whole_capture (inference) | 0.261 | 1.35× if every kernel became free |
+| SmolVLA | `eager` | ae_step (denoising step) | 0.928 | 13.99× if every kernel became free |
+| SmolVLA | `eager` | whole_capture (inference) | 0.872 | 7.82× if every kernel became free |
 
 The right-hand column is Amdahl's law with the idle time as the serial part: even a kernel-side change that made every kernel take **zero** time would leave the idle share untouched **if the kernel count is unchanged**. For π0's eager `ae_step` — 84.3 % idle — that ceiling is 6.4×, reached only in the limit of free kernels. For the whole eager inference at N=10 it is 2.2×, because the two phases that are not dispatch-bound make up the rest of the frame. A design that also removes launches is not bound by these numbers.
 
