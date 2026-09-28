@@ -1,0 +1,48 @@
+{
+ "experiment": "T016 step 5 (EV-13): E12b corruption 2x2 -- cell shared pool + single KV buffer",
+ "bench_commit": "4db669e4b35fbd5356dcde6e93387ccaf067e2ab",
+ "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+ "rung": "bf16_both",
+ "power_mode": "NV Power Mode: MAXN",
+ "sm_count": 16,
+ "granted_partitions": "none (whole GPU)",
+ "gpu_clock_hz": 1300500000,
+ "emc_rate_hz": 3199000000,
+ "variant": "shared_pool+single_kv",
+ "outcome": "HANG (no frame completed within the per-cell guard)",
+ "hang": {
+  "cell": "shared_pool+single_kv",
+  "outcome": "HANG",
+  "limit_s": 1800,
+  "stack": "raw/pyspy_at_timeout.txt"
+ },
+ "throttled": "not recorded: the process was killed at the guard; the sibling cells of the same session were not throttled",
+ "command": "/home/yanggon/venvs/pi0/bin/python bench/e12c_diagnose.py --pool shared --kv single --frames 100 --outdir results/20260926_E12c_pi0_corruption_diag_MAXN/shared_pool_double_kv",
+ "backfill_note": "2026-09-28 completeness audit: the hung cell kept only hang.json + raw/ (py-spy stack); meta.json added from hang.json and the sibling cell's session provenance; no measured value exists for this cell",
+ "raw_files": [
+  {
+   "path": "hang.json",
+   "bytes": 107,
+   "sha256": "82514e8eb1b6b8f58063892924284e8171b6d38756bbbd551680550b2783c384"
+  },
+  {
+   "path": "raw/pyspy_at_timeout.txt",
+   "bytes": 1943,
+   "sha256": "68599996058efd3eccfed4afd0749a6be7ef03d911ed50c72718be569ed3c17a"
+  },
+  {
+   "path": "raw/pyspy_first_attempt_smoke_6frames.txt",
+   "bytes": 1961,
+   "sha256": "7b10c0eeacb50637cfd1735d5c920f83066bed4ce564ff396910267a394dad3b"
+  },
+  {
+   "path": "raw/stdout.txt",
+   "bytes": 979,
+   "sha256": "de785ee188a4c4a9eb966dc6e410532c849746f115f9bad3dd41ba327900521d"
+  }
+ ],
+ "date_utc": "2026-09-27T02:20:45Z"
+}
