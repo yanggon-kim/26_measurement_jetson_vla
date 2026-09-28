@@ -1,0 +1,173 @@
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "tpc_pg_mask": "0", "gpu_cur_freq_hz": "1300500000", "gpu_min_freq_hz": "1300500000", "gpu_max_freq_hz": "1300500000", "cpu_online": "0-11", "cpu_governor": "schedutil", "torch": "2.10.0", "device": "Orin", "capability": "(8, 7)"}
+/home/yanggon/venvs/groot/lib/python3.10/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:01<00:01,  1.04s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.54it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.41it/s]
+32 DiT blocks, N=4
+  block 0: cross_attn
+  block 1: self_attn
+  block 16: cross_attn
+  block 17: self_attn
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 0 (cross_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=273
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.212954, 0.21993, 0.224384, 0.176667] ms  kernels=0.0
+    compiled adaln_cond@L0 in 2.3 s
+  adaln_cond             compiled  [0.422582, 0.443269, 0.42816, 0.375255] ms  kernels=0.0
+  adaln_cond             cudagraph [0.101838, 0.106221, 0.0704, 0.009488] ms  kernels=0.0
+  adalayernorm1          eager     [0.459525, 0.466293, 0.468192, 0.413686] ms  kernels=0.0
+W0928 15:34:40.010000 137289 torch/_inductor/utils.py:1679] [1/0] Not enough SMs to use max_autotune_gemm mode
+    compiled adalayernorm1@L0 in 0.9 s
+  adalayernorm1          compiled  [0.40575, 0.413974, 0.4076, 0.354583] ms  kernels=0.0
+  adalayernorm1          cudagraph [0.116893, 0.118189, 0.083936, 0.012432] ms  kernels=0.0
+  attention_fused        eager     [1.093158, 1.099237, 1.134336, 1.076118] ms  kernels=0.0
+    compiled attention_fused@L0 in 2.3 s
+  attention_fused        compiled  [0.893099, 0.930938, 0.892576, 0.828892] ms  kernels=0.0
+  attention_fused        cudagraph [0.356823, 0.635905, 0.312816, 0.014575] ms  kernels=0.0
+  residual               eager     [0.066495, 0.332055, 0.072896, 0.034607] ms  kernels=0.0
+    compiled residual@L0 in 0.5 s
+  residual               compiled  [0.159228, 0.238058, 0.169296, 0.119101] ms  kernels=0.0
+  residual               cudagraph [0.046735, 0.071919, 0.051472, 0.008672] ms  kernels=0.0
+  layernorm3             eager     [0.094126, 0.114846, 0.098016, 0.06195] ms  kernels=0.0
+    compiled layernorm3@L0 in 0.6 s
+  layernorm3             compiled  [0.168716, 0.170828, 0.168912, 0.11779] ms  kernels=0.0
+  layernorm3             cudagraph [0.045119, 0.052479, 0.04544, 0.0088] ms  kernels=0.0
+  feedforward            eager     [0.369687, 0.372135, 0.351104, 0.275561] ms  kernels=0.0
+    compiled feedforward@L0 in 1.4 s
+  feedforward            compiled  [0.438534, 0.44535, 0.435792, 0.384951] ms  kernels=0.0
+  feedforward            cudagraph [0.283641, 0.298889, 0.244128, 0.010096] ms  kernels=0.0
+  residual_ff            eager     [0.066735, 0.090654, 0.071312, 0.032304] ms  kernels=0.0
+    compiled residual_ff@L0 in 0.1 s
+  residual_ff            compiled  [0.163244, 0.173356, 0.169344, 0.119117] ms  kernels=0.0
+  residual_ff            cudagraph [0.046143, 0.053102, 0.047792, 0.008496] ms  kernels=0.0
+    compiled sequence@L0 in 1.1 s
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-report-cf56.qdstrm'
+[1/1] [0%                          ] host_sequences.nsys-repProcessing events...
+[1/1] [0%                          ] host_sequences.nsys-rep[1/1] [5%                          ] host_sequences.nsys-rep[1/1] [14%                         ] host_sequences.nsys-rep[1/1] [===23%                      ] host_sequences.nsys-rep[1/1] [===24%                      ] host_sequences.nsys-rep[1/1] [====25%                     ] host_sequences.nsys-rep[1/1] [====26%                     ] host_sequences.nsys-rep[1/1] [====27%                     ] host_sequences.nsys-rep[1/1] [====28%                     ] host_sequences.nsys-rep[1/1] [=====29%                    ] host_sequences.nsys-rep[1/1] [==============64%           ] host_sequences.nsys-rep[1/1] [========================100%] host_sequences.nsys-rep[1/1] [========================100%] host_sequences.nsys-rep
+  nsys: captured 10 sequences x 3 style(s) at layer 0
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 1 (self_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=41
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.250698, 0.428102, 0.263968, 0.212923] ms  kernels=0.0
+    compiled adaln_cond@L1 in 0.0 s
+  adaln_cond             compiled  [0.477348, 0.545619, 0.478784, 0.415638] ms  kernels=0.0
+  adaln_cond             cudagraph [0.107117, 0.393335, 0.088352, 0.018928] ms  kernels=0.0
+  adalayernorm1          eager     [0.569267, 0.573666, 0.57424, 0.513268] ms  kernels=0.0
+    compiled adalayernorm1@L1 in 0.0 s
+  adalayernorm1          compiled  [0.456197, 0.549603, 0.464, 0.40631] ms  kernels=0.0
+  adalayernorm1          cudagraph [0.120029, 0.411607, 0.099584, 0.023791] ms  kernels=0.0
+  attention_fused        eager     [0.960569, 0.960313, 0.961312, 0.913034] ms  kernels=0.0
+    compiled attention_fused@L1 in 1.4 s
+  attention_fused        compiled  [0.949465, 0.94905, 0.944688, 0.874619] ms  kernels=0.0
+  attention_fused        cudagraph [0.199451, 0.484117, 0.151776, 0.0224] ms  kernels=0.0
+  residual               eager     [0.08091, 0.341479, 0.089984, 0.043071] ms  kernels=0.0
+    compiled residual@L1 in 0.0 s
+  residual               compiled  [0.185548, 0.436405, 0.197568, 0.138685] ms  kernels=0.0
+  residual               cudagraph [0.053775, 0.332776, 0.062128, 0.021968] ms  kernels=0.0
+  layernorm3             eager     [0.114414, 0.375159, 0.124992, 0.077262] ms  kernels=0.0
+    compiled layernorm3@L1 in 0.0 s
+  layernorm3             compiled  [0.188315, 0.437541, 0.197168, 0.136189] ms  kernels=0.0
+  layernorm3             cudagraph [0.055678, 0.32988, 0.060352, 0.015455] ms  kernels=0.0
+  feedforward            eager     [0.416982, 0.64904, 0.396752, 0.32276] ms  kernels=0.0
+    compiled feedforward@L1 in 0.0 s
+  feedforward            compiled  [0.491188, 0.755198, 0.499744, 0.437189] ms  kernels=0.0
+  feedforward            cudagraph [0.286713, 0.567826, 0.241728, 0.019328] ms  kernels=0.0
+  residual_ff            eager     [0.082574, 0.342168, 0.091888, 0.046158] ms  kernels=0.0
+    compiled residual_ff@L1 in 0.0 s
+  residual_ff            compiled  [0.182972, 0.437541, 0.196672, 0.137453] ms  kernels=0.0
+  residual_ff            cudagraph [0.056335, 0.332824, 0.06344, 0.023248] ms  kernels=0.0
+    compiled sequence@L1 in 0.0 s
+  nsys: captured 10 sequences x 3 style(s) at layer 1
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 16 (cross_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=273
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.256378, 0.260058, 0.26416, 0.211675] ms  kernels=0.0
+    compiled adaln_cond@L16 in 0.0 s
+  adaln_cond             compiled  [0.470661, 0.478629, 0.470992, 0.409254] ms  kernels=0.0
+  adaln_cond             cudagraph [0.105165, 0.107741, 0.087776, 0.022367] ms  kernels=0.0
+  adalayernorm1          eager     [0.567331, 0.570466, 0.568784, 0.515763] ms  kernels=0.0
+    compiled adalayernorm1@L16 in 0.0 s
+  adalayernorm1          compiled  [0.453829, 0.46506, 0.46096, 0.395783] ms  kernels=0.0
+  adalayernorm1          cudagraph [0.117149, 0.121933, 0.09576, 0.024352] ms  kernels=0.0
+  attention_fused        eager     [1.288289, 1.284833, 1.279312, 1.233218] ms  kernels=0.0
+    compiled attention_fused@L16 in 0.0 s
+  attention_fused        compiled  [1.012327, 1.016679, 1.010304, 0.938073] ms  kernels=0.0
+  attention_fused        cudagraph [0.366071, 0.367799, 0.31512, 0.029552] ms  kernels=0.0
+  residual               eager     [0.079518, 0.083054, 0.088832, 0.043503] ms  kernels=0.0
+    compiled residual@L16 in 0.0 s
+  residual               compiled  [0.183068, 0.187212, 0.1932, 0.135613] ms  kernels=0.0
+  residual               cudagraph [0.054399, 0.058927, 0.06296, 0.018431] ms  kernels=0.0
+  layernorm3             eager     [0.115261, 0.115758, 0.12456, 0.076622] ms  kernels=0.0
+    compiled layernorm3@L16 in 0.0 s
+  layernorm3             compiled  [0.183868, 0.191179, 0.196064, 0.134572] ms  kernels=0.0
+  layernorm3             cudagraph [0.055022, 0.06179, 0.061776, 0.019776] ms  kernels=0.0
+  feedforward            eager     [0.42055, 0.417766, 0.39888, 0.328121] ms  kernels=0.0
+    compiled feedforward@L16 in 0.0 s
+  feedforward            compiled  [0.490292, 0.492676, 0.492192, 0.436678] ms  kernels=0.0
+  feedforward            cudagraph [0.290969, 0.292137, 0.244992, 0.022111] ms  kernels=0.0
+  residual_ff            eager     [0.08059, 0.082878, 0.09064, 0.044255] ms  kernels=0.0
+    compiled residual_ff@L16 in 0.0 s
+  residual_ff            compiled  [0.189004, 0.187355, 0.19336, 0.137613] ms  kernels=0.0
+  residual_ff            cudagraph [0.053647, 0.060255, 0.062032, 0.020335] ms  kernels=0.0
+    compiled sequence@L16 in 0.0 s
+  nsys: captured 10 sequences x 3 style(s) at layer 16
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 17 (self_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=41
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.260746, 0.261321, 0.266432, 0.215211] ms  kernels=0.0
+    compiled adaln_cond@L17 in 0.0 s
+  adaln_cond             compiled  [0.464261, 0.471733, 0.468624, 0.412694] ms  kernels=0.0
+  adaln_cond             cudagraph [0.105373, 0.10691, 0.088064, 0.022367] ms  kernels=0.0
+  adalayernorm1          eager     [0.562418, 0.569218, 0.570384, 0.511652] ms  kernels=0.0
+    compiled adalayernorm1@L17 in 0.0 s
+  adalayernorm1          compiled  [0.449557, 0.459029, 0.460528, 0.399526] ms  kernels=0.0
+  adalayernorm1          cudagraph [0.120942, 0.121645, 0.102128, 0.027311] ms  kernels=0.0
+  attention_fused        eager     [0.967864, 0.961529, 0.96072, 0.906715] ms  kernels=0.0
+    compiled attention_fused@L17 in 0.0 s
+  attention_fused        compiled  [0.943689, 0.945145, 0.941024, 0.868203] ms  kernels=0.0
+  attention_fused        cudagraph [0.199596, 0.201275, 0.151168, 0.025599] ms  kernels=0.0
+  residual               eager     [0.081518, 0.083694, 0.0904, 0.044959] ms  kernels=0.0
+    compiled residual@L17 in 0.0 s
+  residual               compiled  [0.188908, 0.18574, 0.193808, 0.144396] ms  kernels=0.0
+  residual               cudagraph [0.055071, 0.059934, 0.064064, 0.020992] ms  kernels=0.0
+  layernorm3             eager     [0.115101, 0.117645, 0.12632, 0.076542] ms  kernels=0.0
+    compiled layernorm3@L17 in 0.0 s
+  layernorm3             compiled  [0.181692, 0.18886, 0.197728, 0.136157] ms  kernels=0.0
+  layernorm3             cudagraph [0.054078, 0.059903, 0.060736, 0.016847] ms  kernels=0.0
+  feedforward            eager     [0.418822, 0.42087, 0.398256, 0.327129] ms  kernels=0.0
+    compiled feedforward@L17 in 0.0 s
+  feedforward            compiled  [0.488964, 0.493044, 0.492784, 0.435333] ms  kernels=0.0
+  feedforward            cudagraph [0.288969, 0.291129, 0.242576, 0.023615] ms  kernels=0.0
+  residual_ff            eager     [0.08075, 0.084334, 0.090896, 0.042847] ms  kernels=0.0
+    compiled residual_ff@L17 in 0.0 s
+  residual_ff            compiled  [0.184843, 0.193003, 0.195168, 0.138285] ms  kernels=0.0
+  residual_ff            cudagraph [0.055135, 0.060206, 0.06296, 0.017136] ms  kernels=0.0
+    compiled sequence@L17 in 0.0 s
+  nsys: captured 10 sequences x 3 style(s) at layer 17
+Generated:
+    /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260928_E11a_groot_n17_hostseg/raw/host_sequences.nsys-rep
+gpu_cur_freq_hz=1300500000

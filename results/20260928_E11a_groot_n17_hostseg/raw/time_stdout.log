@@ -1,0 +1,212 @@
+kernel counts: 112 entries from results/20260928_E11a_groot_n17_hostseg/kernels_per_call.csv
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "tpc_pg_mask": "0", "gpu_cur_freq_hz": "1300500000", "gpu_min_freq_hz": "1300500000", "gpu_max_freq_hz": "1300500000", "cpu_online": "0-11", "cpu_governor": "schedutil", "torch": "2.10.0", "device": "Orin", "capability": "(8, 7)"}
+/home/yanggon/venvs/groot/lib/python3.10/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/yanggon/00_VLA/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:01<00:01,  1.03s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.55it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:01<00:00,  1.42it/s]
+32 DiT blocks, N=4
+  block 0: cross_attn
+  block 1: self_attn
+  block 16: cross_attn
+  block 17: self_attn
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 0 (cross_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=273
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.19606, 0.201116, 0.20656, 0.162204] ms  kernels=3.1
+    compiled adaln_cond@L0 in 1.5 s
+  adaln_cond             compiled  [0.381112, 0.389079, 0.3848, 0.328841] ms  kernels=3.0
+  adaln_cond             cudagraph [0.093086, 0.094686, 0.0688, 0.006111] ms  kernels=3.0
+  adalayernorm1          eager     [0.421815, 0.434198, 0.430784, 0.376552] ms  kernels=7.1
+    compiled adalayernorm1@L0 in 0.3 s
+  adalayernorm1          compiled  [0.359992, 0.370616, 0.370912, 0.317465] ms  kernels=3.0
+  adalayernorm1          cudagraph [0.103822, 0.105406, 0.080208, 0.006128] ms  kernels=7.0
+  attention_fused        eager     [0.987434, 1.008746, 1.002544, 0.953627] ms  kernels=12.0
+    compiled attention_fused@L0 in 1.1 s
+  attention_fused        compiled  [0.807774, 0.828542, 0.818432, 0.752992] ms  kernels=0.0
+  attention_fused        cudagraph [0.34332, 0.345528, 0.309792, 0.006304] ms  kernels=12.0
+  residual               eager     [0.058334, 0.062943, 0.064192, 0.014624] ms  kernels=1.1
+    compiled residual@L0 in 0.1 s
+  residual               compiled  [0.139149, 0.147197, 0.14952, 0.104189] ms  kernels=0.0
+  residual               cudagraph [0.023696, 0.040575, 0.025952, 0.006176] ms  kernels=1.0
+  layernorm3             eager     [0.08579, 0.091166, 0.091488, 0.054175] ms  kernels=1.1
+    compiled layernorm3@L0 in 0.1 s
+  layernorm3             compiled  [0.138141, 0.148925, 0.149856, 0.10355] ms  kernels=0.0
+  layernorm3             cudagraph [0.023839, 0.038432, 0.026048, 0.00608] ms  kernels=1.0
+  feedforward            eager     [0.350936, 0.353209, 0.32704, 0.253515] ms  kernels=3.1
+    compiled feedforward@L0 in 0.5 s
+  feedforward            compiled  [0.425142, 0.42943, 0.40704, 0.343961] ms  kernels=0.0
+  feedforward            cudagraph [0.275002, 0.277018, 0.240576, 0.005952] ms  kernels=3.0
+  residual_ff            eager     [0.060079, 0.064159, 0.065344, 0.01456] ms  kernels=1.1
+    compiled residual_ff@L0 in 0.1 s
+  residual_ff            compiled  [0.137725, 0.146812, 0.147296, 0.103134] ms  kernels=0.0
+  residual_ff            cudagraph [0.023488, 0.038815, 0.025984, 0.006272] ms  kernels=1.0
+  sequence eager     0.7230 ms
+    compiled sequence@L0 in 0.4 s
+  sequence compiled  0.5755 ms
+  whole_layer_graph      0.1892 ms
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 1 (self_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=41
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.1991, 0.204284, 0.204656, 0.162397] ms  kernels=3.1
+    compiled adaln_cond@L1 in 0.0 s
+  adaln_cond             compiled  [0.376216, 0.390743, 0.385584, 0.330969] ms  kernels=3.0
+  adaln_cond             cudagraph [0.093406, 0.094462, 0.068736, 0.006112] ms  kernels=3.0
+  adalayernorm1          eager     [0.423223, 0.43463, 0.432512, 0.379864] ms  kernels=7.1
+    compiled adalayernorm1@L1 in 0.0 s
+  adalayernorm1          compiled  [0.362249, 0.37276, 0.372176, 0.320889] ms  kernels=3.0
+  adalayernorm1          cudagraph [0.103582, 0.105549, 0.080704, 0.00624] ms  kernels=7.0
+  attention_fused        eager     [0.756223, 0.767631, 0.768112, 0.721392] ms  kernels=6.1
+    compiled attention_fused@L1 in 0.8 s
+  attention_fused        compiled  [0.753184, 0.763344, 0.751872, 0.692561] ms  kernels=0.0
+  attention_fused        cudagraph [0.185724, 0.18886, 0.152512, 0.006144] ms  kernels=6.0
+  residual               eager     [0.059487, 0.064095, 0.06352, 0.014624] ms  kernels=1.1
+    compiled residual@L1 in 0.0 s
+  residual               compiled  [0.139869, 0.149373, 0.150912, 0.106365] ms  kernels=0.0
+  residual               cudagraph [0.023552, 0.039279, 0.026048, 0.006304] ms  kernels=1.0
+  layernorm3             eager     [0.085791, 0.091678, 0.0912, 0.05379] ms  kernels=1.1
+    compiled layernorm3@L1 in 0.0 s
+  layernorm3             compiled  [0.140029, 0.150237, 0.150624, 0.10515] ms  kernels=0.0
+  layernorm3             cudagraph [0.023775, 0.038287, 0.02576, 0.006207] ms  kernels=1.0
+  feedforward            eager     [0.349641, 0.353768, 0.32896, 0.252955] ms  kernels=3.1
+    compiled feedforward@L1 in 0.0 s
+  feedforward            compiled  [0.429575, 0.431575, 0.410992, 0.347865] ms  kernels=0.0
+  feedforward            cudagraph [0.278298, 0.280698, 0.244, 0.005952] ms  kernels=3.0
+  residual_ff            eager     [0.059871, 0.064639, 0.063744, 0.014368] ms  kernels=1.1
+    compiled residual_ff@L1 in 0.0 s
+  residual_ff            compiled  [0.139165, 0.149053, 0.149312, 0.104637] ms  kernels=0.0
+  residual_ff            cudagraph [0.023631, 0.039663, 0.026112, 0.006303] ms  kernels=1.0
+  sequence eager     0.7222 ms
+    compiled sequence@L1 in 0.0 s
+  sequence compiled  0.5760 ms
+  whole_layer_graph      0.1886 ms
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 16 (cross_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=273
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.196828, 0.203771, 0.204224, 0.162013] ms  kernels=3.1
+    compiled adaln_cond@L16 in 0.0 s
+  adaln_cond             compiled  [0.372984, 0.386584, 0.382656, 0.330969] ms  kernels=3.0
+  adaln_cond             cudagraph [0.093966, 0.095454, 0.069568, 0.006016] ms  kernels=3.0
+  adalayernorm1          eager     [0.423336, 0.433959, 0.432656, 0.379017] ms  kernels=7.1
+    compiled adalayernorm1@L16 in 0.0 s
+  adalayernorm1          compiled  [0.360057, 0.374137, 0.370512, 0.319817] ms  kernels=3.0
+  adalayernorm1          cudagraph [0.105326, 0.106302, 0.08096, 0.00608] ms  kernels=7.0
+  attention_fused        eager     [0.99862, 1.020395, 1.00896, 0.959628] ms  kernels=12.0
+    compiled attention_fused@L16 in 0.0 s
+  attention_fused        compiled  [0.805135, 0.825007, 0.813776, 0.754177] ms  kernels=0.0
+  attention_fused        cudagraph [0.345913, 0.348552, 0.312768, 0.006271] ms  kernels=12.0
+  residual               eager     [0.057983, 0.062655, 0.064352, 0.013984] ms  kernels=1.1
+    compiled residual@L16 in 0.0 s
+  residual               compiled  [0.139997, 0.149677, 0.149984, 0.105054] ms  kernels=0.0
+  residual               cudagraph [0.023648, 0.038319, 0.026176, 0.006208] ms  kernels=1.0
+  layernorm3             eager     [0.085486, 0.090814, 0.090496, 0.054143] ms  kernels=1.1
+    compiled layernorm3@L16 in 0.0 s
+  layernorm3             compiled  [0.139006, 0.148157, 0.15, 0.104926] ms  kernels=0.0
+  layernorm3             cudagraph [0.023712, 0.037887, 0.02584, 0.006176] ms  kernels=1.0
+  feedforward            eager     [0.349849, 0.353257, 0.328512, 0.252667] ms  kernels=3.1
+    compiled feedforward@L16 in 0.0 s
+  feedforward            compiled  [0.428215, 0.433527, 0.41184, 0.345657] ms  kernels=0.0
+  feedforward            cudagraph [0.285082, 0.287034, 0.244336, 0.006112] ms  kernels=3.0
+  residual_ff            eager     [0.059839, 0.063775, 0.064672, 0.01472] ms  kernels=1.1
+    compiled residual_ff@L16 in 0.0 s
+  residual_ff            compiled  [0.138558, 0.149021, 0.148096, 0.103902] ms  kernels=0.0
+  residual_ff            cudagraph [0.023712, 0.040751, 0.025888, 0.006399] ms  kernels=1.0
+  sequence eager     0.7199 ms
+    compiled sequence@L16 in 0.0 s
+  sequence compiled  0.5708 ms
+  whole_layer_graph      0.1882 ms
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+block 17 (self_attn): x(1, 41, 1536) S=41 D=1536 I=6144 H=32 head_dim=48 T=41
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+  adaln_cond             eager     [0.195916, 0.202364, 0.203936, 0.162028] ms  kernels=3.1
+    compiled adaln_cond@L17 in 0.0 s
+  adaln_cond             compiled  [0.375577, 0.388985, 0.384128, 0.331738] ms  kernels=3.0
+  adaln_cond             cudagraph [0.093502, 0.094366, 0.068992, 0.006208] ms  kernels=3.0
+  adalayernorm1          eager     [0.419799, 0.430615, 0.430832, 0.37796] ms  kernels=7.1
+    compiled adalayernorm1@L17 in 0.0 s
+  adalayernorm1          compiled  [0.359224, 0.368377, 0.369184, 0.318538] ms  kernels=3.0
+  adalayernorm1          cudagraph [0.103806, 0.104686, 0.080192, 0.006175] ms  kernels=7.0
+  attention_fused        eager     [0.75112, 0.766544, 0.76512, 0.720689] ms  kernels=6.1
+    compiled attention_fused@L17 in 0.0 s
+  attention_fused        compiled  [0.738657, 0.758849, 0.74856, 0.693218] ms  kernels=0.0
+  attention_fused        cudagraph [0.183164, 0.184348, 0.149824, 0.006208] ms  kernels=6.0
+  residual               eager     [0.059006, 0.063103, 0.063248, 0.01408] ms  kernels=1.1
+    compiled residual@L17 in 0.0 s
+  residual               compiled  [0.138493, 0.147005, 0.149696, 0.10515] ms  kernels=0.0
+  residual               cudagraph [0.023808, 0.038767, 0.025792, 0.006272] ms  kernels=1.0
+  layernorm3             eager     [0.085439, 0.091102, 0.09128, 0.055007] ms  kernels=1.1
+    compiled layernorm3@L17 in 0.0 s
+  layernorm3             compiled  [0.138462, 0.146621, 0.148384, 0.10387] ms  kernels=0.0
+  layernorm3             cudagraph [0.023648, 0.039872, 0.025728, 0.006144] ms  kernels=1.0
+  feedforward            eager     [0.347545, 0.352025, 0.326928, 0.252795] ms  kernels=3.1
+    compiled feedforward@L17 in 0.0 s
+  feedforward            compiled  [0.423319, 0.428072, 0.405728, 0.344233] ms  kernels=0.0
+  feedforward            cudagraph [0.27385, 0.275931, 0.239968, 0.006112] ms  kernels=3.0
+  residual_ff            eager     [0.060351, 0.064479, 0.06504, 0.015296] ms  kernels=1.1
+    compiled residual_ff@L17 in 0.0 s
+  residual_ff            compiled  [0.138621, 0.146877, 0.15024, 0.105534] ms  kernels=0.0
+  residual_ff            cudagraph [0.023615, 0.039583, 0.02608, 0.006304] ms  kernels=1.0
+  sequence eager     0.7184 ms
+    compiled sequence@L17 in 0.0 s
+  sequence compiled  0.5693 ms
+  whole_layer_graph      0.1897 ms
+  autocast cross-check unavailable (ModuleNotFoundError: No module named 'gr00t.model.policy'); relying on --api=new
+  autocast: none (--api=new); this model's policy.py does not wrap inference in it
+
+=== per-step extras ===
+  state_encoder          eager     0.5069 ms kernels=9.1
+W0928 15:42:09.111000 139369 torch/_inductor/utils.py:1679] [12/0] Not enough SMs to use max_autotune_gemm mode
+    compiled state_encoder in 1.3 s
+  state_encoder          compiled  0.5129 ms kernels=0.0
+  state_encoder          cudagraph 0.1637 ms kernels=9.0
+  timestep_encoder       eager     0.8101 ms kernels=17.0
+    compiled timestep_encoder in 1.2 s
+  timestep_encoder       compiled  0.5116 ms kernels=0.0
+  timestep_encoder       cudagraph 0.0880 ms kernels=17.0
+  action_encoder         eager     1.3039 ms kernels=25.1
+    compiled action_encoder in 2.7 s
+  action_encoder         compiled  0.6900 ms kernels=0.0
+  action_encoder         cudagraph 0.5793 ms kernels=25.0
+  action_pos_embed       eager     0.1567 ms kernels=2.0
+    compiled action_pos_embed in 0.5 s
+  action_pos_embed       compiled  0.2200 ms kernels=0.0
+  action_pos_embed       cudagraph 0.0238 ms kernels=2.0
+  concat_state_action    eager     0.0663 ms kernels=1.1
+    compiled concat_state_action in 0.4 s
+  concat_state_action    compiled  0.1445 ms kernels=0.0
+  concat_state_action    cudagraph 0.0235 ms kernels=1.0
+  final_norm_out_proj    eager     0.5087 ms kernels=8.1
+    compiled final_norm_out_proj in 1.1 s
+  final_norm_out_proj    compiled  0.4865 ms kernels=0.0
+  final_norm_out_proj    cudagraph 0.1391 ms kernels=8.0
+  action_decoder         eager     0.5218 ms kernels=10.1
+    compiled action_decoder in 1.1 s
+  action_decoder         compiled  0.5255 ms kernels=0.0
+  action_decoder         cudagraph 0.1327 ms kernels=10.0
+  euler_update           eager     0.1352 ms kernels=3.1
+    compiled euler_update in 0.3 s
+  euler_update           compiled  0.1458 ms kernels=0.0
+  euler_update           cudagraph 0.0238 ms kernels=3.0
+
+wrote results/20260928_E11a_groot_n17_hostseg (1620 model_inputs rows, 336000 samples)
