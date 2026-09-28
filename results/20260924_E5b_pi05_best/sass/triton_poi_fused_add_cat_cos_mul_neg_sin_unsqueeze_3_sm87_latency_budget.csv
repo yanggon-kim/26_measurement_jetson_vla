@@ -1,0 +1,25 @@
+instruction,role,on_chain,on_max_documented_cycles_chain,cycles_assumed,cycles_assumed_l2_variant,source_of_cycles,inst_executed_mean_per_launch
+"0x228c7e0  IADD3 R14, P1, R13, c[0x4][0x8], RZ",ALU,True,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c7f0  IADD3.X R15, R19, c[0x4][0xc], RZ, P1, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c800  LDG.E.CONSTANT R15, [R14.64]",global load (DRAM/L2: weights or activations),True,True,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",0.0
+"0x228c810  IADD3 R13, P2, R13, 0x4, RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c820  IMAD.MOV.U32 R10, RZ, RZ, R2",FMA,False,False,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c830  IMAD.MOV.U32 R11, RZ, RZ, RZ",FMA,False,False,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c840  ISETP.NE.U32.AND P1, PT, R13, 0x18, PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c850  IMAD.X R19, RZ, RZ, R19, P2",FMA,False,False,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c860  ISETP.NE.AND.EX P1, PT, R19, RZ, PT, P1",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c870  IMAD.WIDE.U32 R10, R20, R15, R10",FMA,True,True,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x228c880  STL [R3], R10",LSU / Store,True,True,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x228c890  MOV R2, R11",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x228c8a0  IADD3 R3, R3, 0x4, RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+0x228c8b0  @P1   BRA 0x20228c7e0,branch,False,False,2-4,2-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+
+# summary (docs/03 §9)
+serial_cycles_per_iteration_DRAM_variant,406-508,deepest def-use chain (4 instructions, column on_chain); 1 of them have no documented latency in §9 and add an unknown amount, so this is a lower bound
+serial_cycles_per_iteration_L2_variant,156-208,deepest def-use chain (4 instructions, column on_chain); 1 of them have no documented latency in §9 and add an unknown amount, so this is a lower bound
+max_documented_cycles_chain_DRAM_variant,406-508,4 instructions (column on_max_documented_cycles_chain)
+measured_cycles_per_iteration,not measurable: gpc__cycles_active.avg and sm__warps_launched.sum are not exported on this Orin (protocol §3.3)
+overlap_ratio_serial_over_measured,not computable without the measured cycles
+achieved_active_warps_per_sm,23.0175
+inner_loop_iterations_per_warp_derived,no back-edge
+chain_method,static register def-use over one pass of the body (loop-carried edges ignored; vector widths from opcode modifiers) -- an approximation, bench/e5b_static.py longest_chain

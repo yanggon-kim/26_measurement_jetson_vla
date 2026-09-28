@@ -1,0 +1,36 @@
+# inner loop PC range 0x2293b00-0x2293e70: no backward BRA: fully unrolled, the inner range is the whole kernel (§3)
+# triton_poi_fused_cat_5 inner loop 0x2293b00-0x2293e70
+opcode,count,category,lsu_subclass
+IADD3,2,ALU,
+ISETP.GE.AND,2,ALU,
+SEL,2,ALU,
+ISETP.NE.U32.AND,1,ALU,
+LOP3.LUT,1,ALU,
+ISETP.GE.U32.AND,1,ALU,
+NOP,10,Branch,
+BRA,2,Branch,
+S2R,2,Branch,
+CS2R,2,Branch,
+EXIT,2,Branch,
+IMAD.WIDE,3,FMA,
+IMAD.MOV.U32,2,FMA,
+IMAD.SHL.U32,2,FMA,
+LDG.E.64,2,LSU,Load
+STG.E.64,1,LSU,Store
+BMOV.32.CLEAR,15,Other,
+BMOV.32,2,Other,
+UMOV,1,Uniform,
+ULDC.64,1,Uniform,
+
+category,count,pct_of_total
+LSU,3,5.4%
+FMA,7,12.5%
+ALU,9,16.1%
+Uniform,2,3.6%
+Branch,18,32.1%
+Other,17,30.4%
+TOTAL,56,100.0%
+
+lsu_subclass,count,pct_of_lsu,pct_of_total
+Load,2,66.7%,3.6%
+Store,1,33.3%,1.8%

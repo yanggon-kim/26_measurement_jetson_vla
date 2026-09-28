@@ -1,0 +1,36 @@
+# inner loop PC range 0x2275200-0x2275570: no backward BRA: fully unrolled, the inner range is the whole kernel (§3)
+# triton_poi_fused_add_cumsum_sub_2 inner loop 0x2275200-0x2275570
+opcode,count,category,lsu_subclass
+IADD3,5,ALU,
+LEA.HI.X.SX32,2,ALU,
+ISETP.NE.U32.AND,1,ALU,
+LOP3.LUT,1,ALU,
+IADD3.X,1,ALU,
+ISETP.GE.AND,1,ALU,
+NOP,9,Branch,
+BRA,2,Branch,
+S2R,2,Branch,
+EXIT,2,Branch,
+IMAD.MOV.U32,6,FMA,
+IMAD.SHL.U32,1,FMA,
+IMAD,1,FMA,
+IMAD.WIDE,1,FMA,
+LDG.E.64,1,LSU,Load
+STG.E.128,1,LSU,Store
+BMOV.32.CLEAR,15,Other,
+BMOV.32,2,Other,
+UMOV,1,Uniform,
+ULDC.64,1,Uniform,
+
+category,count,pct_of_total
+LSU,2,3.6%
+FMA,9,16.1%
+ALU,11,19.6%
+Uniform,2,3.6%
+Branch,15,26.8%
+Other,17,30.4%
+TOTAL,56,100.0%
+
+lsu_subclass,count,pct_of_lsu,pct_of_total
+Load,1,50.0%,1.8%
+Store,1,50.0%,1.8%
