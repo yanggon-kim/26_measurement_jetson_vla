@@ -1,0 +1,36 @@
+{
+ "experiment": "E7v (owner's request 2026-09-28): vision / language (VLM prefill) / action energy split, MAXN -- derived summary of the 12 E7v runs",
+ "kind": "derived",
+ "command": "python3 bench/e7v_split.py results/20260928_E7v_summary",
+ "bench_commit": "5e74233a6a39fc7aa29a0586f355be240d569556",
+ "inputs": [
+  "20260928_E7v_groot_n15_all_compile_autotune",
+  "20260928_E7v_groot_n15_eager_fp32",
+  "20260928_E7v_groot_n16_all_compile_autotune",
+  "20260928_E7v_groot_n16_eager_fp32",
+  "20260928_E7v_groot_n17_eager_fp32",
+  "20260928_E7v_groot_n17_vlm_compile",
+  "20260928_E7v_pi05_N10_bf16_both_graphs_MAXN",
+  "20260928_E7v_pi05_N10_eager_MAXN",
+  "20260928_E7v_pi0_N10_bf16_both_MAXN",
+  "20260928_E7v_pi0_N10_eager_MAXN",
+  "20260928_E7v_smolvla_N10_eager_MAXN",
+  "20260928_E7v_smolvla_N10_vlm_graphs_MAXN"
+ ],
+ "power_mode": "MAXN (each input's meta.json)",
+ "sampler": "fixed (starts after warm-up; T016 step 4)",
+ "method": "per run five 60 s loops in one session after one idle baseline: prefix (vision+language), vision (the image-encoder calls of one prefix pass, recorded and replayed), vlm (the unchanged prefix with the encoder answered from the recorded outputs), ae, full; above-idle module energy per inference; closure checks (vision+vlm)/prefix and (prefix+ae)/full",
+ "files": [
+  {
+   "path": "e7v_split.csv",
+   "bytes": 2781,
+   "sha256": "e2a25a5c2be9ca421306fd88e64f7586d59b20e93d36a35bafc9f6bc520e873b"
+  },
+  {
+   "path": "e7v_split.md",
+   "bytes": 1939,
+   "sha256": "ced1a671e93051cffed1f3e5bfc08a669747b177c84e85015de399030097d08b"
+  }
+ ],
+ "date_utc": "2026-09-28T19:20:00Z"
+}
