@@ -1,0 +1,29 @@
+########## 14:17 pi05 E11d prefix sweep
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi05_libero_base
+✓ Loaded state dict from model.safetensors
+Remapped 812 state dict keys
+All keys loaded successfully!
+
+=== eager (load 221.6 s) ===
+  1img_short       P=968 valid=303 prompt=47/200  e2e  2667.65 ms  peak  16899 MB
+  1img_typical     P=968 valid=318 prompt=62/200  e2e  2657.94 ms  peak  16899 MB
+  1img_long        P=968 valid=336 prompt=80/200  e2e  2647.41 ms  peak  16899 MB
+  2img_short       P=968 valid=559 prompt=47/200  e2e  2646.17 ms  peak  16900 MB
+  2img_typical     P=968 valid=574 prompt=62/200  e2e  2646.84 ms  peak  16900 MB
+  2img_long        P=968 valid=592 prompt=80/200  e2e  2647.02 ms  peak  16900 MB
+  3img_short       P=968 valid=815 prompt=47/200  e2e  2647.31 ms  peak  16902 MB
+  3img_typical     P=968 valid=830 prompt=62/200  e2e  2647.70 ms  peak  16902 MB
+  3img_long        P=968 valid=848 prompt=80/200  e2e  2647.73 ms  peak  16902 MB
+  fit vision_vs_images   vision      a= 239.981 b=-0.31666 ms_per_image r2=0.7332
+  fit vlm_prefix_vs_P    vlm_prefix  x constant at 968 -> no slope
+  fit ae_step_vs_P       ae_total    x constant at 968 -> no slope
+  fit ae_step_vs_P       e2e         x constant at 968 -> no slope
+wrote results/20260924_E11d_pi05_eager_prefixsweep (111 rows)

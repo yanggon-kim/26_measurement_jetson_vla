@@ -1,0 +1,26 @@
+########## /home/yanggon/venvs/pi0/bin/python bench/prefix_sweep.py --outdir-prefix results/20260922b_E11d_pi0 --timed 100
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+
+=== eager (load 217.2 s) ===
+  1img_short       P=816 valid=262 prompt=6/48  e2e  1054.24 ms  peak   9037 MB
+  1img_typical     P=816 valid=277 prompt=21/48  e2e  1057.01 ms  peak   9037 MB
+  1img_long        P=816 valid=295 prompt=39/48  e2e  1055.77 ms  peak   9037 MB
+  2img_short       P=816 valid=518 prompt=6/48  e2e  1055.85 ms  peak   9038 MB
+  2img_typical     P=816 valid=533 prompt=21/48  e2e  1053.43 ms  peak   9038 MB
+  2img_long        P=816 valid=551 prompt=39/48  e2e  1053.43 ms  peak   9038 MB
+  3img_short       P=816 valid=774 prompt=6/48  e2e  1054.74 ms  peak   9040 MB
+  3img_typical     P=816 valid=789 prompt=21/48  e2e  1055.64 ms  peak   9040 MB
+  3img_long        P=816 valid=807 prompt=39/48  e2e  1055.97 ms  peak   9040 MB
+  fit vision_vs_images   vision      a= 241.735 b=-0.66228 ms_per_image r2=0.9170
+  fit vlm_prefix_vs_P    vlm_prefix  x constant at 816 -> no slope
+  fit ae_step_vs_P       ae_total    x constant at 816 -> no slope
+  fit ae_step_vs_P       e2e         x constant at 816 -> no slope
+wrote results/20260922b_E11d_pi0_eager_prefixsweep (111 rows)

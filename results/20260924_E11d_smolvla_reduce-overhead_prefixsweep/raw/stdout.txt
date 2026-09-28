@@ -1,0 +1,45 @@
+########## 17:26 smolvla E11d prefix sweep (reduce-overhead, re-run)
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]
+Loading weights:  42%|████▏     | 204/489 [00:00<00:00, 2020.99it/s]
+Loading weights:  97%|█████████▋| 476/489 [00:00<00:00, 2426.15it/s]
+Loading weights: 100%|██████████| 489/489 [00:00<00:00, 2382.36it/s]
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/__init__.py:1612: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  _C._set_float32_matmul_precision(precision)
+Reducing the number of VLM layers to 16 ...
+
+=== reduce-overhead (load 17.5 s) ===
+  fixture images remapped ['observation.images.image'] -> ['observation.images.camera1']
+W0924 17:28:52.468000 440715 torch/_inductor/utils.py:1446] [0/0] Not enough SMs to use max_autotune_gemm mode
+  fixture images remapped ['observation.images.image'] -> ['observation.images.camera1']
+  1img_short       P=113 valid=71 prompt=6/48  e2e    39.69 ms  peak    937 MB
+  fixture images remapped ['observation.images.image'] -> ['observation.images.camera1']
+  fixture images remapped ['observation.images.image'] -> ['observation.images.camera1']
+  1img_typical     P=113 valid=87 prompt=22/48  e2e    39.82 ms  peak    947 MB
+  fixture images remapped ['observation.images.image'] -> ['observation.images.camera1']
+  fixture images remapped ['observation.images.image'] -> ['observation.images.camera1']
+  1img_long        P=113 valid=105 prompt=40/48  e2e    40.27 ms  peak    947 MB
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  2img_short       P=177 valid=135 prompt=6/48  e2e    58.31 ms  peak    942 MB
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  2img_typical     P=177 valid=151 prompt=22/48  e2e    58.33 ms  peak    952 MB
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+  2img_long        P=177 valid=169 prompt=40/48  e2e    58.42 ms  peak    952 MB
+  fixture images remapped ['observation.images.image', 'observation.images.image2', 'observation.images.empty_camera_0'] -> ['observation.images.camera1', 'observation.images.camera2', 'observation.images.camera3']
+  fixture images remapped ['observation.images.image', 'observation.images.image2', 'observation.images.empty_camera_0'] -> ['observation.images.camera1', 'observation.images.camera2', 'observation.images.camera3']
+  3img_short       P=241 valid=199 prompt=6/48  e2e    76.02 ms  peak    947 MB
+  fixture images remapped ['observation.images.image', 'observation.images.image2', 'observation.images.empty_camera_0'] -> ['observation.images.camera1', 'observation.images.camera2', 'observation.images.camera3']
+  fixture images remapped ['observation.images.image', 'observation.images.image2', 'observation.images.empty_camera_0'] -> ['observation.images.camera1', 'observation.images.camera2', 'observation.images.camera3']
+  3img_typical     P=241 valid=215 prompt=22/48  e2e    76.04 ms  peak    956 MB
+  fixture images remapped ['observation.images.image', 'observation.images.image2', 'observation.images.empty_camera_0'] -> ['observation.images.camera1', 'observation.images.camera2', 'observation.images.camera3']
+  fixture images remapped ['observation.images.image', 'observation.images.image2', 'observation.images.empty_camera_0'] -> ['observation.images.camera1', 'observation.images.camera2', 'observation.images.camera3']
+  3img_long        P=241 valid=233 prompt=40/48  e2e    75.89 ms  peak    956 MB
+  fit ae_step_vs_P       e2e         a=   8.000 b=0.28281 ms_per_token r2=0.9998
+wrote results/20260924_E11d_smolvla_reduce-overhead_prefixsweep (30 rows)
+EXIT=0 smolvla E11d prefix sweep (reduce-overhead, re-run)

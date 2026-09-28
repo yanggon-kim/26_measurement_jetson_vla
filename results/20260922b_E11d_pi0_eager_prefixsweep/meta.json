@@ -131,11 +131,21 @@
  "throttled": false,
  "throttled_evidence": "GPU clock pinned min==max, recorded in `gate`.",
  "model_inputs_rows": 111,
- "raw_files": [],
+ "raw_files": [
+  {
+   "path": "raw/stdout.txt",
+   "bytes": 2198,
+   "sha256": "f7bc6b47169f693b2dbf3c0a27b2f990ff3b949f4ca34594c9f03cd86a02bd85",
+   "recovered_from": "scratch/T010/e11d.log lines 1-26"
+  }
+ ],
  "notes": [
   "A camera that is not supplied is NOT dropped: config.empty_cameras=1 and _preprocess_images synthesises a -1-filled tensor with a zero mask, which is still encoded into 256 prefix tokens. The prompt is padded to tokenizer_max_length=48. So P_processed is CONSTANT at 816 across all nine points while P_valid moves \u2014 protocol \u00a713 asks for this to be reported as a result, and it is why the vlm_prefix-vs-P and ae_step-vs-P fits have no slope to report.",
   "The dataset supplies two cameras, so the third slot of the 3-image points carries a copy of the second; what varies is how many slots arrive with a valid mask. Recorded per row as _third_image_is_duplicate.",
   "Regions are instrumented in eager only: bench/regions.py's context managers force a graph break under torch.compile (see bench/run_e4.py), so the compiled sweep reports t_e2e only."
  ],
- "backfill_note": "2026-09-27: null compile_mode replaced by its meaning; no measured value changed"
+ "backfill_note": "2026-09-27: null compile_mode replaced by its meaning; no measured value changed",
+ "recovery_notes": [
+  "2026-09-28 completeness audit: raw/stdout.txt recovered verbatim from the queue log scratch/T010/e11d.log (lines 1-26); the run itself never wrote a stdout file. Includes compile / first-call output."
+ ]
 }
