@@ -56,6 +56,19 @@ SmolVLA's `whole_graphs` (all of `sample_actions` as one graph) is faster still,
 into regions [E4d]. The expert's share of the frame **falls** with optimisation in five of six models (π0.5 is the
 exception: its eager prefix was the pathology); no optimised model spends more than 48.6 % in the expert [E4i].
 
+### 1.3 Component shares of the frame (derived from §1.1: component median / e2e median)
+
+| model | config | vision | VLM prefix | action expert | other (e2e − sum) |
+|---|---|---:|---:|---:|---:|
+| π0 | base / best | 22.5 % / 13.4 % | 21.9 % / 45.4 % | 54.9 % / 39.7 % | 0.6 % / 1.5 % |
+| π0.5 | base / best | 7.9 % / 11.6 % | 71.4 % / 49.1 % | 20.4 % / 38.0 % | 0.3 % / 1.3 % |
+| SmolVLA | base / best | 4.6 % / 33.9 % | 9.0 % / 8.6 % | 85.3 % / 48.6 % | 1.1 % / 8.9 % |
+| GR00T N1.7 | base / best | 19.0 % / 29.4 % | 23.8 % / 36.4 % | 56.7 % / 33.1 % | 0.6 % / 1.0 % |
+| GR00T N1.6 | base / best | 18.9 % / 28.0 % | 18.9 % / 30.1 % | 61.5 % / 41.7 % | 0.7 % / 0.2 % |
+| GR00T N1.5 | base / best | 19.7 % / 19.1 % | 39.4 % / 41.9 % | 38.6 % / 35.9 % | 2.3 % / 3.1 % |
+
+"Other" = pre/post-processing between the timed regions (≤ 8.9 ms).
+
 ### 1.2 The best combination per model, and what each ingredient buys (e2e ladder, ms) [E4d, E4i, E4]
 
 | model | ladder (each step adds one technique) |
@@ -113,6 +126,19 @@ re-measurement with the fixed sampler reproduced within 0.7 % (prefix + expert =
 | | `all_compile_autotune` | 98.1 / 60.2 / 159.7 | 5.54 / 3.02 / **8.71** | 56.5 / 50.1 | 755 |
 
 (W above idle = J / s, derived. Module idle ≈ 10.5–11.0 W.)
+
+**Energy shares (derived from the table above; prefix includes vision — no vision-only energy loop was run):**
+
+| model | config | energy: prefix (incl. vision) / expert | time: prefix / expert | (prefix + expert) / full |
+|---|---|---|---|---:|
+| π0 | eager / best | 78.1 / 21.9 % · 76.1 / 23.9 % | 44.5 / 55.5 % · 60.0 / 40.0 % | 1.008 / 0.993 |
+| π0.5 | eager / best | 86.0 / 14.0 % · 74.3 / 25.7 % | 79.5 / 20.5 % · 61.3 / 38.7 % | 0.980 / 0.994 |
+| SmolVLA | eager / best | 29.1 / 70.9 % · 61.1 / 38.9 % | 13.8 / 86.2 % · 48.8 / 51.2 % | **1.256** / 0.968 |
+| GR00T N1.7 | eager / best | 55.5 / 44.5 % · 59.6 / 40.4 % | 41.6 / 58.4 % · 66.2 / 33.8 % | 0.997 / 0.994 |
+| GR00T N1.6 | eager / best | 56.5 / 43.5 % · 58.5 / 41.5 % | 36.9 / 63.1 % · 54.5 / 45.5 % | 1.001 / 0.981 |
+| GR00T N1.5 | eager / best | 69.1 / 30.9 % · 64.7 / 35.3 % | 56.7 / 43.3 % · 62.0 / 38.0 % | 0.929 / 0.983 |
+
+Shares are of prefix + expert (the full-frame loop is measured separately; the last column checks the sum).
 
 **Readings.**
 - **Optimisation saves energy, not just time**: best vs eager uses 55 % (π0), 16 % (π0.5), 48 % (SmolVLA) and 80–93 %
