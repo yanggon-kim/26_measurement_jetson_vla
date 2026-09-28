@@ -5,7 +5,7 @@ committed without it. This writes one per directory from that directory's OWN fi
 and never recomputes or invents a number: the headline table is the first rows of the primary CSV as committed.
 Directories that already have summary.md are left untouched. Each file says it was generated and from what.
 
-    python3 bench/make_summaries.py [--dry-run]
+    python3 bench/make_summaries.py [--dry-run] [results/<dir> ...]   (named dirs only -- never a run still writing)
 """
 from __future__ import annotations
 
@@ -48,7 +48,8 @@ def table(p, max_rows=6, max_cols=8, width=24):
 def main() -> int:
     dry = "--dry-run" in sys.argv
     n = 0
-    for d in sorted(glob.glob("results/*/")):
+    named = [a for a in sys.argv[1:] if not a.startswith("--")]
+    for d in (named or sorted(glob.glob("results/*/"))):
         d = d.rstrip("/")
         if os.path.exists(os.path.join(d, "summary.md")):
             continue
