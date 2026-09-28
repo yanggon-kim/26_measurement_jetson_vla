@@ -499,3 +499,12 @@ report states separately.
   by a control that cannot apply to it, and a guard on `assert_real_weights` that could never
   fire. Two were found by reading the code, one by the diagnostic added to test a hypothesis
   that then turned out to be wrong.
+
+
+## Addendum (2026-09-27) — Step 4 at 8 hardware SMs (MODE_30W) and, beyond T014, at 6 (MODE_15W)
+
+Measured in the capped sessions of T004 step 4b; results and reading in `reports/E7_capped_modes.md` §3. At both modes
+the eager co-run does not overlap (T_pipe = A_iso + B_iso within 0.1 %, s = 0.995), equivalence PASS with the stale
+control 5 / 5, and pipelining saves no energy. The GPU-bound GEMM control scales exactly with SM count × GPU clock.
+The compiled `graphs_both` prefix at 30W slowed 2.68× vs the MAXN green-8 reference, above the clock bracket (2.125×)
+— the restated prediction falsified for that stage (STATUS.md, 2026-09-26); from 30W to 15W it slows 1.71×.

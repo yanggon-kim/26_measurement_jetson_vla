@@ -174,3 +174,17 @@ so an undelivered experiment is reported on every wake, not discovered by readin
 
 E6 is also unmet for T008 (π0.5, SmolVLA) and T009 (GR00T), whose acceptance names
 `reports/E6_<m>_roofline.md`. It needs no reboot and blocks on nothing.
+
+status: done 2026-09-27 — closes the 2026-09-25 CORRECTION and step 4b
+- E6 was delivered after the correction above: `reports/E6_pi0_roofline.md` (+ `E6_pi05`, `E6_smolvla`, `E6_groot`),
+  `results/20260925_E6_*`.
+- Step 4b done in both capped sessions (owner reboots): MODE_30W 2026-09-26, MODE_15W 2026-09-27. (i) the E7 loops,
+  eager + best at N = 10 for π0, π0.5, SmolVLA and GR00T N1.5/1.6/1.7 (N = 4) — 12 runs per mode; (ii) E3 π0 eager
+  latency at N = 4 and 10 per mode; (iii) T014 Step 4 at 30W (and the same E12 queue at 15W). Report
+  `reports/E7_capped_modes.md` (per power mode: latency, above-idle energy per inference, E·D; E3 stages; E12),
+  comparison `results/20260927_E7_power_modes_compare`; result dirs `results/2026092{6,7}_E7_*_{30W,15W}*`,
+  `…_E3_pi0_eager_N{4,10}_{30W,15W}`. Headline: no capped mode is an efficiency route (E·D 1.4–5.2× worse at 15W
+  than MAXN; energy per inference within 1.26–1.47× across all four modes).
+- Deviations: MAXN / 50W / 30W energies read from the timed-window re-analysis (the sampler fix came after them); the
+  15W runs used the fixed sampler. Metadata nulls fixed in 14 writers and back-filled (no measured value changed).
+- bench commit at close: c1f408b. Repository: committed results 552M; size-pack 158.10 MiB + loose 92.86 MiB.

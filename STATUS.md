@@ -2,6 +2,31 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
+## ✅ MODE_15W SESSION DONE (2026-09-27 18:25–22:57) — the task queue is empty; next, owner: back to MAXN
+
+Device after the owner's reboot: `MODE_15W`, TPC mask 248 → **6 SMs**, GPU locked **408 MHz**, EMC **2133 MHz**, 4 CPUs
+@ 1.11 GHz — as `/etc/nvpmodel.conf` defines it. Both power-measurement paths smoke-tested at 15W before the queue.
+
+* **E7 (T004 4b)**: all 12 power loops (π0, π0.5, SmolVLA N = 10; GR00T N1.5/1.6/1.7 N = 4; eager + best) and E3 π0
+  latency at N = 4 / 10. Report **`reports/E7_capped_modes.md`** (MAXN / 50W / 30W / 15W side by side). Headline:
+  **energy per inference barely moves across power modes (1.26–1.47× spread) while latency grows 2–6×; E·D at 15W is
+  1.4–5.2× worse than MAXN — no capped mode is an efficiency route.** The eager denoising step tracks the CPU clock
+  (1.23× / 2.05× at 30W / 15W vs CPU 1.27× / 1.98×); vision tracks SM × GPU clock (90–92 %).
+* **E12 at 6 SMs** (beyond T014, same queue): GEMM control scales exactly with SM × clock (15W/30W 2.005 vs 2.000;
+  same 4-SM partition 1.497 vs clock 1.500); compiled prefix / expert 1497 / 543 ms (15W/30W 1.71 / 1.90); eager co-run
+  serial (s 0.995), equivalence PASS, pipelining saves no energy (1.006).
+* **Defects found and fixed:** `corun_green.py` control 2 requested 8 SMs on a 6-SM device (fixed → 4 when < 8; step
+  re-run); null `rung` / `compile_mode` / `gr00t_root` / `cuda` / `jetpack` / `l4t` in 14 meta writers (fixed; ~100
+  committed metas back-filled, no measured value changed). Remaining pre-existing nulls not touched: `model` / `N` in
+  microbenchmark and rails-check metas (not applicable there), `shipped_config.*` (the checkpoint's own config values).
+* Task files: T004 and T014 got their missing closing status blocks (T004's E6 correction and step 4b; T014's Step 4).
+
+**Next, owner:** return to MAXN: `sudo nvpmodel -m 0`, confirm the reboot, then `claude --continue` (I apply
+`jetson_clocks` and check the gate reads MAXN / 16 SMs). **No task is open**; new work waits for the research side
+(and its answers to the T016 questions below).
+
+---
+
 ## ✅ T017 DONE (2026-09-27 ~17:10, MAXN) — next: the MODE_15W session (needs the owner's reboot)
 
 π0 padding trim, decomposed (`reports/E14b_pi0_padtrim.md`); all four variants in one bracketed session of the E12b
@@ -19,8 +44,7 @@ New and unexplained: trimming the 27 prompt tokens slows the Gemma prefill (odd 
 and cuts the expert by 31 % without moving its bytes. Repository after T017: committed results 534 MB, size-pack
 158.10 MiB + loose 88.64 MiB.
 
-**Next, owner:** the MODE_15W session (MAXN → 15W → MAXN; `sudo nvpmodel -m 1`, confirm the reboot, then
-`claude --continue`). Its queues are fixed and use the corrected power sampler. Nothing else is queued at MAXN.
+**Next:** done — see the MODE_15W block above.
 
 ---
 

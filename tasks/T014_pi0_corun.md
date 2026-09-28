@@ -148,3 +148,11 @@ green context current via `cuCtxFromGreenCtx` + `cuCtxSetCurrent` does.
 MODE_30W (owner's reboot); Step 5 energy and an N = 4 result directory.
 
 status: MAXN items superseded by T015 2026-09-25; Step 4 waits for MODE_30W
+
+status: done 2026-09-27 — Step 4 (the last open item) was measured in the MODE_30W session of 2026-09-26
+- `results/20260926_E12_pi0_{gemm_control,compiled_stages_N10,corun_N10_*_eager_nosync,equiv,green_N10_*_eager,energy_N10_*_eager_nosync}_MODE_30W`:
+  GEMM control 2.23× vs the 2.125× clock ratio; compiled expert 1.92× (inside the bracket), compiled prefix 2.68×
+  (above it — the restated prediction falsified for that stage); eager co-run serial (T_pipe 2439.1 vs 2441.6 ms),
+  equivalence PASS 6/6 bitwise, stale control 5/5, energy pipelined/serial 0.9996. Beyond this task the same queue
+  ran at MODE_15W (6 SMs) on 2026-09-27: same picture (`…_MODE_15W`). Addendum in `reports/E12_pi0_corun.md`,
+  tables in `reports/E7_capped_modes.md` §3. The MAXN items were closed by T015.

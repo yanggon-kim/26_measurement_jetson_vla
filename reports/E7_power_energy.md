@@ -1,5 +1,7 @@
 # E7 — power and energy per phase, six models
 
+> **Capped modes (MODE_30W, MODE_15W; T004 step 4b):** `reports/E7_capped_modes.md` — energy per inference, latency and E·D per power mode (2026-09-27).
+
 > ## ⚠ CORRECTION (2026-09-26, T016 step 4 / EV-10) — phase energies of COMPILED rungs are understated
 >
 > `bench/power_phases.measure` and `bench/power_core.measure` started the rail sampler **before**
