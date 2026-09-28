@@ -688,7 +688,7 @@ def main() -> int:
                          "are recorded in T002 (results/20260921_E3_pi0_eager_N*/meta.json)",
         "suffix_tokens": "swept: see S_swept",
         "torchvision": sw.get("torchvision"), "triton": sw.get("triton"),
-        "precision": "bfloat16", "compile_mode": None,
+        "precision": "bfloat16", "compile_mode": "none (eager)",
         "batch": 1, "n_warmup": 20, "n_timed": 100,
         "n_warmup_chain": 20, "n_timed_chain": 100, "chain_k": [1, 8, 64],
         "estimator": "median; chained rows are a 3-point least-squares fit of t(k) = fixed + k*marginal over k in {1,8,64}, with the max residual per row",

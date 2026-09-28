@@ -1,81 +1,82 @@
 {
-  "experiment": "E12 (co-run: prefix(k) || expert(k-1) on one GPU)",
-  "task": "T014",
-  "model": "pi0",
-  "model_repo": "lerobot/pi0_libero_finetuned_v044",
-  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-  "model_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
-  "rung": "eager",
-  "compile_mode": null,
-  "batch": 1,
-  "num_denoise_steps": 4,
-  "mechanism": "pi0_nosync",
-  "frames_timed": 100,
-  "warmup_frames": 20,
+ "experiment": "E12 (co-run: prefix(k) || expert(k-1) on one GPU)",
+ "task": "T014",
+ "model": "pi0",
+ "model_repo": "lerobot/pi0_libero_finetuned_v044",
+ "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "model_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "rung": "eager",
+ "compile_mode": "none (eager)",
+ "batch": 1,
+ "num_denoise_steps": 4,
+ "mechanism": "pi0_nosync",
+ "frames_timed": 100,
+ "warmup_frames": 20,
+ "power_mode": "NV Power Mode: MAXN",
+ "sm_count": 16,
+ "gate": {
   "power_mode": "NV Power Mode: MAXN",
   "sm_count": 16,
-  "gate": {
-    "power_mode": "NV Power Mode: MAXN",
-    "sm_count": 16,
-    "gpu_cur_freq_hz": 1300500000,
-    "gpu_min_freq_hz": 1300500000,
-    "gpu_max_freq_hz": 1300500000,
-    "jetson_clocks_locked": true,
-    "tpc_pg_mask": "0",
-    "cpu_online": "0-11",
-    "cpu_governor": "schedutil",
-    "cpu_cur_freq_khz": "2201600",
-    "cpu_max_freq_khz": "2201600"
+  "gpu_cur_freq_hz": 1300500000,
+  "gpu_min_freq_hz": 1300500000,
+  "gpu_max_freq_hz": 1300500000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "0",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "2201600",
+  "cpu_max_freq_khz": "2201600"
+ },
+ "throttled": false,
+ "throttled_evidence": "GPU clock pinned min==max in the gate; bracketed isolated runs drifted 0.6 % (prefix) and 0.8 % (expert), which is the drift check non-negotiable 3 asks for.",
+ "bench_commit": "de6afa31f877bb1d196460d44a77afa0726a3aae",
+ "command": "bench/corun.py --mode timing --path eager --nosync --steps 4 --frames 100 --warm 20 --outdir results/20260925_E12_pi0_corun_N4_MAXN_eager_nosync",
+ "observations": [
+  {
+   "file": "obs_0.json",
+   "row_offset": 0,
+   "frame_index": 0
   },
-  "throttled": false,
-  "throttled_evidence": "GPU clock pinned min==max in the gate; bracketed isolated runs drifted 0.6 % (prefix) and 0.8 % (expert), which is the drift check non-negotiable 3 asks for.",
-  "bench_commit": "de6afa31f877bb1d196460d44a77afa0726a3aae",
-  "command": "bench/corun.py --mode timing --path eager --nosync --steps 4 --frames 100 --warm 20 --outdir results/20260925_E12_pi0_corun_N4_MAXN_eager_nosync",
-  "observations": [
-    {
-      "file": "obs_0.json",
-      "row_offset": 0,
-      "frame_index": 0
-    },
-    {
-      "file": "obs_1.json",
-      "row_offset": 25,
-      "frame_index": 25
-    },
-    {
-      "file": "obs_2.json",
-      "row_offset": 50,
-      "frame_index": 50
-    },
-    {
-      "file": "obs_3.json",
-      "row_offset": 75,
-      "frame_index": 75
-    },
-    {
-      "file": "obs_4.json",
-      "row_offset": 99,
-      "frame_index": 99
-    }
-  ],
-  "observation_source": "HuggingFaceVLA/libero",
-  "torch": "2.8.0",
-  "python": "3.10.12",
-  "cuda": null,
-  "jetpack": null,
-  "l4t": null,
-  "raw_files": [],
-  "host_issue_over_wall": 0.999998,
-  "not_measured": [
-    "compiled bf16_both co-run: the stock path corrupts non-deterministically when pipelined across two streams (max|d| 1.273 on one run, all-NaN on another) while compiled SERIAL is correct and eager PIPELINED is bitwise exact. See scratch/NOTE_e12_compiled_two_stream.txt. Needs the own-CUDAGraph fallback of spec \u00a77 before any compiled co-run number can be reported.",
-    "Step 4 (MODE_30W, 8 SMs): waits for the owner's capped-mode reboot, per spec \u00a75 Step 4 and \u00a711, which permit the MAXN part to be marked done.",
-    "Step 3 mechanisms (stream priority -3, graphs on both stages, green contexts, libsmctrl, MPS, two processes): not yet attempted."
-  ],
-  "notes": [
-    "NO OVERLAP OCCURRED. T_pipe equals A_iso + B_iso, and host issue/wall = 1.0000 -- the CPU spends the entire wall clock issuing kernels, so the two streams never both have resident work. s and p therefore read ~1.00 because each stage ran with the GPU to itself, NOT because overlap was ideal. Only T_pipe separates those two readings.",
-    "pi0 eager is launch-bound: E5 measured ae_step at 84.2 % GPU idle over 968 kernels per step. GPU contention (KerColle's head-of-line blocking) cannot arise in a configuration that never fills the GPU, so this configuration cannot answer that question -- the compiled rung is where it becomes answerable.",
-    "mechanism=pi0_nosync memoises the constant att_masks tensors at modeling_pi0.py:681 (per prefix) and :746 (per denoise step), removing 1+N host syncs per frame. A LABELLED harness change per spec \u00a77, verified to keep the fresh-KV equivalence bitwise identical. It also made the expert stage ~19 % faster at N=4 (226.81 -> 184.18 ms), which is an optimisation for the shipping model independent of E12.",
-    "r = 2.4657 here, NOT E7's 1.50. In eager the expert is the longer stage (192.7 vs 475.2 ms); under bf16_both the prefix is (251.28 vs 167.36). Compiling speeds the expert more than the prefix and flips which stage sets the period, so r must come from the same session."
-  ]
+  {
+   "file": "obs_1.json",
+   "row_offset": 25,
+   "frame_index": 25
+  },
+  {
+   "file": "obs_2.json",
+   "row_offset": 50,
+   "frame_index": 50
+  },
+  {
+   "file": "obs_3.json",
+   "row_offset": 75,
+   "frame_index": 75
+  },
+  {
+   "file": "obs_4.json",
+   "row_offset": 99,
+   "frame_index": 99
+  }
+ ],
+ "observation_source": "HuggingFaceVLA/libero",
+ "torch": "2.8.0",
+ "python": "3.10.12",
+ "cuda": null,
+ "jetpack": null,
+ "l4t": null,
+ "raw_files": [],
+ "host_issue_over_wall": 0.999998,
+ "not_measured": [
+  "compiled bf16_both co-run: the stock path corrupts non-deterministically when pipelined across two streams (max|d| 1.273 on one run, all-NaN on another) while compiled SERIAL is correct and eager PIPELINED is bitwise exact. See scratch/NOTE_e12_compiled_two_stream.txt. Needs the own-CUDAGraph fallback of spec \u00a77 before any compiled co-run number can be reported.",
+  "Step 4 (MODE_30W, 8 SMs): waits for the owner's capped-mode reboot, per spec \u00a75 Step 4 and \u00a711, which permit the MAXN part to be marked done.",
+  "Step 3 mechanisms (stream priority -3, graphs on both stages, green contexts, libsmctrl, MPS, two processes): not yet attempted."
+ ],
+ "notes": [
+  "NO OVERLAP OCCURRED. T_pipe equals A_iso + B_iso, and host issue/wall = 1.0000 -- the CPU spends the entire wall clock issuing kernels, so the two streams never both have resident work. s and p therefore read ~1.00 because each stage ran with the GPU to itself, NOT because overlap was ideal. Only T_pipe separates those two readings.",
+  "pi0 eager is launch-bound: E5 measured ae_step at 84.2 % GPU idle over 968 kernels per step. GPU contention (KerColle's head-of-line blocking) cannot arise in a configuration that never fills the GPU, so this configuration cannot answer that question -- the compiled rung is where it becomes answerable.",
+  "mechanism=pi0_nosync memoises the constant att_masks tensors at modeling_pi0.py:681 (per prefix) and :746 (per denoise step), removing 1+N host syncs per frame. A LABELLED harness change per spec \u00a77, verified to keep the fresh-KV equivalence bitwise identical. It also made the expert stage ~19 % faster at N=4 (226.81 -> 184.18 ms), which is an optimisation for the shipping model independent of E12.",
+  "r = 2.4657 here, NOT E7's 1.50. In eager the expert is the longer stage (192.7 vs 475.2 ms); under bf16_both the prefix is (251.28 vs 167.36). Compiling speeds the expert more than the prefix and flips which stage sets the period, so r must come from the same session."
+ ],
+ "backfill_note": "2026-09-27: null compile_mode replaced by its meaning; no measured value changed"
 }

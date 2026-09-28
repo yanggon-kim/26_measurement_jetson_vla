@@ -1,137 +1,138 @@
 {
-  "experiment": "E5 (nsys timeline)",
-  "task": "T004/T008/T009",
-  "date_utc": "2026-09-25T02:47:42Z",
-  "tag": "best",
-  "model": "groot_n16",
-  "compile_mode": null,
-  "rung": null,
-  "rung_detail": "",
-  "num_denoise_steps": 4,
-  "inferences_captured": 2,
-  "regions_present": [
-    "CCCL:cub::DeviceReduce::Sum",
-    "CCCL:cub::DeviceSelect::Flagged",
-    "ae_total",
-    "vision",
-    "vlm_prefix"
-  ],
-  "gate": {
-    "power_mode": "NV Power Mode: MAXN",
-    "sm_count": 16,
-    "tpc_pg_mask": "0",
-    "gpu_cur_freq_hz": "1300500000",
-    "gpu_min_freq_hz": "1300500000",
-    "gpu_max_freq_hz": "1300500000",
-    "cpu_online": "0-11",
-    "cpu_governor": "schedutil",
-    "torch": "2.10.0",
-    "device": "Orin",
-    "capability": "(8, 7)"
-  },
+ "experiment": "E5 (nsys timeline)",
+ "task": "T004/T008/T009",
+ "date_utc": "2026-09-25T02:47:42Z",
+ "tag": "best",
+ "model": "groot_n16",
+ "compile_mode": "none (eager)",
+ "rung": null,
+ "rung_detail": "",
+ "num_denoise_steps": 4,
+ "inferences_captured": 2,
+ "regions_present": [
+  "CCCL:cub::DeviceReduce::Sum",
+  "CCCL:cub::DeviceSelect::Flagged",
+  "ae_total",
+  "vision",
+  "vlm_prefix"
+ ],
+ "gate": {
   "power_mode": "NV Power Mode: MAXN",
-  "torch": "2.8.0",
-  "python": "3.10.12",
-  "bench_commit": "2a940f5028917ed6de835dfb98f62c013e304b0d",
-  "command": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-  "raw_files": [
-    {
-      "path": "raw/best.nsys-rep",
-      "sha256": "f48807d36afacf82bfce1132b2b42f73c4f6145978ce8ef1866a878ab8175ad2",
-      "bytes": 515177,
-      "kind": "nsys-rep",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "MATCH at byte 426716: a value assigned to 'TOKEN' matches the secret pattern. NOT COMMITTED.",
-      "committed": false,
-      "not_committed_reason": "failed the secrets scan. nsys snapshots system-wide process metadata into its report, which on this machine includes a session token from the agent's own environment. Scrubbing the profiled process's environment does not remove it (verified with `env -i`), so the binary report cannot be committed. The exported CSVs under nsys/ carry the same measurements and are clean.",
-      "regenerate_with": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2"
-    },
-    {
-      "path": "raw/best.sqlite",
-      "sha256": "734d271283edbefbbf47cc8abd880b2be630c3c37b02859bee6e7f3c9fb02997",
-      "bytes": 1425408,
-      "kind": "nsys-sqlite",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "MATCH at byte 30029: a value assigned to 'TOKEN' matches the secret pattern. NOT COMMITTED.",
-      "committed": false,
-      "not_committed_reason": "failed the secrets scan. nsys snapshots system-wide process metadata into its report, which on this machine includes a session token from the agent's own environment. Scrubbing the profiled process's environment does not remove it (verified with `env -i`), so the binary report cannot be committed. The exported CSVs under nsys/ carry the same measurements and are clean.",
-      "regenerate_with": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2"
-    },
-    {
-      "path": "raw/best_stats.log",
-      "sha256": "6899c87c8e11e40f82d7bc5fd6f3059c693db17f6f79e5c88bea794fad6089f2",
-      "bytes": 1825,
-      "kind": "stdout",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "raw/best_stdout.log",
-      "sha256": "6359621e8a0c305a0280969d3a9099d431e8169af91de9f060edd9a9559dc515",
-      "bytes": 14665,
-      "kind": "stdout",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "nsys/best_cuda_api_sum.csv",
-      "sha256": "19ff94e35b5f2b2ebe7637709ca6d5d6b2cdce7184bf234373c7e314fc0ed978",
-      "bytes": 874,
-      "kind": "other",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "nsys/best_cuda_gpu_kern_sum.csv",
-      "sha256": "6187157bc4ea68eb7b904fedaff79d747c47b3a219e96389876023e37d14ae0b",
-      "bytes": 16552,
-      "kind": "other",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "nsys/best_cuda_gpu_trace.csv",
-      "sha256": "92c8fadb273a2fe36fea553c8de69475fd222d775b0061ccb658b5bb107f3907",
-      "bytes": 608014,
-      "kind": "other",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "nsys/best_nvtx_gpu_proj_trace.csv",
-      "sha256": "2dffb017696a5f53108df342acda79335034dff59f70c95f3831678e5389294a",
-      "bytes": 1416,
-      "kind": "other",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "nsys/best_nvtx_sum.csv",
-      "sha256": "97f92910fe22703b9b8d4647c048b6b3b7935438d3f3c60b183d1c6818fd48bc",
-      "bytes": 511,
-      "kind": "other",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    },
-    {
-      "path": "nsys/best_summary.json",
-      "sha256": "47425a34c276ee040ac37fc76a7129d4dd4b811bee0b44e147f84975a2d95b7e",
-      "bytes": 3308,
-      "kind": "other",
-      "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
-      "secrets_scan": "clean",
-      "committed": true
-    }
-  ],
-  "notes": [
-    "The .nsys-rep and .sqlite are NOT committed on this device: they embed the system-wide process environment including a session token, verified to survive `env -i`. They stay in scratch/ and are listed committed:false (protocol \u00a73.5). The exported CSVs carry everything the analysis reads.",
-    "nsys's own tracing inflates region wall time by about x1.53 on this device, so gpu_idle_frac computed from traced wall time OVERSTATES idleness. Where gpu_idle_frac_corrected is present, that is the number to trust."
-  ]
+  "sm_count": 16,
+  "tpc_pg_mask": "0",
+  "gpu_cur_freq_hz": "1300500000",
+  "gpu_min_freq_hz": "1300500000",
+  "gpu_max_freq_hz": "1300500000",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "torch": "2.10.0",
+  "device": "Orin",
+  "capability": "(8, 7)"
+ },
+ "power_mode": "NV Power Mode: MAXN",
+ "torch": "2.8.0",
+ "python": "3.10.12",
+ "bench_commit": "2a940f5028917ed6de835dfb98f62c013e304b0d",
+ "command": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+ "raw_files": [
+  {
+   "path": "raw/best.nsys-rep",
+   "sha256": "f48807d36afacf82bfce1132b2b42f73c4f6145978ce8ef1866a878ab8175ad2",
+   "bytes": 515177,
+   "kind": "nsys-rep",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "MATCH at byte 426716: a value assigned to 'TOKEN' matches the secret pattern. NOT COMMITTED.",
+   "committed": false,
+   "not_committed_reason": "failed the secrets scan. nsys snapshots system-wide process metadata into its report, which on this machine includes a session token from the agent's own environment. Scrubbing the profiled process's environment does not remove it (verified with `env -i`), so the binary report cannot be committed. The exported CSVs under nsys/ carry the same measurements and are clean.",
+   "regenerate_with": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2"
+  },
+  {
+   "path": "raw/best.sqlite",
+   "sha256": "734d271283edbefbbf47cc8abd880b2be630c3c37b02859bee6e7f3c9fb02997",
+   "bytes": 1425408,
+   "kind": "nsys-sqlite",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "MATCH at byte 30029: a value assigned to 'TOKEN' matches the secret pattern. NOT COMMITTED.",
+   "committed": false,
+   "not_committed_reason": "failed the secrets scan. nsys snapshots system-wide process metadata into its report, which on this machine includes a session token from the agent's own environment. Scrubbing the profiled process's environment does not remove it (verified with `env -i`), so the binary report cannot be committed. The exported CSVs under nsys/ carry the same measurements and are clean.",
+   "regenerate_with": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2"
+  },
+  {
+   "path": "raw/best_stats.log",
+   "sha256": "6899c87c8e11e40f82d7bc5fd6f3059c693db17f6f79e5c88bea794fad6089f2",
+   "bytes": 1825,
+   "kind": "stdout",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "raw/best_stdout.log",
+   "sha256": "6359621e8a0c305a0280969d3a9099d431e8169af91de9f060edd9a9559dc515",
+   "bytes": 14665,
+   "kind": "stdout",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "nsys/best_cuda_api_sum.csv",
+   "sha256": "19ff94e35b5f2b2ebe7637709ca6d5d6b2cdce7184bf234373c7e314fc0ed978",
+   "bytes": 874,
+   "kind": "other",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "nsys/best_cuda_gpu_kern_sum.csv",
+   "sha256": "6187157bc4ea68eb7b904fedaff79d747c47b3a219e96389876023e37d14ae0b",
+   "bytes": 16552,
+   "kind": "other",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "nsys/best_cuda_gpu_trace.csv",
+   "sha256": "92c8fadb273a2fe36fea553c8de69475fd222d775b0061ccb658b5bb107f3907",
+   "bytes": 608014,
+   "kind": "other",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "nsys/best_nvtx_gpu_proj_trace.csv",
+   "sha256": "2dffb017696a5f53108df342acda79335034dff59f70c95f3831678e5389294a",
+   "bytes": 1416,
+   "kind": "other",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "nsys/best_nvtx_sum.csv",
+   "sha256": "97f92910fe22703b9b8d4647c048b6b3b7935438d3f3c60b183d1c6818fd48bc",
+   "bytes": 511,
+   "kind": "other",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  },
+  {
+   "path": "nsys/best_summary.json",
+   "sha256": "47425a34c276ee040ac37fc76a7129d4dd4b811bee0b44e147f84975a2d95b7e",
+   "bytes": 3308,
+   "kind": "other",
+   "produced_by": "bench/parse_nsys.py results/20260924_E5_groot_n16_best --tag best --steps 4 --inferences 2",
+   "secrets_scan": "clean",
+   "committed": true
+  }
+ ],
+ "notes": [
+  "The .nsys-rep and .sqlite are NOT committed on this device: they embed the system-wide process environment including a session token, verified to survive `env -i`. They stay in scratch/ and are listed committed:false (protocol \u00a73.5). The exported CSVs carry everything the analysis reads.",
+  "nsys's own tracing inflates region wall time by about x1.53 on this device, so gpu_idle_frac computed from traced wall time OVERSTATES idleness. Where gpu_idle_frac_corrected is present, that is the number to trust."
+ ],
+ "backfill_note": "2026-09-27: null compile_mode replaced by its meaning; no measured value changed"
 }

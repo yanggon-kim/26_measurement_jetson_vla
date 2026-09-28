@@ -214,7 +214,7 @@ def main() -> int:
         "model_revision": spec.revision,
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "matmul_precision": "high" if args.tf32 == "on" else "highest",
-        "compile_mode": None, "batch": 1, "num_denoise_steps": steps, "n_field": spec.n_field,
+        "compile_mode": "none (eager)", "batch": 1, "num_denoise_steps": steps, "n_field": spec.n_field,
         "prefix_tokens": tok.get("prefix_tokens_P"), "suffix_tokens": tok.get("suffix_tokens_S"),
         "token_counts": tok, "n_warmup": args.warmup, "n_timed": args.timed,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],

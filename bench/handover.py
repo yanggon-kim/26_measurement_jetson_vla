@@ -376,7 +376,7 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
         "model_commit": MR.resolved_commit(spec),
         "model_revision": spec.revision,
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
-        "compile_mode": None, "batch": 1, "num_denoise_steps": args.steps,
+        "compile_mode": "none (eager)", "batch": 1, "num_denoise_steps": args.steps,
         "action_horizon": getattr(cfg, "chunk_size", None),
         "prefix_tokens": Pn, "prefix_tokens_valid": P_valid, "suffix_tokens": Sn,
         "n_warmup": args.warmup, "n_timed": args.timed,

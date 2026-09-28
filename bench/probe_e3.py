@@ -200,7 +200,7 @@ def main() -> int:
         "model_repo": "https://github.com/huggingface/lerobot",
         "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
         "checkpoint": P.CHECKPOINT, "checkpoint_revision": P.REVISION,
-        "weight_integrity": integrity, "precision": cfg.dtype, "compile_mode": None,
+        "weight_integrity": integrity, "precision": cfg.dtype, "compile_mode": "none (eager)",
         "num_denoise_steps": N_STEPS, "batch": 1,
         "n_warmup": args.warmup, "n_timed": args.timed,
         "prefix_tokens": tokens["prefix_tokens_P"], "suffix_tokens": tokens["suffix_tokens_S"],

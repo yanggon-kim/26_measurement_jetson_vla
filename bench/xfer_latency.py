@@ -439,7 +439,7 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": None, "model_repo": None, "model_commit": None, "checkpoint": None,
         "precision": "uint8 buffers for transfers; float32 for zero-copy and the control",
-        "compile_mode": None, "batch": 1, "num_denoise_steps": None, "action_horizon": None,
+        "compile_mode": "none (eager)", "batch": 1, "num_denoise_steps": None, "action_horizon": None,
         "prefix_tokens": None, "suffix_tokens": None,
         "n_warmup": args.warmup, "n_timed": args.timed, "n_timed_sync": args.sync_timed,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],

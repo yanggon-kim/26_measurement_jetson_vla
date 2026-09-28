@@ -894,7 +894,7 @@ def run_timing(args, spec, gate) -> int:
             "model": spec.name, "model_repo": spec.checkpoint,
             "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision,
             "checkpoint": spec.checkpoint,
-            "rung": "eager", "compile_mode": None, "batch": 1,
+            "rung": "eager", "compile_mode": "none (eager)", "batch": 1,
             "num_denoise_steps": args.steps,
             "mechanism": "pi0_nosync" if getattr(args, "nosync", False) else "baseline_eager",
             "frames_timed": args.frames, "warmup_frames": args.warm,

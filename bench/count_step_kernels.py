@@ -86,7 +86,7 @@ def main() -> int:
         "model_repo": P.CHECKPOINT, "model_commit": P.REVISION, "checkpoint": P.CHECKPOINT,
         "num_denoise_steps": args.steps, "action_horizon": getattr(cfg, "chunk_size", None),
         "torchvision": None, "triton": None,          # filled below from software_versions()
-        "compile_mode": None, "batch": 1, "num_inference_steps": args.steps,
+        "compile_mode": "none (eager)", "batch": 1, "num_inference_steps": args.steps,
         "n_warmup": 20, "n_timed": 1,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,

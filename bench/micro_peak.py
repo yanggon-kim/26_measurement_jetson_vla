@@ -343,7 +343,7 @@ def main() -> int:
     write_json(out / "meta.json", {
         "experiment": "E1", "task": "T005",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": None, "precision": "one row per dtype", "compile_mode": None,
+        "model": None, "precision": "one row per dtype", "compile_mode": "none (eager)",
         "batch": 1, "n_warmup": 20, "n_timed": 100,
         "n_repeats_bandwidth": 3,
         "estimator": "GEMM rows: median. Bandwidth rows: best-of-3 repeat medians (a peak).",

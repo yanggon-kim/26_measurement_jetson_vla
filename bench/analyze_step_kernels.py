@@ -120,7 +120,7 @@ def main() -> int:
         "checkpoint": lo_meta.get("checkpoint"),
         "power_mode": lo_meta.get("power_mode"), "sm_count": lo_meta.get("sm_count"),
         "gpu_hz": lo_meta.get("gpu_hz"), "gate": lo_meta.get("gate"),
-        "precision": "bfloat16", "compile_mode": None, "batch": 1,
+        "precision": "bfloat16", "compile_mode": "none (eager)", "batch": 1,
         "torch": sw.get("torch"), "torchvision": sw.get("torchvision"),
         "triton": sw.get("triton"), "python": sw.get("python"),
         "bench_commit": sh_out(f"git -C {REPO} rev-parse HEAD"),

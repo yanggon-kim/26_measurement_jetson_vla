@@ -185,7 +185,7 @@ def main() -> int:
     write_json(out / "meta.json", {
         "experiment": "E7-prep (rail double-count check)", "task": "T005",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": None, "precision": "bfloat16", "compile_mode": None,
+        "model": None, "precision": "bfloat16", "compile_mode": "none (eager)",
         "model_repo": None, "model_commit": None, "checkpoint": None,
         "num_denoise_steps": None, "action_horizon": None,
         "prefix_tokens": None, "suffix_tokens": None,

@@ -206,7 +206,7 @@ def main() -> int:
             "checkpoint": P.CHECKPOINT, "checkpoint_revision": P.REVISION,
             "checkpoint_bytes": 7011548640,
             "weight_integrity": integrity,
-            "precision": cfg.dtype, "compile_mode": None,
+            "precision": cfg.dtype, "compile_mode": "none (eager)",
             "compile_mode_note": "eager; the checkpoint ships compile_model=true with "
                                  "compile_mode=max-autotune and both were overridden BEFORE "
                                  "construction (PI0Pytorch.__init__ compiles immediately)",

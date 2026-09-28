@@ -99,7 +99,7 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": P.CHECKPOINT, "model_repo": P.CHECKPOINT, "model_commit": P.REVISION,
         "model_revision": P.REVISION, "checkpoint": P.CHECKPOINT, "precision": "bfloat16",
-        "compile_mode": None, "batch": 1, "num_denoise_steps": args.steps,
+        "compile_mode": "none (eager)", "batch": 1, "num_denoise_steps": args.steps,
         "prefix_tokens": 816, "suffix_tokens": 51,
         "power_mode": gate["power_mode"], "sm_count": gate["sm_count"],
         "gpu_hz": gate["gpu_cur_freq_hz"], "gate": gate,
