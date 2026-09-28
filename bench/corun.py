@@ -892,7 +892,7 @@ def run_timing(args, spec, gate) -> int:
         C.write_json(out / "meta.json", {
             "experiment": "E12 (co-run: prefix(k) || expert(k-1) on one GPU)", "task": "T014",
             "model": spec.name, "model_repo": spec.checkpoint,
-            "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision,
+            "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision or "not pinned (hub default branch; see model_commit)",
             "checkpoint": spec.checkpoint,
             "rung": "eager", "compile_mode": "none (eager)", "batch": 1,
             "num_denoise_steps": args.steps,

@@ -581,7 +581,7 @@ def finish(out: Path, args, gate, rows, notes, steps, samples=None, verified=Non
         "experiment": "E4c (optimisation ladder)", "task": "T004",
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model_key": args.model, "model": spec.checkpoint, "model_repo": spec.checkpoint,
-        "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision,
+        "model_commit": MR.resolved_commit(spec), "model_revision": spec.revision or "not pinned (hub default branch; see model_commit)",
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": "per rung, see opt_ladder.csv", "batch": 1,
         "num_denoise_steps": steps, **tok,

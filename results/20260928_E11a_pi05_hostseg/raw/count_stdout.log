@@ -1,0 +1,107 @@
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi05_libero_base
+✓ Loaded state dict from model.safetensors
+Remapped 812 state dict keys
+All keys loaded successfully!
+weights: {"checked": 400, "matched": 400, "checkpoint": "lerobot/pi05_libero_base", "checkpoint_file_sha256_source": "huggingface_hub cache", "verdict": "real weights"}
+tokens: {"prefix_tokens_P": 968, "prefix_tokens_valid": 574, "suffix_tokens_S": 50, "suffix_tokens_valid": 50, "n_images": 3, "image_shapes": [[1, 3, 224, 224], [1, 3, 224, 224], [1, 3, 224, 224]], "image_masks": [true, true, false], "language_tokens": 200, "language_tokens_valid": 62, "state_dim_padded": null, "state_in_prefix": true, "chunk_size": 50}
+
+layer 0: x(1, 50, 1024) scores(1, 8, 50, 1018) T=1018 D=1024 I=4096 H=8 head_dim=256
+  rmsnorm1               eager     kernels=9.1
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:305: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+    compiled rmsnorm1@L0 in 7.1 s
+  rmsnorm1               compiled  kernels=2.0
+  rmsnorm1               cudagraph kernels=9.0
+  rope                   eager     kernels=10.1
+    compiled rope@L0 in 0.9 s
+  rope                   compiled  kernels=2.0
+  rope                   cudagraph kernels=10.0
+  softmax                eager     kernels=1.1
+    compiled softmax@L0 in 0.5 s
+  softmax                compiled  kernels=1.0
+  softmax                cudagraph kernels=1.0
+  residual_rmsnorm2      eager     kernels=11.1
+    compiled residual_rmsnorm2@L0 in 0.6 s
+  residual_rmsnorm2      compiled  kernels=2.0
+  residual_rmsnorm2      cudagraph kernels=11.0
+  gelu_gate_mul_up       eager     kernels=2.1
+    compiled gelu_gate_mul_up@L0 in 0.6 s
+  gelu_gate_mul_up       compiled  kernels=1.0
+  gelu_gate_mul_up       cudagraph kernels=2.0
+  partials_residual      eager     kernels=2.1
+    compiled partials_residual@L0 in 0.5 s
+  partials_residual      compiled  kernels=1.0
+  partials_residual      cudagraph kernels=2.0
+  residual               eager     kernels=2.1
+    compiled residual@L0 in 0.5 s
+  residual               compiled  kernels=1.0
+  residual               cudagraph kernels=2.0
+  attention_gpu          eager     kernels=6.1
+W0928 13:20:57.716000 86380 torch/_inductor/utils.py:1446] [7/0] Not enough SMs to use max_autotune_gemm mode
+    compiled attention_gpu@L0 in 1.1 s
+  attention_gpu          compiled  kernels=4.0
+  attention_gpu          cudagraph kernels=6.0
+  cast_scores_fp32_fp16  eager     kernels=1.0
+    compiled cast_scores_fp32_fp16@L0 in 0.5 s
+  cast_scores_fp32_fp16  compiled  kernels=1.0
+  cast_scores_fp32_fp16  cudagraph kernels=1.0
+
+layer 9: x(1, 50, 1024) scores(1, 8, 50, 1018) T=1018 D=1024 I=4096 H=8 head_dim=256
+  rmsnorm1               eager     kernels=9.1
+    compiled rmsnorm1@L9 in 0.0 s
+  rmsnorm1               compiled  kernels=2.0
+  rmsnorm1               cudagraph kernels=9.0
+  rope                   eager     kernels=10.1
+    compiled rope@L9 in 0.0 s
+  rope                   compiled  kernels=2.0
+  rope                   cudagraph kernels=10.0
+  softmax                eager     kernels=1.1
+    compiled softmax@L9 in 0.0 s
+  softmax                compiled  kernels=1.0
+  softmax                cudagraph kernels=1.0
+  residual_rmsnorm2      eager     kernels=11.1
+    compiled residual_rmsnorm2@L9 in 0.0 s
+  residual_rmsnorm2      compiled  kernels=2.0
+  residual_rmsnorm2      cudagraph kernels=11.0
+  gelu_gate_mul_up       eager     kernels=2.1
+    compiled gelu_gate_mul_up@L9 in 0.0 s
+  gelu_gate_mul_up       compiled  kernels=1.0
+  gelu_gate_mul_up       cudagraph kernels=2.0
+  partials_residual      eager     kernels=2.1
+    compiled partials_residual@L9 in 0.0 s
+  partials_residual      compiled  kernels=1.0
+  partials_residual      cudagraph kernels=2.0
+  residual               eager     kernels=2.1
+    compiled residual@L9 in 0.0 s
+  residual               compiled  kernels=1.0
+  residual               cudagraph kernels=2.0
+  attention_gpu          eager     kernels=6.1
+    compiled attention_gpu@L9 in 0.0 s
+  attention_gpu          compiled  kernels=4.0
+  attention_gpu          cudagraph kernels=6.0
+  cast_scores_fp32_fp16  eager     kernels=1.0
+    compiled cast_scores_fp32_fp16@L9 in 0.0 s
+  cast_scores_fp32_fp16  compiled  kernels=1.0
+  cast_scores_fp32_fp16  cudagraph kernels=1.0
+  suffix_embed           eager     kernels=22.0
+    compiled suffix_embed in 1.8 s
+  suffix_embed           compiled  kernels=8.0
+  final_norm_out_proj    eager     kernels=10.1
+  final_norm_out_proj    cudagraph kernels=10.0
+  euler_update           eager     kernels=2.1
+    compiled euler_update in 0.6 s
+  euler_update           compiled  kernels=1.0
+  euler_update           cudagraph kernels=2.0
+wrote results/20260928_E11a_pi05_hostseg_kernels/raw/profiler/key_averages.csv (784 rows)
+
+wrote results/20260928_E11a_pi05_hostseg_kernels/kernels_per_call.csv (61 rows, 61 profiler traces)

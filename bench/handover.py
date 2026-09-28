@@ -374,7 +374,7 @@ stored and copied like any other. A mapping that moved only the valid tokens wou
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": spec.name, "model_repo": spec.checkpoint,
         "model_commit": MR.resolved_commit(spec),
-        "model_revision": spec.revision,
+        "model_revision": spec.revision or "not pinned (hub default branch; see model_commit)",
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": "none (eager)", "batch": 1, "num_denoise_steps": args.steps,
         "action_horizon": getattr(cfg, "chunk_size", None),

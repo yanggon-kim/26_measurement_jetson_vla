@@ -593,7 +593,7 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": spec.name, "model_repo": spec.checkpoint,
         "model_commit": MR.resolved_commit(spec),
-        "model_revision": spec.revision,
+        "model_revision": spec.revision or "not pinned (hub default branch; see model_commit)",
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "compile_mode": args.modes, "batch": 1, "num_denoise_steps": args.steps,
         "prefix_tokens": ps["P"], "suffix_tokens": ps["S"], "token_counts": ps,

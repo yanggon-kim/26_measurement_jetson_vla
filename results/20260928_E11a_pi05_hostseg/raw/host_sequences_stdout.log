@@ -1,0 +1,107 @@
+gate: {"power_mode": "NV Power Mode: MAXN", "sm_count": 16, "gpu_cur_freq_hz": 1300500000, "gpu_min_freq_hz": 1300500000, "gpu_max_freq_hz": 1300500000, "jetson_clocks_locked": true, "tpc_pg_mask": "0", "cpu_online": "0-11", "cpu_governor": "schedutil", "cpu_cur_freq_khz": "2201600", "cpu_max_freq_khz": "2201600"}
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi05_libero_base
+✓ Loaded state dict from model.safetensors
+Remapped 812 state dict keys
+All keys loaded successfully!
+weights: {"checked": 400, "matched": 400, "checkpoint": "lerobot/pi05_libero_base", "checkpoint_file_sha256_source": "huggingface_hub cache", "verdict": "real weights"}
+tokens: {"prefix_tokens_P": 968, "prefix_tokens_valid": 574, "suffix_tokens_S": 50, "suffix_tokens_valid": 50, "n_images": 3, "image_shapes": [[1, 3, 224, 224], [1, 3, 224, 224], [1, 3, 224, 224]], "image_masks": [true, true, false], "language_tokens": 200, "language_tokens_valid": 62, "state_dim_padded": null, "state_in_prefix": true, "chunk_size": 50}
+
+layer 0: x(1, 50, 1024) scores(1, 8, 50, 1018) T=1018 D=1024 I=4096 H=8 head_dim=256
+  rmsnorm1               eager     [0.576408, 0.991254, 0.620128, 0.530697] ms  kernels=0.0
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py:305: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+    compiled rmsnorm1@L0 in 4.2 s
+  rmsnorm1               compiled  [0.41611, 0.5718, 0.410784, 0.356353] ms  kernels=0.0
+  rmsnorm1               cudagraph [0.143818, 0.417566, 0.098832, 0.012815] ms  kernels=0.0
+  rope                   eager     [0.510762, 0.516042, 0.509184, 0.464956] ms  kernels=0.0
+    compiled rope@L0 in 1.3 s
+  rope                   compiled  [0.216615, 0.436382, 0.229248, 0.173497] ms  kernels=0.0
+  rope                   cudagraph [0.072141, 0.356705, 0.051968, 0.012895] ms  kernels=0.0
+  softmax                eager     [0.072925, 0.342706, 0.080576, 0.041998] ms  kernels=0.0
+    compiled softmax@L0 in 1.1 s
+  softmax                compiled  [0.160905, 0.168249, 0.1724, 0.119915] ms  kernels=0.0
+  softmax                cudagraph [0.051038, 0.053533, 0.03296, 0.008847] ms  kernels=0.0
+  residual_rmsnorm2      eager     [0.619462, 0.62983, 0.627232, 0.582312] ms  kernels=0.0
+    compiled residual_rmsnorm2@L0 in 0.8 s
+  residual_rmsnorm2      compiled  [0.422974, 0.427503, 0.409696, 0.362369] ms  kernels=0.0
+  residual_rmsnorm2      cudagraph [0.147466, 0.147978, 0.101968, 0.012159] ms  kernels=0.0
+  gelu_gate_mul_up       eager     [0.111819, 0.114107, 0.119296, 0.08254] ms  kernels=0.0
+    compiled gelu_gate_mul_up@L0 in 0.8 s
+  gelu_gate_mul_up       compiled  [0.166585, 0.174761, 0.17512, 0.122955] ms  kernels=0.0
+  gelu_gate_mul_up       cudagraph [0.047422, 0.05531, 0.037184, 0.010304] ms  kernels=0.0
+  partials_residual      eager     [0.12705, 0.131034, 0.131344, 0.092637] ms  kernels=0.0
+    compiled partials_residual@L0 in 0.8 s
+  partials_residual      compiled  [0.157434, 0.164633, 0.174512, 0.121147] ms  kernels=0.0
+  partials_residual      cudagraph [0.049678, 0.058686, 0.045808, 0.010383] ms  kernels=0.0
+  residual               eager     [0.108491, 0.109467, 0.111888, 0.070957] ms  kernels=0.0
+    compiled residual@L0 in 0.7 s
+  residual               compiled  [0.165529, 0.176457, 0.178112, 0.124827] ms  kernels=0.0
+  residual               cudagraph [0.040702, 0.059981, 0.044656, 0.010335] ms  kernels=0.0
+  attention_gpu          eager     [0.622678, 0.602647, 0.530064, 0.451453] ms  kernels=0.0
+W0928 13:25:30.758000 90425 torch/_inductor/utils.py:1446] [7/0] Not enough SMs to use max_autotune_gemm mode
+    compiled attention_gpu@L0 in 1.3 s
+  attention_gpu          compiled  [0.533546, 0.535306, 0.400944, 0.322867] ms  kernels=0.0
+  attention_gpu          cudagraph [0.437166, 0.437678, 0.392352, 0.010848] ms  kernels=0.0
+  cast_scores_fp32_fp16  eager     [0.072269, 0.076205, 0.081264, 0.042559] ms  kernels=0.0
+    compiled cast_scores_fp32_fp16@L0 in 0.7 s
+  cast_scores_fp32_fp16  compiled  [0.160057, 0.168537, 0.164656, 0.120059] ms  kernels=0.0
+  cast_scores_fp32_fp16  cudagraph [0.034638, 0.100796, 0.033072, 0.008415] ms  kernels=0.0
+    compiled sequence@L0 in 1.8 s
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-report-7939.qdstrm'
+[1/1] [0%                          ] host_sequences.nsys-repProcessing events...
+[1/1] [0%                          ] host_sequences.nsys-rep[1/1] [9%                          ] host_sequences.nsys-rep[1/1] [==19%                       ] host_sequences.nsys-rep[1/1] [=====30%                    ] host_sequences.nsys-rep[1/1] [=====31%                    ] host_sequences.nsys-rep[1/1] [=====32%                    ] host_sequences.nsys-rep[1/1] [======33%                   ] host_sequences.nsys-rep[1/1] [======34%                   ] host_sequences.nsys-rep[1/1] [======35%                   ] host_sequences.nsys-rep[1/1] [=======36%                  ] host_sequences.nsys-rep[1/1] [=======37%                  ] host_sequences.nsys-rep[1/1] [=======38%                  ] host_sequences.nsys-rep[1/1] [================70%         ] host_sequences.nsys-rep[1/1] [========================100%] host_sequences.nsys-rep[1/1] [========================100%] host_sequences.nsys-rep
+  nsys: captured 10 sequences x 3 style(s) at layer 0
+
+layer 9: x(1, 50, 1024) scores(1, 8, 50, 1018) T=1018 D=1024 I=4096 H=8 head_dim=256
+  rmsnorm1               eager     [0.665221, 0.684116, 0.678272, 0.620743] ms  kernels=0.0
+    compiled rmsnorm1@L9 in 0.0 s
+  rmsnorm1               compiled  [0.648886, 0.605175, 0.499984, 0.398432] ms  kernels=0.0
+  rmsnorm1               cudagraph [0.144538, 0.422463, 0.097184, 0.019263] ms  kernels=0.0
+  rope                   eager     [0.633766, 0.643334, 0.6424, 0.590904] ms  kernels=0.0
+    compiled rope@L9 in 0.0 s
+  rope                   compiled  [0.268181, 0.455693, 0.27304, 0.213607] ms  kernels=0.0
+  rope                   cudagraph [0.076989, 0.079229, 0.064576, 0.020639] ms  kernels=0.0
+  softmax                eager     [0.087884, 0.088956, 0.09848, 0.053389] ms  kernels=0.0
+    compiled softmax@L9 in 0.0 s
+  softmax                compiled  [0.183113, 0.191368, 0.198736, 0.137339] ms  kernels=0.0
+  softmax                cudagraph [0.051038, 0.057838, 0.05824, 0.016415] ms  kernels=0.0
+  residual_rmsnorm2      eager     [0.767841, 0.777809, 0.772, 0.718914] ms  kernels=0.0
+    compiled residual_rmsnorm2@L9 in 0.0 s
+  residual_rmsnorm2      compiled  [0.453022, 0.476093, 0.46104, 0.394592] ms  kernels=0.0
+  residual_rmsnorm2      cudagraph [0.151322, 0.15057, 0.10176, 0.018784] ms  kernels=0.0
+  gelu_gate_mul_up       eager     [0.138443, 0.141466, 0.148048, 0.104684] ms  kernels=0.0
+    compiled gelu_gate_mul_up@L9 in 0.0 s
+  gelu_gate_mul_up       compiled  [0.188953, 0.188952, 0.204512, 0.14841] ms  kernels=0.0
+  gelu_gate_mul_up       cudagraph [0.05347, 0.057358, 0.057568, 0.014368] ms  kernels=0.0
+  partials_residual      eager     [0.153274, 0.156778, 0.165424, 0.118635] ms  kernels=0.0
+    compiled partials_residual@L9 in 0.0 s
+  partials_residual      compiled  [0.191064, 0.189416, 0.199744, 0.146346] ms  kernels=0.0
+  partials_residual      cudagraph [0.05723, 0.063341, 0.063264, 0.014575] ms  kernels=0.0
+  residual               eager     [0.132379, 0.132491, 0.139808, 0.094636] ms  kernels=0.0
+    compiled residual@L9 in 0.0 s
+  residual               compiled  [0.197256, 0.201704, 0.209008, 0.148298] ms  kernels=0.0
+  residual               cudagraph [0.060734, 0.063998, 0.060512, 0.014496] ms  kernels=0.0
+  attention_gpu          eager     [0.676869, 0.679636, 0.637168, 0.548218] ms  kernels=0.0
+    compiled attention_gpu@L9 in 0.0 s
+  attention_gpu          compiled  [0.54913, 0.558074, 0.477552, 0.376192] ms  kernels=0.0
+  attention_gpu          cudagraph [0.439998, 0.442766, 0.393104, 0.019343] ms  kernels=0.0
+  cast_scores_fp32_fp16  eager     [0.095212, 0.094012, 0.101632, 0.056717] ms  kernels=0.0
+    compiled cast_scores_fp32_fp16@L9 in 0.0 s
+  cast_scores_fp32_fp16  compiled  [0.18764, 0.19412, 0.199184, 0.143019] ms  kernels=0.0
+  cast_scores_fp32_fp16  cudagraph [0.053438, 0.057854, 0.0604, 0.014464] ms  kernels=0.0
+    compiled sequence@L9 in 0.0 s
+  nsys: captured 10 sequences x 3 style(s) at layer 9
+Generated:
+    /home/yanggon/00_VLA/26_measurement_jetson_vla/results/20260928_E11a_pi05_hostseg_kernels/raw/host_sequences.nsys-rep
+gpu_cur_freq_hz=1300500000

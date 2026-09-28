@@ -275,7 +275,7 @@ def token_counts(policy, batch, spec=None) -> dict:
         "image_masks": [bool(m_.all().item()) for m_ in img_masks],
         "language_tokens": int(lang.shape[1]),
         "language_tokens_valid": int(lang_mask.sum().item()),
-        "state_dim_padded": int(state.shape[-1]) if state is not None else None,
+        "state_dim_padded": int(state.shape[-1]) if state is not None else "none (no state tensor in the batch)",
         "state_in_prefix": name != "pi0",
         "chunk_size": int(policy.config.chunk_size),
     }

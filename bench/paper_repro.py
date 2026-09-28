@@ -211,7 +211,7 @@ def main() -> int:
         "date_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "model": spec.name, "model_repo": spec.checkpoint,
         "model_commit": MR.resolved_commit(spec),
-        "model_revision": spec.revision,
+        "model_revision": spec.revision or "not pinned (hub default branch; see model_commit)",
         "checkpoint": spec.checkpoint, "precision": "bfloat16",
         "matmul_precision": "high" if args.tf32 == "on" else "highest",
         "compile_mode": "none (eager)", "batch": 1, "num_denoise_steps": steps, "n_field": spec.n_field,
