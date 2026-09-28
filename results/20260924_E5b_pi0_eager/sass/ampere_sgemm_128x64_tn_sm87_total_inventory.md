@@ -1,0 +1,79 @@
+# SASS instruction inventory — `ampere_sgemm_128x64_tn_sm87.sass`
+
+Total instructions: **1304** (file has 1304 lines; cuobjdump emits ~2 lines per instruction).
+
+## Per-category subtotal
+
+| Category | Count | % of total |
+|---|---:|---:|
+| LSU | 156 | 12.0% |
+| FMA | 611 | 46.9% |
+| ALU | 437 | 33.5% |
+| Uniform | 1 | 0.1% |
+| Branch | 74 | 5.7% |
+| Other | 25 | 1.9% |
+| **Total** | **1304** | **100.0%** |
+
+## LSU split (Load / Store / Atomic)
+
+| Sub-class | Count | % of LSU | % of total |
+|---|---:|---:|---:|
+| Load | 120 | 76.9% | 9.2% |
+| Store | 36 | 23.1% | 2.8% |
+| **LSU total** | **156** | **100.0%** | **12.0%** |
+
+## Per-opcode breakdown
+
+| Category | Sub | Opcode | Count |
+|---|---|---|---:|
+| LSU | Load | `LDS.128` | 52 |
+| LSU | Load | `LDG.E.LTC128B.CONSTANT` | 38 |
+| LSU | Store | `STS` | 25 |
+| LSU | Load | `LDG.E.LTC128B.STRONG.GPU` | 16 |
+| LSU | Load | `LDS` | 8 |
+| LSU | Store | `STG.E.EF` | 8 |
+| LSU | Load | `LDG.E.LTC128B.64.CONSTANT` | 4 |
+| LSU | Store | `STS.128` | 2 |
+| LSU | Load | `LDG.E.EL.LTC128B.STRONG.GPU` | 1 |
+| LSU | Load | `MEMBAR.GPU` | 1 |
+| LSU | Store | `STG.E.EF.STRONG.GPU` | 1 |
+| FMA |  | `FFMA` | 520 |
+| FMA |  | `FMUL` | 64 |
+| FMA |  | `IMAD.WIDE.U32` | 14 |
+| FMA |  | `IMAD.U32` | 12 |
+| FMA |  | `FSETP.NE.AND` | 1 |
+| ALU |  | `MOV` | 64 |
+| ALU |  | `IADD3` | 59 |
+| ALU |  | `LEA` | 55 |
+| ALU |  | `ISETP.LT.AND` | 47 |
+| ALU |  | `LOP3.LUT` | 46 |
+| ALU |  | `LEA.HI.X` | 42 |
+| ALU |  | `IADD3.X` | 38 |
+| ALU |  | `R2P` | 21 |
+| ALU |  | `ISETP.EQ.AND` | 11 |
+| ALU |  | `SHF.R.U32.HI` | 11 |
+| ALU |  | `SHF.L.U32` | 9 |
+| ALU |  | `PLOP3.LUT` | 6 |
+| ALU |  | `SHF.R.S32.HI` | 5 |
+| ALU |  | `BMSK` | 4 |
+| ALU |  | `ISETP.NE.AND` | 4 |
+| ALU |  | `ISETP.GT.AND` | 3 |
+| ALU |  | `P2R` | 3 |
+| ALU |  | `P2R.B1` | 3 |
+| ALU |  | `ISETP.EQ.XOR` | 2 |
+| ALU |  | `ISETP.GE.AND` | 2 |
+| ALU |  | `ISETP.NE.U32.AND` | 1 |
+| ALU |  | `P2R.B2` | 1 |
+| Uniform |  | `UMOV` | 1 |
+| Branch |  | `BRA.U` | 20 |
+| Branch |  | `NOP` | 18 |
+| Branch |  | `BRA` | 10 |
+| Branch |  | `S2R` | 9 |
+| Branch |  | `CALL.REL` | 8 |
+| Branch |  | `BAR.SYNC.DEFER_BLOCKING` | 6 |
+| Branch |  | `BAR.SYNC` | 1 |
+| Branch |  | `EXIT` | 1 |
+| Branch |  | `RET.ABS` | 1 |
+| Other |  | `BMOV.32.CLEAR` | 15 |
+| Other |  | `LEPC` | 8 |
+| Other |  | `BMOV.32` | 2 |
