@@ -1,0 +1,35 @@
+# inner loop PC range 0x2eef9140-0x2eefa1f0: backward BRA 0x2eefa1f0 -> 0x2eef9140: of the 2 backward branches, the range whose instructions executed most (ncu per-PC Instructions Executed, §3)
+# Kernel2__cutlass_80_tensorop_s1688gemm_256x64_16x4_tn_align4 inner loop 0x2eef9140-0x2eefa1f0
+opcode,count,category,lsu_subclass
+IADD3,9,ALU,
+R2P,4,ALU,
+IADD3.X,3,ALU,
+ISETP.NE.AND,2,ALU,
+SEL,1,ALU,
+ISETP.GT.AND,1,ALU,
+DEPBAR.LE,1,Branch,
+BAR.SYNC.DEFER_BLOCKING,1,Branch,
+BRA,1,Branch,
+FSETP.GEU.AND,64,FMA,
+IMAD.IADD.U32,64,FMA,
+IMAD.MOV.U32,5,FMA,
+IMAD.WIDE.U32,3,FMA,
+LDSM.16.M88.4,16,LSU,Load
+LDGSTS.E.BYPASS.LTC128B.128,10,LSU,Load
+LDGDEPBAR,1,LSU,Load
+HMMA.1688.F32.TF32,64,Tensor core,
+UIADD3,6,Uniform,
+UMOV,4,Uniform,
+UISETP.NE.AND,2,Uniform,
+
+category,count,pct_of_total
+LSU,27,10.3%
+Tensor core,64,24.4%
+FMA,136,51.9%
+ALU,20,7.6%
+Uniform,12,4.6%
+Branch,3,1.1%
+TOTAL,262,100.0%
+
+lsu_subclass,count,pct_of_lsu,pct_of_total
+Load,27,100.0%,10.3%

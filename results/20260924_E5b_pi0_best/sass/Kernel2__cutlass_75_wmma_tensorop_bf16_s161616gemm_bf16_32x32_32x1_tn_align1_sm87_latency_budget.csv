@@ -1,0 +1,80 @@
+instruction,role,on_chain,on_max_documented_cycles_chain,cycles_assumed,cycles_assumed_l2_variant,source_of_cycles,inst_executed_mean_per_launch
+"0x2ef25f10  PRMT R15, R33, 0x5410, R32",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f20  PRMT R14, R35, 0x5410, R34",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f30  PRMT R13, R37, 0x5410, R36",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f40  PRMT R12, R39, 0x5410, R38",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f50  PRMT R27, R41, 0x5410, R40",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f60  PRMT R26, R43, 0x5410, R42",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f70  STS.128 [R51+0xa00], R12",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f80  PRMT R25, R45, 0x5410, R44",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25f90  PRMT R24, R47, 0x5410, R46",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25fa0  R2P PR, R30, 0xf",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef25fb0  IADD3 R29, R29, -0x1, RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef25fc0  STS.128 [R51], R24",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+0x2ef25fd0  BAR.SYNC.DEFER_BLOCKING 0x0,block barrier,False,False,10-20,10-20,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); ~10-20 + wait for other warps",14336.0
+"0x2ef25fe0  LD.E R2, [R18.64+0xa00]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef25ff0  IMAD.MOV.U32 R24, RZ, RZ, R53",FMA,False,True,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26000  LD.E R3, [R18.64+0xa10]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26010  IMAD.MOV.U32 R25, RZ, RZ, R23",FMA,False,False,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26020  IMAD.MOV.U32 R23, RZ, RZ, R0",FMA,False,False,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26030  LD.E R12, [R20.64]",LSU / Load,True,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26040  LD.E R13, [R20.64+0x280]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26050  LD.E R14, [R20.64+0x10]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26060  LD.E R15, [R20.64+0x290]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26070  LD.E R16, [R18.64+0xc80]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26080  LD.E R17, [R18.64+0xc90]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26090  HMMA.16816.F32.BF16 R4, R12, R2, R4",tensor-core MMA,True,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef260a0  LD.E R2, [R18.64+0xa20]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef260b0  LD.E R3, [R18.64+0xa30]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef260c0  HMMA.16816.F32.BF16 R8, R12, R16, R8",tensor-core MMA,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef260d0  LD.E R12, [R20.64+0x20]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef260e0  LD.E R13, [R20.64+0x2a0]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef260f0  LD.E R14, [R20.64+0x30]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26100  LD.E R15, [R20.64+0x2b0]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26110  LD.E R16, [R18.64+0xca0]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26120  LD.E R17, [R18.64+0xcb0]",LSU / Load,False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+0x2ef26130  BAR.SYNC.DEFER_BLOCKING 0x0,block barrier,False,False,10-20,10-20,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); ~10-20 + wait for other warps",14336.0
+"0x2ef26140  @P0   LDG.E.LTC128B.U16 R47, [R24.64]",global load (DRAM/L2: weights or activations),False,True,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26150  @P1   LDG.E.LTC128B.U16 R46, [R24.64+0x2]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26160  @P2   LDG.E.LTC128B.U16 R45, [R24.64+0x4]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26170  @P3   LDG.E.LTC128B.U16 R44, [R24.64+0x6]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26180  R2P PR, R30.B1, 0xf",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef26190  @!UPT UIADD3 URZ, URZ, URZ, URZ",Uniform,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef261a0  @P0   LDG.E.LTC128B.U16 R43, [R24.64+0x8]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef261b0  @P1   LDG.E.LTC128B.U16 R42, [R24.64+0xa]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef261c0  @P2   LDG.E.LTC128B.U16 R41, [R24.64+0xc]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef261d0  @P3   LDG.E.LTC128B.U16 R40, [R24.64+0xe]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef261e0  R2P PR, R31, 0xf",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef261f0  @!UPT UIADD3 URZ, URZ, URZ, URZ",Uniform,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef26200  @P0   LDG.E.LTC128B.U16 R39, [R22.64]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26210  @P1   LDG.E.LTC128B.U16 R38, [R22.64+0x2]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26220  @P2   LDG.E.LTC128B.U16 R37, [R22.64+0x4]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26230  @P3   LDG.E.LTC128B.U16 R36, [R22.64+0x6]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26240  R2P PR, R31.B1, 0xf",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef26250  ISETP.GE.AND P4, PT, R29, 0x3, PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26260  SEL R30, R30, RZ, P4",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef26270  @P0   LDG.E.LTC128B.U16 R35, [R22.64+0x8]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef26280  IADD3 R53, P0, R24, c[0x0][0x1a8], RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26290  @P1   LDG.E.LTC128B.U16 R34, [R22.64+0xa]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef262a0  @P2   LDG.E.LTC128B.U16 R33, [R22.64+0xc]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef262b0  ISETP.GT.AND P2, PT, R29, 0x1, PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef262c0  @P3   LDG.E.LTC128B.U16 R32, [R22.64+0xe]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",14336.0
+"0x2ef262d0  ISETP.GT.AND P3, PT, R29, 0x2, PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef262e0  @!UPT UIADD3 URZ, URZ, URZ, URZ",Uniform,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef262f0  @!P3  IMAD.MOV.U32 R31, RZ, RZ, RZ",FMA,False,False,4-6,4-6,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26300  IADD3 R22, P1, R22, c[0x0][0x1c8], RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26310  IADD3.X R0, R23, c[0x0][0x1cc], RZ, P1, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26320  IADD3.X R23, R25, c[0x0][0x1ac], RZ, P0, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+"0x2ef26330  HMMA.16816.F32.BF16 R4, R12, R2, R4",tensor-core MMA,True,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+"0x2ef26340  HMMA.16816.F32.BF16 R8, R12, R16, R8",tensor-core MMA,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),14336.0
+0x2ef26350  @P2   BRA 0x42ef25f10,branch,False,False,2-4,2-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",14336.0
+
+# summary (docs/03 §9)
+serial_cycles_per_iteration_DRAM_variant,400-500,deepest def-use chain (3 instructions, column on_chain); 2 of them have no documented latency in §9 and add an unknown amount, so this is a lower bound
+serial_cycles_per_iteration_L2_variant,150-200,deepest def-use chain (3 instructions, column on_chain); 2 of them have no documented latency in §9 and add an unknown amount, so this is a lower bound
+max_documented_cycles_chain_DRAM_variant,404-506,2 instructions (column on_max_documented_cycles_chain)
+measured_cycles_per_iteration,not measurable: gpc__cycles_active.avg and sm__warps_launched.sum are not exported on this Orin (protocol §3.3)
+overlap_ratio_serial_over_measured,not computable without the measured cycles
+achieved_active_warps_per_sm,33.33111111111111
+inner_loop_iterations_per_warp_derived,7.0,back-edge BRA executions per launch / warps per launch (grid x ceil(block/32))
+chain_method,static register def-use over one pass of the body (loop-carried edges ignored; vector widths from opcode modifiers) -- an approximation, bench/e5b_static.py longest_chain

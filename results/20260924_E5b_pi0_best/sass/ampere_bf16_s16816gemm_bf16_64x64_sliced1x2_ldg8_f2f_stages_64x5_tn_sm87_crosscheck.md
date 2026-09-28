@@ -1,15 +1,25 @@
-# Static-vs-dynamic cross-check (sm_87) — `Kernel2`
+# Static-vs-dynamic cross-check (sm_87) — `ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8_f2f_stages_64x5_tn`
 
-## Static SASS counts (from `Kernel2_inventory.csv`)
+## Static SASS counts (from `ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8_f2f_stages_64x5_tn_sm87_total_inventory.csv`)
 
-- LSU        : **373** (16.5%)
-- FMA        : **969** (42.8%)
-- ALU        : **550** (24.3%)
-- XU/Shuffle : **1** (0.0%)
-- Other      : **373** (16.5%)
-- TOTAL      : **2266**
+- LSU        : **93** (11.8%)
+- FMA        : **114** (14.5%)
+- ALU        : **399** (50.6%)
+- XU/Shuffle : **0** (0.0%)
+- Other      : **182** (23.1%)
+- TOTAL      : **788**
 
-Static ratios:  LSU/FMA = 0.38x,  LSU/ALU = 0.68x,  ALU/FMA = 0.57x
+Static ratios:  LSU/FMA = 0.82x,  LSU/ALU = 0.23x,  ALU/FMA = 3.50x
+
+## Dynamic ncu pipe utilisation (single-config — one ncu run)
+
+> Only one configuration is profiled. The table below shows the single run's dynamic counters. For workloads where multiple inputs or batch sizes are profiled separately, re-run this with a top-level `{run_id: {kernel_name: ...}}` JSON to compare across runs.
+
+| run | LSU% | FMA% | ALU% | LD% | WR% | LD:WR | dyn LSU/FMA | dyn LSU/ALU |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `20260924_E5b_pi0_best` | 8.74 | 0.23 | 5.57 | 8.38 | 0.36 | 23.43 | 38.08 | 1.57 |
+
+**Direction agreement check.** Static LSU/FMA = 0.82x; dynamic ranges 38.08x-38.08x. Static counts predict the LSU-heavy character; dynamic ratio is 46.7x amplified — see why below.
 
 ## Why static ≠ dynamic
 
