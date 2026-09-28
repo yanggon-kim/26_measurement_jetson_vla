@@ -629,6 +629,10 @@ def main() -> int:
     kernels_map = {}
     if args.kernels_csv and Path(args.kernels_csv).exists():
         for r in csv.DictReader(Path(args.kernels_csv).open()):
+            # keyed by LAYER too (2026-09-28): SmolVLA's layers 0 and 9 are different kinds (self- vs
+            # cross-attention, 63 vs 43 attention kernels); keyed by (segment, style) alone the last layer's
+            # count overwrote the first's. The (segment, style) entry stays as the fallback for extras.
+            kernels_map[(r["segment"], int(r["layer"]), r["exec_style"])] = float(r["n_kernels"])
             kernels_map[(r["segment"], r["exec_style"])] = float(r["n_kernels"])
         print(f"kernel counts: {len(kernels_map)} entries from {args.kernels_csv}")
 
@@ -719,7 +723,8 @@ def main() -> int:
                                      "exec_style": style, "n_kernels": nk})
                     print(f"  {sd['segment']:22s} {style:9s} kernels={nk}", flush=True)
                     continue
-                nk = kernels_map.get((sd["segment"], style), 0.0)
+                nk = kernels_map.get((sd["segment"], li, style),
+                                     kernels_map.get((sd["segment"], style), 0.0))
                 for timing, gap in (("wall_isolated", 0.0), ("wall_isolated", 2.0),
                                     ("gpu_event", 0.0), ("wall_launch", 0.0)):
                     ms = time_segment(fn, timing, args.warmup, args.timed, gap)
