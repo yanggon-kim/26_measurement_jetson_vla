@@ -490,7 +490,10 @@ from pathlib import Path
 # REPO is not defined inside these heredocs -- only os and Path are imported -- so this
 # resolves bench/ from the cwd the audit is invoked in, which is always the repo root.
 _BENCH_DIR = Path("bench").resolve()
-_NOT_JOBS = {"bw_hog.py", "progress_monitor.py", "watchdog.py"}
+_NOT_JOBS = {"bw_hog.py", "progress_monitor.py", "watchdog.py",
+             # CPU-only analysis (no CUDA): counted as GPU jobs, they raised false "2 INDEPENDENT GPU JOBS" (2026-09-28)
+             "e5b_static.py", "make_summaries.py", "sweep_ncu_table.py", "parse_ncu.py", "build_inst_inventory.py",
+             "sass_backward_bra.py", "crosscheck_sass.py", "analyze_e5b.py"}
 
 
 def _is_job_arg(a: str) -> bool:
@@ -653,7 +656,10 @@ from pathlib import Path
 # REPO is not defined inside these heredocs -- only os and Path are imported -- so this
 # resolves bench/ from the cwd the audit is invoked in, which is always the repo root.
 _BENCH_DIR = Path("bench").resolve()
-_NOT_JOBS = {"bw_hog.py", "progress_monitor.py", "watchdog.py"}
+_NOT_JOBS = {"bw_hog.py", "progress_monitor.py", "watchdog.py",
+             # CPU-only analysis (no CUDA): counted as GPU jobs, they raised false "2 INDEPENDENT GPU JOBS" (2026-09-28)
+             "e5b_static.py", "make_summaries.py", "sweep_ncu_table.py", "parse_ncu.py", "build_inst_inventory.py",
+             "sass_backward_bra.py", "crosscheck_sass.py", "analyze_e5b.py"}
 
 
 def _is_job_arg(a: str) -> bool:
