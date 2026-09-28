@@ -1,0 +1,96 @@
+{
+  "tag": "eager_N4",
+  "steps": 4,
+  "inferences": 2,
+  "n_kernels": 13950,
+  "regions": {
+    "vision": 6,
+    "CCCL:cub::DeviceScan::InclusiveScan": 20,
+    "vlm_prefix": 2,
+    "ae_step": 8
+  },
+  "timeline": [
+    {
+      "region": "CCCL:cub::DeviceScan::InclusiveScan",
+      "instances": 20,
+      "instances_per_inference": 10,
+      "wall_ms": 2445.1628,
+      "kernel_union_ms": 2259.9896,
+      "gpu_idle_ms": 185.1733,
+      "gpu_idle_frac": 0.0757,
+      "n_kernels": 4234.0,
+      "kernels_per_unit": 4234.0,
+      "unit": "inference",
+      "note": "per inference, averaged over the captured inferences",
+      "gap_total_ms": 185.1733,
+      "gap_median_us": 24.672,
+      "n_gaps": 8466
+    },
+    {
+      "region": "ae_step",
+      "instances": 8,
+      "instances_per_inference": 4,
+      "wall_ms": 364.4385,
+      "kernel_union_ms": 127.7522,
+      "gpu_idle_ms": 236.6864,
+      "gpu_idle_frac": 0.6495,
+      "n_kernels": 4409.0,
+      "kernels_per_unit": 1102.25,
+      "unit": "denoising step",
+      "note": "per inference, averaged over the captured inferences",
+      "gap_total_ms": 236.6864,
+      "gap_median_us": 52.064,
+      "n_gaps": 8816
+    },
+    {
+      "region": "vision",
+      "instances": 6,
+      "instances_per_inference": 3,
+      "wall_ms": 240.6819,
+      "kernel_union_ms": 238.0464,
+      "gpu_idle_ms": 2.6355,
+      "gpu_idle_frac": 0.011,
+      "n_kernels": 1650.0,
+      "kernels_per_unit": 1650.0,
+      "unit": "inference",
+      "note": "per inference, averaged over the captured inferences",
+      "gap_total_ms": 2.6355,
+      "gap_median_us": 1.376,
+      "n_gaps": 3298
+    },
+    {
+      "region": "vlm_prefix",
+      "instances": 2,
+      "instances_per_inference": 1,
+      "wall_ms": 2166.3496,
+      "kernel_union_ms": 2163.8787,
+      "gpu_idle_ms": 2.4709,
+      "gpu_idle_frac": 0.0011,
+      "n_kernels": 879.0,
+      "kernels_per_unit": 879.0,
+      "unit": "inference",
+      "note": "per inference, averaged over the captured inferences",
+      "gap_total_ms": 2.4709,
+      "gap_median_us": 1.376,
+      "n_gaps": 1756
+    },
+    {
+      "region": "whole_capture",
+      "instances": 1,
+      "instances_per_inference": 1,
+      "wall_ms": 5556.1175,
+      "kernel_union_ms": 5060.0466,
+      "gpu_idle_ms": 496.0709,
+      "gpu_idle_frac": 0.0893,
+      "n_kernels": 13950,
+      "kernels_per_unit": 6975.0,
+      "unit": "inference",
+      "note": "the whole capture window, 2 inferences"
+    }
+  ],
+  "notes": [
+    "GPU idle is region wall time minus the UNION of kernel intervals, so overlapping kernels are not double-counted.",
+    "All durations are nsys durations. Protocol \u00a72: ncu Duration is never a latency.",
+    "Compiled captures run with --no-regions because regions.py's context managers graph-break the model, so only whole_capture is available for those."
+  ]
+}

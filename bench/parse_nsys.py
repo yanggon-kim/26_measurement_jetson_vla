@@ -265,7 +265,7 @@ def main() -> int:
         # rather than leaving the field blank in the artefact protocol §5 governs.
         "model": target.get("model") or _model_from_dirname(d.name),
         "compile_mode": target.get("compile_mode"),
-        "rung": target.get("rung"), "rung_detail": target.get("rung_detail", ""),
+        "rung": target.get("rung") or "none (eager, no ladder rung)", "rung_detail": target.get("rung_detail", ""),
         "num_denoise_steps": target.get("steps", args.steps),
         "inferences_captured": target.get("inferences", args.inferences),
         "regions_present": sorted(regions),

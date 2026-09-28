@@ -98,7 +98,7 @@ def main() -> int:
     print(json.dumps({"gate": gate, "model": args.model, "steps": args.steps,
                       "inferences": args.inferences,
                       "compile_mode": (f"set by the rung ({args.rung})" if args.rung else (args.compile_mode or "none (eager)")),
-                      "rung": args.rung, "rung_detail": rung_desc,
+                      "rung": args.rung or "none (eager, no ladder rung)", "rung_detail": rung_desc,
                       "regions": None if rec is None else rec.results_ms()}))
     return 0
 
