@@ -1,0 +1,110 @@
+{
+ "experiment": "E7 (power and energy per phase)",
+ "task": "T009",
+ "model": "groot_n17",
+ "checkpoint": "nvidia/GR00T-N1.7-3B",
+ "precision": "bfloat16",
+ "matmul_precision": "high",
+ "compile": "action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs",
+ "rung": "vlm_compile",
+ "num_inference_timesteps": 4,
+ "n_warmup": 5,
+ "n_timed": "60.0 s loop per phase",
+ "sample_hz": 20,
+ "power_mode": "NV Power Mode: MAXN",
+ "sm_count": 16,
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "tpc_pg_mask": "0",
+  "gpu_cur_freq_hz": "1300500000",
+  "gpu_min_freq_hz": "1300500000",
+  "gpu_max_freq_hz": "1300500000",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "torch": "2.10.0",
+  "device": "Orin",
+  "capability": "(8, 7)"
+ },
+ "allow_capped": false,
+ "bench_commit": "64ddc3660435bc0a57b8a60e979d78ee7af403ff",
+ "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+ "gr00t_root_resolved": "/home/yanggon/00_VLA/Isaac-GR00T",
+ "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+ "gate_end": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "tpc_pg_mask": "0",
+  "gpu_cur_freq_hz": "1300500000",
+  "gpu_min_freq_hz": "1300500000",
+  "gpu_max_freq_hz": "1300500000",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "torch": "2.10.0",
+  "device": "Orin",
+  "capability": "(8, 7)"
+ },
+ "throttled": false,
+ "throttled_evidence": "GPU clock start 1300500000 end 1300500000",
+ "date_utc": "2026-09-28T18:35:48Z",
+ "command": "bench/groot_phases.py --power --seconds 60 --outdir results/20260928_E7v_groot_n17_vlm_compile --phases prefix,vision,vlm,ae,full --version n17 --rung vlm_compile --checkpoint nvidia/GR00T-N1.7-3B --tf32 on --head-mode reduce-overhead --llm-mode max-autotune-no-cudagraphs",
+ "gr00t_root": "default",
+ "observation_shapes": {
+  "video": {
+   "exterior_image_1_left": [
+    1,
+    2,
+    256,
+    256,
+    3
+   ],
+   "wrist_image_left": [
+    1,
+    2,
+    256,
+    256,
+    3
+   ]
+  },
+  "state": {
+   "eef_9d": [
+    1,
+    1,
+    9
+   ],
+   "gripper_position": [
+    1,
+    1,
+    1
+   ],
+   "joint_position": [
+    1,
+    1,
+    7
+   ]
+  }
+ },
+ "idle_baseline_mW": {
+  "VDD_GPU_SOC": 4786.6,
+  "VDD_CPU_CV": 1550.1,
+  "VIN_SYS_5V0": 4297.3,
+  "VDDQ_VDD2_1V8AO": 444.2
+ },
+ "phases": {
+  "prefix": "model.backbone(backbone_inputs) -- the whole VLM, vision INSIDE",
+  "ae": "model.action_head.get_action on a backbone output computed once; contains the num_inference_timesteps loop",
+  "full": "model.get_action(inputs) on already-collated inputs, i.e. the GPU path only -- prepare_input (CPU) is outside all three loops",
+  "vision": "E7v: the image-encoder calls one backbone pass makes, recorded and replayed",
+  "vlm": "E7v: the unchanged backbone with the image encoder answered from recorded outputs"
+ },
+ "phases_run": "prefix,vision,vlm,ae,full",
+ "notes": [
+  "The memory rail is measured at the regulator INPUT (~5.04 V) and is NOT rescaled to 1.8 V. It is an upper bound on DRAM power; quote its above-idle delta next to the absolute value, and never call it 'DRAM power' without those words (protocol \u00a74).",
+  "Each rail is reported separately, as module power (all four) and as the three-rail sum without the memory rail.",
+  "T005 checked the four rails for double-counting and found none: a load that raises VDD_GPU_SOC by 51.8 W raises VIN_SYS_5V0 by only 8.7 W. They may be summed.",
+  "An idle baseline was measured in this power mode, for this duration, before the loops.",
+  "tegrastats --logfile appends, so each log is deleted before its run (T001).",
+  "prefix and ae are driven BELOW model.get_action, so if a compile mode was applied to get_action itself they would not go through it. This run compiled: action_head.get_action@reduce-overhead+clone;backbone.model.language_model.forward@max-autotune-no-cudagraphs.",
+  "GR00T's prefix loop includes its vision encoder, as the LeRobot models' prefix loop does. With --phases vision,vlm (E7v) the encoder is split out: vision replays the recorded encoder calls, vlm runs the backbone with them answered from recorded outputs."
+ ]
+}
