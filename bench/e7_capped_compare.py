@@ -56,7 +56,7 @@ def main() -> int:
         if rung in ("none (eager)",):
             rung = "eager"
         n = m.get("num_denoise_steps") or m.get("num_inference_timesteps")
-        prec = m.get("matmul_precision") or "as the rung sets it"
+        prec = m.get("matmul_precision") or ("as the rung sets it" if rung != "eager" else "default")
         pm = mode_of(str(m.get("power_mode") or (m.get("gate") or {}).get("power_mode") or ""))
         base = os.path.basename(d)
         fixed = base[:8] >= FIX_DATE
