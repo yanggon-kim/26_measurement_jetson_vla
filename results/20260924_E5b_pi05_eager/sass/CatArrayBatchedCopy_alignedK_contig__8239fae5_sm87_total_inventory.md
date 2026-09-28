@@ -1,0 +1,64 @@
+# SASS instruction inventory — `CatArrayBatchedCopy_alignedK_contig__8239fae5_sm87.sass`
+
+Total instructions: **576** (file has 576 lines; cuobjdump emits ~2 lines per instruction).
+
+## Per-category subtotal
+
+| Category | Count | % of total |
+|---|---:|---:|
+| LSU | 19 | 3.3% |
+| FMA | 239 | 41.5% |
+| ALU | 257 | 44.6% |
+| XU | 9 | 1.6% |
+| Uniform | 2 | 0.3% |
+| Branch | 33 | 5.7% |
+| Other | 17 | 3.0% |
+| **Total** | **576** | **100.0%** |
+
+## LSU split (Load / Store / Atomic)
+
+| Sub-class | Count | % of LSU | % of total |
+|---|---:|---:|---:|
+| Load | 10 | 52.6% | 1.7% |
+| Store | 9 | 47.4% | 1.6% |
+| **LSU total** | **19** | **100.0%** | **3.3%** |
+
+## Per-opcode breakdown
+
+| Category | Sub | Opcode | Count |
+|---|---|---|---:|
+| LSU | Store | `STG.E` | 9 |
+| LSU | Load | `LDG.E` | 5 |
+| LSU | Load | `LDC` | 3 |
+| LSU | Load | `LDC.64` | 1 |
+| LSU | Load | `LDG.E.128` | 1 |
+| FMA |  | `IMAD` | 112 |
+| FMA |  | `IMAD.MOV` | 40 |
+| FMA |  | `IMAD.HI.U32` | 36 |
+| FMA |  | `IMAD.IADD` | 19 |
+| FMA |  | `IMAD.WIDE.U32` | 15 |
+| FMA |  | `IMAD.MOV.U32` | 14 |
+| FMA |  | `HFMA2.MMA` | 2 |
+| FMA |  | `IMAD.SHL.U32` | 1 |
+| ALU |  | `IADD3` | 107 |
+| ALU |  | `ISETP.GE.U32.AND` | 57 |
+| ALU |  | `SEL` | 36 |
+| ALU |  | `LOP3.LUT` | 11 |
+| ALU |  | `ISETP.NE.AND` | 10 |
+| ALU |  | `ISETP.NE.U32.AND` | 10 |
+| ALU |  | `F2I.FTZ.U32.TRUNC.NTZ` | 9 |
+| ALU |  | `I2F.U32.RP` | 9 |
+| ALU |  | `MOV` | 4 |
+| ALU |  | `ISETP.GT.U32.AND` | 3 |
+| ALU |  | `SHF.L.U32` | 1 |
+| XU |  | `MUFU.RCP` | 9 |
+| Uniform |  | `ULDC.64` | 1 |
+| Uniform |  | `UMOV` | 1 |
+| Branch |  | `NOP` | 15 |
+| Branch |  | `BRA` | 7 |
+| Branch |  | `EXIT` | 4 |
+| Branch |  | `S2R` | 3 |
+| Branch |  | `BSSY` | 2 |
+| Branch |  | `BSYNC` | 2 |
+| Other |  | `BMOV.32.CLEAR` | 15 |
+| Other |  | `BMOV.32` | 2 |

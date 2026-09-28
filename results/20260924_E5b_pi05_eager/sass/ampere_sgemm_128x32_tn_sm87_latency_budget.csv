@@ -1,0 +1,226 @@
+instruction,role,on_chain,on_max_documented_cycles_chain,cycles_assumed,cycles_assumed_l2_variant,source_of_cycles,inst_executed_mean_per_launch
+"0x22763b0  STS [R26], R16",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),128.0
+"0x22763c0  STS [R26+0x80], R17",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),128.0
+"0x22763d0  STS [R26+0x100], R18",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),128.0
+"0x22763e0  STS [R26+0x180], R19",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),128.0
+"0x22763f0  STS [R23], R20",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),128.0
+0x2276400  BAR.SYNC.DEFER_BLOCKING 0x0,block barrier,False,False,10-20,10-20,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); ~10-20 + wait for other warps",128.0
+"0x2276410  LOP3.LUT R26, R26, 0x2000, RZ, 0x3c, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",128.0
+"0x2276420  LOP3.LUT R23, R23, 0x2000, RZ, 0x3c, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",128.0
+"0x2276430  LDS.128 R32, [R22]",shared-memory load,True,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",128.0
+"0x2276440  LDS.128 R40, [R21]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",128.0
+"0x2276450  FFMA R1, R32, R40, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276460  ISETP.GE.AND P1, PT, R30, 0x10, PT",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276470  FFMA R0, R32, R41, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276480  FFMA R5, R33, R40, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276490  IADD3 R30, R30, -0x8, RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22764a0  FFMA R4, R33, R41, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22764b0  FFMA R9, R34, R40, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22764c0  LDS.128 R36, [R22+0x210]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22764d0  FFMA R8, R34, R41, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22764e0  FFMA R13, R35, R40, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22764f0  LDS.128 R44, [R21+0x90]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276500  FFMA R12, R35, R41, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276510  FFMA R15, R35, R42, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276520  @!P1  R2P PR, RZ, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276530  FFMA R14, R35, R43, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276540  FFMA R11, R34, R42, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276550  @P1   R2P PR, R31, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276560  FFMA R10, R34, R43, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276570  FFMA R7, R33, R42, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276580  @P3   LDG.E.LTC128B.CONSTANT R16, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",512.0
+"0x2276590  FFMA R6, R33, R43, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22765a0  FFMA R3, R32, R42, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22765b0  FFMA R2, R32, R43, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22765c0  FFMA R1, R36, R44, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22765d0  LDS.128 R32, [R22+0x420]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22765e0  FFMA R0, R36, R45, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22765f0  FFMA R5, R37, R44, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276600  @P1   IADD3 R28, P2, R28, c[0x0][0x178], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276610  FFMA R4, R37, R45, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276620  FFMA R9, R38, R44, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276630  LDS.128 R40, [R21+0x120]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276640  FFMA R8, R38, R45, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276650  FFMA R13, R39, R44, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276660  @P1   IADD3.X R29, R29, c[0x0][0x17c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276670  FFMA R12, R39, R45, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276680  FFMA R15, R39, R46, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276690  @P4   LDG.E.LTC128B.CONSTANT R17, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",512.0
+"0x22766a0  FFMA R14, R39, R47, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22766b0  FFMA R11, R38, R46, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22766c0  FFMA R10, R38, R47, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22766d0  FFMA R7, R37, R46, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22766e0  @P1   IADD3 R28, P2, R28, c[0x0][0x178], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22766f0  FFMA R6, R37, R47, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276700  FFMA R3, R36, R46, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276710  @P1   IADD3.X R29, R29, c[0x0][0x17c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276720  FFMA R2, R36, R47, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276730  FFMA R1, R32, R40, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276740  LDS.128 R36, [R22+0x630]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276750  FFMA R0, R32, R41, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276760  FFMA R5, R33, R40, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276770  LDS.128 R44, [R21+0x1b0]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276780  FFMA R4, R33, R41, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276790  FFMA R9, R34, R40, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22767a0  @P5   LDG.E.LTC128B.CONSTANT R18, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",512.0
+"0x22767b0  FFMA R8, R34, R41, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22767c0  FFMA R13, R35, R40, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22767d0  FFMA R12, R35, R41, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22767e0  FFMA R15, R35, R42, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22767f0  @P1   IADD3 R28, P2, R28, c[0x0][0x178], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276800  FFMA R14, R35, R43, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276810  FFMA R11, R34, R42, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276820  @P1   IADD3.X R29, R29, c[0x0][0x17c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276830  FFMA R10, R34, R43, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276840  FFMA R7, R33, R42, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276850  @P6   LDG.E.LTC128B.CONSTANT R19, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",512.0
+"0x2276860  FFMA R6, R33, R43, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276870  FFMA R3, R32, R42, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276880  FFMA R2, R32, R43, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276890  FFMA R1, R36, R44, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22768a0  LDS.128 R32, [R22+0x840]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22768b0  FFMA R0, R36, R45, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22768c0  FFMA R5, R37, R44, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22768d0  @P1   IADD3 R28, P2, R28, c[0x0][0x188], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22768e0  FFMA R4, R37, R45, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22768f0  FFMA R9, R38, R44, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276900  LDS.128 R40, [R21+0x240]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276910  FFMA R8, R38, R45, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276920  FFMA R13, R39, R44, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276930  @P1   IADD3.X R29, R29, c[0x0][0x18c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276940  FFMA R12, R39, R45, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276950  FFMA R15, R39, R46, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276960  @P1   R2P PR, R31.B1, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276970  FFMA R14, R39, R47, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276980  FFMA R11, R38, R46, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276990  @P3   LDG.E.LTC128B.CONSTANT R20, [R24]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",512.0
+"0x22769a0  FFMA R10, R38, R47, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22769b0  FFMA R7, R37, R46, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22769c0  FFMA R6, R37, R47, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22769d0  FFMA R3, R36, R46, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22769e0  @P1   IADD3 R24, P2, R24, c[0x0][0x190], RZ",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x22769f0  FFMA R2, R36, R47, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a00  FFMA R1, R32, R40, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a10  LDS.128 R36, [R22+0xa50]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a20  FFMA R0, R32, R41, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a30  FFMA R5, R33, R40, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a40  @P1   IADD3.X R25, R25, c[0x0][0x194], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a50  FFMA R4, R33, R41, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a60  FFMA R9, R34, R40, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a70  LDS.128 R44, [R21+0x2d0]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a80  FFMA R8, R34, R41, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276a90  FFMA R13, R35, R40, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276aa0  FFMA R12, R35, R41, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ab0  FFMA R15, R35, R42, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ac0  FFMA R14, R35, R43, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ad0  FFMA R11, R34, R42, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ae0  FFMA R10, R34, R43, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276af0  FFMA R7, R33, R42, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b00  FFMA R6, R33, R43, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b10  FFMA R3, R32, R42, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b20  FFMA R2, R32, R43, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b30  FFMA R1, R36, R44, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b40  LDS.128 R32, [R22+0xc60]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b50  FFMA R0, R36, R45, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b60  FFMA R5, R37, R44, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b70  LDS.128 R40, [R21+0x360]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b80  FFMA R4, R37, R45, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276b90  FFMA R9, R38, R44, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ba0  FFMA R8, R38, R45, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276bb0  FFMA R13, R39, R44, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276bc0  FFMA R12, R39, R45, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276bd0  FFMA R15, R39, R46, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276be0  @P1   STS [R26], R16",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276bf0  FFMA R14, R39, R47, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c00  FFMA R11, R38, R46, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c10  @P1   STS [R26+0x80], R17",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276c20  FFMA R10, R38, R47, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c30  FFMA R7, R37, R46, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c40  @P1   STS [R26+0x100], R18",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276c50  FFMA R6, R37, R47, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c60  FFMA R3, R36, R46, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c70  @P1   STS [R26+0x180], R19",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276c80  FFMA R2, R36, R47, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276c90  FFMA R1, R32, R40, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ca0  LDS.128 R36, [R22+0xe70]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276cb0  FFMA R0, R32, R41, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276cc0  FFMA R5, R33, R40, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276cd0  LDS.128 R44, [R21+0x3f0]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ce0  FFMA R4, R33, R41, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276cf0  FFMA R9, R34, R40, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d00  @P1   STS [R23], R20",shared-memory store,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),512.0
+"0x2276d10  FFMA R8, R34, R41, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d20  FFMA R13, R35, R40, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+0x2276d30  @P1   BAR.SYNC.DEFER_BLOCKING 0x0,block barrier,False,False,10-20,10-20,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); ~10-20 + wait for other warps",512.0
+"0x2276d40  FFMA R12, R35, R41, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d50  FFMA R15, R35, R42, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d60  FFMA R14, R35, R43, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d70  FFMA R11, R34, R42, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d80  FFMA R10, R34, R43, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276d90  FFMA R7, R33, R42, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276da0  FFMA R6, R33, R43, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276db0  FFMA R3, R32, R42, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276dc0  FFMA R2, R32, R43, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276dd0  FFMA R1, R36, R44, R1",FMA,True,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276de0  LOP3.LUT R22, R22, 0x2000, RZ, 0x3c, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276df0  FFMA R0, R36, R45, R0",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e00  FFMA R5, R37, R44, R5",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e10  LOP3.LUT R21, R21, 0x2000, RZ, 0x3c, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e20  FFMA R4, R37, R45, R4",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e30  FFMA R9, R38, R44, R9",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e40  @P1   LOP3.LUT R26, R26, 0x2000, RZ, 0x3c, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e50  FFMA R8, R38, R45, R8",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e60  FFMA R13, R39, R44, R13",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e70  @P1   LDS.128 R32, [R22]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e80  FFMA R12, R39, R45, R12",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276e90  FFMA R15, R39, R46, R15",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ea0  @P1   LDS.128 R40, [R21]",shared-memory load,False,False,30-30,30-30,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276eb0  FFMA R14, R39, R47, R14",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ec0  FFMA R11, R38, R46, R11",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ed0  @P1   LOP3.LUT R23, R23, 0x2000, RZ, 0x3c, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ee0  FFMA R10, R38, R47, R10",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276ef0  FFMA R7, R37, R46, R7",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276f00  FFMA R6, R37, R47, R6",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276f10  FFMA R3, R36, R46, R3",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276f20  FFMA R2, R36, R47, R2",FMA,False,False,4-4,4-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+0x2276f30  @P1   BRA.U 0x202276450,branch,False,False,2-4,2-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",512.0
+"0x2276f40  LOP3.LUT P0, RZ, R30, 0x7, RZ, 0xc0, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",128.0
+0x2276f50  @!P0  BRA.U 0x202277120,branch,False,False,2-4,2-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",128.0
+0x2276f60  NOP,Branch,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2276f70  S2R R36, SR_TID.X",Branch,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2276f80  LOP3.LUT R38, R36, 0x7, RZ, 0xc0, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2276f90  ISETP.GT.AND P1, PT, R30, R38, PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2276fa0  @!P1  R2P PR, RZ, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2276fb0  @P1   R2P PR, R31, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2276fc0  @P3   LDG.E.LTC128B.CONSTANT R16, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",0.0
+"0x2276fd0  @!P3  MOV R16, RZ",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2276fe0  @P1   IADD3 R28, P2, R28, c[0x0][0x178], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2276ff0  @P1   IADD3.X R29, R29, c[0x0][0x17c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2277000  @P4   LDG.E.LTC128B.CONSTANT R17, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",0.0
+"0x2277010  @!P4  MOV R17, RZ",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2277020  @P1   IADD3 R28, P2, R28, c[0x0][0x178], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2277030  @P1   IADD3.X R29, R29, c[0x0][0x17c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2277040  @P5   LDG.E.LTC128B.CONSTANT R18, [R28]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",0.0
+"0x2277050  @!P5  MOV R18, RZ",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2277060  @P1   IADD3 R28, P2, R28, c[0x0][0x178], RZ",ALU,False,True,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2277070  @P1   IADD3.X R29, R29, c[0x0][0x17c], RZ, P2, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x2277080  @P6   LDG.E.LTC128B.CONSTANT R19, [R28]",global load (DRAM/L2: weights or activations),False,True,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",0.0
+"0x2277090  @!P6  MOV R19, RZ",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x22770a0  LOP3.LUT R38, R36, 0x7, RZ, 0xc0, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x22770b0  ISETP.GT.AND P1, PT, R30, R38, PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+"0x22770c0  @!P1  R2P PR, RZ, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x22770d0  @P1   R2P PR, R31.B1, 0x78",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x22770e0  @P3   LDG.E.LTC128B.CONSTANT R20, [R24]",global load (DRAM/L2: weights or activations),False,False,400-500,150-200,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin); LDG DRAM variant",0.0
+"0x22770f0  @!P3  MOV R20, RZ",ALU,False,False,not documented,not documented,not documented in docs/03 §9 (no latency given for this opcode),0.0
+"0x2277100  LOP3.LUT R30, R30, 0xfffffff8, RZ, 0xc0, !PT",ALU,False,False,2-2,2-2,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+0x2277110  BRA.U 0x2022763b0,branch,False,False,2-4,2-4,"docs/03 §9 table ([ASSUMPTION]: documented for Ada / Blackwell with GDDR, order of magnitude only on Orin)",0.0
+
+# summary (docs/03 §9)
+serial_cycles_per_iteration_DRAM_variant,62-62,deepest def-use chain (9 instructions, column on_chain); 0 of them have no documented latency in §9 and add an unknown amount, so this is a lower bound
+serial_cycles_per_iteration_L2_variant,62-62,deepest def-use chain (9 instructions, column on_chain); 0 of them have no documented latency in §9 and add an unknown amount, so this is a lower bound
+max_documented_cycles_chain_DRAM_variant,416-516,9 instructions (column on_max_documented_cycles_chain)
+measured_cycles_per_iteration,not measurable: gpc__cycles_active.avg and sm__warps_launched.sum are not exported on this Orin (protocol §3.3)
+overlap_ratio_serial_over_measured,not computable without the measured cycles
+achieved_active_warps_per_sm,7.98
+inner_loop_iterations_per_warp_derived,no back-edge
+chain_method,static register def-use over one pass of the body (loop-carried edges ignored; vector widths from opcode modifiers) -- an approximation, bench/e5b_static.py longest_chain
