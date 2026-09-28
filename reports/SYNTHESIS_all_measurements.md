@@ -191,9 +191,9 @@ frame within **0.3–4.9 %**. SmolVLA eager now closes (1.021) — the 26 % exce
   parts are tiny once compiled).
 - **Language (the VLM prefill) is the largest energy consumer after optimisation** for π0 (59 %), π0.5 (60 %) and GR00T
   N1.5 (45 %); in GR00T N1.6 / N1.7 the three parts are nearly even (28–41 %).
-- **The action expert is the cheapest per unit time**: 20–26 W above idle for the compiled LeRobot experts vs 41–47 W for
-  vision / language; only GR00T's compiled DiT (41–49 W) is as power-dense as its prefix — consistent with it being the
-  one bandwidth-bound expert (§3). Action share of energy at the best rung: π0 24 %, π0.5 26 %, SmolVLA 39 %, GR00T
+- **The action expert is the cheapest per unit time**: 20–26 W above idle for the compiled LeRobot experts vs 33–47 W for
+  their vision / language parts; only GR00T's compiled DiT (41–49 W) is as power-dense as its prefix or more (N1.7: 42 W
+  vs vision 37 W, language 29 W) — consistent with it being the one bandwidth-bound expert (§3). Action share of energy at the best rung: π0 24 %, π0.5 26 %, SmolVLA 39 %, GR00T
   35–41 %.
 
 ## 3. Root cause of the bottleneck (nsys + ncu), base vs best [E5_timeline, E4g, E4h, E5b_*, E6_*, E12b, E13]
