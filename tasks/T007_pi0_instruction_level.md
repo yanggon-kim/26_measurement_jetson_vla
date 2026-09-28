@@ -88,3 +88,15 @@ waiting on launches.
 27 % and §7 does not document it. C1 independently found the eager expert `imc_miss`-limited
 in all three LeRobot models, so it is a reproduced observation, not noise. What does it mean
 on this device?
+
+status: done 2026-09-28 — completeness audit (owner request): the missing pieces are now delivered
+- Step 3 S sweep for π0 was never run (π0.5 / SmolVLA / GR00T had it): `results/20260928_E5b_pi0_ssweep`, section in
+  `reports/E5b_pi0.md`. At S = 51 both projections are weight streams (1.22–1.49× floor); only S = 256 leaves the flat region.
+- docs/03 §0 file set for every E5b directory (`bench/e5b_static.py`): sass/targets.csv, per-symbol SASS, total + inner
+  inventories, backward BRA, hot loop / pseudocode / latency budget for deep targets, ncu/parsed.json, ncu/*_raw.csv;
+  what cannot exist is in each meta.not_produced. Two tool bugs fixed: backward-BRA detection never fired on ncu-exported
+  dumps; per-short-name dumps kept only one of π0 best's four `Kernel2` symbols (the dumped one was 1 of 20 launches).
+- `reports/E5b_pi0.md` restructured to docs/03 §10's seven parts (`bench/make_e5b_reports.py`); §10 verification answered
+  honestly (stall tracing not satisfied: imc_miss / no_instruction undocumented in §7; chain-vs-budget not verifiable:
+  no cycle counters on Orin).
+- bench commit at close: 333505a.

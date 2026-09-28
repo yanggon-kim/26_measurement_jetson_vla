@@ -99,3 +99,17 @@ rows) re-consolidates π0 so its table no longer cites the confounded run. Repor
 4. `model_commit` was back-filled for `20260924_E11a_pi05_hostseg` and
    `20260924_E11c_pi05_handover`, disclosed inside each `meta.json`. It was empty because
    `resolved_commit()` postdated those runs and π0.5 pins no revision.
+
+status: done 2026-09-28 — completeness audit (owner request): gaps found and closed; one earlier SmolVLA number was wrong
+- **Correction:** SmolVLA's E11a `attention_whole` returned a captured tensor, so its committed 0.0156 ms / 0 kernels timed a
+  Python return. Fixed (e23d4b3): the model's own attention is 3.56 ms eager at layer 0 (self) and 2.64 ms at layer 9 (cross).
+- Step 1: the 20260924 runs had no kernel counts (n_kernels 0 everywhere, no t_launch_per_kernel) and no nsys capture.
+  Complete re-runs: `results/20260928_E11a_{pi05,smolvla}_hostseg` (count + nsys + timing; π0.5 layer times reproduce within
+  0.5 %). Kernel counts are now keyed by layer (be4b3b7; SmolVLA's layers 0 / 9 are different kinds).
+- Step 2 (`xfer_exact.csv`) was never measured: `results/20260928_E11c_{pi05,smolvla}_handover_xfer` (`bench/xfer_exact.py`).
+- Step 4: prefix-sweep stdout recovered into raw/ from the queue logs (six E11d dirs).
+- Step 7: consolidated files rebuilt with xfer_exact, T006's region latencies and t_ae_step (N-sweep slope):
+  `results/20260928_E11_pi05_inputs` (1428 rows), `results/20260928_E11_smolvla_inputs` (1129 rows), checker exit 0.
+- Reports: `reports/E11_{pi05,smolvla}_hybrid_inputs.md` now in T010's structure (`bench/make_e11_reports.py`);
+  `reports/E11_models.md` has the cross-model table T011 names.
+- bench commit at close: 333505a.

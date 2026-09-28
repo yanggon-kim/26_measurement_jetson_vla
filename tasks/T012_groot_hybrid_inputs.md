@@ -84,3 +84,21 @@ please extend `MODELS`.
 3. Segment bytes verified bf16 rather than assumed: N1.7's `adaln_cond` `bytes_read` is
    9440256, which is 1536×3072 weight elements at 2 bytes plus temb 1536 at 2 bytes exactly.
    N1.5 matches after the autocast fix.
+
+status: done 2026-09-28 — completeness audit (owner request): the 2026-09-24 scope reduction (E11a only) is withdrawn; steps 1–7 are delivered
+- Step 1 complete: `results/20260928_E11a_groot_n17_hostseg` (kernel counts, nsys host sequences, sequence /
+  whole_layer_graph, 8 step extras; blocks 0 / 16 cross-attention, 1 / 17 self-attention). **The DiT has 32 blocks
+  (16 cross-attention), not the 16 this task assumed.**
+- Step 2: `results/20260928_E11c_groot_n17_handover_xfer`. Step 3: `results/20260928_E11c_groot_n17_handover` — the head
+  receives backbone features (1, 273, 2048) bf16 = 1,118,208 B, not a KV cache; the 16 cross-attention blocks re-project
+  them through to_k / to_v at every denoising step (26.8 MB, 3.18 ms per step).
+- Step 4: `results/20260928_E11d_groot_n17_{eager,vlm_compile}_prefixsweep` — the checkpoint accepts exactly 2 cameras
+  (1 refused: wrist camera required; a 3rd is silently ignored — both in raw/refused_points.csv); prompts 14 / 17 / 75
+  tokens. A first run (same-length short / typical prompts, 3-image points that were really 2-image) is superseded.
+- Step 5: `results/20260928_E11e_groot_n17_{eager,vlm_compile}_mempressure`. Step 6:
+  `results/20260928_E11f_groot_n17_{eager,vlm_compile}_pipelining` (compiled GPU idle not measurable inside one graph).
+- Step 7: `results/20260928_E11_groot_n17_inputs` (2201 rows, 32 / 35 quantities, checker exit 0).
+- Report `reports/E11_groot_n17_hybrid_inputs.md` in T010's structure; GR00T row in `reports/E11_models.md`.
+- Code: `bench/groot_e11.py`, `bench/groot_segments.py` (count / nsys / time), `bench/segments_groot.py` (step extras),
+  shared functions extracted from host_segments / mempressure / pipelining (LeRobot outputs verified unchanged).
+- bench commit at close: 333505a.

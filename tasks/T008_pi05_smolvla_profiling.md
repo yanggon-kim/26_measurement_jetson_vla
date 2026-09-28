@@ -46,3 +46,14 @@ overhead (~45–75 µs); kernel time is taken from the sweeps' own ncu captures 
 these models (§2 slope used, `E3_E4_models.md`); the compiled rung for E5b is each model's best Part B rung.
 
 bench commit `ae47c79bda14`.
+
+status: done 2026-09-28 — completeness audit (owner request): the missing pieces are now delivered
+- Step 2 at N = 4 (only N = 10 existed): `results/20260928_E5_{pi05,smolvla}_{eager,best}_N4`; E5 timeline reports regenerated.
+- Step 3 ae_layer ncu captures (never run): `results/20260928_E5_ncu_pi05_{eager,best}_aelayer` (layer 0),
+  `results/20260928_E5_ncu_smolvla_eager_aelayer` (layers 0 self-attn, 1 cross-attn). SmolVLA best: NOT MEASURED — per-layer
+  NVTX ranges split the graph-captured denoise_step and cudagraph_trees refuses the replay (exact error in meta; cloning
+  the outputs was tried and did not help); the graph-level best capture is `results/20260924_E5b_smolvla_best`.
+  `bench/regions.py` now marks SmolVLA layers (its layer body is inlined). First attempt refused by the profiler guard,
+  which counted a CPU-only `ncu --import` as a profiler (fixed in all four ncu scripts).
+- E5b §0 file sets and §10-structured reports for π0.5 / SmolVLA as in T007's block.
+- bench commit at close: 333505a.
