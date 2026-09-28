@@ -1,0 +1,6 @@
+model,stage,tensor,shape,dtype,stride,contiguous,bytes,valid_tokens,padded_tokens,image_tokens,text_tokens_valid,per,notes
+groot_n17,backbone_output,backbone_features,"(1, 273, 2048)",bfloat16,"(559104, 2048, 1)",True,1118208,273,0,256,17,inference,returned by model.backbone (the hand-over object)
+groot_n17,backbone_output,backbone_attention_mask,"(1, 273)",bool,"(273, 1)",True,273,273,0,256,17,inference,mask carried with the features
+groot_n17,backbone_output,image_mask,"(1, 273)",bool,"(273, 1)",True,273,273,0,256,17,inference,mask carried with the features
+groot_n17,after_encode_features,backbone_features,"(1, 273, 2048)",bfloat16,"(559104, 2048, 1)",True,1118208,273,0,,,inference,"vlln + vl_self_attention applied once per inference (gr00t_n1d7.py:175-179, :307); this is what every DiT step reads as encoder_hidden_states"
+groot_n17,after_encode_features,state_features,"(1, 1, 1536)",bfloat16,"(1536, 1536, 1)",True,3072,,,,,inference,state_encoder once per inference (gr00t_n1d7.py:321); concatenated with the action tokens every step (:412)

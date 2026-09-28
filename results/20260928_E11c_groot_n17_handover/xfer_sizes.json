@@ -1,0 +1,27 @@
+{
+  "sizes": {
+    "scores_self_fp32": 215168,
+    "scores_self_fp16": 107584,
+    "scores_cross_fp32": 1432704,
+    "scores_cross_fp16": 716352,
+    "activation_tile": 125952,
+    "ffn_tile": 503808,
+    "kv_bytes_total": 1118208,
+    "cross_kv_per_step": 26836992
+  },
+  "info": {
+    "P": 273,
+    "S": 41,
+    "D": 1536,
+    "I": 6144,
+    "query_heads": 32,
+    "head_dim": 48,
+    "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+    "model_repo": "nvidia/GR00T-N1.7-3B",
+    "checkpoint": "nvidia/GR00T-N1.7-3B",
+    "num_denoise_steps": 4,
+    "action_horizon": 40,
+    "derivation": "H, head_dim from action_head.model.config; I from the first Linear of transformer_blocks[0].ff; S = state tokens + action_horizon; T = backbone tokens (P); kv_bytes_total = backbone_features bytes as handed over; cross_kv_per_step = K+V written by all cross blocks' to_k/to_v per step",
+    "source": "results/20260928_E11c_groot_n17_handover/handover.csv, cross_kv.csv"
+  }
+}

@@ -1,0 +1,8 @@
+model,tensor,direction,shape,dtype,bytes,per,notes
+groot_n17,backbone_features,gpu_to_action_head,"(1, 273, 2048)",bfloat16,1118208,inference,the hand-over object (backbone output)
+groot_n17,noisy_actions,into_action_head,"(1, 40, 132)",bfloat16,10560,step,action_encoder input each step (gr00t_n1d7.py:405)
+groot_n17,timestep,into_action_head,"(1,)",int64,8,step,discretised timestep tensor (gr00t_n1d7.py:401-404)
+groot_n17,state_features,inside_action_head,"(1, 1, 1536)",bfloat16,3072,inference,state encoded ONCE per inference (gr00t_n1d7.py:321) and concatenated each step (:412)
+groot_n17,dit_hidden_states,into_dit,"(1, 41, 1536)",bfloat16,125952,step,"sa_embs = cat(state_features, action_features)"
+groot_n17,velocity,out_of_action_head,"(1, 41, 132)",bfloat16,10824,step,action_decoder output; the last action_horizon rows are the Euler update's velocity (gr00t_n1d7.py:430-435)
+groot_n17,total,both,,,21392,step,noisy_actions + timestep + velocity (dit_hidden_states is inside the head)
