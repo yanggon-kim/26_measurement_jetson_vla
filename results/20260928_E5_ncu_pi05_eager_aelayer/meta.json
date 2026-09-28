@@ -1,0 +1,55 @@
+{
+ "experiment": "E5 C1 ncu, action-expert layer ranges (T008 step 3)",
+ "task": "T008",
+ "date_utc": "2026-09-28",
+ "model": "pi05",
+ "mode": "eager",
+ "compile_mode": "none (eager)",
+ "power_mode": "NV Power Mode: MAXN",
+ "jetson_clocks": "applied by the queue before each capture",
+ "command": "bash bench/run_ncu_c1.sh <model> <mode> <region> <outdir> (exact ncu command in ncu/<tag>.sh)",
+ "queue": "scratch/queues/t008_ncu_retry.sh (first attempt refused by the profiler guard, see notes)",
+ "bench_commit": "21a2a1b4fb47a7d9636f4e703f7fe8db47663a2f",
+ "captures": [
+  {
+   "region": "ae_layer_0",
+   "kernels_profiled": 53,
+   "kernel_cap": 60,
+   "compile_evidence": {
+    "compiled": false
+   },
+   "compile_style": "eager",
+   "gpu_cur_freq_hz": 1300500000
+  }
+ ],
+ "not_measured": "none",
+ "raw_files": [
+  {
+   "path": "ncu/pi05_eager_ae_layer_0.ncu-rep.zst",
+   "bytes": 2627421,
+   "sha256": "0b4294daad118c6a5c33c8165c153ede99865b30e3e829270a0afb508b0249f4"
+  },
+  {
+   "path": "ncu/pi05_eager_ae_layer_0.sh",
+   "bytes": 1689,
+   "sha256": "85b7c45f244574c30a255cb30993fe144911eafabd0ab315fddc0dbd93acfdba"
+  },
+  {
+   "path": "ncu/pi05_eager_ae_layer_0.stdout",
+   "bytes": 7333,
+   "sha256": "fed770f120f3428d7a7a67d2d364edbc5612cce462427258393f8b9adabe27b9"
+  },
+  {
+   "path": "ncu/pi05_eager_ae_layer_0_details.csv",
+   "bytes": 1557010,
+   "sha256": "1cb05a007942c0569c6d9309447c22daa3b9cf7840b95dd0ba2d42863a030a9e"
+  }
+ ],
+ "notes": [
+  "Completeness audit 2026-09-28: T008 step 3 asked for ae_layer ncu captures (pi05 layer 0; smolvla layer 0 = self-attention, layer 1 = cross-attention), eager and best; they had never been run.",
+  "First attempt 13:15: all six refused by the profiler guard because a CPU-only `ncu --import` was running (guard fixed, 4677997).",
+  "The capture is capped at 60 kernels (-c 60 in the ncu command); a layer with more kernels is truncated at 60.",
+  "SmolVLA's layer body is inlined in the container's forward, so ae_layer[j] spans layer j's attention call to layer j+1's (bench/regions.py, 2026-09-28).",
+  "pi05 best: LeRobot compile_model=True; the per-layer NVTX wrappers cause graph breaks (dynamo graph_breaks in compile_evidence), so the compiled partitioning differs from the unwrapped best rung."
+ ]
+}

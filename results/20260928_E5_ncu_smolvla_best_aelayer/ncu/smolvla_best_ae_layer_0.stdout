@@ -1,0 +1,87 @@
+==PROF== Connected to process 119446 (/usr/bin/python3.10)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  43%|████▎     | 212/489 [00:00<00:00, 2113.81it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 2467.60it/s]
+Reducing the number of VLM layers to 16 ...
+compile_style: ladder targets (denoise_step, embed_image, pg.forward)
+prep: SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids (mask is all-true by construction)
+  fixture images remapped ['observation.images.image', 'observation.images.image2'] -> ['observation.images.camera1', 'observation.images.camera2']
+/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/backends/cuda/__init__.py:131: UserWarning: Please use the new API settings to control TF32 behavior, such as torch.backends.cudnn.conv.fp32_precision = 'tf32' or torch.backends.cuda.matmul.fp32_precision = 'ieee'. Old settings, e.g, torch.backends.cuda.matmul.allow_tf32 = True, torch.backends.cudnn.allow_tf32 = True, allowTF32CuDNN() and allowTF32CuBLAS() will be deprecated after Pytorch 2.9. Please see https://pytorch.org/docs/main/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices (Triggered internally at /opt/pytorch/aten/src/ATen/Context.cpp:80.)
+  return torch._C._get_cublas_allow_tf32()
+==PROF== Connected to process 119604 (/usr/bin/python3.10)
+Traceback (most recent call last):
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/ncu_target.py", line 181, in <module>
+    raise SystemExit(main())
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/ncu_target.py", line 143, in main
+    policy.predict_action_chunk(batch)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 319, in predict_action_chunk
+    actions = self._get_action_chunk(batch, noise, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 291, in _get_action_chunk
+    actions = self.model.sample_actions(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 862, in sample_actions
+    v_t = denoise_step_partial_call(x_t)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 841, in denoise_step_partial_call
+    return self.denoise_step(
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 172, in denoise_close
+    return _orig(*a, **kw)
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 135, in denoise_step
+    return _orig(*a, **kw)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 803, in compile_wrapper
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 892, in denoise_step
+    outputs_embeds, _ = self.vlm_with_expert.forward(
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 123, in forward
+    return _orig(*a, **kw)
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/ncu_target.py", line 100, in _cloned
+    return _OL.clone_graph_outputs(_c(*a, **k))
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 803, in compile_wrapper
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/smolvlm_with_expert.py", line 431, in forward
+    att_outputs, past_key_values = self.forward_attn_layer(
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 161, in wrapped
+    torch.cuda.nvtx.range_push(f"ae_layer[{j}]")
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 162, in torch_dynamo_resume_in_wrapped_at_161
+    torch.cuda.nvtx.range_push(f"ae_layer_{j}")
+  File "/home/yanggon/00_VLA/26_measurement_jetson_vla/bench/regions.py", line 162, in torch_dynamo_resume_in_wrapped_at_162
+    torch.cuda.nvtx.range_push(f"ae_layer_{j}")
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 1004, in _fn
+    return fn(*args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1044, in forward
+    return compiled_fn(full_args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 339, in runtime_wrapper
+    all_outs = call_func_at_runtime_with_args(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/utils.py", line 126, in call_func_at_runtime_with_args
+    out = normalize_as_list(f(args))
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 510, in wrapper
+    return compiled_fn(runtime_args)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/output_code.py", line 584, in __call__
+    return self.current_callable(inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 1693, in run
+    return compiled_fn(new_inputs)  # type: ignore[arg-type]
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 404, in deferred_cudagraphify
+    fn, out = cudagraphify(model, inputs, new_static_input_idxs, *args, **kwargs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 463, in cudagraphify
+    return manager.add_function(
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2316, in add_function
+    return fn, fn(inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2012, in run
+    out = self._run(new_inputs, function_id)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2116, in _run
+    return self.run_eager(new_inputs, function_id)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 2277, in run_eager
+    return node.run(new_inputs)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 671, in run
+    non_cudagraph_inps_storages = get_non_cudagraph_inps()
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 663, in get_non_cudagraph_inps
+    non_cudagraph_inps = [
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/torch/_inductor/cudagraph_trees.py", line 667, in <listcomp>
+    and t.untyped_storage().data_ptr() not in existing_path_data_ptrs
+RuntimeError: Error: accessing tensor output of CUDAGraphs that has been overwritten by a subsequent run. Stack trace: File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 879, in denoise_step
+    suffix_embs, suffix_pad_masks, suffix_att_masks = self.embed_suffix(x_t, timestep)
+  File "/home/yanggon/venvs/pi0/lib/python3.10/site-packages/lerobot/policies/smolvla/modeling_smolvla.py", line 745, in embed_suffix
+    action_time_emb = self.action_time_mlp_out(action_time_emb). To prevent overwriting, clone the tensor outside of torch.compile() or call torch.compiler.cudagraph_mark_step_begin() before each model invocation.
+==PROF== Disconnected from process 119604
+==PROF== Disconnected from process 119446
+==ERROR== The application returned an error code (1).

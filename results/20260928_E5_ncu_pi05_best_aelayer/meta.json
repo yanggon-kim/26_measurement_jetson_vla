@@ -1,0 +1,57 @@
+{
+ "experiment": "E5 C1 ncu, action-expert layer ranges (T008 step 3)",
+ "task": "T008",
+ "date_utc": "2026-09-28",
+ "model": "pi05",
+ "mode": "best",
+ "compile_mode": "reduce-overhead (see compile_style per capture)",
+ "power_mode": "NV Power Mode: MAXN",
+ "jetson_clocks": "applied by the queue before each capture",
+ "command": "bash bench/run_ncu_c1.sh <model> <mode> <region> <outdir> (exact ncu command in ncu/<tag>.sh)",
+ "queue": "scratch/queues/t008_ncu_retry.sh (first attempt refused by the profiler guard, see notes)",
+ "bench_commit": "21a2a1b4fb47a7d9636f4e703f7fe8db47663a2f",
+ "captures": [
+  {
+   "region": "ae_layer_0",
+   "kernels_profiled": 56,
+   "kernel_cap": 60,
+   "compile_evidence": {
+    "frames_compiled": 103,
+    "graph_breaks": 5,
+    "compiled": true
+   },
+   "compile_style": "LeRobot compile_model=True (sample_actions as one unit)",
+   "gpu_cur_freq_hz": 1300500000
+  }
+ ],
+ "not_measured": "none",
+ "raw_files": [
+  {
+   "path": "ncu/pi05_best_ae_layer_0.ncu-rep.zst",
+   "bytes": 3366241,
+   "sha256": "1d3242054c7720fba0b66e7906db999113ef6e630d6e7c785b632f4272c78f77"
+  },
+  {
+   "path": "ncu/pi05_best_ae_layer_0.sh",
+   "bytes": 1697,
+   "sha256": "2c4c6a63f13be423579cdcc22187671b010768c4bea39698772916befe32b71a"
+  },
+  {
+   "path": "ncu/pi05_best_ae_layer_0.stdout",
+   "bytes": 9387,
+   "sha256": "a9715cdb710647e5a1fec9ba7911b0609e85f809568021051f0b1815b028eb3d"
+  },
+  {
+   "path": "ncu/pi05_best_ae_layer_0_details.csv",
+   "bytes": 2446747,
+   "sha256": "3c6751ea4028130c8f1b32d0a460878545cb72f1acf5f865a140bd8e0c2e7e94"
+  }
+ ],
+ "notes": [
+  "Completeness audit 2026-09-28: T008 step 3 asked for ae_layer ncu captures (pi05 layer 0; smolvla layer 0 = self-attention, layer 1 = cross-attention), eager and best; they had never been run.",
+  "First attempt 13:15: all six refused by the profiler guard because a CPU-only `ncu --import` was running (guard fixed, 4677997).",
+  "The capture is capped at 60 kernels (-c 60 in the ncu command); a layer with more kernels is truncated at 60.",
+  "SmolVLA's layer body is inlined in the container's forward, so ae_layer[j] spans layer j's attention call to layer j+1's (bench/regions.py, 2026-09-28).",
+  "pi05 best: LeRobot compile_model=True; the per-layer NVTX wrappers cause graph breaks (dynamo graph_breaks in compile_evidence), so the compiled partitioning differs from the unwrapped best rung."
+ ]
+}
