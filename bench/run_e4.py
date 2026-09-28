@@ -194,10 +194,18 @@ def main() -> int:
                     help="off (default) = the real compiled model, e2e only, slope gives "
                          "ms/step. on = region breakdown, but the NVTX/event context "
                          "managers graph-break the compiled region — a labelled variant only.")
+    ap.add_argument("--allow-capped", action="store_true",
+                    help="T004 4b(ii) (2026-09-28): permit a capped power mode, as run_e3.py does; the real "
+                         "mode is recorded in the gate and meta.json.")
+    ap.add_argument("--exp", default="E4",
+                    help="experiment label in the directory name (4b(ii) names its runs E3_pi0_<mode>_N<N>_<powermode>)")
+    ap.add_argument("--suffix", default="",
+                    help="appended to the directory name, e.g. the power mode (30W): a capped run must never "
+                         "carry a MAXN-looking name")
     args = ap.parse_args()
     steps = [int(x) for x in args.steps.split(",")]
 
-    gate = P.gate()
+    gate = P.gate(require_maxn=not args.allow_capped)
     tag = args.mode if args.variant == "whole" else f"{args.mode}+{args.variant}"
     print(f"=== E4  mode={args.mode}  variant={args.variant}  N={steps} ===")
     print("gate:", json.dumps(gate))
@@ -230,7 +238,10 @@ def main() -> int:
         policy, cinfo = compile_policy(policy, args.mode, args.variant)
         results = {}
         for n in steps:
-            run = REPO / "results" / f"{args.date}_E4_pi0_{tag}_N{n}"
+            run = REPO / "results" / (f"{args.date}_{args.exp}_pi0_{tag}_N{n}"
+                                      + (f"_{args.suffix}" if args.suffix else ""))
+            if run.exists() and any(run.iterdir()):
+                raise SystemExit(f"{run} exists and is not empty (protocol §5)")
             (run / "raw").mkdir(parents=True, exist_ok=True)
             print(f"\n--- N={n} ---", flush=True)
             t0 = time.time()
@@ -337,7 +348,10 @@ def main() -> int:
                 "fixture": {k: fx[k] for k in ("dataset","episode_index","frame_index","task")},
                 "command": (f"TORCH_LOGS=graph_breaks,recompiles python bench/run_e4.py "
                             f"--mode {args.mode} --variant {args.variant} "
-                            f"--steps {args.steps} --warmup {args.warmup} --timed {args.timed}"),
+                            f"--steps {args.steps} --warmup {args.warmup} --timed {args.timed}"
+                            + (" --allow-capped" if args.allow_capped else "")
+                            + (f" --exp {args.exp}" if args.exp != "E4" else "")
+                            + (f" --suffix {args.suffix}" if args.suffix else "")),
                 "throttled": False,
                 "throttled_evidence": "GPU clock pinned min==max; gate recorded above",
                 **extra,
