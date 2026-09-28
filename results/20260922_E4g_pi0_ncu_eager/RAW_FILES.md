@@ -33,3 +33,9 @@ never published.
 captures request four sections plus the 14 `smsp__average_warps_issue_stalled_*` metrics
 by name and are ~900 KB each after `zstd -19`, answering the same question. These remain
 the fuller raw record.
+
+## Update 2026-09-28 (completeness audit): now committed, compressed
+
+`zstd -19` shrinks the four reports to 2.8–8.6 MB (`ncu/<name>.ncu-rep.zst`), under the §6 cap, so they are committed
+as protocol §6 prefers; the uncompressed originals stay ignored. Restore with `zstd -d ncu/<name>.ncu-rep.zst`; the
+original sha256 of each is in `meta.json.raw_files` and matches the table above.
