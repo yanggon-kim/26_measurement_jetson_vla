@@ -6,16 +6,27 @@
 
 **A blank cell means the model has no such segment**, not that it was measured at zero. SmolVLA has no AdaRMS gate; GR00T's attention is fused under SDPA and has no separable `softmax`; π0's conditioning tensor is `None` so it has no `adaln_cond`. Printing a zero for any of those would assert something false.
 
-**GR00T contributes E11a only, and that is a scope statement rather than a gap.** E11c/d/e/f are built on the LeRobot phase loops and on a `transformers` KV cache, and GR00T has neither — its prefix is a whole VLM invoked as one unit and its action head takes the backbone output, not a cache. So the GR00T rows carry per-segment bytes, FLOPs and times for a DiT block, which is what the PIM model needs from a DiT architecture, and the handover, prefix-sweep, memory-pressure and pipelining sections are blank for them by design.
+**GR00T N1.7 has every E11 part since 2026-09-28** (T012 steps 2–7, `bench/groot_e11.py`): its hand-over object is the backbone's hidden states rather than a KV cache, and its 16 cross-attention blocks (of 32) re-project them at every denoising step — see `reports/E11_groot_n17_hybrid_inputs.md`. GR00T N1.5 / N1.6 still contribute E11a only.
+
+## Cross-model table (T011 acceptance; GR00T row per T012)
+
+Every cell is read from the model's newest consolidated `results/*_E11_<m>_inputs/model_inputs.csv` (`run` column) by `bench/make_e11_reports.py`; `pending` means that file or quantity does not exist yet. Times in ms, throughput in inferences/s, bytes in B. Definitions: `t_host_layer` = the first measured layer/block's `sequence` (eager, compiled) and `whole_layer_graph` (cudagraph), wall_isolated median; `t_step_extra (Σ eager)` = the SUM of the per-step extras' eager wall_isolated medians (derived: a sum); `kernels/layer` = the sum of that layer's host-segment kernel counts (derived: a sum); `t_kv_materialise` = the first key's wall_isolated median (the key is named); `t_vision` / `t_vlm_prefix` = the restated E3/E4 (T006/T009) region latencies at N = 10 — for GR00T `t_vlm_prefix` is the backbone EXCLUDING vision (`vlm_prefix_excl_vision`); `prefix_throughput` = E11e with no load; `prefix_slowdown` = E11e.
+
+| model | S | P | layers | t_host_layer eager | t_host_layer compiled | t_host_layer whole_layer_graph | t_step_extra (Σ eager) | kernels/layer eager | kernels/layer compiled | kv_bytes_total | t_kv_materialise | t_vision (N=10 eager / best) | t_vlm_prefix (N=10 eager / best) | prefix_throughput eager / best | e2e_throughput eager / best | prefix_slowdown gpu_hog_100 eager / best | prefix_slowdown cpu_hog_100 eager / best | run |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| π0 | 51 | 816 | 18 | 1.529 | 0.4455 | 0.1827 | 2.1421 (3 extras) | 44.7 | 13 | 15,040,512 | 0.5726 (stacked) | 239.5951 / — | 232.9308 / — | 2.0863 / 2.9445 | 1.4086 / 2.7446 | 1.3517 / 1.3446 | 1.0781 / 1.1258 | 20260924_E11_pi0_inputs |
+| π0.5 | 50 | 968 | 18 | 1.7309 | 0.6936 | 0.3344 | 1.9544 (3 extras) | 44.8 | 15 | 35,684,352 | 0.8726 (stacked) | 103.2767 / 56.3711 | 559.1142 / 227.4252 | 0.4123 / 1.5431 | 0.3749 / 1.4338 | 1.35 / 1.3551 | 1.0113 / 1.1219 | 20260928_E11_pi05_inputs |
+| SmolVLA | 50 | 177 | 16 | 0.711 | 0.3049 | 0.06638 | 1.8698 (3 extras) | 83.3 | 17 | 3,624,960 | 0.2353 (stacked) | 33.3633 / 31.0272 | 66.0924 / 7.5992 | 10.2663 / 10.2131 | 2.944 / 17.4366 | 1.1385 / 1.1282 | 1.0835 / 1.0904 | 20260928_E11_smolvla_inputs |
+| GR00T N1.7 | 41 | 273 | 32 | 0.723 | 0.5755 | 0.1892 | 4.0097 (8 extras) | 28.6 | 6 | 1,118,208 | 3.2846 (cross_kv_projection) | 69.8019 / 70.2681 | 85.0333 / 84.478 | 6.446 / 6.3994 | 2.7508 / 4.2289 | 1.4607 / 1.3704 | 1.1654 / 1.1739 | 20260928_E11_groot_n17_inputs |
 
 ## Conditions each run measured for itself
 
 | model | P (prefix tokens) | S (suffix tokens) | N | precision | run |
 |---|---:|---:|---:|---|---|
 | π0 | 816 | 51 | 4 | bf16 | `20260924_E11_pi0_inputs` |
-| π0.5 | 968 | 50 | 4 | bf16 | `20260924_E11_pi05_inputs` |
-| SmolVLA | 177 | 50 | 4 | bf16 | `20260924_E11_smolvla_inputs` |
-| GR00T N1.7 | — | — | 4 | bf16 | `20260924_E11a_groot_n17_hostseg` |
+| π0.5 | 968 | 50 | 4 | bf16 | `20260928_E11_pi05_inputs` |
+| SmolVLA | 177 | 50 | 4 | bf16 | `20260928_E11_smolvla_inputs` |
+| GR00T N1.7 | 273 | 41 | 4 | bf16 | `20260928_E11_groot_n17_inputs` |
 | GR00T N1.6 | — | — | 4 | bf16 | `20260924_E11a_groot_n16_hostseg` |
 | GR00T N1.5 | — | — | 4 | bf16 | `20260924_E11a_groot_n15_hostseg` |
 
@@ -71,22 +82,22 @@ Where a model measured more than one layer or block, the **largest** is shown �
 
 | segment | π0 | π0.5 | SmolVLA | GR00T N1.7 | GR00T N1.6 | GR00T N1.5 |
 |---|---:|---:|---:|---:|---:|---:|
-| `attention_fused` | — | — | — | 0.9955 | 1.0036 | 0.9545 |
-| `residual_rmsnorm2` | 0.4416 | 0.5831 | 0.4150 | — | — | — |
-| `attention_gpu` | 0.5371 | 0.5794 | — | — | — | — |
-| `adalayernorm1` | — | — | — | 0.4244 | 0.4245 | 0.5177 |
-| `rmsnorm1` | 0.4068 | 0.5112 | 0.3504 | — | — | — |
-| `rope` | 0.4706 | 0.4741 | — | — | — | — |
-| `feedforward` | — | — | — | 0.3529 | 0.3526 | 0.4271 |
-| `adaln_cond` | — | — | — | 0.1990 | 0.1989 | 0.2412 |
-| `layernorm3` | — | — | — | 0.0871 | 0.0861 | 0.1530 |
-| `partials_residual` | 0.1205 | 0.1213 | — | — | — | — |
-| `gelu_gate_mul_up` | 0.1126 | 0.1132 | 0.1129 | — | — | — |
-| `softmax` | 0.1105 | 0.0734 | — | — | — | — |
-| `residual` | 0.0683 | 0.1032 | 0.0975 | 0.0587 | 0.0608 | 0.0962 |
-| `residual_ff` | — | — | — | 0.0613 | 0.0612 | 0.0963 |
-| `cast_scores_fp32_fp16` | 0.0739 | 0.0753 | — | — | — | — |
-| `attention_whole` | — | — | 0.0156 | — | — | — |
+| `attention_whole` | — | — | 3.5556 | — | — | — |
+| `attention_fused` | — | — | — | 1.0204 | 1.0036 | 0.9545 |
+| `residual_rmsnorm2` | 0.4416 | 0.5792 | 0.4002 | — | — | — |
+| `attention_gpu` | 0.5371 | 0.5790 | — | — | — | — |
+| `adalayernorm1` | — | — | — | 0.4346 | 0.4245 | 0.5177 |
+| `rmsnorm1` | 0.4068 | 0.5091 | 0.3398 | — | — | — |
+| `rope` | 0.4706 | 0.4706 | — | — | — | — |
+| `feedforward` | — | — | — | 0.3538 | 0.3526 | 0.4271 |
+| `adaln_cond` | — | — | — | 0.2066 | 0.1989 | 0.2412 |
+| `layernorm3` | — | — | — | 0.0917 | 0.0861 | 0.1530 |
+| `partials_residual` | 0.1205 | 0.1208 | — | — | — | — |
+| `gelu_gate_mul_up` | 0.1126 | 0.1124 | 0.1105 | — | — | — |
+| `softmax` | 0.1105 | 0.0737 | — | — | — | — |
+| `residual` | 0.0683 | 0.1023 | 0.0951 | 0.0644 | 0.0608 | 0.0962 |
+| `residual_ff` | — | — | — | 0.0653 | 0.0612 | 0.0963 |
+| `cast_scores_fp32_fp16` | 0.0739 | 0.0755 | — | — | — | — |
 
 Where a model measured more than one layer or block, the **largest** is shown — the per-layer rows are in each run's own `model_inputs.csv` with a `layer=` or `block=` variant.
 
@@ -95,9 +106,9 @@ Where a model measured more than one layer or block, the **largest** is shown �
 | model | distinct quantities | rows | not measured |
 |---|---:|---:|---|
 | π0 | 33 | 1564 | see `20260924_E11_pi0_inputs/summary.md` |
-| π0.5 | 27 | 1159 | see `20260924_E11_pi05_inputs/summary.md` |
-| SmolVLA | 27 | 860 | see `20260924_E11_smolvla_inputs/summary.md` |
-| GR00T N1.7 | 4 | 168 | see `20260924_E11a_groot_n17_hostseg/summary.md` |
+| π0.5 | 31 | 1428 | see `20260928_E11_pi05_inputs/summary.md` |
+| SmolVLA | 31 | 1129 | see `20260928_E11_smolvla_inputs/summary.md` |
+| GR00T N1.7 | 32 | 2201 | see `20260928_E11_groot_n17_inputs/summary.md` |
 | GR00T N1.6 | 4 | 168 | see `20260924_E11a_groot_n16_hostseg/summary.md` |
 | GR00T N1.5 | 4 | 162 | see `20260924_E11a_groot_n15_hostseg/summary.md` |
 
