@@ -1,15 +1,15 @@
-# Static-vs-dynamic cross-check (sm_87) — `ampere_bf16_s16816gemm_bf16_128x128_ldg8_relu_f2f_stages_32x5_tn`
+# Static-vs-dynamic cross-check (sm_87) — `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn`
 
-## Static SASS counts (from `ampere_bf16_s16816gemm_bf16_128x128_ldg8_relu_f2f_stages_32x5_tn_inventory.csv`)
+## Static SASS counts (from `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_sm87_total_inventory.csv`)
 
-- LSU        : **106** (10.0%)
-- FMA        : **226** (21.3%)
-- ALU        : **477** (45.0%)
+- LSU        : **127** (12.8%)
+- FMA        : **162** (16.3%)
+- ALU        : **495** (49.7%)
 - XU/Shuffle : **0** (0.0%)
-- Other      : **251** (23.7%)
-- TOTAL      : **1060**
+- Other      : **212** (21.3%)
+- TOTAL      : **996**
 
-Static ratios:  LSU/FMA = 0.47x,  LSU/ALU = 0.22x,  ALU/FMA = 2.11x
+Static ratios:  LSU/FMA = 0.78x,  LSU/ALU = 0.26x,  ALU/FMA = 3.06x
 
 ## Dynamic ncu pipe utilisation (single-config — one ncu run)
 
@@ -17,9 +17,9 @@ Static ratios:  LSU/FMA = 0.47x,  LSU/ALU = 0.22x,  ALU/FMA = 2.11x
 
 | run | LSU% | FMA% | ALU% | LD% | WR% | LD:WR | dyn LSU/FMA | dyn LSU/ALU |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `(single-run)` | 13.03 | 0.80 | 9.11 | 94.63 | 5.37 | 17.64 | 16.29 | 1.43 |
+| `20260925_E5b_groot_n17_eager` | 13.39 | 0.37 | 7.98 | 12.88 | 0.50 | 25.54 | 36.63 | 1.68 |
 
-**Direction agreement check.** Static LSU/FMA = 0.47x; dynamic ranges 16.29x-16.29x. Static counts predict the LSU-heavy character; dynamic ratio is 34.7x amplified — see why below.
+**Direction agreement check.** Static LSU/FMA = 0.78x; dynamic ranges 36.63x-36.63x. Static counts predict the LSU-heavy character; dynamic ratio is 46.7x amplified — see why below.
 
 ## Why static ≠ dynamic
 

@@ -1,4 +1,4 @@
-# SASS instruction inventory — `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn.sass`
+# SASS instruction inventory — `ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x3_tn_sm87.sass`
 
 Total instructions: **996** (file has 1000 lines; cuobjdump emits ~2 lines per instruction).
 

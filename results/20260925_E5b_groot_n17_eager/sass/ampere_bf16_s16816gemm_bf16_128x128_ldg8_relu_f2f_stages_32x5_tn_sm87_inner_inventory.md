@@ -1,0 +1,47 @@
+<!-- inner loop: backward BRA 0x85b0a070 -> 0x85b098f0: of the 6 backward branches, the range whose instructions executed most (ncu per-PC Instructions Executed, §3) -->
+# SASS instruction inventory — `ampere_bf16_s16816gemm_bf16_128x128_ldg8_relu_f2f_stages_32x5_tn_sm87.sass` (PC range 0x85b098f0-0x85b0a070)
+
+Total instructions in PC range: **119**.
+
+## Per-category subtotal
+
+| Category | Count | % of total |
+|---|---:|---:|
+| LSU | 25 | 21.0% |
+| Tensor core | 64 | 53.8% |
+| ALU | 22 | 18.5% |
+| Uniform | 5 | 4.2% |
+| Branch | 3 | 2.5% |
+| **Total** | **119** | **100.0%** |
+
+## LSU split (Load / Store / Atomic)
+
+| Sub-class | Count | % of LSU | % of total |
+|---|---:|---:|---:|
+| Load | 25 | 100.0% | 21.0% |
+| **LSU total** | **25** | **100.0%** | **21.0%** |
+
+## Per-opcode breakdown
+
+| Category | Sub | Opcode | Count |
+|---|---|---|---:|
+| LSU | Load | `LDSM.16.M88.4` | 16 |
+| LSU | Load | `LDGSTS.E.BYPASS.LTC128B.128.CONSTANT` | 8 |
+| LSU | Load | `LDGDEPBAR` | 1 |
+| Tensor core |  | `HMMA.16816.F32.BF16` | 64 |
+| ALU |  | `IADD3` | 9 |
+| ALU |  | `IADD3.X` | 8 |
+| ALU |  | `ISETP.GT.AND` | 2 |
+| ALU |  | `R2P` | 2 |
+| ALU |  | `MOV` | 1 |
+| Uniform |  | `UIADD3` | 2 |
+| Uniform |  | `UISETP.LT.AND` | 2 |
+| Uniform |  | `UMOV` | 1 |
+| Branch |  | `BAR.SYNC.DEFER_BLOCKING` | 1 |
+| Branch |  | `BRA.U` | 1 |
+| Branch |  | `DEPBAR.LE` | 1 |
+
+## Ratios (§4)
+
+* compute-to-memory = (FP + tensor-core) ÷ (global loads + stores) = 64 ÷ 8 = 8.0. Integer arithmetic is left out: statically it cannot be told apart from address arithmetic, so the ratio is a lower bound on §4's definition.
+* static load : store = 25 : 0
