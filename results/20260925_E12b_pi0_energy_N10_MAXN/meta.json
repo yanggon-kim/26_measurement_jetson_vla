@@ -1,153 +1,154 @@
 {
-  "experiment": "E12b M5 -- energy per frame, whole-frame loops (T015)",
-  "bench_commit": "714e3952f96ce46311d66d7a2bb389dca9c2b71a",
-  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
-  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "experiment": "E12b M5 -- energy per frame, whole-frame loops (T015)",
+ "bench_commit": "714e3952f96ce46311d66d7a2bb389dca9c2b71a",
+ "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "rung": "bf16_both",
+ "rung_note": {
   "rung": "bf16_both",
-  "rung_note": {
-    "rung": "bf16_both",
-    "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
-    "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
-    "matmul_precision": "high",
-    "matches_E7": true,
-    "expert": "model.denoise_step@default",
-    "embed_image": "pg.embed_image@default",
-    "memo": "memo_681: modeling_pi0.py:681 att_masks->tensor memoised on contents (prefix only)"
-  },
-  "variant": "bf16_both+stock+shipping_full | bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+prefix_first+serial_full_gpu | bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+green_12_4+prefix_first",
+  "prep": "vision_tower+multi_modal_projector->bf16, embed_image fp32 cast removed; 74 layernorm modules -> bf16 (own parameters only)",
+  "compiled": "model.denoise_step@reduce-overhead;pg.embed_image@reduce-overhead+clone;pg.forward@max-autotune-no-cudagraphs",
+  "matmul_precision": "high",
+  "matches_E7": true,
+  "expert": "model.denoise_step@default",
+  "embed_image": "pg.embed_image@default",
+  "memo": "memo_681: modeling_pi0.py:681 att_masks->tensor memoised on contents (prefix only)"
+ },
+ "variant": "bf16_both+stock+shipping_full | bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+prefix_first+serial_full_gpu | bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+green_12_4+prefix_first",
+ "power_mode": "NV Power Mode: MAXN",
+ "sm_count": 16,
+ "granted_partitions": "12/4",
+ "gpu_clock_hz": 1300500000,
+ "emc_rate_hz": 3199000000,
+ "gate_start": {
   "power_mode": "NV Power Mode: MAXN",
   "sm_count": 16,
-  "granted_partitions": "12/4",
-  "gpu_clock_hz": 1300500000,
+  "gpu_cur_freq_hz": 1300500000,
+  "gpu_min_freq_hz": 1300500000,
+  "gpu_max_freq_hz": 1300500000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "0",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "2201600",
+  "cpu_max_freq_khz": "2201600",
   "emc_rate_hz": 3199000000,
-  "gate_start": {
-    "power_mode": "NV Power Mode: MAXN",
-    "sm_count": 16,
-    "gpu_cur_freq_hz": 1300500000,
-    "gpu_min_freq_hz": 1300500000,
-    "gpu_max_freq_hz": 1300500000,
-    "jetson_clocks_locked": true,
-    "tpc_pg_mask": "0",
-    "cpu_online": "0-11",
-    "cpu_governor": "schedutil",
-    "cpu_cur_freq_khz": "2201600",
-    "cpu_max_freq_khz": "2201600",
-    "emc_rate_hz": 3199000000,
-    "temps_mC": {
-      "cpu-thermal": 49375,
-      "gpu-thermal": 44187,
-      "soc0-thermal": 45406,
-      "soc1-thermal": 45156,
-      "soc2-thermal": 45250,
-      "tj-thermal": 49375
-    },
-    "t_utc": "2026-09-25T19:20:54Z"
+  "temps_mC": {
+   "cpu-thermal": 49375,
+   "gpu-thermal": 44187,
+   "soc0-thermal": 45406,
+   "soc1-thermal": 45156,
+   "soc2-thermal": 45250,
+   "tj-thermal": 49375
   },
-  "throttled": false,
-  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 56.9 C (trip threshold used 95 C); temps at end {'cpu-thermal': 56937, 'gpu-thermal': 53281, 'soc0-thermal': 52937, 'soc1-thermal': 52218, 'soc2-thermal': 53000, 'tj-thermal': 56937}",
-  "N": 10,
-  "seconds_per_arm": 60.0,
-  "rails": "four sysfs INA3221 rails at 20 Hz (power_core) + tegrastats at 100 ms",
-  "results": {
-    "arms": {
-      "a_stock_full": {
-        "label": "bf16_both+stock+shipping_full",
-        "period_ms": 424.6921,
-        "module_mW": 42374.8,
-        "energy_per_frame_mJ": 17996.223,
-        "energy_per_frame_above_idle_mJ": 13409.379,
-        "three_rail_no_mem_mJ": 16674.273,
-        "three_rail_no_mem_above_idle_mJ": 12269.275,
-        "n_nonfinite": 0,
-        "valid": true
-      },
-      "b_fair_serial": {
-        "label": "bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+prefix_first+serial_full_gpu",
-        "period_ms": 347.9356,
-        "module_mW": 50446.2,
-        "energy_per_frame_mJ": 17552.029,
-        "energy_per_frame_above_idle_mJ": 13794.185,
-        "three_rail_no_mem_mJ": 16270.933,
-        "three_rail_no_mem_above_idle_mJ": 12662.07,
-        "n_nonfinite": 0,
-        "valid": true
-      },
-      "c_best_corun": {
-        "label": "bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+green_12_4+prefix_first",
-        "period_ms": 313.7451,
-        "module_mW": 57063.4,
-        "energy_per_frame_mJ": 17903.363,
-        "energy_per_frame_above_idle_mJ": 14514.791,
-        "three_rail_no_mem_mJ": 16447.877,
-        "three_rail_no_mem_above_idle_mJ": 13193.645,
-        "n_nonfinite": 0,
-        "valid": true
-      }
-    },
-    "corun_over_fair_serial_energy": 1.02,
-    "corun_over_fair_serial_above_idle": 1.0522,
-    "outcome_10_corun_le_0.95_fair_serial": false,
-    "idle_subtraction": "each rail's in-session 60 s idle mean, measured before the model was loaded"
+  "t_utc": "2026-09-25T19:20:54Z"
+ },
+ "throttled": false,
+ "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 56.9 C (trip threshold used 95 C); temps at end {'cpu-thermal': 56937, 'gpu-thermal': 53281, 'soc0-thermal': 52937, 'soc1-thermal': 52218, 'soc2-thermal': 53000, 'tj-thermal': 56937}",
+ "N": 10,
+ "seconds_per_arm": 60.0,
+ "rails": "four sysfs INA3221 rails at 20 Hz (power_core) + tegrastats at 100 ms",
+ "results": {
+  "arms": {
+   "a_stock_full": {
+    "label": "bf16_both+stock+shipping_full",
+    "period_ms": 424.6921,
+    "module_mW": 42374.8,
+    "energy_per_frame_mJ": 17996.223,
+    "energy_per_frame_above_idle_mJ": 13409.379,
+    "three_rail_no_mem_mJ": 16674.273,
+    "three_rail_no_mem_above_idle_mJ": 12269.275,
+    "n_nonfinite": 0,
+    "valid": true
+   },
+   "b_fair_serial": {
+    "label": "bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+prefix_first+serial_full_gpu",
+    "period_ms": 347.9356,
+    "module_mW": 50446.2,
+    "energy_per_frame_mJ": 17552.029,
+    "energy_per_frame_above_idle_mJ": 13794.185,
+    "three_rail_no_mem_mJ": 16270.933,
+    "three_rail_no_mem_above_idle_mJ": 12662.07,
+    "n_nonfinite": 0,
+    "valid": true
+   },
+   "c_best_corun": {
+    "label": "bf16_both+hoist+owngraph_expert+dbuf_kv+owngraph_prefix+memo_681+green_12_4+prefix_first",
+    "period_ms": 313.7451,
+    "module_mW": 57063.4,
+    "energy_per_frame_mJ": 17903.363,
+    "energy_per_frame_above_idle_mJ": 14514.791,
+    "three_rail_no_mem_mJ": 16447.877,
+    "three_rail_no_mem_above_idle_mJ": 13193.645,
+    "n_nonfinite": 0,
+    "valid": true
+   }
   },
-  "command": "/home/yanggon/venvs/pi0/bin/python bench/e12b_m5.py --outdir results/20260925_E12b_pi0_energy_N10_MAXN --corun-config graphs_both --corun-split 12/4",
-  "torch": "2.8.0",
-  "date_utc": "2026-09-25T19:31:30Z",
-  "variant_tokens": {
-    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
-    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
-    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
-    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
-    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
-    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
-    "kv_copy": "each frame's KV / pad / noise copied into the expert graph's static input buffers ON THE EXPERT STREAM (counted in the expert stage time)",
-    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
-    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
-    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
-    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  "corun_over_fair_serial_energy": 1.02,
+  "corun_over_fair_serial_above_idle": 1.0522,
+  "outcome_10_corun_le_0.95_fair_serial": false,
+  "idle_subtraction": "each rail's in-session 60 s idle mean, measured before the model was loaded"
+ },
+ "command": "/home/yanggon/venvs/pi0/bin/python bench/e12b_m5.py --outdir results/20260925_E12b_pi0_energy_N10_MAXN --corun-config graphs_both --corun-split 12/4",
+ "torch": "2.8.0",
+ "date_utc": "2026-09-25T19:31:30Z",
+ "variant_tokens": {
+  "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+  "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+  "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+  "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+  "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+  "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+  "kv_copy": "each frame's KV / pad / noise copied into the expert graph's static input buffers ON THE EXPERT STREAM (counted in the expert stage time)",
+  "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+  "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+  "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+  "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+ },
+ "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+ "raw_files": [
+  {
+   "path": "power.csv",
+   "bytes": 3126,
+   "sha256": "737e574329263f9b9cf33d21a17fdb754801933483e9f500aa462b89e2a93a38"
   },
-  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
-  "raw_files": [
-    {
-      "path": "power.csv/power.csv",
-      "bytes": 3126,
-      "sha256": "737e574329263f9b9cf33d21a17fdb754801933483e9f500aa462b89e2a93a38"
-    },
-    {
-      "path": "power.csv/raw/rail_samples.csv",
-      "bytes": 355574,
-      "sha256": "4a9b65e6512fcb55f6b11a95fd8fdfc54c9ea657dc21ce29d6cdc40cc3f82669"
-    },
-    {
-      "path": "raw/stdout_m5.log",
-      "bytes": 1920,
-      "sha256": "7ea8fd2a08419f4e4d691f8f136b6dd6c11a7a6a3cd3258763f37b7305e3a1f3"
-    },
-    {
-      "path": "raw/tegrastats_a_stock_full.log",
-      "bytes": 266691,
-      "sha256": "7aab5387bc3f8f1bb9efbdfda3c4d0dbebdcfb3bfceb7304f5f3a26409733a2e"
-    },
-    {
-      "path": "raw/tegrastats_b_fair_serial.log",
-      "bytes": 493149,
-      "sha256": "4dab58e3186ec90d1029dbcc61b74f10d61b9308a1dc25a488b836fafbaa3b78"
-    },
-    {
-      "path": "raw/tegrastats_c_best_corun.log",
-      "bytes": 486005,
-      "sha256": "9c42dd454d2c5483613ade9fb143dea654b010302835ed3ab1c2e14f988bb9f0"
-    },
-    {
-      "path": "raw/tegrastats_idle.log",
-      "bytes": 254148,
-      "sha256": "a1517682037e558b02082c6cc9de2a7fa021cdaae9bcde9d717efba8f734d157"
-    },
-    {
-      "path": "summary.json",
-      "bytes": 1466,
-      "sha256": "9b7b531c53582c58fc303d773fc0d9c514cf05b8d3f42d7a7da7e770ec0a3b77"
-    }
-  ],
-  "superseded_run": "scratch/superseded/20260925_E12b_energy_arm_b_was_partitioned_serial: the first M5 run measured arm (b) through the 12/4-partitioned harness (526 ms/frame), which made the co-run look 13 % cheaper (0.874) and flipped outcome 10 to true. Replaced by this run, with (b) on the whole GPU. Not committed as a result."
+  {
+   "path": "raw/rail_samples.csv",
+   "bytes": 355574,
+   "sha256": "4a9b65e6512fcb55f6b11a95fd8fdfc54c9ea657dc21ce29d6cdc40cc3f82669"
+  },
+  {
+   "path": "raw/stdout_m5.log",
+   "bytes": 1920,
+   "sha256": "7ea8fd2a08419f4e4d691f8f136b6dd6c11a7a6a3cd3258763f37b7305e3a1f3"
+  },
+  {
+   "path": "raw/tegrastats_a_stock_full.log",
+   "bytes": 266691,
+   "sha256": "7aab5387bc3f8f1bb9efbdfda3c4d0dbebdcfb3bfceb7304f5f3a26409733a2e"
+  },
+  {
+   "path": "raw/tegrastats_b_fair_serial.log",
+   "bytes": 493149,
+   "sha256": "4dab58e3186ec90d1029dbcc61b74f10d61b9308a1dc25a488b836fafbaa3b78"
+  },
+  {
+   "path": "raw/tegrastats_c_best_corun.log",
+   "bytes": 486005,
+   "sha256": "9c42dd454d2c5483613ade9fb143dea654b010302835ed3ab1c2e14f988bb9f0"
+  },
+  {
+   "path": "raw/tegrastats_idle.log",
+   "bytes": 254148,
+   "sha256": "a1517682037e558b02082c6cc9de2a7fa021cdaae9bcde9d717efba8f734d157"
+  },
+  {
+   "path": "summary.json",
+   "bytes": 1466,
+   "sha256": "9b7b531c53582c58fc303d773fc0d9c514cf05b8d3f42d7a7da7e770ec0a3b77"
+  }
+ ],
+ "superseded_run": "scratch/superseded/20260925_E12b_energy_arm_b_was_partitioned_serial: the first M5 run measured arm (b) through the 12/4-partitioned harness (526 ms/frame), which made the co-run look 13 % cheaper (0.874) and flipped outcome 10 to true. Replaced by this run, with (b) on the whole GPU. Not committed as a result.",
+ "layout_note": "2026-09-28 completeness audit: files moved from power.csv/power.csv and power.csv/raw/rail_samples.csv (a writer bug made power.csv a directory) to power.csv and raw/rail_samples.csv; contents unchanged (git mv)"
 }

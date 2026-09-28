@@ -119,7 +119,7 @@ def main() -> int:
                     hf.label() + "+serial_full_gpu")
         measure_arm("c_best_corun", lambda: h.run("pipeline", F, fin), F, h.label())
 
-    PC.write_power_csv(out / "power.csv", rows, [{"phase": "idle", **x} for x in idle_s] + samples)
+    PC.write_power_csv(out, rows, [{"phase": "idle", **x} for x in idle_s] + samples)
     b, c = results["b_fair_serial"], results["c_best_corun"]
     res = {"arms": results,
            "corun_over_fair_serial_energy": round(c["energy_per_frame_mJ"] / b["energy_per_frame_mJ"], 4),

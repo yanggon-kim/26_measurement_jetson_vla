@@ -142,7 +142,7 @@ def main() -> int:
                     round((mw - base) * per_frame_ms / 1e3, 4),
                 "n_samples": len(samples)})
 
-    PC.write_power_csv(out / "power.csv", rows, all_samples)
+    PC.write_power_csv(out, rows, all_samples)  # was out / "power.csv" -> wrote power.csv/power.csv (fixed 2026-09-28)
 
     p, s = results["pipelined"], results["serial_full"]
     ratio_t = p["per_frame_ms"] / s["per_frame_ms"]

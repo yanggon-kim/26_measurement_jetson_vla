@@ -1,107 +1,108 @@
 {
-  "experiment": "E12 Step 5 -- energy of the pipelined vs the serial schedule",
-  "method": "protocol \u00a74, as E7: in-session idle baseline, >=60 s per arm, four sysfs rails at 20 Hz plus tegrastats. The serial arm is a whole-frame loop via corun.run_serial, NOT a prefix loop plus an expert loop, which in E7 do not sum to `full`.",
-  "model": "pi0",
-  "rung": "eager",
-  "N": 10,
-  "mechanism": "pi0_nosync",
-  "nosync_note": "pi0_nosync: memoised the constant att_masks tensors at modeling_pi0.py:681 (per prefix) and :746 (per denoise step); 1+N host syncs per frame removed",
-  "frames_per_call": 10,
-  "seconds_per_arm": 60.0,
-  "frames_manifest": {
-    "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
-    "dataset": "HuggingFaceVLA/libero",
-    "split": "train",
-    "source_api": "https://datasets-server.huggingface.co/rows",
-    "episode_index": 0,
-    "task_index": 0,
-    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
-    "frames": [
-      {
-        "file": "obs_0.json",
-        "row_offset": 0,
-        "frame_index": 0
-      },
-      {
-        "file": "obs_1.json",
-        "row_offset": 25,
-        "frame_index": 25
-      },
-      {
-        "file": "obs_2.json",
-        "row_offset": 50,
-        "frame_index": 50
-      },
-      {
-        "file": "obs_3.json",
-        "row_offset": 75,
-        "frame_index": 75
-      },
-      {
-        "file": "obs_4.json",
-        "row_offset": 99,
-        "frame_index": 99
-      }
-    ]
-  },
-  "gate": {
-    "power_mode": "NV Power Mode: MODE_15W",
-    "sm_count": 6,
-    "gpu_cur_freq_hz": 408000000,
-    "gpu_min_freq_hz": 408000000,
-    "gpu_max_freq_hz": 408000000,
-    "jetson_clocks_locked": true,
-    "tpc_pg_mask": "248",
-    "cpu_online": "0-3",
-    "cpu_governor": "schedutil",
-    "cpu_cur_freq_khz": "1113600 729600",
-    "cpu_max_freq_khz": "1113600 2201600"
-  },
-  "results": {
-    "pipelined": {
-      "call_ms_median": 43597.5902,
-      "frames_per_call": 10,
-      "per_frame_ms": 4359.759,
-      "module_mW": 12554.3,
-      "module_above_idle_mW": 5180.6,
-      "energy_per_frame_mJ": 54733.7104,
-      "energy_per_frame_above_idle_mJ": 22586.1662
-    },
-    "serial_full": {
-      "call_ms_median": 43472.849,
-      "frames_per_call": 10,
-      "per_frame_ms": 4347.2849,
-      "module_mW": 12514.9,
-      "module_above_idle_mW": 5141.2,
-      "energy_per_frame_mJ": 54405.8538,
-      "energy_per_frame_above_idle_mJ": 22350.29
-    }
-  },
-  "verdict": "pipelined / serial = 1.0029 in time, 1.0060 in energy per frame. Neither differs materially, which is what T_pipe = A_iso + B_iso predicts: the schedule does not overlap, so it cannot save either. Energy here is module power x measured frame time; it is not a separate claim about efficiency beyond what those two measurements carry.",
-  "command": "/home/yanggon/venvs/pi0/bin/python bench/corun_energy.py --allow-capped --steps 10 --frames 10 --seconds 60 --outdir results/20260927_E12_pi0_energy_N10_MODE_15W_eager_nosync",
-  "code_commit": "2c6d4c5fc07ffdbf12087a7d5c28c4535a17ac5f",
-  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
-  "revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
-  "torch": "2.8.0",
-  "cuda": "12.6",
-  "idle_means_mW": {
-    "VDD_GPU_SOC": 2789.04,
-    "VDD_CPU_CV": 72.65,
-    "VIN_SYS_5V0": 4038.25,
-    "VDDQ_VDD2_1V8AO": 473.76
-  },
-  "measured": [
-    "rail power per arm",
-    "frame time per arm",
-    "idle rail power"
-  ],
-  "derived": [
-    "energy per frame = module mW x frame ms",
-    "energy above idle = (module - idle) mW x frame ms",
-    "the two ratios in `verdict`"
-  ],
-  "not_measured": [
-    "Energy of a pipeline that ACTUALLY overlaps -- none exists on this device, see the report's \u00a71 and \u00a75. This arm measures the schedule as it really runs.",
-    "Per-stage energy attribution within a frame: the rails are sampled at 20 Hz and a frame is ~670 ms, so a single frame carries ~13 samples -- enough for a frame mean, not for splitting prefix from expert inside one."
+ "experiment": "E12 Step 5 -- energy of the pipelined vs the serial schedule",
+ "method": "protocol \u00a74, as E7: in-session idle baseline, >=60 s per arm, four sysfs rails at 20 Hz plus tegrastats. The serial arm is a whole-frame loop via corun.run_serial, NOT a prefix loop plus an expert loop, which in E7 do not sum to `full`.",
+ "model": "pi0",
+ "rung": "eager",
+ "N": 10,
+ "mechanism": "pi0_nosync",
+ "nosync_note": "pi0_nosync: memoised the constant att_masks tensors at modeling_pi0.py:681 (per prefix) and :746 (per denoise step); 1+N host syncs per frame removed",
+ "frames_per_call": 10,
+ "seconds_per_arm": 60.0,
+ "frames_manifest": {
+  "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
+  "dataset": "HuggingFaceVLA/libero",
+  "split": "train",
+  "source_api": "https://datasets-server.huggingface.co/rows",
+  "episode_index": 0,
+  "task_index": 0,
+  "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+  "frames": [
+   {
+    "file": "obs_0.json",
+    "row_offset": 0,
+    "frame_index": 0
+   },
+   {
+    "file": "obs_1.json",
+    "row_offset": 25,
+    "frame_index": 25
+   },
+   {
+    "file": "obs_2.json",
+    "row_offset": 50,
+    "frame_index": 50
+   },
+   {
+    "file": "obs_3.json",
+    "row_offset": 75,
+    "frame_index": 75
+   },
+   {
+    "file": "obs_4.json",
+    "row_offset": 99,
+    "frame_index": 99
+   }
   ]
+ },
+ "gate": {
+  "power_mode": "NV Power Mode: MODE_15W",
+  "sm_count": 6,
+  "gpu_cur_freq_hz": 408000000,
+  "gpu_min_freq_hz": 408000000,
+  "gpu_max_freq_hz": 408000000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "248",
+  "cpu_online": "0-3",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "1113600 729600",
+  "cpu_max_freq_khz": "1113600 2201600"
+ },
+ "results": {
+  "pipelined": {
+   "call_ms_median": 43597.5902,
+   "frames_per_call": 10,
+   "per_frame_ms": 4359.759,
+   "module_mW": 12554.3,
+   "module_above_idle_mW": 5180.6,
+   "energy_per_frame_mJ": 54733.7104,
+   "energy_per_frame_above_idle_mJ": 22586.1662
+  },
+  "serial_full": {
+   "call_ms_median": 43472.849,
+   "frames_per_call": 10,
+   "per_frame_ms": 4347.2849,
+   "module_mW": 12514.9,
+   "module_above_idle_mW": 5141.2,
+   "energy_per_frame_mJ": 54405.8538,
+   "energy_per_frame_above_idle_mJ": 22350.29
+  }
+ },
+ "verdict": "pipelined / serial = 1.0029 in time, 1.0060 in energy per frame. Neither differs materially, which is what T_pipe = A_iso + B_iso predicts: the schedule does not overlap, so it cannot save either. Energy here is module power x measured frame time; it is not a separate claim about efficiency beyond what those two measurements carry.",
+ "command": "/home/yanggon/venvs/pi0/bin/python bench/corun_energy.py --allow-capped --steps 10 --frames 10 --seconds 60 --outdir results/20260927_E12_pi0_energy_N10_MODE_15W_eager_nosync",
+ "code_commit": "2c6d4c5fc07ffdbf12087a7d5c28c4535a17ac5f",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "torch": "2.8.0",
+ "cuda": "12.6",
+ "idle_means_mW": {
+  "VDD_GPU_SOC": 2789.04,
+  "VDD_CPU_CV": 72.65,
+  "VIN_SYS_5V0": 4038.25,
+  "VDDQ_VDD2_1V8AO": 473.76
+ },
+ "measured": [
+  "rail power per arm",
+  "frame time per arm",
+  "idle rail power"
+ ],
+ "derived": [
+  "energy per frame = module mW x frame ms",
+  "energy above idle = (module - idle) mW x frame ms",
+  "the two ratios in `verdict`"
+ ],
+ "not_measured": [
+  "Energy of a pipeline that ACTUALLY overlaps -- none exists on this device, see the report's \u00a71 and \u00a75. This arm measures the schedule as it really runs.",
+  "Per-stage energy attribution within a frame: the rails are sampled at 20 Hz and a frame is ~670 ms, so a single frame carries ~13 samples -- enough for a frame mean, not for splitting prefix from expert inside one."
+ ],
+ "layout_note": "2026-09-28 completeness audit: files moved from power.csv/power.csv and power.csv/raw/rail_samples.csv (a writer bug made power.csv a directory) to power.csv and raw/rail_samples.csv; contents unchanged (git mv)"
 }
