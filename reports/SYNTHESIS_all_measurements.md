@@ -156,8 +156,45 @@ Shares are of prefix + expert (the full-frame loop is measured separately; the l
   12.36 / 12.74 (latency 425 → 2188 ms); π0.5 graphs 16.57 / 12.88 / 15.77 / 15.93; SmolVLA graphs 2.84 / 2.20 / 2.27 /
   2.55; GR00T N1.7 (50W → 15W) 7.71 → 7.69. Energy spans ≤ 1.47×, latency 2–6×; E·D 1.4–5.2× worse at 15W; lowest energy
   at 50W for 4 of 6 configurations. **No capped mode is an efficiency route.**
-- Not measured: vision vs VLM energy split (no vision-only loop); true DRAM power; corrected per-rail values for compiled
+- Vision vs language energy split: now measured, §2.1. Not measured: true DRAM power; corrected per-rail values for compiled
   rungs other than π0 `bf16_both`; SmolVLA eager's prefix + expert exceeds its full frame by 26 % (unexplained).
+
+### 2.1 Vision / language / action energy, measured separately (E7v, 2026-09-28) [`results/20260928_E7v_summary`]
+
+Twelve new runs at MAXN with the fixed sampler: per run five 60 s loops in one session — `vision` (the image-encoder
+calls of one prefix pass, recorded and replayed: SigLIP + projector per camera for π0 / π0.5, the SmolVLM vision
+encoder, GR00T's `backbone.model.visual`), `vlm` = the **language** part (the unchanged prefix / backbone with the encoder
+answered from the recorded outputs), `ae` (action), plus `prefix` and `full` as checks. Per phase: median ms / above-idle
+J per inference / above-idle W; shares are of vision + language + action.
+
+| model | config | vision ms / J / W | language ms / J / W | action ms / J / W | energy share V / L / A | time share V / L / A | (V+L)/prefix energy | (prefix+A)/full energy |
+|---|---|---|---|---|---|---|---:|---:|
+| groot_n15 | `all_compile_autotune` | 31.8 / 1.70 / 53.3 | 65.5 / 3.88 / 59.3 | 60.9 / 2.97 / 48.8 | 20 / 45 / 35 % | 20 / 41 / 38 % | 1.018 | 0.991 |
+| groot_n15 | `eager_fp32` | 41.3 / 2.08 / 50.3 | 99.2 / 5.04 / 50.8 | 110.6 / 3.42 / 30.9 | 20 / 48 / 32 % | 16 / 40 / 44 % | 1.014 | 0.951 |
+| groot_n16 | `all_compile_autotune` | 43.6 / 2.29 / 52.6 | 42.2 / 2.04 / 48.2 | 74.5 / 3.07 / 41.2 | 31 / 28 / 41 % | 27 / 26 / 46 % | 1.011 | 0.987 |
+| groot_n16 | `eager_fp32` | 61.7 / 2.51 / 40.7 | 63.8 / 2.59 / 40.6 | 215.8 / 4.01 / 18.6 | 28 / 28 / 44 % | 18 / 19 / 63 % | 1.008 | 1.005 |
+| groot_n17 | `eager_fp32` | 69.3 / 2.59 / 37.3 | 85.7 / 2.64 / 30.8 | 213.8 / 4.17 / 19.5 | 28 / 28 / 44 % | 19 / 23 / 58 % | 1.004 | 0.997 |
+| groot_n17 | `vlm_compile` | 70.1 / 2.59 / 36.9 | 85.8 / 2.50 / 29.1 | 81.6 / 3.44 / 42.2 | 30 / 29 / 40 % | 30 / 36 / 34 % | 1.008 | 0.989 |
+| pi05 | `bf16_both_graphs` | 56.8 / 2.40 / 42.3 | 236.3 / 9.85 / 41.7 | 183.7 / 4.23 / 23.1 | 15 / 60 / 26 % | 12 / 50 / 39 % | 1.011 | 0.991 |
+| pi05 | `none (eager)` | 240.0 / 10.71 / 44.6 | 2168.1 / 75.03 / 34.6 | 609.9 / 13.88 / 22.8 | 11 / 75 / 14 % | 8 / 72 / 20 % | 1.008 | 0.998 |
+| pi0 | `bf16_both` | 57.3 / 2.32 / 40.5 | 195.3 / 8.21 / 42.0 | 170.1 / 3.36 / 19.8 | 17 / 59 / 24 % | 14 / 46 / 40 % | 1.012 | 0.990 |
+| pi0 | `none (eager)` | 239.8 / 10.58 / 44.1 | 235.7 / 9.61 / 40.8 | 597.1 / 6.29 / 10.5 | 40 / 36 / 24 % | 22 / 22 / 56 % | 1.016 | 1.003 |
+| smolvla | `none (eager)` | 32.2 / 1.41 / 43.7 | 66.6 / 0.64 / 9.6 | 620.1 / 3.85 / 6.2 | 24 / 11 / 65 % | 4 / 9 / 86 % | 1.011 | 1.021 |
+| smolvla | `vlm_graphs` | 29.8 / 1.40 / 47.0 | 9.0 / 0.30 / 32.8 | 42.1 / 1.09 / 25.8 | 50 / 11 / 39 % | 37 / 11 / 52 % | 1.015 | 0.974 |
+
+**Closure (both measured):** vision + language vs the unsplit prefix within **0.4–1.8 %**; prefix + action vs the full
+frame within **0.3–4.9 %**. SmolVLA eager now closes (1.021) — the 26 % excess in the older E7 table was a sampler artefact.
+
+**Reading.**
+- **Vision is the most power-dense phase** in every LeRobot run (40–47 W above idle; GR00T 37–53 W), but short: at the
+  best rungs it is 15–17 % of π0 / π0.5 energy, 20–31 % of GR00T's, and **50 % of SmolVLA's** (its language and action
+  parts are tiny once compiled).
+- **Language (the VLM prefill) is the largest energy consumer after optimisation** for π0 (59 %), π0.5 (60 %) and GR00T
+  N1.5 (45 %); in GR00T N1.6 / N1.7 the three parts are nearly even (28–41 %).
+- **The action expert is the cheapest per unit time**: 20–26 W above idle for the compiled LeRobot experts vs 41–47 W for
+  vision / language; only GR00T's compiled DiT (41–49 W) is as power-dense as its prefix — consistent with it being the
+  one bandwidth-bound expert (§3). Action share of energy at the best rung: π0 24 %, π0.5 26 %, SmolVLA 39 %, GR00T
+  35–41 %.
 
 ## 3. Root cause of the bottleneck (nsys + ncu), base vs best [E5_timeline, E4g, E4h, E5b_*, E6_*, E12b, E13]
 
