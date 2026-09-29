@@ -71,6 +71,25 @@ Directories `results/20260921_E3_pi0_eager_N{4,10}`, `results/20260926_E3_pi0_ea
 i.e. near compute-bound); the Gemma prefill less so (86 % / 74 %); **the eager denoising step tracks the CPU clock**
 (1.23 vs 1.27, 2.05 vs 1.98) — the host-issue-bound expert E5 found at MAXN stays host-bound at every mode.
 
+### 2b. π0 compiled latency (`reduce-overhead`, regions off; T004 4b(ii) completed 2026-09-28)
+
+| median ms (p5–p95 within ±0.5 %) | MAXN | MODE_30W | MODE_15W | 30W / 15W vs MAXN | SM × GPU-clock ratio 30W / 15W | CPU-clock ratio 30W / 15W |
+|---|---:|---:|---:|---|---|---|
+| e2e, N = 4 | 497.8 | 1844.9 | 3369.4 | 3.71 / 6.77 | 4.25 / 8.50 | 1.27 / 1.98 |
+| e2e, N = 10 | 597.3 | 2061.5 | 3765.9 | 3.45 / 6.31 | 4.25 / 8.50 | 1.27 / 1.98 |
+| per denoising step (N=10 − N=4, / 6) — derived | 16.58 | 36.10 | 66.08 | 2.18 / 3.99 | | |
+| fixed part (e2e N=4 − 4 × step) — derived | 431.5 | 1700.5 | 3105.1 | 3.94 / 7.20 | | |
+| compile speed-up over eager (§2), N = 4 / N = 10 | 1.39 / 1.69 | 1.12 / 1.19 | 1.11 / 1.16 | | | |
+
+Directories `results/20260921_E4_pi0_reduce-overhead_N{4,10}` (MAXN), `results/20260928_E3_pi0_reduce-overhead_N{4,10}_30W`,
+`results/20260929_E3_pi0_reduce-overhead_N{4,10}_15W` (the 15W run started 17:12 PDT, already 2026-09-29 UTC);
+`bench/run_e4.py --mode reduce-overhead --steps 4,10 --warmup 20 --timed 100 --allow-capped --exp E3 --suffix <mode>`.
+Compiled captures carry no region split (regions graph-break under compile), so only e2e is measured; the step and
+fixed part are derived from the two N. **Reading:** compilation removes the host-issue bound of the eager step at every
+mode, and what is left scales with the GPU: the fixed part (vision + prefix) at 93 % / 85 % of the SM × clock ratio,
+the compiled step at about half of it (2.18 / 3.99) — between the CPU and GPU ratios. Because the fixed part dominates
+and scales with the GPU, **compilation buys only 1.11–1.19× in the capped modes against 1.39–1.69× at MAXN.**
+
 ## 3. E12 at 8 and 6 hardware SMs (T014 step 4 at 30W; the same queue at 15W, beyond T014)
 
 | quantity | MAXN reference | MODE_30W | MODE_15W | 15W / 30W |
