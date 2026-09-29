@@ -188,3 +188,14 @@ status: done 2026-09-27 — closes the 2026-09-25 CORRECTION and step 4b
 - Deviations: MAXN / 50W / 30W energies read from the timed-window re-analysis (the sampler fix came after them); the
   15W runs used the fixed sampler. Metadata nulls fixed in 14 writers and back-filled (no measured value changed).
 - bench commit at close: c1f408b. Repository: committed results 552M; size-pack 158.10 MiB + loose 92.86 MiB.
+
+status: done 2026-09-28 — 4b(ii) completed: the compiled latency run in both capped modes (found missing in the 2026-09-28 completeness audit)
+- The 2026-09-26/27 capped sessions measured 4b(ii) for eager only; the task asks for an E3-style run at N = 4 and 10 in
+  both modes, and the E7 loops there cover eager AND reduce-overhead. Added with two owner reboots:
+  `results/20260928_E3_pi0_reduce-overhead_N{4,10}_30W` (e2e 1844.9 / 2061.5 ms) and
+  `results/20260929_E3_pi0_reduce-overhead_N{4,10}_15W` (3369.4 / 3765.9 ms; UTC date), regions off (the task: regions
+  on for eager only), 20 warm-up / 100 timed. `bench/run_e4.py` gained `--allow-capped --exp --suffix`.
+- Report: `reports/E7_capped_modes.md` §2b. Compiled step 16.6 / 36.1 / 66.1 ms at MAXN / 30W / 15W; the fixed part
+  scales with SM × GPU clock (3.94× / 7.20× vs 4.25× / 8.50×), so compilation buys only 1.11–1.19× when capped
+  (1.39–1.69× at MAXN).
+- bench commit at close: d6fccef.

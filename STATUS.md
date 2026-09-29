@@ -2,12 +2,13 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
-## ⏳ 2026-09-28 17:00 — T004 4b(ii) compiled latency: MODE_30W done; next, owner: MODE_15W
+## ✅ 2026-09-28 17:45 — T004 4b(ii) complete in both capped modes; next, owner: back to MAXN
 
-* 30W (owner reboot 16:24): `results/20260928_E3_pi0_reduce-overhead_N{4,10}_30W` — e2e 1844.9 / 2061.5 ms
-  (MAXN compiled 497.8 / 597.3; 30W eager 2066.1 / 2457.3); 36.1 ms per denoising step. `bench/run_e4.py` gained
-  `--allow-capped --exp E3 --suffix <mode>`.
-* **Next, owner:** `sudo nvpmodel -m 1` (MODE_15W), reboot; then the same run at 15W; then `sudo nvpmodel -m 0` (MAXN).
+* Compiled π0 latency, N = 4 / 10: 30W `results/20260928_E3_pi0_reduce-overhead_N{4,10}_30W` 1844.9 / 2061.5 ms;
+  15W `results/20260929_E3_pi0_reduce-overhead_N{4,10}_15W` 3369.4 / 3765.9 ms (MAXN 497.8 / 597.3). Report
+  `reports/E7_capped_modes.md` §2b: compilation buys only 1.11–1.19× when capped; the fixed part scales with the GPU.
+* Every task in `tasks/` now has its acceptance items delivered or explicitly marked not measured with the reason.
+* **Device is in MODE_15W. Next, owner:** `sudo nvpmodel -m 0` (MAXN) and reboot; no run is waiting for it.
 
 ---
 
