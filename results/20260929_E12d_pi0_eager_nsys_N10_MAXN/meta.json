@@ -1,0 +1,149 @@
+{
+ "experiment": "E12d arm (a) -- nsys capture of T014's eager in-process co-run: direct overlap measurement",
+ "task": "owner request 2026-09-28 (T014 follow-up)",
+ "model": "pi0",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "rung": "eager (no torch.compile)",
+ "compile_mode": "none (eager)",
+ "variant": "eager+pi0_nosync+hoist (corun.run_pipeline, T014's committed eager configuration)",
+ "N": 10,
+ "batch": 1,
+ "power_mode": "NV Power Mode: MAXN",
+ "sm_count": 16,
+ "gpu_clock_hz": 1300500000,
+ "gate": {
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "gpu_cur_freq_hz": 1300500000,
+  "gpu_min_freq_hz": 1300500000,
+  "gpu_max_freq_hz": 1300500000,
+  "jetson_clocks_locked": true,
+  "tpc_pg_mask": "0",
+  "cpu_online": "0-11",
+  "cpu_governor": "schedutil",
+  "cpu_cur_freq_khz": "2201600",
+  "cpu_max_freq_khz": "2201600"
+ },
+ "throttled": false,
+ "throttled_evidence": "GPU clock pinned min==max in the gate; the run log ends with gpu_cur_freq_hz=1300500000",
+ "bench_commit": "bf95891f756d7ab7e73cee938608e00bc35d0c8f",
+ "command": "bash bench/run_nsys.sh results/20260929_E12d_pi0_eager_nsys_N10_MAXN e12d_eager -- python bench/e12d_nsys.py; nsys stats -r nvtx_pushpop_trace; python bench/e12b_nsys_analyze.py --gpu-trace nsys/e12d_eager_cuda_gpu_trace.csv --nvtx nsys/e12d_eager_nvtx_pushpop_trace.csv --out <dir>",
+ "nsys_options": "-t cuda,nvtx,osrt,cublas --capture-range=cudaProfilerApi --capture-range-end=stop --cuda-graph-trace=node",
+ "ranges": {
+  "pipeline": "corun.run_pipeline over 5 frames",
+  "prefix_alone": "5 prefixes on the prefix stream",
+  "expert_alone": "5 experts on the expert stream, caches computed before the range",
+  "serial": "3 frames, prefix then expert, synchronised per frame"
+ },
+ "nonfinite_action_elements": 0,
+ "headline": {
+  "range": "pipeline (5 co-run frames)",
+  "span_ms": 6363.92,
+  "both_streams_executing_ms": 0.0,
+  "both_frac_of_span": 0.0,
+  "gpu_busy_union_ms": 3046.99,
+  "gpu_busy_frac_of_span": 0.4788,
+  "prefix_alone_busy_frac": 0.9921,
+  "expert_alone_busy_frac": 0.1587,
+  "expert_kernels_per_frame": 9678,
+  "prefix_kernels_per_frame": 2609
+ },
+ "notes": [
+  "Profiled times are inflated (nsys on a launch-heavy workload); ratios come from unprofiled runs (results/20260925_E12_pi0_corun_N10_MAXN_eager_nosync and E12d arm b). This capture explains.",
+  ".nsys-rep and .sqlite stay uncommitted (protocol \u00a73.5: they embed the process environment)."
+ ],
+ "raw_files": [
+  {
+   "path": "corun_breakdown.csv",
+   "bytes": 523,
+   "sha256": "c781bbbb35b72449d45b0cdc9ac69bb74690f339c64d4e8ff50e31db6322ded8",
+   "committed": true
+  },
+  {
+   "path": "corun_decomposition.csv",
+   "bytes": 637,
+   "sha256": "0862764d65ae0cd374e3ce6f17f07ba10cd9d5cfd2ddd660c6bbbb90016fa06c",
+   "committed": true
+  },
+  {
+   "path": "nsys/e12d_eager_cuda_api_sum.csv",
+   "bytes": 1255,
+   "sha256": "60092c43012090d333b00392ff541386744cd0bfeefca21d2045fc87e7d55e5b",
+   "committed": true
+  },
+  {
+   "path": "nsys/e12d_eager_cuda_gpu_kern_sum.csv",
+   "bytes": 21872,
+   "sha256": "1a0651e3e46d0729445b27c630fd4c304f8e7d5cdd83cf280a4c509571aa424d",
+   "committed": true
+  },
+  {
+   "path": "nsys/e12d_eager_cuda_gpu_trace.csv.zst",
+   "bytes": 1641862,
+   "sha256": "6df1e4cceaa20afe93d7317346b057c13e5f606da86a38903b1d5ac2bcb98803",
+   "committed": true,
+   "compression": {
+    "tool": "zstd",
+    "level": 19,
+    "original_sha256": "0b4830a45dc062ee9980412f74168dcd6df1d2d3345357ac31853119518588e5",
+    "original_bytes": 43113244
+   }
+  },
+  {
+   "path": "nsys/e12d_eager_nvtx_gpu_proj_trace.csv",
+   "bytes": 32410,
+   "sha256": "e0705a26b7d0da0e744ea00ec8c18f66fb5a865d909dd1dc32c0c9857cbb8f69",
+   "committed": true
+  },
+  {
+   "path": "nsys/e12d_eager_nvtx_pushpop_trace.csv",
+   "bytes": 41041,
+   "sha256": "aae4580b04832397d32a3c2ab9f34bcff6c41bd18f9d2e07784c0feeafaf2275",
+   "committed": true
+  },
+  {
+   "path": "nsys/e12d_eager_nvtx_sum.csv",
+   "bytes": 551,
+   "sha256": "241d06043a6b9ee6c1ded58b094514c5a47ca4fbb8ca33623997c458e50154ce",
+   "committed": true
+  },
+  {
+   "path": "overlap_summary.csv",
+   "bytes": 278,
+   "sha256": "77c3fd9c22f5ffce9372aea1e7bc59b73e8a698c86b96bf507daa02a696e56c4",
+   "committed": true
+  },
+  {
+   "path": "prefix_grids.csv",
+   "bytes": 4029,
+   "sha256": "31678d188a68cabb4832d78f827cbad05fa016bd26f20a0b5ab7638d9d4d8e02",
+   "committed": true
+  },
+  {
+   "path": "raw/e12d_eager.nsys-rep",
+   "bytes": 8476146,
+   "sha256": "e3a56767b197d1bb0eda62e7f500e8b11fc95abf665d988b282315dab0cd56ca",
+   "committed": false
+  },
+  {
+   "path": "raw/e12d_eager.sqlite",
+   "bytes": 25055232,
+   "sha256": "753ce65934f2443b2d4f9002ed4b3f803a25bdaef7d98268e445a9f7921a33b2",
+   "committed": false
+  },
+  {
+   "path": "raw/e12d_eager_stats.log",
+   "bytes": 2606,
+   "sha256": "9ffd50b796601e885a017b28e0942e3d92deb483550300693a47c2809901a35c",
+   "committed": true
+  },
+  {
+   "path": "raw/e12d_eager_stdout.log",
+   "bytes": 3096,
+   "sha256": "ace9319c429708402df1a1852f847b69a6e0950cd0ea40540f5d2241d37d3389",
+   "committed": true
+  }
+ ],
+ "date_utc": "2026-09-29T06:46:12Z"
+}
