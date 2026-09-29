@@ -1,0 +1,43 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: lerobot/pi0_libero_finetuned_v044
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+  pi0_nosync: memoised the constant att_masks tensors at modeling_pi0.py:681 (per prefix) and :746 (per denoise step); 1+N host syncs per frame removed
+  harness built in 5.9 s: eager+pi0_nosync+hoist+owngraph_expert_eager+dbuf_kv+prefix_eager+prefix_first
+    pipeline                     frame 0 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control                frame 0 max|d| 8.241e-02 nonfinite 0 -> n/a (frame 0)
+    pipeline                     frame 1 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control                frame 1 max|d| 9.382e-02 nonfinite 0 -> DETECTED
+    pipeline                     frame 2 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control                frame 2 max|d| 1.476e-01 nonfinite 0 -> DETECTED
+    pipeline                     frame 3 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control                frame 3 max|d| 7.234e-02 nonfinite 0 -> DETECTED
+    pipeline                     frame 4 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control                frame 4 max|d| 1.238e-01 nonfinite 0 -> DETECTED
+    pipeline                     frame 5 max|d| 0.000e+00 nonfinite 0 -> PASS
+    stale_control                frame 5 max|d| 1.996e+00 nonfinite 0 -> DETECTED
+    graph_vs_plain_eager_serial  frame 0 max|d| 0.000e+00 nonfinite 0 -> BITWISE
+    graph_vs_plain_eager_serial  frame 1 max|d| 0.000e+00 nonfinite 0 -> BITWISE
+    graph_vs_plain_eager_serial  frame 2 max|d| 0.000e+00 nonfinite 0 -> BITWISE
+    graph_vs_plain_eager_serial  frame 3 max|d| 0.000e+00 nonfinite 0 -> BITWISE
+    graph_vs_plain_eager_serial  frame 4 max|d| 0.000e+00 nonfinite 0 -> BITWISE
+    graph_vs_plain_eager_serial  frame 5 max|d| 0.000e+00 nonfinite 0 -> BITWISE
+  equivalence PASS; graph-vs-plain bitwise True
+  plain_expert_pre           expert   539.91  (non-graph eager, reference)
+  prefix_alone_pre         prefix   470.75  expert      nan  frame      nan  period   470.91  host-issue  470.74 ms  nonfinite 0
+  expert_alone_pre         prefix      nan  expert   123.54  frame      nan  period   123.58  host-issue  123.52 ms  nonfinite 0
+  serial_pre               prefix   475.94  expert   123.45  frame   599.37  period   599.58  host-issue  308.61 ms  nonfinite 0
+  pipeline_prefix_first    prefix   487.15  expert   284.29  frame      nan  period   593.24  host-issue  593.18 ms  nonfinite 0
+  pipeline_expert_first    prefix   533.57  expert   579.60  frame      nan  period   579.75  host-issue  579.59 ms  nonfinite 0
+  pipeline_60s             prefix   487.10  expert   284.31  frame      nan  period   593.21  host-issue  593.17 ms  nonfinite 0
+  prefix_alone_post        prefix   471.37  expert      nan  frame      nan  period   471.53  host-issue  471.42 ms  nonfinite 0
+  expert_alone_post        prefix      nan  expert   123.52  frame      nan  period   123.57  host-issue  123.49 ms  nonfinite 0
+  serial_post              prefix   476.09  expert   123.44  frame   599.55  period   599.80  host-issue  308.71 ms  nonfinite 0
+  plain_expert_post          expert   540.57  (non-graph eager, reference)
+  pipeline_prefix_first  O=1.2594 phi=0.0485 p=1.0342 s=2.3013 r=3.8132 T_pipe=593.2357 (A 471.0559, B 123.5331, Tser 599.4617, B plain eager 540.2413)
+  pipeline_expert_first  O=1.2308 phi=0.1535 p=1.1327 s=4.6919 r=3.8132 T_pipe=579.7522 (A 471.0559, B 123.5331, Tser 599.4617, B plain eager 540.2413)
+  pipeline_60s           O=1.2593 phi=0.0487 p=1.0341 s=2.3015 r=3.8132 T_pipe=593.2106 (A 471.0559, B 123.5331, Tser 599.4617, B plain eager 540.2413)

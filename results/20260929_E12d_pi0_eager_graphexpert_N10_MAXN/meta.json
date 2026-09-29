@@ -1,0 +1,161 @@
+{
+  "experiment": "E12d arm (b) -- eager expert captured as one CUDA graph, eager prefix, in-process two-stream co-run (owner-requested T014 follow-up)",
+  "task": "owner request 2026-09-28 (T014 follow-up)",
+  "bench_commit": "bf95891f756d7ab7e73cee938608e00bc35d0c8f",
+  "model_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_commit": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "eager (no torch.compile)",
+  "compile_mode": "none (eager)",
+  "variant": "eager+pi0_nosync+hoist+owngraph_expert_eager+dbuf_kv+prefix_eager+<order>",
+  "harness_note": "pi0_nosync: memoised the constant att_masks tensors at modeling_pi0.py:681 (per prefix) and :746 (per denoise step); 1+N host syncs per frame removed",
+  "power_mode": "NV Power Mode: MAXN",
+  "sm_count": 16,
+  "granted_partitions": "none (full GPU, 16 SMs)",
+  "gpu_clock_hz": 1300500000,
+  "emc_rate_hz": 3199000000,
+  "gate_start": {
+    "power_mode": "NV Power Mode: MAXN",
+    "sm_count": 16,
+    "gpu_cur_freq_hz": 1300500000,
+    "gpu_min_freq_hz": 1300500000,
+    "gpu_max_freq_hz": 1300500000,
+    "jetson_clocks_locked": true,
+    "tpc_pg_mask": "0",
+    "cpu_online": "0-11",
+    "cpu_governor": "schedutil",
+    "cpu_cur_freq_khz": "2201600",
+    "cpu_max_freq_khz": "2201600",
+    "emc_rate_hz": 3199000000,
+    "temps_mC": {
+      "cpu-thermal": 58218,
+      "gpu-thermal": 53000,
+      "soc0-thermal": 53687,
+      "soc1-thermal": 53343,
+      "soc2-thermal": 53656,
+      "tj-thermal": 58406
+    },
+    "t_utc": "2026-09-29T06:43:14Z"
+  },
+  "throttled": false,
+  "throttled_evidence": "GPU clock start 1300500000 end 1300500000 (pinned min==max: True); peak thermal zone at end 64.4 C (trip threshold used 95 C); temps at end {'cpu-thermal': 64375, 'gpu-thermal': 60531, 'soc0-thermal': 60500, 'soc1-thermal': 59968, 'soc2-thermal': 60250, 'tj-thermal': 64375}",
+  "N": 10,
+  "batch": 1,
+  "frames_per_condition": 120,
+  "smoke": false,
+  "equivalence_pass": true,
+  "graph_vs_plain_eager_bitwise": true,
+  "capture_error": "none",
+  "bracket_drift_pct": {
+    "prefix_alone": 0.132,
+    "expert_alone": 0.017,
+    "serial": 0.03,
+    "plain_expert": 0.122
+  },
+  "peak_memory_allocated_GiB": 8.419,
+  "weights_verified": {
+    "checked": 400,
+    "matched": 400,
+    "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+    "checkpoint_file_sha256_source": "huggingface_hub cache",
+    "verdict": "real weights"
+  },
+  "frames_manifest": {
+    "_comment": "E12 observation set. Real LIBERO frames from the SAME source as bench/fixtures/observation.json (the HuggingFaceVLA/libero dataset through the datasets-server rows API), not re-rendered. They exist because docs/E12_corun/README.md \u00a76.1 requires several materially different observations: with one observation per frame the expert's KV would be identical every frame and a stale-KV bug would be invisible, which would leave the fresh-KV check with no power and every E12 number ungated.",
+    "dataset": "HuggingFaceVLA/libero",
+    "split": "train",
+    "source_api": "https://datasets-server.huggingface.co/rows",
+    "episode_index": 0,
+    "task_index": 0,
+    "task": "put the white mug on the left plate and put the yellow and white mug on the right plate",
+    "frames": [
+      {
+        "file": "obs_0.json",
+        "row_offset": 0,
+        "frame_index": 0
+      },
+      {
+        "file": "obs_1.json",
+        "row_offset": 25,
+        "frame_index": 25
+      },
+      {
+        "file": "obs_2.json",
+        "row_offset": 50,
+        "frame_index": 50
+      },
+      {
+        "file": "obs_3.json",
+        "row_offset": 75,
+        "frame_index": 75
+      },
+      {
+        "file": "obs_4.json",
+        "row_offset": 99,
+        "frame_index": 99
+      }
+    ]
+  },
+  "decisions": {
+    "pipeline": "free-running, gated only by CUDA events",
+    "kv_handoff": "dbuf_kv (E12b): KV + pad copied on the prefix stream into expert buffer k%2; prefix(k) waits for expert(k-2); copy counted in the prefix",
+    "first_5_frames_dropped": "per-stage medians skip frames 0-4 of each run; T_pipe is wall / frames over the whole run",
+    "plain_expert": "the non-graph eager expert through corun.run_isolated, bracketed, as the reference the graph is compared with"
+  },
+  "command": "/home/yanggon/venvs/pi0/bin/python bench/e12d_eager_graph.py --outdir results/20260929_E12d_pi0_eager_graphexpert_N10_MAXN --frames 120 --seconds 60",
+  "torch": "2.8.0",
+  "date_utc": "2026-09-29T07:00:35Z",
+  "variant_tokens": {
+    "bf16_both": "E7's rung exactly (casts + model.denoise_step@reduce-overhead, pg.embed_image@reduce-overhead+clone, pg.forward@max-autotune-no-cudagraphs)",
+    "stock": "shipping sample_actions timestep: torch.tensor(<float>, device) rebuilt every step",
+    "hoist": "the N timestep tensors built once and reused (corun.timestep_tensors); nothing else",
+    "shipping_full": "the whole frame through policy.predict_action_chunk (E7's `full` loop)",
+    "stages": "the whole frame as corun.prefix_stage + corun.expert_stage (same compiled callables)",
+    "owngraph_expert": "denoise_step compiled WITHOUT cudagraph trees (same Inductor kernels) and the N-step expert loop captured as ONE torch.cuda.CUDAGraph with its OWN pool",
+    "kv_copy": "STALE (never in a committed E12b label): an early harness version copied each frame's KV / pad / noise into the expert graph's static buffers on the EXPERT stream. Replaced by dbuf_kv before any committed run",
+    "dbuf_kv": "each frame's KV cache and pad mask copied, on the PREFIX stream at the end of prefix(k) (counted in the prefix stage), into expert-owned buffer k % 2; the expert graph captured for that parity reads only that buffer; prefix(k) first waits for expert(k-2), the last reader of that buffer",
+    "owngraph_prefix": "graphs_both only: the whole prefix (embed_image compiled mode='default' + the VLM prefill) captured as ONE torch.cuda.CUDAGraph in the harness's own pool; required so the prefix can be confined to a green partition (M0)",
+    "memo_681": "graphs_both only: modeling_pi0.py:681's att_masks -> torch.tensor conversion memoised on its contents (a constant per prompt length), because a captured graph cannot contain the host sync it performs; numerics identical",
+    "serial_full_gpu": "M5 arm (b): the fair serial frame (prefix then expert, same harness and graphs) on the WHOLE GPU, no partition, one frame after another",
+    "prio_prefix_<p>/prio_expert_<p>": "whole-GPU mechanism rows: that stage's stream created with CUDA stream priority <p> as GRANTED (-5 highest)",
+    "maxconn_<n>": "CUDA_DEVICE_MAX_CONNECTIONS=<n> in the process environment (hardware work queues per context)",
+    "hog_max / hog_matched / hog_<x>GBps": "hog_<rate> instances. max = the hog graph (4 x 128 MiB device copies) with no sleep. matched = a torch.cuda._sleep between copies, binary-searched so the hog ALONE in the expert's partition moves the fair expert's average demand by E6 BYTES (638 046 208 B per step / measured B per step), its rate taken as bytes copied / graph time (CUDA events), NOT EMC. <x>GBps (M4 calibration) = that same bytes/time rate for one sleep setting",
+    "prefix_first": "per frame the host issues prefix(k) before expert(k-1)",
+    "expert_first": "per frame the host issues expert(k-1) before prefix(k)",
+    "green_<p>_<e>": "prefix in a green-context partition of <p> SMs, expert in a disjoint one of <e>; each stage's graph CAPTURED inside its own green context (M0: a graph captured on the primary context is NOT confined when replayed on a green stream)",
+    "hog_<rate>": "in-process bandwidth hog (device copy graph) on the expert partition's stream"
+  },
+  "lerobot_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "raw_files": [
+    {
+      "path": "condition_summary.csv",
+      "bytes": 1186,
+      "sha256": "32e2ab0732df06aca92b3ed6e96e6db7345c8a89fdcf8793e7c1a94a5484eb66"
+    },
+    {
+      "path": "corun_ratios.csv",
+      "bytes": 1242,
+      "sha256": "665a1cee45ed223abc7cec4cfe215c1f2fdbd486f51dcab34e3a23a8ab9fdddd"
+    },
+    {
+      "path": "equivalence.csv",
+      "bytes": 2899,
+      "sha256": "76822b1436f8c887c97486c1caec90edb84a7f751e2a1cce284138471fee3fd8"
+    },
+    {
+      "path": "equivalence.md",
+      "bytes": 544,
+      "sha256": "d2bdc79e225566cdaf2d9c56be18eecf34d8d49d2b2946e19be5ebb7cb1ef297"
+    },
+    {
+      "path": "raw/host_issue.csv",
+      "bytes": 41800,
+      "sha256": "bbe364b5dbcbbb478375f9e1ef0ef94a26b662d47f3ee2479f0646a00f82b573"
+    },
+    {
+      "path": "raw/latency_samples.csv",
+      "bytes": 263762,
+      "sha256": "dcb47cf891760f50fb6a6727763fb66d73f250cdf15647ff4e9012ab61ec58c2"
+    }
+  ]
+}
