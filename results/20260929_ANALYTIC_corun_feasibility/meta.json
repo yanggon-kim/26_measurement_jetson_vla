@@ -1,0 +1,44 @@
+{
+ "experiment": "analytic co-run feasibility (owner request, 2026-09-28)",
+ "kind": "derived only \u2014 no new measurement",
+ "date_utc": "2026-09-29T06:31:35Z",
+ "command": "python3 bench/analytic_corun.py --out results/20260929_ANALYTIC_corun_feasibility",
+ "supply": {
+  "P_bf16_TFLOPps": 33.8506,
+  "BW_GBps": 187.47,
+  "BW_hog_GBps": 178.5,
+  "memory_bytes": 65879891968,
+  "source": "results/20260922_E1_peak/hw_constants.json; E12b M4 (hog)"
+ },
+ "power_mode": "MAXN (every source run)",
+ "models": {
+  "pi0": [
+   "pi0_bf16_both",
+   10,
+   "bf16_both",
+   "*_E11d_pi0_reduce-overhead_prefixsweep"
+  ],
+  "pi05": [
+   "pi05_bf16_both_graphs",
+   10,
+   "bf16_both_graphs",
+   "*_E11d_pi05_reduce-overhead_prefixsweep"
+  ],
+  "smolvla": [
+   "smolvla_vlm_graphs",
+   10,
+   "vlm_graphs",
+   "*_E11d_smolvla_reduce-overhead_prefixsweep"
+  ],
+  "groot_n17": [
+   "groot_n17_vlm_compile",
+   4,
+   "vlm_compile",
+   "*_E11d_groot_n17_vlm_compile_prefixsweep"
+  ]
+ },
+ "raw_files": [],
+ "notes": [
+  "Owner question (2026-09-28): \"Let's say we have some amount of compute and some amount of bandwidth and capacity\nrequirements for action and prefix at the same time. Check whether they can be run on one Jetson.\" This answers it\nwith no new measurement: every demand and every supply below is read from a committed file, and every derived\nquantity says how it was derived."
+ ]
+}

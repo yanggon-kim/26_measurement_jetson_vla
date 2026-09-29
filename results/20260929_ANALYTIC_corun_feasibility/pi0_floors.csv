@@ -1,0 +1,7 @@
+config,floor,T_floor_ms,O_floor,derivation
+"compiled (graphs_both, fair expert)","fluid, measured bytes at the hog's 178.5 GB/s",246.2792,1.0,"max(A=246.3, B=101.4, (M_A+M_B)/178.5 GB/s = 167.2) ms"
+"compiled (graphs_both, fair expert)","SM space: best split, zero memory coupling",267.7141,1.0870349586972834,"min over measured splits of max(A_part, B_part); best 12/4 = max(267.7, 254.8)"
+"compiled (graphs_both, fair expert)",MEASURED best co-run (T_pipe),307.1459,1.24714511010268,20260925_E12b_pi0_green_corun_N10_MAXN/corun_ratios.csv
+eager,one issuing thread (program order): T ≥ A + B,997.8326,1.9051434519659107,"A=474.1, B=523.8 (E12); the expert is host-bound (E5: 84 % GPU idle, 969 kernels/step) so its issue occupies the thread for ≈ B"
+eager,"two independent issuers, GPU serialised: T ≥ max(A, B, GPU_A + GPU_B)",607.8153,1.1604905860960002,GPU busy per frame from E5 (nsys): prefix 472.4 + expert 135.4 ms; prediction for a two-process / graph-captured-expert co-run (E12d measures it)
+eager,MEASURED in-process co-run (T_pipe),994.8801,1.8995062979563813,E12 corun_ratios.csv
