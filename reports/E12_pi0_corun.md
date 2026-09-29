@@ -508,3 +508,42 @@ the eager co-run does not overlap (T_pipe = A_iso + B_iso within 0.1 %, s = 0.99
 control 5 / 5, and pipelining saves no energy. The GPU-bound GEMM control scales exactly with SM count × GPU clock.
 The compiled `graphs_both` prefix at 30W slowed 2.68× vs the MAXN green-8 reference, above the clock bracket (2.125×)
 — the restated prediction falsified for that stage (STATUS.md, 2026-09-26); from 30W to 15W it slows 1.71×.
+
+## Addendum (2026-09-29) — E12d: other ways to co-run the uncompiled model (owner request)
+
+The owner asked whether the uncompiled co-run can be run another way. Three arms, π0 eager, N = 10, MAXN,
+120 frames per condition, `T_pipe` from a 71 s loop. Every arm passed its checks: actions bitwise equal to the
+single-process serial run, the stale-cache control detected 5 / 5, and 0 NaN/Inf. Code: `bench/e12d_nsys.py`,
+`bench/e12d_eager_graph.py`, `bench/e12d_twoproc.py`.
+
+| arm | A_iso | B_iso | T_serial | **T_pipe** | **O** | φ | p / s | result directory |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| T014 in-process, one thread (reference) | 474.1 | 523.8 | 994.4 | 994.9 | 1.900 | 0.00 | 0.998 / 0.996 | `20260925_E12_pi0_corun_N10_MAXN_eager_nosync` |
+| (b) expert captured as ONE CUDA graph of its eager kernels | 471.1 | 123.5 | 599.5 | 593.2 | 1.259 | 0.05 | 1.034 / 2.302 | `20260929_E12d_pi0_eager_graphexpert_N10_MAXN` |
+| (c) two slim processes, cache through shared memory | 473.5 | 568.4 | 1044.0 | **686.9** | **1.206** | **0.75** | 1.450 / 1.021 | `20260929_E12d_pi0_eager_twoproc_N10_MAXN` |
+| (c) the same under MPS | 473.9 | 579.9 | 1056.4 | 835.0 | 1.440 | 0.47 | 1.075 / 1.443 | `20260929_E12d_pi0_eager_twoproc_mps_N10_MAXN` |
+
+ms, medians; p5–p95 within ±0.2 % for every isolated and serial row.
+
+- **(a) Direct measurement replaces issue/wall** (`20260929_E12d_pi0_eager_nsys_N10_MAXN`). With one issuing thread,
+  kernels of the two streams execute simultaneously for **0.0 %** of the co-run (0 of 6364 ms, profiled), while the
+  GPU is busy only 47.9 % of that span. Run alone, the expert keeps the GPU busy 15.9 % of its time (9,678 kernels
+  per frame) and the prefix 99.2 %. Kernel durations are unchanged (+5.0 / +0.3 ms). Nothing contends: the
+  expert's kernels land only in the prefix's gaps. The review's objection to issue/wall is now answered by
+  measurement.
+- **(b) The host-issue cost is real and large.** Removing it (one graph launch, the same kernels, bitwise identical)
+  makes the expert 4.37× faster (540 → 124 ms) and the whole frame 995 → 599 ms. It still does not overlap. With
+  launches gone, the uncompiled prefix saturates the GPU, so the pair is GPU-bound (φ 0.05).
+- **(c) Two issuers make the same uncompiled kernels overlap.** φ goes from 0 to 0.75 and the period from 994.9 to
+  686.9 ms. The expert keeps its isolated speed (s 1.02) and the prefix absorbs the sharing (p 1.45).
+  - Memory now fits. The prefix process holds 7.24 GiB on the GPU and the expert process 1.12 GiB, leaving 32.4 of
+    51 GiB free; T014's two full-model processes were OOM-killed.
+  - CUDA IPC does not work on this Orin (`cudaErrorInvalidValue`), so the cache is handed over through pinned shared
+    memory. The copies cost 0.50 ms device → host and 0.68 ms host → device.
+  - MPS overlaps less and moves the slowdown onto the expert. There is no timeline for either two-process run, so the
+    scheduling explanation in the result summaries is interpretation, not measurement.
+- **Against the analytic floor** (`reports/ANALYTIC_corun_feasibility.md`): two independent issuers were predicted
+  at T ≥ 607.8 ms, from GPU busy time, prefix 472.4 + expert 135.4 ms. The measured 686.9 ms is 13 % above that floor.
+- **Best uncompiled options:** for latency, the graph-captured expert run serially (599 ms per frame); for
+  throughput, two processes (687 ms per frame, 1.45× T014's pipeline). Neither beats the compiled rung (E12b: 307 ms
+  best co-run, 348 ms serial).

@@ -107,9 +107,9 @@ now decomposed against an analytic floor.
 | two independent issuers, GPU work serialised | 607.8 ms | 1.160 | GPU busy per frame from E5 nsys: prefix 472.4 + expert 135.4 ms; stages no longer wait on one thread |
 
 The eager measurement sits on the one-thread floor. If each stage had its own issuer, the floor would fall to about
-608 ms: a 1.64× faster frame than serial, bounded by the prefix's GPU time plus the expert's kernel time. **That is
-a prediction, and E12d is measuring it now.** E12d runs the expert as one CUDA graph of its eager kernels, and runs
-two slim processes that hand the KV cache over through shared memory.
+608 ms: a 1.64× faster frame than serial, bounded by the prefix's GPU time plus the expert's kernel time. **E12d
+measured it (2026-09-29): two slim processes reach 686.9 ms (O 1.206, φ 0.75), 13 % above that floor**
+(`results/20260929_E12d_pi0_eager_twoproc_N10_MAXN`; `reports/E12_pi0_corun.md`, 2026-09-29 addendum). 
 
 ## Caveats
 
