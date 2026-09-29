@@ -2,13 +2,13 @@
 
 *Maintained by the on-device agent. The research side reads it and never edits it.*
 
-## ✅ 2026-09-28 17:45 — T004 4b(ii) complete in both capped modes; next, owner: back to MAXN
+## ✅ 2026-09-28 17:45 — T004 4b(ii) complete in both capped modes; device back in MAXN
 
 * Compiled π0 latency, N = 4 / 10: 30W `results/20260928_E3_pi0_reduce-overhead_N{4,10}_30W` 1844.9 / 2061.5 ms;
   15W `results/20260929_E3_pi0_reduce-overhead_N{4,10}_15W` 3369.4 / 3765.9 ms (MAXN 497.8 / 597.3). Report
   `reports/E7_capped_modes.md` §2b: compilation buys only 1.11–1.19× when capped; the fixed part scales with the GPU.
 * Every task in `tasks/` now has its acceptance items delivered or explicitly marked not measured with the reason.
-* **Device is in MODE_15W. Next, owner:** `sudo nvpmodel -m 0` (MAXN) and reboot; no run is waiting for it.
+* Device back in **MAXN** after the owner's reboot (17:45): 16 SMs, 12 CPUs, GPU locked 1300.5 MHz (`jetson_clocks`). Nothing running; no task open.
 
 ---
 
