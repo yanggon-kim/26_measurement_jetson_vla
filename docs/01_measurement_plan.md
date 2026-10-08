@@ -1,62 +1,16 @@
 # 01 — Measurement plan
 
-Priorities: **P0** = E0, E3, E4 for π0 · **P1** = **E11 for π0** (inputs for the hybrid GPU + PIM model — right
-after E3 / E4, because it reuses their harness and fixture), then E5 (nsys + ncu), E5b, E6, E7 for π0, and E2, E1, and
-**E12 for π0** (co-running the prefix and the action expert on one GPU; T014, placed right after T004 in the
-order table) and its follow-up **E12b** (the compiled co-run, whole GPU and inside green-context partitions; T015,
-right after T014) · **P2** = π0.5 and SmolVLA through E3, E4, **E11**, **E5, E5b, E6, E7**, and E8 · **P3** = GR00T N1.7 through the
-same set including **E11**, E9, E10. The profiling experiments (E5, E5b, E6, E7) **and E11** are **required for
-every model that runs**, not only for π0;
-π0 goes first. First deliverable (end of P0): the ladder table for π0 —
-*bandwidth floor 3.15 ms → measured eager → measured compiled*, in ms per denoising step — with conditions.
-Second deliverable (first item of P1): `model_inputs.csv` for π0 (E11, protocol §13.8).
-Before profiling any model, compute its **physical floor** per region (protocol §9).
-Each experiment below lists what to run, the sweep, and the files we expect. Follow `02_protocol.md` throughout.
+Experiments E0–E12b are defined below; E13, E8s, E14 and E14b are specified in their task files (T016, T017).
+The profiling experiments (E5, E5b, E6, E7) and E11 are required for every model that runs. Before profiling any
+model, compute its **physical floor** per region (protocol §9). Follow `02_protocol.md` throughout.
 
-**Task order.** Work through `tasks/` in this order — by priority, not by task number — taking the first open
-task whose dependencies are done:
+**Task order.** Take the first open task in this table (priority order, not task number) whose dependencies are
+done. A new task is added as a new row.
 
-| order | task | experiments | priority | depends on |
-|---|---|---|---|---|
-| 1 | T001 | E0 bring-up | P0 | — |
-| — | T013 | withdrawn (the MAXN record was completed inside T001); never claim | — | — |
-| 2 | T002 | E3 π0 eager | P0 | T001 |
-| 3 | T003 | E4 π0 compiled | P0 | T002 |
-| 4 | **T010** | **E11 π0** | P1 | T003 |
-| 5 | T004 | E5, E6, E7 π0 | P1 | T003 |
-| 6 | **T014** | **E12 π0 co-run: prefix ∥ expert on one GPU** (Steps 1–3, 5 at MAXN; Step 4 inside T004's `MODE_30W` session) | P1 | T004 (E7 at MAXN — done) |
-| 6b | **T015** | **E12b π0 compiled co-run: fair expert, whole GPU, and both stages together in green-context partitions** (MAXN only) | P1 | T014 (MAXN part — results exist) |
-| 6c | **T016** | **E13 π0 prefix under stolen bandwidth (EV-02), E8s seeded LIBERO N sweep, E14 prefix software savings (variants), E7 energy reconciliation, E12b corruption diagnosis** (MAXN only; amended 2026-09-26: SM-free steal, E13d per-kernel bytes, FACIL) | P1 | T015 (done) |
-| 6d | **T017** | **E14b π0 prefix padding trim, decomposed: empty camera (`nocam`), prompt padding (`trimprompt`), both (`nopad`) — time, vision, DRAM bytes, K/V handover, serial frame, action difference with a pre-stated pass criterion** (MAXN only; variants, never baseline) | P1 | **T016 (done)** — strictly after it |
-| 7 | T005 | E1, E2 | P1 | T001 |
-| 8 | T007 | E5b π0 | P1 | T004, T005 |
-| 9 | T006 | E3, E4 π0.5 + SmolVLA; E8 | P2 | T003 |
-| 10 | **T011** | **E11 π0.5 + SmolVLA** | P2 | T006 (step 1), T010 |
-| 11 | T008 | E5, E5b, E6, E7 π0.5 + SmolVLA | P2 | T006, T004, T007 |
-| 12 | T009 | GR00T N1.7: E3, E4, E5, E5b, E6, E7 | P3 | T008 |
-| 13 | **T012** | **E11 GR00T N1.7** | P3 | T009 (step 1), T010 |
-
-**T014 (added 2026-09-24) goes next.** Several tasks above are claimed and part-done at once; finish the task you
-are executing when you read this, then take T014 before any other open MAXN work (T012 if not yet under way, the
-remaining E5 / E5b, `MODE_50W`). Its Step 4 is not a separate session: it runs in the `MODE_30W` session of T004
-step 4b (protocol §1). The research side considers E12 the most decisive measurement of the current thread.
-
-**T015 (added 2026-09-25) goes next.** T014 did not answer its question (no compiled co-run; the eager co-run is
-host-bound; green contexts were timed one stage at a time — `analysis/E12_review.md`). Finish the queue stage or
-task you are executing when you read this, then take T015 before any other open MAXN work; if the device is in a
-capped mode when you read this, finish the capped queues first and take T015 once MAXN is restored (never ask for
-a reboot for it). If the human owner has given you a different order directly, the owner's order wins; say in
-`STATUS.md` where T015 sits. T015 takes over T014's open MAXN items; T014 Step 4 stays with the `MODE_30W` session.
-
-**T016 (added 2026-09-26) goes next** — the next MAXN work; its step 1 (EV-02, the prefix under stolen memory
-bandwidth) is the measurement the research side is waiting for. The task file is its whole specification. The
-capped-mode reboot session stays pending as before: if the device is in a capped mode when you read this, finish
-those queues first and take T016 once MAXN is restored (never ask for a reboot for it).
-
-**T017 (added 2026-09-26) comes strictly after T016** — never before it and never interleaved with a T016 step,
-even though T016 step 3 has a `nopad` row: T017 decomposes that trim (empty camera dropped before SigLIP, prompt
-padding, both), measures vision and DRAM bytes per variant, and judges the actions against a pass criterion fixed in
-its task file. The task file is its whole specification; protocol §17 holds its binding rules.
+| order | task | experiments | state |
+|---|---|---|---|
+| 1–13 | T001–T012, T014–T017 (T013 withdrawn, never claim) | E0–E14b, all models | closed; status lines in the task files |
+| 14 | **T018** | repository hygiene: trim `STATUS.md` / `PROGRESS.md`, delete superseded reports (no GPU) | **open**, no dependency |
 
 ## E0 — Platform record
 Everything in protocol §1, plus `nvidia-smi` (if present), `free -h`, storage, `tegrastats` idle snapshot, the list
@@ -86,15 +40,8 @@ For every linear layer of the π0 expert, time `y = x @ W.T` with x of shape `[S
 | mlp_gate, mlp_up | 1024 | 4096 | 8.39 MB each |
 | mlp_down | 4096 | 1024 | 8.39 MB |
 
-> **[CORRECTED ON DEVICE — T005, 2026-09-21]** This table previously carried a single row
-> `kv_proj (k and v) | 1024 | 512 | 1.05 MB`. The expert is **multi-query**
-> (`num_key_value_heads = 1`, `head_dim = 256`), so k and v are two *separate* `1024 -> 256`
-> projections, not one fused `1024 -> 512`. The combined weight bytes are unchanged, but it is
-> two kernel launches rather than one — and at S = 51, where E2 finds these layers are
-> launch- and weight-streaming-bound rather than FLOP-bound, the launch count is what matters.
-> Confirmed twice: from the checkpoint's own module shapes (`k_proj.weight [256, 1024]`, T002)
-> and from the Inductor autotune log, which shows `36 x mm(51x1024, 1024x256)` = 18 layers x 2
-> separate projections (T003).
+k_proj and v_proj are two separate `1024 -> 256` launches: the expert is multi-query (one KV head, head dim 256;
+corrected on device, T005).
 
 Also attention for S = 51 queries (8 heads × 256) against P + S = 867 keys with one KV head (SDPA), RMSNorm, RoPE,
 GeLU, softmax and an elementwise add at these sizes. For each: kernel time (CUDA events over 1,000 calls), the
@@ -172,10 +119,8 @@ with `source` ∈ {`analytic`, `ncu`}, plus the floor and gap ratio of protocol 
 Per protocol §4 for each model (π0 first; eager and best compiled), at the paper's N and the model's default N: mean power per rail for idle, prefix-only loop,
 action-expert-only loop, full inference loop; energy per inference and per denoising step, total and above idle.
 Power is sampled from sysfs for all four rails (protocol §4; tegrastats omits the memory rail on this board).
-MAXN is required for every model. Capped modes (answer to question 3 of 2026-09-21; rules in protocol §1): for π0
-try `MODE_50W` without a reboot as the last item of the last MAXN session; `MODE_30W` / `MODE_15W` need one human
-reboot each and are measured only if a later task announces such a session — they are **optional** and block
-nothing. For the other models the capped modes are optional.
+MAXN is required for every model. Capped modes follow protocol §1; π0's `MODE_50W`, `MODE_30W` and `MODE_15W`
+points are done (`reports/E7_capped_modes.md`). A new capped session runs only when a task announces it.
 
 ## E8 — LIBERO closed loop
 Using openpi's `examples/libero` (policy server + client) and lerobot's LIBERO environment: success rate on

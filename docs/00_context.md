@@ -13,45 +13,20 @@ only ~50 tokens its matrix multiplies are skinny, launch-dominated kernels.
 
 Our project moves those skinny matrix multiplies into the LPDDR5 memory itself (processing-in-memory,
 modelled on SK hynix's AiM) and proposes instruction-set extensions. Every comparison is against "the
-same Orin-class SoC running the action expert on its GPU". **Until now that GPU side was never
-measured by us.** It is a ladder of numbers taken or derived from one published characterization paper
-(Zhou et al., *Characterizing Vision-Language-Action Models across XPUs*, arXiv 2604.24447) plus our own
-analytic model. You are here to put measured numbers on that ladder, and to tell us where it is wrong.
+same Orin-class SoC running the action expert on its GPU". That GPU side started as numbers taken from one
+published characterization paper (Zhou et al., arXiv 2604.24447) plus our analytic model; your measurements have
+replaced them. The cross-model picture is `reports/SYNTHESIS_all_measurements.md`. Keep telling us where the
+research is wrong.
 
-## The ladder we use today (π0 on AGX Orin, per denoising step)
-| rung | value | where it comes from | status |
-|---|---|---|---|
-| bandwidth floor | 3.15 ms | 629 MB of weights (+KV) ÷ 204.8 GB/s | analytic, **spec-based** |
-| **bandwidth floor, measured peak** | **3.40 ms** | 638 MB (T002 `floor.csv`) ÷ **187.47 GB/s** measured in T005/E1 | **measured** — every `floor.csv`'s `peak_source = measured` row is now filled |
-| "optimistic bound" | 6.30 ms | 2 × floor, a stand-in for a perfect software stack | **assumed** |
-| ~~compiled stack~~ | ~~≈ 90 ms~~ | 136 ms ÷ 1.51, the paper's `torch.compile` gain on *Jetson Thor* | **superseded**: 5.5× too pessimistic |
-| **compiled stack (best stock mode)** | **16.30 ms** | **T003 / E4, `reports/E4_pi0_compile.md`** — `reduce-overhead`, slope over N ∈ {1,2,4,6,8,10} | **measured**, 5.2× the floor |
-| *(one-line fix: crop instead of cloning the KV cache)* | *10.37 ms* | *T003 / E4 §3.3, byte-identical actions* | *measured, 3.3× the floor — **1.67× the "optimistic bound" that was assumed unreachable*** |
-| ~~measured stack~~ | ~~136 ms~~ | the paper's 543 ms action-expert phase ÷ N = 4 | **superseded**: derived, and 2.6× too slow |
-| **measured stack (eager)** | **52.94 ms** | **T002 / E3, `reports/E3_pi0_eager.md`** — slope fit over N ∈ {1,2,4,6,8,10}, r² = 0.99999, MAXN, LeRobot π0 | **measured on this Orin**, 17.0× the floor |
-
-## Numbers you replace or validate
-| quantity | what we use today | source | your measurement |
-|---|---|---|---|
-| π0 end-to-end latency on Orin | ~~920 ms (N = 4)~~ → **measured 694.1 ms** | paper Table 1 | **E3 done** |
-| phase split vision / VLM / action expert | ~~110 / 258 / 543 ms = 12 / 28 / 59 %~~ → **measured 239.4 / 233.1 / 215.5 ms = 34.5 / 33.6 / 31.1 % at N = 4** | paper Fig. 5 | **E3 done — the split is the big disagreement, see below** |
-| action-expert time **per denoising step** | ~~136 ms~~ → **measured 52.94 ms** | derived | **E3 done** (the most important single number) |
-| action-expert share of latency vs N | ~~59.1 % (N = 4), 78.3 % (N = 10)~~ → **measured 31.1 % (N = 4), 52.7 % (N = 10)** | derived | **E3 done** |
-| `torch.compile` gain on Orin | ~~1.51× (Thor's) → ≈ 90 ms/step~~ → **measured 3.22× per step** (1.39× e2e at N = 4, 1.69× at N = 10) | transplanted | **E4 done** — a single e2e factor is not transferable across N; the slope is |
-| GPU utilisation in the AE phase — the paper's "SM utilisation": streaming-multiprocessor (SM) occupancy as Nsight Compute (`ncu`) reports it; you report ncu SM occupancy / activity per region, with tegrastats `GR3D_FREQ` only as a coarse cross-check | 22 % | paper Fig. 5 | E5 |
-| per-pipe utilisation (LSU / FMA / ALU / …) and warp-stall reasons in `vision`, `vlm_prefix`, `ae_step` | unknown | — | E5 |
-| what the dominant action-expert kernels stall on, at instruction level (memory loads vs compute vs launch), vs S and under `torch.compile` | asserted "memory-bound", never shown | — | **E5b** |
-| where the ≈ 43× over the floor goes: kernel time vs launch gaps vs idle | unknown | — | E5 |
-| per-kernel launch overhead | **~29 µs** for a single-kernel op, **~62 µs** for an `F.linear`; shape-independent *while the call is launch-bound* | **measured** (T005/E2, 3-point fit of `t(k) = fixed + k·marginal`) | ~~E2~~ done |
-| achieved fraction of peak bandwidth / FLOPs on small kernels | **0.915 / 0.806** | **measured** (T005/E1) — the 0.7 / 0.4 assumption was 1.31× and 2.01× too pessimistic | ~~E1, E2~~ done |
-| peak memory bandwidth and bf16 throughput | **187.47 GB/s, 33.85 TFLOP/s** (91.5 % and 80.6 % of spec) | **measured** (T005/E1). Bandwidth varies run to run by up to 1.19× with clocks and temperature constant — unexplained; see `reports/E1_E2_microbench.md` | ~~E1~~ done |
-| arithmetic intensity of an AE layer | 60 (ours) vs 64.5 (paper) FLOPs/B | analytic | E6 |
-| token count where the GPU stops being launch-bound (~~our "S ≈ 16 crossover"~~) | **S ≈ 128** for the MLP projections, **S ≈ 256** for q_proj, **never within S ≤ 256** for o_proj or the multi-query k/v | **measured** (T005/E2). At S = 16 nothing has crossed over; at the model's S = 51 every projection is still launch-bound | ~~E2 sweep over S~~ done |
-| real prefix length P | 816 | ~~assumed~~ → **measured 816** = 3 images × 256 + 48 language tokens (only 533 valid) | **E3 done — the assumption was right** |
-| module power during the AE phase (sum of the rails in protocol §4) | 20 W (we sweep 15–30) | **assumed** | E7 |
-| energy per denoising step, measured stack | 3,335 mJ | 136 ms × 20 W + DRAM model | E7 |
-| closed-loop quality vs number of denoising steps and vs *stale* steps | paper Table 7 | paper | E8 |
-| is 2 × floor really out of reach for the best engineered stack? | assumed yes | — | E10 |
+## The ladder (π0 on AGX Orin, per denoising step, MAXN)
+| rung | value | source |
+|---|---|---|
+| bandwidth floor, spec | 3.115 ms | 638 MB (weights + KV, T002 `floor.csv`) ÷ 204.8 GB/s |
+| bandwidth floor, measured peak | 3.40 ms | 638 MB ÷ 187.47 GB/s (T005 / E1) |
+| "optimistic bound (2× floor)" | 6.30 ms | 2 × floor, a stand-in for a perfect software stack — **assumed** |
+| crop instead of cloning the KV cache | 10.37 ms | T003 / E4 §3.3, byte-identical actions — a variant, not the baseline |
+| compiled stack, best stock mode | 16.30 ms | T003 / E4 `reports/E4_pi0_compile.md` (`reduce-overhead`, slope over N) |
+| eager stack | 52.94 ms | T002 / E3 `reports/E3_pi0_eager.md` (slope over N, LeRobot π0) |
 
 ## Inputs of the hybrid model (what E11 replaces)
 The system we will model next is a **hybrid**: the vision encoder and the VLM prefix run on the Jetson GPU; the
@@ -94,83 +69,6 @@ measures them; its `model_inputs.csv` (protocol §13.8) is what the research sid
 | `cpu_util` | the assumption that the CPU is free to drive the memory-side command stream | not modelled |
 | `p_mean_W` (`<phase>/<rail>`) | GPU / module power charged to the host segments and to the prefix in the energy model | 20 W |
 
-## What E11 (T010) and E1/E2 (T005) measured for the table above, 2026-09-22
-
-Consolidated hand-off: `results/20260922_E11_pi0_inputs/model_inputs.csv` (1,589 rows, checker exit 0);
-report `reports/E11_pi0_hybrid_inputs.md`; peaks `results/20260922_E1_peak/hw_constants.json`.
-
-| quantity | assumed above | measured (π0, MAXN, bf16) |
-|---|---|---|
-| kernels per host segment | 1 (attention 2) | 9–10 for the norms / RoPE, 2 for GeGLU / residual, 7 for attention — ~35 launches per layer eager |
-| `t_launch_per_kernel` | 20 µs | ~29 µs single-kernel op, ~62 µs `F.linear`, shape-independent while launch-bound |
-| `achieved_tflops` / `achieved_bw_GBps` fractions | 0.4 / 0.7 | 0.806 / 0.915 of spec (33.85 TFLOP/s, 187.47 GB/s; ridge 180.6 FLOP/B); bandwidth varies 1.19× run to run |
-| `t_host_layer` (six segments) | 0.16 ms | **1.502 ms eager**, 0.177 ms as one CUDA graph per layer, 0.085 ms as one compiled sequence; per-segment compilation is slower than eager for 5 of 9 segments |
-| `t_step_extra` | 0.08 ms | 2.115 ms eager (`suffix_embed` 1.43, `final_norm_out_proj` 0.59, `euler_update` 0.10) |
-| `xfer_latency_fit` | a = 0, 143 GB/s | pinned: **a = 40 µs, 36 GB/s** either direction; pageable 59–74 µs, 8–14 GB/s; zero-copy via `cudaMallocManaged` works |
-| `t_sync` | 0 | 10.6 µs idle sync, 59 µs kernel round trip, **109 µs stream handoff**; the CPU blocks, not spins |
-| `kv_bytes_total`, `kv_copied_bytes_per_step`, `t_kv_materialise` | 15–16 MB, 0, 0 | 15,040,512 B (533 of 816 tokens valid); **the whole cache is deep-copied every step, 5.5–5.7 ms**; materialise 0.48–0.58 ms |
-| `t_vision`, `t_vlm_prefix`, `prefix_latency_fit` | 110 + 258 ms, P fixed | 241.6 + 234.4 ms eager, constant to 0.15 % over 1–3 images × 3 prompts because the input format pads to 816 always; no P slope exists |
-| `gpu_idle_frac_ae_total` | unknown | **84 %** eager at N = 4 and N = 10 (vision / prefix: 1–2 %); 969 kernels per step, 17 % GEMMs |
-| `prefix_slowdown` under memory pressure | 1.0 | 2.22× under a GPU bandwidth hog at any duty cycle, of which the spin control explains 1.75× — bandwidth-attributable ≈ 1.27×; CPU hog 1.06× |
-| `host_layer_slowdown` | 1.0 | 1.001–1.003× as two processes (holds); two-stream rows confounded, not used |
-| `cpu_util` | not modelled | 99.8 % of one core during the expert phase, 69.8 % prefix, 56.5 % full |
-| expert projection GEMMs vs their memory floor | — | 126 projections, 622.85 MB: 1.33× floor as one CUDA graph (MLP projections at 87–90 % of measured peak), 2.61× from Python |
-
-Reading for the study: the expert's weight streaming is already near its floor; what a PIM mapping removes
-from the GPU is the *dispatch* — 969 launches and 84 % idle per step — and what it must pay for is the host
-segments (0.18 ms/layer as graphs, not 0.16 ms as one launch), the transfers (40 µs fixed each) and the
-synchronisation (109 µs per stream handoff). The all-GPU baseline it competes with is 16.30 ms/step stock
-compiled, 10.37 ms/step with the crop-not-clone fix — not 90 or 136.
-
-## What E3 (T002) changed, 2026-09-21
-
-**The action expert does not dominate π0's latency on this Orin.** At the paper's N = 4 it is
-the *smallest* of the three phases (31.1 %) and `vision` is the largest (34.5 %); even at the
-model's default N = 10 the expert reaches only 52.7 %. The hypothesis that it is
-**memory-bound** is confirmed independently (floor 3.115 ms memory vs 0.912 ms compute), but
-"dominates latency" is not supported. The PIM case should be argued from the expert's
-**17× gap to its own floor**, and from N = 10 where it is half the frame, not from a claimed
-59–78 % share.
-
-Three costs worth knowing before modelling anything.
-
-**80.1 ms of every inference encodes a dummy image** — `empty_cameras: 1` pushes an all-−1
-third camera through SigLIP (33.3 % of `vision`), and its attention mask is zero, so the
-result is discarded.
-
-**`kv_copied_bytes_per_step` is not 0.** `modeling_pi0.py:919` runs
-`copy.deepcopy(past_key_values)` inside `denoise_step`: all 36 KV tensors, **15,040,512 B**,
-cloned **every** step, measured at **5.68 ms/step** — 10.4 % of a step, and 1.82× the step's
-whole 3.115 ms memory floor. It is Python/allocator cost (2.65 GB/s effective), not
-bandwidth. The hybrid model's `t_kv_materialise` / `kv_copied_bytes_per_step` assumptions of
-zero should be revised. (LeRobot-specific; openpi's loop does not do this.)
-
-*Corrected by T003/E4.* An earlier version of this paragraph suggested the copy might be
-unnecessary because the expert passes `use_cache=False`. **That was wrong, and the experiment
-was run:** deleting it makes the cache grow to P + 2S = 918 against an 867 mask and the model
-fails on step 2 — the expert appends its suffix K/V regardless. The copy is *load-bearing*.
-What is **not** needed is the 15 MB **clone**: `DynamicCache.crop(P)` after the forward gives
-byte-identical actions (verified bitwise, max abs diff 0.000e+00) and takes the compiled step
-from 16.30 to **10.37 ms** while removing **all four** of the model's graph breaks — every one
-of which is this line, since dynamo cannot trace `copy.deepcopy`. See
-`reports/E4_pi0_compile.md` §3.
-
-**Denoising step 0 costs +0.83 ms** over the rest. An earlier version of this section said
-+3.13 ms; that figure was ~74 % measurement artefact and is withdrawn.
-
-**`T_extra` ≈ 0.08 ms per step is out by two orders of magnitude.** Of a 54.63 ms step, the
-18 expert layers account for ~44.9 ms (itself carrying ~2.6 ms of event overhead); the rest —
-KV deep copy, `embed_suffix`, mask construction, final norm, `action_out_proj`, Python — is
-**~10 ms**.
-
-**Implementation used.** E3 measured **LeRobot's π0** (`lerobot @ f0d2b37beb`, checkpoint
-`lerobot/pi0_libero_finetuned_v044`), not openpi's PyTorch port — the openpi route costs a
-12 GB orbax conversion, a mandatory JAX import, a `transformers == "4.53.2"` string-equality
-check and a Python ≥ 3.11 gate, none of which measures anything. LeRobot's is a direct port of
-the same architecture, but **the weights are a different fine-tune**, so the paper comparison
-is across implementations *and* checkpoints. Running openpi later is the obvious way to test
-whether the phase-split disagreement above is implementation or measurement.
-
 ## Models (pins used by the research side)
 | model | repository | commit | notes |
 |---|---|---|---|
@@ -178,6 +76,8 @@ whether the phase-split disagreement above is implementation or measurement.
 | SmolVLA (and a second π0 implementation) | github.com/huggingface/lerobot | `a16f34c085c9597fcbdb9fde395a3334d78df716` | LIBERO env `src/lerobot/envs/libero.py`; compile flags in `examples/rtc/eval_dataset.py` (`use_torch_compile`, `torch_compile_mode`, …) |
 | GR00T N1.7 (optional) | github.com/NVIDIA/Isaac-GR00T | `376ba890cff8c9de64d71d982772a9c36185fdd7` | has Orin support: `scripts/activate_orin.sh`, `scripts/deployment/orin/`, and `scripts/deployment/benchmark_inference.py` (eager / compile / TensorRT, per-component timing) |
 If a pinned commit does not run on the Jetson, use the nearest one that does and record the hash and why.
+π0 is measured with **LeRobot's port** (`lerobot @ f0d2b37`, `lerobot/pi0_libero_finetuned_v044`; owner
+decision, T002), not openpi's — a different fine-tune, so paper comparisons are across implementations.
 All four models go through the full set of experiments (E3, E4, E11, E5, E5b, E6, E7); π0 first, then π0.5 and
 SmolVLA, then GR00T N1.7. "Optional" for GR00T means "last", not "skipped if it runs".
 

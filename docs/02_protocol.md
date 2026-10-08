@@ -21,12 +21,8 @@
   that; if it switches, re-apply `jetson_clocks`, measure, then return with `sudo nvpmodel -m 0` (if *that* asks
   for a reboot, decline, write it at the top of `STATUS.md` and stop — the human restores MAXN). `MODE_30W` and
   `MODE_15W` are measured only in a session the human has started in that mode after a reboot; never request
-  them yourself. **Updated 2026-09-22:** the owner committed directly to the two reboots (your `STATUS.md`
-  standing item), so for π0 the capped half of E7 is **required**, not optional: MAXN first (T004), then the
-  human reboots into `MODE_30W`, then `MODE_15W`, and you re-run only the E7 power points and the short E3
-  latency check listed in T004 step 4b in each — **plus, in the `MODE_30W` session only, E12 Step 1 (T014 Step 4,
-  §14; added 2026-09-24)**. Write "next: resume E7 at mode <id>" in `STATUS.md` before any
-  switch, and re-run the §1 gate (mode, SM count, `jetson_clocks`, `cur_freq`) in the new mode — record the
+  them yourself; a task says what to run in such a session (π0's were T004 step 4b and T014 Step 4, done). Write
+  "next: resume at mode <id>" in `STATUS.md` before any switch, and re-run the §1 gate (mode, SM count, `jetson_clocks`, `cur_freq`) in the new mode — record the
   mode's SM count and clocks per run; a capped-mode number is never presented as an Orin number without its mode.
 - Save `sudo jetson_clocks --show`, `cat /etc/nv_tegra_release`, `dpkg -l | grep -E 'nvidia-jetpack|cuda-toolkit|tensorrt|cudnn'`,
   `nvcc --version`, `python -c "import torch;print(torch.__version__, torch.version.cuda)"`, kernel version, and the EMC
@@ -192,8 +188,7 @@ grid and block size):
   (`--query-metrics` lists none; an explicit `--metrics dram__…` returns `n/a`; placeholder columns read 0). Never
   quote them. **[Orin] `Memory Throughput` is the L2 throughput** (it equals `lts__throughput…` on the raw page), not
   DRAM utilisation: write it as "Memory (L2) Throughput" in every table and never read it as off-chip bandwidth use;
-- **[Orin] off-chip bytes (substitute for the DRAM counters; answer to question 1 of 2026-09-21, corrected
-  2026-09-22 after T005).** Two *different* counters of the raw page, both kept per kernel:
+- **[Orin] off-chip bytes (substitute for the DRAM counters).** Two *different* counters of the raw page, both kept per kernel:
   `offchip_read_bytes  = lts__t_sectors_aperture_sysmem_op_read_lookup_miss.sum × 32 B` and
   `offchip_write_bytes = lts__t_sectors_aperture_sysmem_op_write.sum × 32 B` (the **total** write-sector
   counter, *not* `…op_write_lookup_miss`, which is identically 0 on this device because the L2 is
@@ -256,8 +251,7 @@ written *in addition to* the raw file, never instead of it. The research side re
 device agent never thought to summarise.
 
 - **Raw, committed under `results/<run>/raw/`** (tracked; raw and derived stay in the same result directory):
-  - ~~`.nsys-rep`, and the `.sqlite` that nsys derives from it (rule in §6e)~~ — **exception since 2026-09-22
-    (T010): the nsys binary report and its `.sqlite` are NOT committed on this device.** nsys snapshots
+  - **not** the nsys binary report or its `.sqlite`: they are never committed on this device. nsys snapshots
     system-wide process metadata into the report, including the environment of processes it did not launch,
     and on this machine that includes a session token of the agent's own harness; capturing under `env -i`
     does not remove it (verified). Rule: keep both binaries in `scratch/<run>/`, list them in
@@ -320,7 +314,7 @@ device agent never thought to summarise.
   same file as a **coarse cross-check only**: it says whether the GPU had work queued, not how much of the GPU
   the work used. The utilisation metric of this project is ncu's SM occupancy (§3.3). Both the raw
   tegrastats log (`raw/tegrastats.log`, compressed per §6 if large) and the tidy CSV are committed.
-- **What the memory-rail reading is (answer to question 2 of 2026-09-21; no calibration step is needed).** Each
+- **What the memory-rail reading is (no calibration step is needed).** Each
   INA3221 channel reports the bus voltage *at its shunt*, which sits at the **input** of the regulator(s) of that
   rail group, not at the load: `VDD_GPU_SOC` reads ≈ 19.9 V and `VDDQ_VDD2_1V8AO` ≈ 5.04 V in T001 for that reason.
   `mW = mV × mA` is therefore a real power: the input power of the regulators that make LPDDR5 VDDQ and VDD2 **and**
@@ -329,12 +323,9 @@ device agent never thought to summarise.
   **upper bound** on DRAM power (it includes regulator loss and non-memory 1.8 V loads), so the quantity to quote
   for memory activity is the **above-idle delta** of this rail per phase, next to its absolute value; never call
   it "DRAM power" without those words.
-- **Is the module sum double-counting? Check once, in E1 (T005).** The memory regulators' 5 V input may or may not
-  be downstream of the `VIN_SYS_5V0` shunt. Log the four rails at idle, during the E1 memory-copy loop and during
-  the E1 large-GEMM loop, and report ΔVIN_SYS_5V0 and ΔVDDQ_VDD2_1V8AO (above idle) for each: if `VIN_SYS_5V0` rises
-  by about the memory-rail delta or more whenever the memory rail rises, say that nesting is likely. Until then
-  "module power" stays the four-rail sum (NVIDIA's convention for this module, `[ASSUMPTION]`), and every table
-  also gives the three-rail sum without the memory rail, so either reading can be recomputed.
+- **Module power is the four-rail sum** (NVIDIA's convention for this module, `[ASSUMPTION]`; T005 found the rails do not
+  double-count). Every table also gives the three-rail sum without the memory rail, so either reading can be
+  recomputed.
 - Measure 60 s of idle baseline in the same power mode before each power run.
 - Because one inference is shorter than the sampling period, measure power on a **loop of back-to-back
   inferences ≥ 60 s**, and separately on loops that run only the prefix and only the action expert, so the
@@ -391,8 +382,8 @@ c. **If a compressed file is still over 50 MB:** first shorten the capture (fewe
    the unsplit file. More than 8 parts (≈ 360 MB) for one capture means the capture is badly designed: go back
    to (a) and, if it is truly irreducible, ask under "Questions for the research side" before committing it.
 d. **No Git LFS** unless a task says so.
-e. **The nsys `.sqlite` and `.nsys-rep` are not committed on this device** (§3.5 exception, 2026-09-22: they
-   embed a session token). Keep both in `scratch/<run>/`, record the regenerating command in
+e. **The nsys `.sqlite` and `.nsys-rep` are not committed on this device** (§3.5: they embed a session token).
+   Keep both in `scratch/<run>/`, record the regenerating command in
    `meta.json.raw_files` (`committed: false`), and commit the full CSV exports instead. The 50 MB rule then
    applies to the compressed `cuda_gpu_trace` CSV: shorten the capture window before splitting it.
 f. **Report sizes after every task** in `STATUS.md` under "Repository size": the output of `du -sh results/`,
@@ -664,10 +655,9 @@ Throughput = completed inferences ÷ wall time of a back-to-back loop ≥ 60 s. 
 activities share the GPU: **two processes**, or **one process with two CUDA streams** (`torch.cuda.Stream`; try a
 high-priority stream for the short work and record whether the priority argument is accepted). Report the
 latency distribution (median, p95, max) of the short activity alone and under concurrency, not only the mean.
-**Two-stream rule (added 2026-09-22 after T010):** both activities are issued from **one** Python thread onto
+**Two-stream rule:** both activities are issued from **one** Python thread onto
 two streams (interleave the launches, or drive the long activity as CUDA-graph replays), never from a second
-Python thread — T010's two-stream numbers (1.79–1.91×) are confounded by GIL contention and by the short
-activity sleeping through its 2 ms pauses, and are not used. The two-process result is the primary one.
+Python thread (a second thread is confounded by GIL contention; T010). The two-process result is the primary one.
 
 ### 13.8 `model_inputs.csv` — the machine-readable hand-off (every E11 result directory has one)
 Long format, one row per (quantity, key, variant, statistic), UTF-8, comma-separated, header exactly:
@@ -722,7 +712,7 @@ Check the file with `python docs/reference_scripts/check_model_inputs.py results
 library only, runs anywhere) before committing; it must exit 0. It verifies the header, the enumerations, that
 `value` parses, and that every `source_file` exists.
 
-## 14. E12 — co-running the prefix and the action expert on one GPU (added 2026-09-24)
+## 14. E12 — co-running the prefix and the action expert on one GPU
 The full specification, with purpose, steps, hazards and outputs, is `docs/E12_corun/README.md` (task T014). The
 rules below are binding; the specification elaborates them and leaves everything else to the agent's judgement.
 - **Definitions.** `A_iso`, `B_iso`: prefix (vision + VLM prefix) and action-expert (all N steps) stage times,
@@ -744,10 +734,8 @@ rules below are binding; the specification elaborates them and leaves everything
   path are found and removed or reported (the equivalence check re-run after any such harness change).
 - **Unavailable mechanisms** (green contexts, `libsmctrl`, MPS, …) are recorded with the version check, the exact
   call and the error, committed under `raw/` and summarised in `mechanisms.csv`.
-- **Power modes.** MAXN for everything except E12 Step 4, which runs in the `MODE_30W` session of §1 alongside
-  the E7 / E3 points (no extra reboot).
 
-## 15. E12b — the compiled co-run, whole GPU and inside green-context partitions (added 2026-09-25)
+## 15. E12b — the compiled co-run, whole GPU and inside green-context partitions
 The full specification is `docs/E12b_compiled_corun/README.md` (task T015); it follows E12, and §14 still applies.
 The rules below are binding; the specification elaborates them and leaves everything else to the agent's judgement.
 - **Definitions.** As §14, for the **fair** configuration: `bf16_both` + the timestep hoist (the N timestep tensors
@@ -770,18 +758,16 @@ The rules below are binding; the specification elaborates them and leaves everyt
   `power_mode`, `sm_count`, granted partition sizes, clocks or `throttled`.
 - **Completion.** A task is marked done only when every acceptance item of the specification holds, or the status
   line names the item that does not and why.
-- **Power modes.** MAXN only; E12b adds nothing to the capped-mode sessions. P2 (`bf16_both + cropcache`) and the
-  `check_model_inputs.py` `MODELS` change are not approved. The channel-partition measurement (EV-02; formerly
-  "P1") was approved on 2026-09-26 as T016 step 1 (§16).
+- **Not approved:** P2 (`bf16_both + cropcache`) and any change to `check_model_inputs.py` `MODELS`.
 
-## 16. T016 — prefix under stolen bandwidth (E13 / EV-02), seeded LIBERO (E8s), prefix savings (E14) (added 2026-09-26)
+## 16. T016 — prefix under stolen bandwidth (E13 / EV-02), seeded LIBERO (E8s), prefix savings (E14)
 The task file `tasks/T016_prefix_bandwidth_and_followups.md` is the whole specification; §15 and §14 apply where
 it reuses the E12b co-run machinery. The rules below are binding; everything else is the agent's judgement.
 - **Bandwidth slowdown.** `σ(x) = A(prefix | load at x GB/s) / A(prefix | reference)`, the reference in the same SM
   layout with the load absent or replaced by an SM-matched compute-only control, same session, bracketed. The load
   runs in the same process (§15: separate contexts time-slice); its rate is reported alone and during the prefix,
   EMC-calibrated. This is an approximation of a PIM holding channels (§13.5's limits apply) and is reported as one.
-  *(Amended 2026-09-26, T016 Amendment 1.)* The primary load takes **no SMs** (copy engine between pinned host and
+  The primary load takes **no SMs** (copy engine between pinned host and
   device buffers, or a CPU-side copy); the same-process rule binds only loads that hold a GPU context — a CPU-side
   load without one may run in its own threads or process, pinned away from the harness thread. Its reference is the
   same prefix with no load. A green-context (SM-taking) load is a secondary arm only.
@@ -798,11 +784,10 @@ it reuses the E12b co-run machinery. The rules below are binding; everything els
   no reboot.
 - §15's finite check and provenance rules (no null in `meta.json`) apply to every T016 run; MAXN only.
 
-## 17. T017 — π0 prefix padding trim, decomposed (E14b) (added 2026-09-26)
+## 17. T017 — π0 prefix padding trim, decomposed (E14b)
 The task file `tasks/T017_pi0_padding_trim.md` is the whole specification; §16 (variants, DRAM bytes) and §15
 (compiled harness, finite checks, provenance) apply. The rules below are binding; everything else is the agent's
 judgement.
-- **Order.** Strictly after T016; never interleaved with a T016 step. MAXN only, no reboot.
 - **Labels.** `pad` (reference), `nocam`, `trimprompt`, `nopad` (= `nocam` + `trimprompt`), each appended to the
   E12b harness label. `nocam` never creates the empty camera: no dummy image, no image-encoder call, no prefix
   tokens. Variants are never called baseline (§16).

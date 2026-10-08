@@ -10,10 +10,11 @@ power, and the LIBERO benchmark. You write the instructions and analyse what com
 
 ## 2. Layout and write partition
 Yours: `README.md`, `AGENTS.md` (canonical device instructions; `CLAUDE.md` = `@AGENTS.md`), `docs/00_context.md`
-(research context + table of numbers to replace), `docs/01_measurement_plan.md` (E0–E11 + task-order table), `docs/02_protocol.md`
-(binding measurement rules + result schema), `tasks/T###_*.md` (work queue), `analysis/` (your post-processing).
+(research context), `docs/01_measurement_plan.md` (experiments + the task-order table the device follows),
+`docs/02_protocol.md` (binding rules + result schema), `tasks/T###_*.md` (work queue), `analysis/` (your
+post-processing), and `ONBOARDING.md` / `HANDOFF.md` (tracked; the device never edits them).
 The device's: `env/`, `bench/`, `results/<date>_<Exx>_…/` (`meta.json`, tidy CSVs, `summary.md`, `raw/`), `reports/`,
-`STATUS.md`, and appended status lines in task files. `ONBOARDING.md` / `HANDOFF.md` are ignored by `.gitignore`.
+`STATUS.md`, `PROGRESS.md` (written by `bench/progress_monitor.py`), and appended status lines in task files.
 
 ## 3. Commands
 No build. `git -C <root> pull --rebase` before anything; push after committing instructions. Analysis scripts
@@ -39,5 +40,3 @@ The repo's own `AGENTS.md` and `docs/`. Research background: `../microarch/00_do
 ## 7. Scope
 Owns the root except the device's side. Hands measured numbers to microarch-owner / paper-owner only as
 "for <owner>:" items quoting result directory, device commit, power mode and n.
-
-*`ONBOARDING.md` / `HANDOFF.md` are tracked since the 2026-09-22 server move, so the research side's state travels with the repo. They remain **jetson-owner's** files: the on-device agent never edits them (see `AGENTS.md`, write partition).*
