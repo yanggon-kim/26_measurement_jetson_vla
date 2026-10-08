@@ -4,6 +4,25 @@
 current by default: where this file and `HANDOFF.md` disagree, `HANDOFF.md` wins. Newest first within the first
 block; the "2026-09-22, superseded" block and the decisions / open issues / next steps of that date follow it.*
 
+## Superseded 2026-10-08 (removed from HANDOFF.md)
+
+- "Device: MODE_30W session done; owner order B: back to MAXN, T016 claimed, then MODE_15W, then T017" — all done:
+  T016 and T017 on 2026-09-27, MODE_15W 2026-09-27, T004 4b(ii) 2026-09-28, E12d 2026-09-29; device idle at MAXN.
+- "Issued, committed, NOT pushed: T017" — on origin (`1c5cd12`), done by the device 2026-09-27.
+- "T016 Amendment 1 … rows 1–7 unchanged" and the T016 / T017 pre-registration summaries — answered; see
+  `analysis/E13_E14_review.md`.
+- "T004 has no closing status line" — closed 2026-09-27 / 2026-09-28 by the device.
+- "Standing item — capped power modes: MODE_15W remains" — both capped sessions done; device back in MAXN.
+- Open issue "E7 residuals 418.64 vs 424.68 ms, 9509 vs 13 666 mJ (30 %)" — closed by E7r: sampler started before
+  warm-up / compile; re-measured residual 0.49–0.71 %.
+- Open issue "E12b M2 corruption cause, two-suspect list" — closed by E12c: the single KV buffer.
+- Numbers row "E7 loops: prefix / ae / full 251.28 / 167.36 / 424.68 ms; 6395.8 / 3112.5 / 13 666.2 mJ" — energies
+  superseded by E7r (10 358 / 3 250 / 13 701 mJ); latencies unchanged.
+- Reading "EV-02a: the prefix alone draws ~88 GB/s ≈ 94 % of an 8-channel half" — still true; EV-02 itself now
+  measured (E13).
+- Next steps 1–6 of 2026-09-26 (watch for E13 / E14b, check T017's gate and `pad` reproduction, review MODE_30W)
+  — done in the 2026-10-08 review.
+
 ## Superseded 2026-09-26 (removed from HANDOFF.md)
 
 - "Device: in the capped-mode session — E7 `MODE_30W` arms landing at `7970a1b`; T016 runs once MAXN is

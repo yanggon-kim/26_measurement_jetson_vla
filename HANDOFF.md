@@ -1,131 +1,111 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last rewritten: 2026-09-26 by jetson-owner.*
-*State only — rewritten, never appended. History (older state, dated blocks, old decisions and issues):
-`HANDOFF.history.md`. Full reviews: `analysis/E12_review.md`, `analysis/E12b_review.md`.*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last rewritten: 2026-10-08 by jetson-owner.*
+*State only. It is rewritten, never appended. Older state, decisions and issues are in `HANDOFF.history.md`.
+Full reviews: `analysis/E12_review.md`, `analysis/E12b_review.md`, `analysis/E13_E14_review.md` (T016 + T017 + the
+late addenda).*
 
 ## State now
 
-- **Device:** `MODE_30W` session done (E7 capped arms, T014 Step 4: the compiled `graphs_both` prefix slows 2.68× at
-  30W vs a 2.125× clock ratio — prediction falsified for that stage; not yet reviewed here). Owner order B: back to
-  MAXN, **T016 claimed** (`5107ddd`), then the MODE_15W session (two owner reboots), then T017.
-- **Issued, committed, NOT pushed (awaiting the user's push approval): T017** (`tasks/T017_pi0_padding_trim.md`,
-  order row 6d strictly after T016, protocol §17, AGENTS read list). E14b: π0 padding trim decomposed into `nocam`
-  (empty camera never created, so no SigLIP pass), `trimprompt`, `nopad` vs `pad`, on the E12b compiled-prefix
-  harness, one bracketed session; per variant vision / `vlm_prefix` / prefix / expert / serial time, DRAM bytes
-  (`lts__`), K/V bytes (expected 15 040 512 / 10 321 920 / 14 542 848 / 9 824 256 B). fp32 eager gate
-  (REL ≤ 1e-4) before any timing; compiled verdict on 64 inputs (≥ 4 prompt lengths): bitwise / PASS (MAXABS and
-  REL ≤ the stock-vs-`bf16_both` floor) / FAIL (→ seeded paired LIBERO spatial). Pre-registered rows 1–9 (nopad
-  ρ 0.64–0.74 = the ~164–183 ms `[BRAINSTORM]` bracket; prompt trim alone ≥ 0.99 if tile-quantised; bytes ratio
-  0.72–0.80 = case 003's 0.742).
-- **Issued, pushed: T016** (`tasks/T016_prefix_bandwidth_and_followups.md`, order row 6c; protocol §16; `docs/04`
-  2026-09-26 entry). Five steps: (1) EV-02 prefix under stolen bandwidth — sweep 0–94 GB/s isolating SM loss,
-  37 % duty variant, channel-confinement feasibility probe; (2) seeded LIBERO N ∈ {1,2,3,4,6,10} × 4 suites +
-  repeat control; (3) prefix savings as labelled variants: π0 `nopad`, GR00T `keep1`, `kvonce`; (4) E7 energy
-  residual; (5) E12b corruption 2 × 2. Pre-registered bands: σ@94 GB/s < 1.04 / 1.04–1.247 / > 1.247 (full and
-  37 % duty); N = 2 replicated iff ≥ 3 of 4 suites and pooled McNemar p < 0.05; repeat agreement ≥ 95 %.
-- **T016 Amendment 1 (2026-09-26, pushed before any measurement; from brainstorm case 003):** 1a's primary load is
-  **SM-free** (copy engine pinned-host↔device or CPU-side), prefix unmodified on all 16 SMs, ≥ 3 points with
-  90–130 GB/s left; green-context load demoted to an optional secondary arm. New **1d = EV-02c**
-  (`…_E13d_pi0_prefix_kernel_bytes_MAXN`): per-kernel `lts__` fills / writes split weight re-reads (H1) from
-  activation re-reads (H2); row 8 added (weight share ≥ 2/3 / ≤ 1/3 / mixed). 1c reads FACIL first (our survey: its
-  per-allocation map is proposed MC hardware, not stock Orin — device to confirm). Step 3 rows must carry DRAM bytes.
-  Rows 1–7 unchanged. Protocol §16 and plan row 6c amended to match.
-- **Closed:** T001–T003, T005–T012 done (T006 / T008 / T009 closed 2026-09-26); T014 MAXN superseded by T015
-  (done, reviewed); T013 withdrawn. **T004**: re-opened by the device for missing E6; `reports/E6_pi0_roofline.md`
-  and `results/20260925_E6_pi0/` now exist but the task file has no closing status line — verify and ask it to close.
-- **Pushed:** everything of ours up to T016 Amendment 1; T017 is local only.
-- **Standing item — capped power modes (user's decision 2026-09-24: the device's business, never escalate):**
-  `MODE_30W` is done; `MODE_15W` (id 1) remains, after T016 by the owner's order B (MAXN → 15W → MAXN, owner
-  reboots; queues `bench/queues/queue_e7_capped.sh`, `queue_e12_capped.sh`, fixed for capped modes). The device
-  never confirms a reboot prompt itself (`STATUS.md` "NEXT, needs you"). Carry this row on every pull.
+- **Device:** idle at MAXN since 2026-09-28 17:45. Its last commit is `2984671` (2026-09-29, the E12d addendum).
+  Every task in `tasks/` carries a closing status line: T016 and T017 done 2026-09-27, T004 4b(ii) 2026-09-28, T014
+  2026-09-27. Nothing is queued and no task is open. Both capped-mode sessions (MODE_30W, MODE_15W) are done.
+- **Reviewed (2026-10-08):** T016 (E13, E8s, E14, E7r, E12c) and T017 (E14b), plus E12d, the analytic co-run
+  report, E7 capped §2b / §3, E7v and E5c. Every pre-registered row was answered honestly and no band moved. The
+  only deviations were the unreachable 94 GB/s point and the optional per-variant `kernel_bytes.csv`, both allowed.
+- **Pushed:** everything of ours through T017 (`1c5cd12`). **Local, not pushed:** the review commit (this
+  rewrite, `analysis/E13_E14_review.md`, `analysis/e13_cap_model.py`). The user approves pushes.
+- **Nothing issued is outstanding.** The follow-ups below are proposals awaiting the user's approval.
 
-## Current numbers (π0 LeRobot `lerobot @ f0d2b37beb`, ckpt `45dcc8fc`, MAXN, bf16) — sources, not re-derived
+## Current numbers (π0 LeRobot `f0d2b37`, ckpt `45dcc8fc`, MAXN, bf16, N = 10) — sources, not re-derived
 
 | quantity | value | source |
 |---|---|---|
-| best frame, `bf16_both`, N = 10 | 424.46 ms; split 13.4 / 45.4 / 39.7 % (vis / prefix / ae) | `results/20260922_E4c_pi0_opt_ladder/opt_ladder.csv` |
-| E7 loops: prefix / ae / full | 251.28 / 167.36 / 424.68 ms; 6395.8 / 3112.5 / 13 666.2 mJ | `reports/E7_power_energy.md` |
-| expert per step, best | 10.37 ms; floor 3.115 spec / 3.403 meas. | `results/20260921_E4_pi0_summary.csv` |
-| fair expert (hoist) / fair serial frame | 110.95 / 354.74 ms, 17 552 mJ | E12b, review §1 |
-| compiled stages alone, whole GPU (n = 60) | prefix 246.79, expert 101.48, serial 348.73 ms | `results/20260925_E12_pi0_compiled_stages_N10_MAXN/stages.csv` (bench `352f14f`) |
-| same, green 8/8 (n = 60) | prefix 327.70, expert 149.41, serial 478.61 ms | `…_MAXN_green8_8/stages.csv`; reproduces E12b M3 within 0.25 % |
-| best GPU co-run `O` | 1.247 (green 12/4); whole GPU 1.29–1.40 | E12b |
-| DRAM bytes per frame (L2 fills + writes ≤) | prefix 21.64 GB (3.70× E6 analytic 5.85), expert 8.21 GB (1.29× E6) | `results/20260925_E12b_pi0_dram_bytes_MAXN/dram_bytes.csv` (bench `9df5628`) |
-| real DRAM draw alone | prefix 87.85 GB/s (reads only 72.3), expert 81.03 GB/s; EMC-calibrated 84.6 / 80.6 | same; EMC / measured 0.963 / 0.995 |
-| prefix floors | memory ≈ 115 ms at real traffic ≈ compute 120.9 ms (both roofs) | `reports/E12b_pi0_compiled_corun.md` addendum |
-| LIBERO success, stock vs `bf16_both` N = 10 | 252 vs 249 / 400 pooled (McNemar p 0.87); per suite ≤ 2 ep. apart | `reports/E8_libero.md` (bench `d51ccc6`) |
-| LIBERO spatial, `bf16_both` N = 10 / 4 / 2 | 62 / 74 / 85 of 100; forward 430.7 / 329.2 / 294.7 ms | same |
-| LIBERO run-to-run (stock spatial twice) | 63 vs 56 / 100, 65 % episode agreement | same §4 |
+| best frame, `bf16_both` | 424.46 ms; vis / prefix / ae 13.4 / 45.4 / 39.7 % | `results/20260922_E4c_pi0_opt_ladder/opt_ladder.csv` |
+| energy above idle, `bf16_both` (**corrected**) | prefix 10.36 J, ae 3.25 J, full 13.70 J (was 6.40 / 3.11 / 13.67); V / L / A 17 / 59 / 24 % | `results/20260926_E7r_pi0_energy_reconcile_MAXN`, `results/20260928_E7v_summary` |
+| compiled stages, `graphs_both` harness | prefix 245.41, expert 101.60, serial 347.64 ms (n 180) | `results/20260927_E14b_pi0_padtrim_stages_MAXN` |
+| best GPU co-run `O` | 1.247 (green 12/4, T_pipe 307.15 ms) | E12b |
+| prefix DRAM bytes / draw | 21.60–21.64 GB per frame; 85–88 GB/s; 45–49 % of kernel time above 90 GB/s | E12b, E13d |
+| **σ (SM-free steal, contention)** | 1.060 / 1.120 / 1.181 / 1.247 / 1.279 at 20 / 40 / 60 / 77 / 85 GB/s; 37 % duty 1.125 | `results/20260926_E13a_pi0_bwsteal_ce+cpu_MAXN`, `…_E13b_*` |
+| σ_cap, hard partition, lower bound `[derived]` | 1.044 / 1.084 / 1.19 at 12 / 10 / 8 channels left | `analysis/e13_cap_model.py` on E13d |
+| excess reads, weight share | 0.67 (fit, read as mixed) | `results/20260926_E13d_pi0_prefix_kernel_bytes_MAXN` |
+| padding trim (`nopad`, 816 → 533 tokens) | prefix 180.12, expert 66.32, serial 248.48 ms; bytes ×0.792; PASS | E14b |
+| `trimprompt` / `nocam` | prefix 252.28 / 177.77, expert 69.81 / 88.35 ms | E14b |
+| expert attention, `bf16_both` | 4.19 ms/step (`cutlass_75_wmma`) vs weights 4.54 ms/step; K/V re-copied 15.05 MB/step | `results/20260928_E5c_expert_components` |
+| seeded LIBERO N sweep (pooled /400) | N 1/2/3/4/6/10: 295/300/286/284/267/259; N = 2 vs 10 p 1.3e-5; repeat 95 % | `results/20260926_E8s_pi0_seeded_summary` |
+| `nopad` LIBERO, camera masked | 70 vs 66 / 100, p 0.29 | `…_E8s_pi0_libero_spatial_N10_seeded_maskedcam{,_nopad}` |
+| GR00T N1.7 `keep1` + `kvonce` | 237.0 → 220.0 ms, reads ×0.874, bitwise | `results/20260926_E14_groot_n17_savings_MAXN` |
 
-Readings: `bf16_both` is accuracy-neutral within noise (gaps 1–3 ep. vs a 7-point self-repeat; per-arm 95 % CI
-±9–10 pts). N = 2 beating N = 10 by 23 pts (p = 0.0002) exceeds the noise; N = 4 (+12, p = 0.096) does not.
-π0's flow noise is unseeded torch RNG, so arms are not paired in policy noise. EV-02a: the prefix alone draws
-~88 GB/s ≈ 94 % of an 8-channel half (~94 GB/s), not ~26 % — the E6-bytes premise of EV-02 was wrong.
-Case 001: PIM frame-rate gain over the best GPU co-run ≤ 1.247× `[derived]`, and only if the prefix loses
-nothing to the PIM — which a ~90 %-of-half-bus prefix makes unlikely.
+**Readings (detail in the review):**
+- **Steal vs partition.** E13 is queueing contention on all 16 channels, with the bus never full. A hard partition
+  lies between σ_cap and E13's value at the same bandwidth left. At k = 6 that is 1.08–1.21, giving 1.04–1.15× over
+  the GPU co-run `[derived]`. A PIM that seizes channels under a shared address map blocks, and nothing measured
+  covers that case.
+- **The trim anomalies are probably alignment.** Prefill M ≡ 0 (mod 8) is fast. The expert's key count
+  (prefix + 51) ≡ 0 (mod 8) is fast. pad aligns the first and misaligns the second, so the GPU expert at pad may
+  carry a ~30 ms attention-kernel penalty. One LIBERO clue does not fit. This is untested.
+- **N = 1–4 beats N = 10** on every suite (π0, this fine-tune).
+- **The empty camera** was attended in every E8 / E8s arm. It moves only absolute LIBERO rates; no timing, byte or
+  energy number changes.
 
 ## Open issues
 
-- **(blocks energy claims) E7 residuals:** stage loops 418.64 vs `full` 424.68 ms and 9509 vs 13 666 mJ (30 %).
-  Now T016 step 4.
-- **E12b M2 corruption cause** (T016 step 5) stays a two-suspect list (`e12b_diagnose.py` never existed in git); no
-  one-change-at-a-time isolation; no `graphs_both`-prefix vs rung equivalence. `hog_matched` was ~22 % light
-  (matched to E6 bytes).
-- **Corrections to carry downstream:** E5b S-sweep CUDA-event times were +45–75 µs harness overhead
-  (`ae47c79`); GR00T largest DiT projection is 1.17–1.20× its floor (was 1.6×), `to_q` 1.44–1.47× (was
-  3.5–3.7×) — `reports/E5b_groot.md`. `opt_ladder.py` wrote π0's checkpoint into π0.5 / SmolVLA `meta.json`
-  (fixed, data unaffected). E8 no-settle arms (18 / 24 of 100) superseded.
-- **Not approved — never write as tasks without the user's explicit, current approval:** P2 (`bf16_both` +
-  `cropcache`); `groot_n16` / `groot_n15` in `check_model_inputs.py` `MODELS`. (EV-02 and the seeded E8 follow-up
-  were approved 2026-09-26 → T016.)
-- **Open decisions for the user:** does `owngraph_expert` (101.21 ms) join the GPU baseline; does the timestep
-  hoist (OD-1) enter it (PIM latency gain then ≈ 1.03–1.07× at 16 ch `[derived]`).
-- **Device questions, answers owed:** `owngraph_expert` (above); back-fill `model_commit: null` in older
-  `meta.json` or accept per-report citation; its three Part-C questions (`docs/04`). E8 seeding answered (T016).
-- **Carried user actions (unchanged since 2026-09-22):** leaked session token in history (`410a535`; repo must stay
-  private); no passwordless sudo on the device; bandwidth peak varies 1.19× between processes; π0 is the LeRobot
-  port, not openpi. Tracked repo 413.9 MB (results 408.6 MB), largest file 13.6 MB.
+- **Open decisions for the user (OD-1 family):** does `owngraph_expert` (101.21 ms) or the hoist enter the GPU
+  baseline; does a prefix trim (`nopad`, GR00T `keep1` / `kvonce`); which configured N (the checkpoint default 10 vs
+  the more accurate 1–4). All shrink the PIM's share of the frame.
+- **The AiM vs GPU expert comparison is not like-for-like.** The 66.3 ms GPU `nopad` expert attends 584 keys, and
+  the AiM 93.1 ms models attention at the padded length. microarch-owner has to confirm that length. Review §3(b).
+- **Corrections to carry downstream:** E7 compiled phase energies (28 of 132 rows ≥ 5 %, e.g. π0 prefix +62 %; read
+  `E7_all_dirs_timed_window.csv`). E8 / E8s absolute rates are for the attended-camera input. The directory
+  `…_E8s_pi0_libero_spatial_N10_seeded_nopad` is `trimprompt` (D5; it has no NOTE.md). E5b S-sweep event times
+  are +45–75 µs. GR00T projection floors are 1.17–1.20× (`to_q` 1.44–1.47×). The ANALYTIC report's "activations
+  spill" contradicts E13d.
+- **Unexplained, measured:** the compiled prefix at MODE_30W is 2.68× MAXN green-8 (clock ratio 2.125×). The LIBERO
+  rung-path `trimprompt` gave ~0–4 ms saving vs ~25 ms in the harness. ~38 % idle remains in the compiled expert.
+- **Device questions, answers owed (`docs/04`, on approval):** the camera (read as-is with the caveat?), OD-1 (the
+  user's), the `model_commit: null` back-fill, and `owngraph_expert`.
+- **Not approved; never written as tasks without the user's explicit, current approval:** P2 (`bf16_both` +
+  `cropcache`), and `groot_n16` / `groot_n15` in `check_model_inputs.py` `MODELS`.
+- **Carried user actions (unchanged since 2026-09-22):** the leaked session token in history (`410a535`; the repo
+  must stay private); no passwordless sudo on the device; π0 is the LeRobot port, not openpi. The device reports
+  713 MB of committed results; the local size-pack is 245 MiB.
 
 ## Next steps
 
-1. On each pull: fetch, read `STATUS.md` head, new `results/` and `reports/`; repo size check. Watch for
-   `results/*_E13*`, `reports/E13_pi0_bandwidth_steal.md` first; review against T016's pre-registration table
-   (rows 1–8; check 1a's primary arm is SM-free and 1d's per-kernel sum is within 10 % of E12b's).
-2. Ask the device (a `docs/04` note, on approval) to close T004 against its E6 deliverables, and put the E7
-   residual question and the Part-C answers there.
-3. When the capped-mode session lands: check step 0c against the STATUS bracket (prefix 326.94–326.94×r,
-   expert 149.05–149.05×r, r = 1300.5 / f_GPU,30W); hand numbers to main as "for <owner>:".
-4. When E13 lands: hand σ(x), the duty result and EV-02c's H1/H2 split with tile shapes to main "for
-   brainstorm-owner / microarch-owner:" (cases 001, 003; EV-02b/c; microarch's EV-17 re-read estimate).
-5. When T017 lands (`results/*_E14b_*`, `reports/E14b_pi0_padtrim.md`): check the gate log, the bracket drift, the
-   `pad` reproduction (246.79 ms ± 2 %, 21.64 GB ± 3 %) and rows 1–9; hand ρ, bytes and the verdicts to main "for
-   brainstorm-owner / microarch-owner:" (case 004 / 003, OD-1).
-6. Review the MODE_30W results (T014 Step 4 table in `STATUS.md`) when asked.
-7. P2 / `MODELS` only after explicit user approval (task + order row + protocol §).
+1. **Push on approval:** the review commit.
+2. **Proposed follow-ups (review §9; none issued):** F-c1 nsys kernel names per E14b variant plus the rung path with
+   the camera masked and attended (~30 min). F-c2 standalone attention / GEMM alignment sweep (~15 min). F-c3 exact
+   `pad+kvalign` / `nopad+align` variants (~1 h; decides whether the GPU expert reference drops ~30 ms). F-a1 an
+   EMC-locked prefix as an upper proxy for a hard partition (runtime debugfs clock; the device first confirms it is
+   feasible). F-a2 the CPU-only steal arm. F-e1 seeded N = 2 vs 10 with the camera masked. Order if approved:
+   F-c1 + F-c2 → F-c3 → F-a1 → F-a2 → F-e1. Write them as one task with an order row and a protocol §, and
+   pre-register the bands.
+3. On each pull: fetch, read the head of `STATUS.md` and any new `results/` / `reports/`, and check repo size.
+4. Hand-offs through main (listed in the 2026-10-08 report): σ, σ_cap and the partition mechanisms (brainstorm /
+   microarch); the nopad fairness and the PIM run at 584 keys (microarch); the E7 energy correction (microarch /
+   evaluation); the camera caveat and the mislabeled directory (evaluation); the N result (brainstorm / paper).
 
 ## Recent decisions
 
-- 2026-09-26: T017 issued (case 004's EV-07 refinements): camera drop and prompt trim measured separately, camera
-  dropped before SigLIP; the action pass criterion is relative to the stock-vs-`bf16_both` floor, fixed in advance;
-  T016's `nopad` row is kept, not replaced.
-- 2026-09-26: T016 Amendment 1 — SM-free steal primary, EV-02c per-kernel bytes, FACIL in 1c, bytes required in
-  step 3; dated amendment, pre-registered rows 1–7 untouched. Stray `.claude/agent-memory/` removed from this repo
-  and ignored (canonical store is the workspace's).
-- 2026-09-26: T016 issued (user-approved EV-02 + seeded E8 + prefix-savings variants + EV-10 + EV-13); self-contained
-  task file instead of a `docs/E##` spec; prefix-savings variants are never the baseline.
-- 2026-09-26: E8 read as `bf16_both` accuracy-neutral within run-to-run noise; E12b DRAM bytes settle EV-02a on
-  the ~90 % side.
-- 2026-09-25: E12b reviewed against the `5cf1129` pre-registration; T014 compiled green rows withdrawn.
-- 2026-09-25: "P1" relabelled EV-02 (channel partition); CoRe is the ISA name elsewhere.
-- 2026-09-24: capped modes are the device's business; never escalate unless it marks `blocked`.
+- 2026-10-08: T016 and T017 reviewed (`analysis/E13_E14_review.md`). E13 read as contention, not a partition, and
+  a cap model added as the partition's lower bound (`analysis/e13_cap_model.py`, derived only). The trim anomalies
+  are read as one alignment mechanism (a hypothesis). Follow-ups proposed, not issued.
+- 2026-09-26: T017 issued (case 004). The camera drop and the prompt trim are measured separately, the camera
+  dropped before SigLIP, with the pass criterion relative to the stock-vs-`bf16_both` floor.
+- 2026-09-26: T016 Amendment 1: SM-free steal as the primary arm, EV-02c per-kernel bytes, FACIL in 1c, bytes
+  required in step 3. Pre-registered rows untouched.
+- 2026-09-26: T016 issued. It is a self-contained task file, and its prefix-savings variants are never the baseline.
+- 2026-09-26: E8 read as `bf16_both` accuracy-neutral within noise. E12b's bytes settle EV-02a on the ~90 % side.
+- 2026-09-25: E12b reviewed against the `5cf1129` pre-registration.
+- 2026-09-25: "P1" relabelled EV-02 (channel partition); CoRe is the ISA's name elsewhere.
+- 2026-09-24: capped modes are the device's business, never escalated (both sessions are now done).
 - 2026-09-24: the GR00T head restructuring is ours, never in the GPU baseline.
 
 ## Interfaces with other sub-projects
 
-- → microarch-owner: latency / power / kernel / DRAM-bytes data for `host_model.py`, `energy_model.py`, roofline
-  points; hybrid inputs `results/<date>_E11_<model>_inputs/model_inputs.csv` (protocol §13.8).
-- → brainstorm-owner: case 001 and EV-02a (prefix DRAM draw); `O`, `p_part`, `s_part`, `p_hog`, fair `B`.
-- → paper-owner: baseline ladder, occupancy / instruction-level evidence, LIBERO results.
-- Every number leaves through main as "for <owner>:" and reaches paper / site via evaluation-owner.
-- Names: EV-02 = channel-partition measurement (formerly "P1"); CoRe = the ISA (not in this repo).
+- → microarch-owner: latency / power / kernel / DRAM-bytes data for `host_model.py`, `energy_model.py` and
+  roofline points; hybrid inputs `results/<date>_E11_<model>_inputs/model_inputs.csv` (protocol §13.8).
+- → brainstorm-owner: cases 001 / 003–006 (σ, partition, N, capped modes).
+- → paper-owner: the baseline ladder, occupancy / instruction-level evidence, LIBERO results.
+- Every number leaves through main as "for <owner>:" and reaches the paper and the site via evaluation-owner.
+- Names: EV-02 = the channel-partition measurement (formerly "P1"); CoRe = the ISA (not in this repo).
