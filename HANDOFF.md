@@ -1,6 +1,6 @@
 # HANDOFF — jetson
 
-*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last rewritten: 2026-10-08 by jetson-owner.*
+*Root: `/home/yanggon/05_VLA_LPDDR/jetson` · Owner: `jetson-owner` · Last rewritten: 2026-10-08 by jetson-owner (Thor projection).*
 *State only. It is rewritten, never appended. Older state, decisions and issues are in `HANDOFF.history.md`.
 Full reviews: `analysis/E12_review.md`, `analysis/E12b_review.md`, `analysis/E13_E14_review.md` (T016 + T017 + the
 late addenda).*
@@ -13,8 +13,16 @@ late addenda).*
 - **Reviewed (2026-10-08):** T016 (E13, E8s, E14, E7r, E12c) and T017 (E14b), plus E12d, the analytic co-run
   report, E7 capped §2b / §3, E7v and E5c. Every pre-registered row was answered honestly and no band moved. The
   only deviations were the unreachable 94 GB/s point and the optional per-variant `kernel_bytes.csv`, both allowed.
-- **Pushed:** everything of ours through T017 (`1c5cd12`). **Local, not pushed:** the review commit (this
-  rewrite, `analysis/E13_E14_review.md`, `analysis/e13_cap_model.py`). The user approves pushes.
+- **Pushed:** everything of ours through T017 (`1c5cd12`). **Local, not pushed:** the review commit
+  (`analysis/E13_E14_review.md`, `analysis/e13_cap_model.py`) and the Thor projection commit. The user approves pushes.
+- **Thor projection (static, projected, not measured):** `analysis/thor_projection.{py,md}` →
+  `analysis/thor_projection/*.csv`. Factors are NVIDIA's N1.7 Orin (Isaac-GR00T README @ `376ba89`) ÷ NVIDIA Thor
+  JP 7.2, same input (libero_10, 1 camera, 4 steps): front ×2.65, expert ×1.69 (compiled). Best e2e is π0 198.5,
+  π0.5 226.0, SmolVLA 46.9, N1.7 108.7, N1.6 81.7, N1.5 78.3 ms, and the AE-share geomean goes 39.2 → 49.4 %
+  (low 42.3 %). For π0 on Thor, GPU serial is 153.2 ms, AiM latency mode is 186.2 ms at 16 ch (1.215×) and
+  151.8 ms at 32 ch (0.991×), and the optimistic bound (2× floor) is 4.73 ms/step. Main's draft (our N1.7 ÷ NVIDIA
+  Thor) is kept as a sensitivity. It was input-confounded: ours is 2 cameras × 2 frames (P = 273), which inflated
+  the front factor to ×3.26.
 - **Nothing issued is outstanding.** The follow-ups below are proposals awaiting the user's approval.
 
 ## Current numbers (π0 LeRobot `f0d2b37`, ckpt `45dcc8fc`, MAXN, bf16, N = 10) — sources, not re-derived
@@ -72,7 +80,7 @@ late addenda).*
 
 ## Next steps
 
-1. **Push on approval:** the review commit.
+1. **Push on approval:** the review commit and the Thor projection commit.
 2. **Proposed follow-ups (review §9; none issued):** F-c1 nsys kernel names per E14b variant plus the rung path with
    the camera masked and attended (~30 min). F-c2 standalone attention / GEMM alignment sweep (~15 min). F-c3 exact
    `pad+kvalign` / `nopad+align` variants (~1 h; decides whether the GPU expert reference drops ~30 ms). F-a1 an
@@ -83,10 +91,14 @@ late addenda).*
 3. On each pull: fetch, read the head of `STATUS.md` and any new `results/` / `reports/`, and check repo size.
 4. Hand-offs through main (listed in the 2026-10-08 report): σ, σ_cap and the partition mechanisms (brainstorm /
    microarch); the nopad fairness and the PIM run at 584 keys (microarch); the E7 energy correction (microarch /
-   evaluation); the camera caveat and the mislabeled directory (evaluation); the N result (brainstorm / paper).
+   evaluation); the camera caveat and the mislabeled directory (evaluation); the N result (brainstorm / paper);
+   the Thor projection (evaluation / paper, labelled projected; microarch: AiM on LPDDR5X, e.g. a 3.75 ns column).
 
 ## Recent decisions
 
+- 2026-10-08: Thor projection calibrated on NVIDIA Orin ÷ NVIDIA Thor at the same input, not on our Orin run.
+  Our N1.7 fixture (DROID, 4 images) differs from NVIDIA's (LIBERO, 1 camera). Their compiled expert agrees with
+  ours to 0.8 %, but their backbone does not.
 - 2026-10-08: T016 and T017 reviewed (`analysis/E13_E14_review.md`). E13 read as contention, not a partition, and
   a cap model added as the partition's lower bound (`analysis/e13_cap_model.py`, derived only). The trim anomalies
   are read as one alignment mechanism (a hypothesis). Follow-ups proposed, not issued.
