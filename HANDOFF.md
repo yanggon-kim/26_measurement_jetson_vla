@@ -11,6 +11,8 @@ appended; superseded text is deleted (git keeps it). Full reviews: `analysis/E12
   **not pushed** (main asks the user). Report at `analysis/prefix_root_cause.md`, not `reports/` (device-owned, and T018
   is trimming it). Classes from E5 nsys (full coverage), shapes / bytes from E13d, counters from E4g C1 (first 40).
 - **Thor projection** (static, projected): `analysis/thor_projection.{py,md}`; front ×2.65, expert ×1.69 (NVIDIA ÷ NVIDIA).
+- **Thor campaign (2026-10-21):** orphan branch `thor` @ `f0b2c70` on `origin` holds the self-contained Thor job list
+  (T001–T015, `PROGRESS.md`, Orin snapshot in `reference/orin/`); no device has pulled it; its own `HANDOFF.md` tracks it.
 
 ## Current numbers (MAXN, bf16) — sources, not re-derived
 | quantity | value | source |
