@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# C1 — what is each phase bound by? One ncu capture per (model, mode, region).
+#
+# WHY NOT `--set full`: the overnight C1 run used `--set full -c 300` and produced four
+# .ncu-rep files of 89, 184, 201 and 203 MB. Protocol §6 caps a committed file at 50 MB and
+# GitHub rejects anything over 100 MB, so none of them could be committed. C1's question is
+# narrow -- memory bound, compute bound, or latency bound, and on which stall -- and four
+# sections answer it:
+#
+#   SpeedOfLight           SM [%] vs Memory [%]  -> compute- vs memory-bound
+#   MemoryWorkloadAnalysis DRAM/L2/L1 throughput -> which level is saturated
+#   WarpStateStats         stall reasons         -> Long Scoreboard = memory latency
+#   Occupancy              achieved vs theoretical
+#
+# The stall BREAKDOWN is requested explicitly. The four sections alone do not
+# carry it: ncu's CPIStall rule reported only "The optional metric
+# smsp__pcsamp_sample_count could not be found", so 'Long Scoreboard' -- the one
+# stall reason this study actually needs, because it is the signature of memory
+# latency -- would have been absent from all 36 captures. Caught at capture 2.
+#
+# Protocol §3.2 is still enforced: never unfiltered, one NVTX range per run, with -c.
+#
+# usage: run_ncu_c1.sh <model> <mode> <region> <outdir>
+#   model   pi0 | pi05 | smolvla          (resolved through bench/model_registry.py)
+#   mode    eager | best                  (best = reduce-overhead)
+#   region  vision | vlm_prefix | ae_step_0
+set -u
+MODEL="${1:?model}"; MODE="${2:?mode}"; REGION="${3:?region}"; OUT="${4:?outdir}"
+CAP="${NCU_COUNT:-60}"
+cd /home/yanggon/00_VLA/26_measurement_jetson_vla
+mkdir -p "$OUT/ncu"
+
+PY=$HOME/venvs/pi0/bin/python
+case "$MODE" in
+  eager) TMODE=eager ;;
+  best)  TMODE=reduce-overhead ;;
+  *) echo "mode must be eager|best"; exit 2 ;;
+esac
+
+# N per model: its own configured default, the same one Part A/B used.
+case "$MODEL" in
+  pi0|pi05) N=10 ;;
+  smolvla)  N=10 ;;
+  *) echo "unknown model $MODEL"; exit 2 ;;
+esac
+
+# bracket-free alias: ncu's --nvtx-include expression language gives [ and ] special
+# meaning, and two 250 s runs profiled ZERO kernels before this was understood.
+NVTX_R="$REGION"
+TAG="${MODEL}_${MODE}_${REGION}"
+REP="$OUT/ncu/${TAG}"
+
+# REFUSE to start while another profiler is live. Killing a queue does NOT kill the ncu it
+# launched: that tree runs as root via sudo, so `kill` from this user returns "Operation
+# not permitted" and the capture keeps going. Twice now a new capture has started while an
+# orphan was still profiling, and two profilers sharing one GPU corrupt both. Checked by
+# exact argv element, never a substring of the joined cmdline (that self-match has cost
+# this project three incidents).
+if $HOME/venvs/pi0/bin/python - <<'GUARDPY'
+import sys, os
+from pathlib import Path
+me = os.getpid()
+for d in Path('/proc').iterdir():
+    if not d.name.isdigit() or int(d.name) == me:
+        continue
+    try:
+        argv = [a for a in (d/'cmdline').read_bytes().split(b'\0') if a]
+    except OSError:
+        continue
+    if not argv:
+        continue
+    if b'--import' in argv:          # `ncu --import` only reads a report file (CPU); it profiles nothing
+        continue
+    if argv[0].rsplit(b'/', 1)[-1] == b'ncu' or any(
+            a.endswith(b'ncu_target.py') or a.endswith(b'groot_phases.py') for a in argv[1:]):
+        print(f"  another profiler is live: {d.name} {b' '.join(argv[:3]).decode()[:90]}")
+        sys.exit(0)
+sys.exit(1)
+GUARDPY
+then
+  echo "  REFUSING to start $MODEL/$MODE/$REGION — kill it first (sudo, it runs as root)"
+  exit 3
+fi
+
+echo "########## $(date +%H:%M) ncu $TAG (cap $CAP)"
+t0=$SECONDS
+# sudo resets HOME, so the profiled process looked for the HF cache under root's home,
+# found nothing, and tried to DOWNLOAD a gated repo:
+#   "Cannot access gated repo ... google/paligemma-3b-pt-224 ... You must be authenticated"
+# Point it at the real cache and force offline, so it reads the weights already on disk and
+# never contacts the hub. TORCHINDUCTOR_CACHE_DIR points at the USER's
+# inductor cache for the same reason: under sudo it would default to
+# /tmp/torchinductor_root and recompile every kernel from scratch inside
+# ncu, where compilation is far slower. Part A/B already compiled these
+# exact callables, so the artefacts are on disk. Deliberately NOT passing HF_TOKEN: protocol §3.5 requires profiled
+# commands to run without token variables, because ncu reports capture the environment.
+# `sudo -n env ...` is refused ("a password is required"): the NOPASSWD rule names
+# specific binaries, and env is not one of them. /bin/sh IS, so the environment is set
+# inside a root shell instead. Deliberately NOT passing HF_TOKEN: protocol §3.5 requires
+# profiled commands to run without token variables, because ncu reports capture the
+# environment. Offline mode means no token is needed at all -- the weights are on disk.
+RUNNER="$OUT/ncu/${TAG}.sh"
+cat > "$RUNNER" <<EOF
+HOME=/home/yanggon
+HF_HOME=/home/yanggon/.cache/huggingface
+HF_HUB_OFFLINE=1
+TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_yanggon
+TRANSFORMERS_OFFLINE=1
+export HOME HF_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE TORCHINDUCTOR_CACHE_DIR
+cd /home/yanggon/00_VLA/26_measurement_jetson_vla
+exec $(which ncu) \
+  --profile-from-start off --nvtx --nvtx-include "${NVTX_R}/" \
+  -c $CAP \
+  --section SpeedOfLight --section MemoryWorkloadAnalysis \
+  --section WarpStateStats --section Occupancy \
+  --metrics smsp__average_warps_issue_stalled_long_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_short_scoreboard_per_issue_active.ratio,smsp__average_warps_issue_stalled_wait_per_issue_active.ratio,smsp__average_warps_issue_stalled_no_instruction_per_issue_active.ratio,smsp__average_warps_issue_stalled_math_pipe_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_mio_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_lg_throttle_per_issue_active.ratio,smsp__average_warps_issue_stalled_barrier_per_issue_active.ratio,smsp__average_warps_issue_stalled_membar_per_issue_active.ratio,smsp__average_warps_issue_stalled_drain_per_issue_active.ratio,smsp__average_warps_issue_stalled_dispatch_stall_per_issue_active.ratio,smsp__average_warps_issue_stalled_imc_miss_per_issue_active.ratio,smsp__average_warps_issue_stalled_misc_per_issue_active.ratio,smsp__average_warps_issue_stalled_selected_per_issue_active.ratio \
+  --export "$REP" --force-overwrite \
+  $PY bench/ncu_target.py --model $MODEL --mode $TMODE --warmup ${NCU_WARMUP:-8} \
+      --num-steps $N --region "$REGION"
+EOF
+sudo -n /bin/sh "$RUNNER" > "$OUT/ncu/${TAG}.stdout" 2>&1
+RC_NCU=$?
+# CACHE_OWNERSHIP_FIX (2026-09-25): the profiled process runs as root, so every Triton / Inductor
+# cache entry it creates is root-owned; a later user-run process that hits one fails with
+# PermissionError (all six compiled GR00T N-sweep runs failed that way). Hand them back.
+sudo -n chown -R "$(id -u):$(id -g)" /tmp/triton_yanggon /tmp/torchinductor_yanggon \
+    "$HOME/.triton" "$HOME/.cache/triton_groot" "$HOME/.cache/triton_groot16" 2>/dev/null
+( exit $RC_NCU )
+RC=$?
+echo "  ncu rc=$RC in $((SECONDS-t0))s"
+
+if [ -f "${REP}.ncu-rep" ]; then
+  # CSV export is what the analysis reads; the .ncu-rep is the raw artefact.
+  sudo -n "$(which ncu)" --import "${REP}.ncu-rep" --csv --page details \
+       > "$OUT/ncu/${TAG}_details.csv" 2>/dev/null
+  sudo -n chown "$(id -u):$(id -g)" "${REP}.ncu-rep" "$OUT/ncu/${TAG}_details.csv" 2>/dev/null
+  RAW=$(stat -c%s "${REP}.ncu-rep")
+  zstd -19 -q -f "${REP}.ncu-rep" -o "${REP}.ncu-rep.zst" 2>/dev/null
+  ZST=$(stat -c%s "${REP}.ncu-rep.zst" 2>/dev/null || echo 0)
+  echo "  rep $(numfmt --to=iec $RAW) -> zst $(numfmt --to=iec $ZST)"
+  # Protocol §6: keep every committed file under 50 MB. Say so loudly if we are over.
+  if [ "$ZST" -gt 52428800 ]; then
+    echo "  OVER 50 MB COMPRESSED — shorten the capture (lower NCU_COUNT) before committing"
+  fi
+  rm -f "${REP}.ncu-rep"     # only the compressed one is kept, per §6
+  KERNELS=$(tail -n +2 "$OUT/ncu/${TAG}_details.csv" 2>/dev/null | wc -l)
+  echo "  csv rows=$KERNELS"
+else
+  echo "  NO REPORT WRITTEN — see $OUT/ncu/${TAG}.stdout"
+  tail -5 "$OUT/ncu/${TAG}.stdout" 2>/dev/null | sed 's/^/    /'
+fi

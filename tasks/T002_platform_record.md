@@ -1,0 +1,45 @@
+# T002 — Platform record (E0) at the current power mode · priority P0 · depends on: T001
+
+## Why
+Every later number is read against this record: the mode, the SM count, the locked clocks, the idle power and the
+static hardware constants. A latency without its device state is not a result.
+
+## Orin counterpart
+`reference/orin/tasks/T001_bringup.md` step 1 and its MAXN re-run, `reference/orin/reports/E0_platform.md`.
+
+## Configuration
+The **current** power mode, never switched (protocol §1). `sudo jetson_clocks` and `sudo jetson_clocks --fan`
+applied first (needs H1; without it, record the unlocked state and mark the run `jetson_clocks: false`).
+
+## Steps
+1. Run the protocol §1 gate and record every item of it, plus: `jetson_clocks --show` before and after applying;
+   the GPU frequency (min / max / current / available) and EMC rate; CPU frequencies and governors; `free -h`, swap
+   and zram; storage; temperatures; fan state; the full `nvpmodel` mode table (from T001).
+2. GPU properties from the device: `torch.cuda.get_device_properties(0)` (all fields), compute capability,
+   `gpu_arch` (T001), L2 size, shared memory per SM and per block, max threads / warps / registers per SM,
+   warp size, clock range; from `ncu`'s device attributes if exported (`device__attribute_*` metrics on the toy run)
+   as a cross-check.
+3. Clock under load: run a 10 s bf16 GEMM loop and sample the GPU frequency at ≥ 10 Hz (port
+   `reference/orin/bench/gpu_clock_probe.py`); the locked frequency is the median under load; check it is constant.
+4. Idle power: 60 s of all rails from sysfs at ≥ 10 Hz plus tegrastats (protocol §4); per rail mean and module power.
+5. Write the static half of `hw_constants.json` (protocol §8: every field except the measured peaks, ridge and
+   counter validation).
+6. **If the current mode is not the maximum-performance mode:** this directory is labelled with its mode and is a
+   record only; keep H5 in both boxes. When H5 is resolved (after the human's reboot), re-run steps 1–5 into a new
+   directory `results/<date>_E0_platform_<mode name>/`; that one is authoritative and T003 starts only after it.
+
+## Result directories and reports
+`results/<date>_E0_platform_<mode name>/` (`meta.json`, `platform.json`, `nvpmodel_modes.csv`, `gpu_properties.json`,
+`clock_probe.csv`, `idle_power.csv`, `hw_constants.json`, `raw/` with every command's stdout and the power logs);
+`reports/E0_platform.md`.
+
+## Acceptance
+- One E0 directory in the maximum-performance mode with `jetson_clocks: true`, the locked GPU frequency measured
+  under load, idle power per rail and as module power, and the static `hw_constants.json`; or the record in the
+  current mode with H5 / H1 open in both boxes.
+- `meta.json` complete (protocol §5); raw files committed; sizes in `STATUS.md`; independent review pass (P0).
+
+## Push points
+At the close (one result directory per commit).
+
+## Status (appended by the on-device agent)

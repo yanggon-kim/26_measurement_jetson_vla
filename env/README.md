@@ -1,0 +1,1 @@
+# env — how this Thor was set up (on-device agent): setup scripts, exact versions and pins, the availability matrix of T001 in `README.md`, every install with its command and reason, and `tool_help/`.

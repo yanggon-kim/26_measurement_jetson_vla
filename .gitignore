@@ -1,0 +1,68 @@
+# Raw profiler output IS committed, under results/<run>/raw/ (docs/02_protocol.md §3.5, §6):
+# .ncu-rep, SASS/PTX dumps, .cubin, power logs, torch.profiler traces, full CSV exports.
+# Nothing below may match them. Never committed: model weights, datasets, caches, environments, secrets.
+
+# model weights and checkpoints
+checkpoints/
+weights/
+models/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.npz
+*.onnx
+*.engine
+*.gguf
+
+# datasets
+datasets/
+*.hdf5
+*.parquet
+
+# caches and scratch space (Inductor / Triton caches, temporary profiler output before compression)
+scratch/
+.cache/
+hf_cache/
+__pycache__/
+*.pyc
+
+# virtual environments
+.venv/
+venv/
+
+# credentials and tokens
+.env
+.netrc
+.git-credentials
+hf_token*
+*.token
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# logs are ignored everywhere except inside a result directory
+*.log
+!results/**/*.log
+
+# the fixture observations (PNG + JSON) are allowed
+!bench/fixtures/**
+!reference/orin/bench/fixtures/**
+
+# measured action chunks (not weights) are allowed under raw/
+!results/**/raw/actions_*.npz
+!results/**/actions_*/actions.npz
+
+# --- nsys binaries: BLOCKED UNTIL T001 STEP 6 CLEARS THEM ------------------------------
+# On the Orin, .nsys-rep and .sqlite embedded the system-wide process environment, including a
+# session token of the agent's harness (protocol §3.5). T001 step 6 re-tests this on Thor with a
+# canary. Only if that test is clean may the on-device agent delete the two lines below, in a
+# commit of its own that cites the T001 result directory. Every committed binary is still
+# scanned per file (protocol §3.5).
+results/**/*.nsys-rep
+results/**/*.sqlite
+
+# local agent settings and memory, machine-specific
+.claude/settings.local.json
+.claude/agent-memory/
