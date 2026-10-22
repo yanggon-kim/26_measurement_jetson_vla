@@ -1,0 +1,128 @@
+{
+ "experiment": "E4 Part B optimisation ladder",
+ "task": "T005",
+ "model": "smolvla",
+ "model_repo": "https://github.com/huggingface/lerobot",
+ "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+ "checkpoint": "lerobot/smolvla_base",
+ "checkpoint_revision": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+ "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+ "rung": "per row: ae_compile, ae_graphs, bf16_base, bf16_both, bf16_both_graphs, bf16_norms, bf16_vision, eager_bf16, eager_fp32, eager_tf32, vis_compile, vis_graphs, vis_static_pos, vlm_compile, vlm_compile_nvg, vlm_graphs, whole_graphs",
+ "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+ "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+ "num_denoise_steps": "10 (extra N per rung for the slope: by_N in the row files)",
+ "action_horizon": 50,
+ "prefix_tokens": 177,
+ "suffix_tokens": 50,
+ "batch": 1,
+ "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "f5e8f94",
+ "command": "bash bench/queues/t005_ladders.sh 20261022  (smolvla: ~/venvs/lerobot/bin/python bench/opt_ladder.py --model smolvla --out results/20261022_E4c_smolvla_opt_ladder --rungs <all 17 LeRobot rungs> --slope-steps 2,6 --slope-rungs whole_graphs; paused twice at rung boundaries for T005 diagnostics, interrupted rungs re-run)",
+ "throttled": {
+  "ae_compile_N10": {
+   "10": false
+  },
+  "ae_graphs_N10": {
+   "10": false
+  },
+  "bf16_base_N10": {},
+  "bf16_both_N10": {},
+  "bf16_both_graphs_N10": {},
+  "bf16_norms_N10": {},
+  "bf16_vision_N10": {},
+  "eager_bf16_N10": {
+   "10": false
+  },
+  "eager_fp32_N10": {
+   "10": false
+  },
+  "eager_tf32_N10": {
+   "10": false
+  },
+  "vis_compile_N10": {
+   "10": false
+  },
+  "vis_graphs_N10": {
+   "10": false
+  },
+  "vis_static_pos_N10": {
+   "10": false
+  },
+  "vlm_compile_N10": {
+   "10": false
+  },
+  "vlm_compile_nvg_N10": {
+   "10": false
+  },
+  "vlm_graphs_N10": {
+   "10": false
+  },
+  "whole_graphs_N10": {
+   "10": false,
+   "2": false,
+   "6": false
+  }
+ },
+ "memory_path_state": {
+  "ae_compile_N10": {
+   "10": "normal->normal"
+  },
+  "ae_graphs_N10": {
+   "10": "normal->normal"
+  },
+  "bf16_base_N10": {},
+  "bf16_both_N10": {},
+  "bf16_both_graphs_N10": {},
+  "bf16_norms_N10": {},
+  "bf16_vision_N10": {},
+  "eager_bf16_N10": {
+   "10": "normal->normal"
+  },
+  "eager_fp32_N10": {
+   "10": "normal->normal"
+  },
+  "eager_tf32_N10": {
+   "10": "normal->normal"
+  },
+  "vis_compile_N10": {
+   "10": "normal->normal"
+  },
+  "vis_graphs_N10": {
+   "10": "normal->normal"
+  },
+  "vis_static_pos_N10": {
+   "10": "normal->normal"
+  },
+  "vlm_compile_N10": {
+   "10": "normal->normal"
+  },
+  "vlm_compile_nvg_N10": {
+   "10": "normal->normal"
+  },
+  "vlm_graphs_N10": {
+   "10": "normal->normal"
+  },
+  "whole_graphs_N10": {
+   "10": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  }
+ },
+ "produced_by": {
+  "_N": "bench/opt_ladder.py (child)",
+  ".log": "bench/opt_ladder.py child stdout with TORCH_LOGS=recompiles,graph_breaks",
+  "traceback_": "bench/opt_ladder.py",
+  "secrets_scan": "bench/secrets_scan.py"
+ },
+ "also_raw": [],
+ "nsys_version": "n/a",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "cuobjdump_version": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv."
+}

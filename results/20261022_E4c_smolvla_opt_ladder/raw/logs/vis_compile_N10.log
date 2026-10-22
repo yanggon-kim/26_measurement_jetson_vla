@@ -1,0 +1,103 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5533.79it/s]
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py:137
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Dynamic shape operator
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] User code traceback:
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     raise SystemExit(main())
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return child(a)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     one()
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return ad.iteration()
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py", line 319, in predict_action_chunk
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     actions = self._get_action_chunk(batch, noise, **kwargs)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py", line 291, in _get_action_chunk
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     actions = self.model.sample_actions(
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py", line 818, in sample_actions
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/smolvla/modeling_smolvla.py", line 653, in embed_prefix
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     img_emb = self.vlm_with_expert.embed_image(img)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 249, in embed_image
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return _orig(image)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/smolvla/smolvlm_with_expert.py", line 184, in embed_image
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     .vision_model(
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/generic.py", line 917, in wrapper
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     output = func(self, *args, **kwargs)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 253, in wrapper
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 366, in forward
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     hidden_states = self.embeddings(pixel_values=pixel_values, patch_attention_mask=patch_attention_mask)
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 137, in forward
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     position_ids[patch_attention_mask.view(batch_size, -1)] = pos_ids[patch_attention_mask.view(batch_size, -1)]
+V1022 21:49:02.853000 1784638 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks] Graph break: torch.compile cannot properly resume from this graph break, which results in a skip.
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks] torch.compile will skip tracing the frame wrapper (/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/generic.py line 857) and fall back to eager.
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks] The graph break occurred in the following user code:
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/generic.py", line 917, in wrapper
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]     output = func(self, *args, **kwargs)
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 253, in wrapper
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 366, in forward
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]     hidden_states = self.embeddings(pixel_values=pixel_values, patch_attention_mask=patch_attention_mask)
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 137, in forward
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks]     position_ids[patch_attention_mask.view(batch_size, -1)] = pos_ids[patch_attention_mask.view(batch_size, -1)]
+V1022 21:49:04.627000 1784638 torch/_dynamo/convert_frame.py:2015] [1/0] [__graph_breaks] 
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks] Graph break: torch.compile cannot properly resume from this graph break, which results in a skip.
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks] torch.compile will skip tracing the frame wrapper (/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/output_capturing.py line 222) and fall back to eager.
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks] The graph break occurred in the following user code:
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 253, in wrapper
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 366, in forward
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks]     hidden_states = self.embeddings(pixel_values=pixel_values, patch_attention_mask=patch_attention_mask)
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py", line 137, in forward
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks]     position_ids[patch_attention_mask.view(batch_size, -1)] = pos_ids[patch_attention_mask.view(batch_size, -1)]
+V1022 21:49:04.688000 1784638 torch/_dynamo/convert_frame.py:2015] [2/0] [__graph_breaks] 
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py:137
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks] 
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks] Dynamic shape operator
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks] 
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks] 
+V1022 21:49:04.729000 1784638 torch/_dynamo/symbolic_convert.py:4282] [3/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/smolvlm/modeling_smolvlm.py:137
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace BINARY_SUBSCR: a binary subscript, e.g. x[attr]:
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Dynamic shape operator
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 21:49:05.278000 1784638 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+W1022 21:49:05.481000 1784638 torch/_inductor/utils.py:1679] [4/0_1] Not enough SMs to use max_autotune_gemm mode
+/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3464: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  current_size = base.storage().size()
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "addmm", "best_time": 0.0727040022611618}
+AUTOTUNE addmm(1024x768, 1024x768, 768x768)
+strides: [0, 1], [768, 1], [1, 768]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  addmm 0.0727 ms 100.0% 
+  bias_addmm 0.0883 ms 82.4% 
+SingleProcess AUTOTUNE benchmarking takes 0.0970 seconds and 0.0002 seconds precompiling for 2 choices
+Reducing the number of VLM layers to 16 ...
+Loading weights from local directory
+vis_compile N=10: e2e 62.54 | vision 18.21 | prefix 14.45 | ae 26.54 | graphs during timed 0 | throttled False | state normal->normal

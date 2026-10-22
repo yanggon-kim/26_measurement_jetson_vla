@@ -1,0 +1,25 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Video-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5548.01it/s]
+W1022 21:37:07.992000 1771332 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3464: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  current_size = base.storage().size()
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.007903999648988247}
+AUTOTUNE addmm(50x720, 50x32, 32x720)
+strides: [0, 1], [32, 1], [1, 32]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.0079 ms 100.0% 
+  addmm 0.0134 ms 59.1% 
+SingleProcess AUTOTUNE benchmarking takes 0.0851 seconds and 0.0003 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.009759999811649323}
+AUTOTUNE addmm(50x32, 50x720, 720x32)
+strides: [0, 1], [720, 1], [1, 720]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.0098 ms 100.0% 
+  addmm 0.0140 ms 69.6% 
+SingleProcess AUTOTUNE benchmarking takes 0.0836 seconds and 0.0002 seconds precompiling for 2 choices
+Reducing the number of VLM layers to 16 ...
+Loading weights from local directory
+ae_compile N=10: e2e 73.36 | vision 15.06 | prefix 14.61 | ae 40.15 | graphs during timed 0 | throttled False | state normal->normal
