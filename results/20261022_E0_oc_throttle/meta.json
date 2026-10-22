@@ -1,0 +1,105 @@
+{
+  "date_utc": "2026-10-22T04:54:22Z",
+  "experiment": "E0 over-current throttle probe (60 s, temperatures)",
+  "task": "T002 (review follow-up)",
+  "model": "n/a: microbenchmark",
+  "model_repo": "n/a",
+  "model_commit": "n/a",
+  "checkpoint": "n/a",
+  "checkpoint_revision": "n/a",
+  "precision": "bf16",
+  "rung": "n/a",
+  "compile_mode": "eager",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a",
+  "action_horizon": "n/a",
+  "prefix_tokens": "n/a",
+  "suffix_tokens": "n/a",
+  "batch": "n/a",
+  "n_warmup": "20 GEMMs + 50 calibration GEMMs (slice sizing) before the timed slices",
+  "n_timed": "114 slices of 0.5 s (358 GEMMs each)",
+  "hw_constants_source": "results/20261022_E0_platform_MAXN/hw_constants.json (static half)",
+  "bench_commit": "b1bd14b77447632a7a7432a5f22abb72f07c00f9",
+  "command": [
+    "sleep 30; python bench/gate.py > raw/gate_before.json",
+    "env/rootdo.sh tegrastats --interval 100 --logfile raw/tegrastats.log &",
+    "python bench/oc_throttle_probe.py --seconds 60 --n 4096 --dtype bfloat16 --out results/20261022_E0_oc_throttle/oc_throttle_probe_bf16_60s.csv",
+    "env/rootdo.sh tegrastats --stop; python bench/gate.py --no-apply > raw/gate_after.json"
+  ],
+  "throttled": "true by design: 16,529 oc3 events (the subject of the run)",
+  "notes": "The OC probe ran on bench/oc_throttle_probe.py as committed in 3ae2a42 (temperature columns), the gate on the committed review-fixed gate.py. tegrastats at --interval 100 wrote 514 lines in ~62 s (~8.3 Hz, not 10 Hz).",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "40781",
+    "gpu-thermal": "40750",
+    "cpu-thermal": "40781",
+    "soc012-thermal": "40250",
+    "soc345-thermal": "39781"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_after.json",
+      "sha256": "15f4382aa754d89f1f05503cb0005015334f8c55ce1685c374a81748b66bd503",
+      "bytes": 3247,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before.json",
+      "sha256": "f6a9edaceaffcbbc422c20e88c4ca9bf4fc26e05c0884e4547a68fcb1df3e165",
+      "bytes": 3247,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/oc_throttle_probe_bf16_60s.stdout.log",
+      "sha256": "61eeb5040323de54ed47e3a3ae0aaa336c18267a0c56c7d3e9c580fae01eb638",
+      "bytes": 120,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/tegrastats.log",
+      "sha256": "071be3e7210b81ab24e25f7ab2e81a2f91503818b9e1b7cf197444a49d23b560",
+      "bytes": 268880,
+      "kind": "tegrastats",
+      "produced_by": "tegrastats via env/rootdo.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "oc_throttle_probe_bf16_60s.csv",
+      "sha256": "2fae077d2d423c37865b45e79b01dccf537ceb0571e55ea0739c87dc83c1c872",
+      "bytes": 7991,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
