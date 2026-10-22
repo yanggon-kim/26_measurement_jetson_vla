@@ -87,6 +87,27 @@ def device_record():
             "emc_hz": sh(["cat", "/sys/kernel/debug/bpmp/debug/clk/emc/rate"], root=True)}
 
 
+def oc_counts():
+    """soctherm over-current event counters. On this Thor VDD_GPU's ina3221 warning limit is 5,060 mA (≈ 100 W at
+    19.76 V); sustained heavy GPU load reaches it and oc3 (throttle enabled) fires while devfreq still reports the
+    locked clock (T002: a bf16 GEMM loop drops from ≈ 99.5 to ≈ 94 TFLOP/s). Take this before and after every
+    measured run; any delta marks the run throttled."""
+    out = {}
+    for h in glob.glob("/sys/class/hwmon/hwmon*"):
+        if rd(f"{h}/name") == "soctherm_oc":
+            for f in sorted(glob.glob(f"{h}/oc*_event_cnt")):
+                out[os.path.basename(f).replace("_event_cnt", "")] = int(rd(f))
+    return out
+
+
+def throttle_verdict(before, after, gpu_hz_samples=None, locked=LOCKED_HZ_DEFAULT):
+    """throttled = any OC event during the run, or a devfreq sample below the locked clock."""
+    delta = {k: after.get(k, 0) - before.get(k, 0) for k in before}
+    low = [f for f in (gpu_hz_samples or []) if f < locked]
+    return {"throttled": any(v > 0 for v in delta.values()) or bool(low), "oc_event_delta": delta,
+            "devfreq_samples_below_locked": len(low)}
+
+
 def run_gate(apply_clocks=True, idle_window_s=3.0, check_idle=True, sm_count=None):
     st = {"time_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "checks": {}}
     q = sh(["/usr/sbin/nvpmodel", "-q"])
