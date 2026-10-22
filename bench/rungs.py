@@ -166,8 +166,87 @@ def prep_smolvlm_static_posids(policy):
     return "SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids"
 
 
+def prep_linear_mpad(adapter, scope="lm_expert", span=256, step=16, reps=20):
+    """Pad the row count M of a Linear to the fastest M' >= M measured on this device (T005 finding,
+    results/20261022_E4_prefix_pi0_vs_pi05_diag/: cuBLASLt's heuristic picks a 3.8x slower kernel for pi0's MLP gate/up
+    GEMM at M = 816 than at M = 976; padding is bit-identical on the real rows because GEMM rows are independent,
+    results/20261022_E4_gemm_m816_fix/).
+    1. one eager inference records (M, K, N, dtype) of every nn.Linear in scope;
+    2. per distinct shape, M' in {M, M+step, ..., M+span} is timed (F.linear on random operands, CUDA events, median of
+       `reps`); the fastest M' is kept only if it beats M by > 5 %;
+    3. those Linears get a static forward: zero-pad the rows to M', F.linear, keep the first M rows.
+    scope "lm_expert": the LeRobot language model and action expert (Gemma decoders); "all": every nn.Linear."""
+    import statistics
+    import torch.nn.functional as F
+    policy = adapter.policy
+    if adapter.family != "lerobot":
+        raise NotApplicable("linear_mpad is implemented for the LeRobot models")
+    pg = getattr(policy.model, adapter.spec.container)
+    if scope == "all":
+        roots = [policy.model]
+    elif hasattr(pg, "paligemma"):
+        roots = [pg.paligemma.model.language_model, pg.gemma_expert]
+    else:
+        roots = [pg.vlm.model.text_model, pg.lm_expert]
+    lins = {id(m): m for r in roots for m in r.modules() if isinstance(m, torch.nn.Linear)}
+    seen, hooks = {}, []
+    for m in lins.values():
+        hooks.append(m.register_forward_pre_hook(
+            lambda mod, args: seen.setdefault(id(mod), set()).add(
+                (int(args[0].numel() // args[0].shape[-1]), mod.in_features, mod.out_features, args[0].dtype))))
+    adapter.iteration()
+    for h in hooks:
+        h.remove()
+
+    def t(m, k, n, dt):
+        x = torch.randn(m, k, device="cuda", dtype=dt)
+        w = torch.randn(n, k, device="cuda", dtype=dt)
+        for _ in range(3):
+            F.linear(x, w)
+        ts = []
+        for _ in range(reps):
+            s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            s.record()
+            F.linear(x, w)
+            e.record()
+            torch.cuda.synchronize()
+            ts.append(s.elapsed_time(e))
+        return statistics.median(ts)
+    best = {}
+    for shapes in seen.values():
+        for (m, k, n, dt) in shapes:
+            if (m, k, n, dt) in best or m < 16:
+                continue
+            base = t(m, k, n, dt)
+            cand = min(((t(m2, k, n, dt), m2) for m2 in range(m + step, m + span + 1, step)), default=(base, m))
+            best[(m, k, n, dt)] = (cand[1], base, cand[0]) if cand[0] < 0.95 * base else (m, base, base)
+    padmap = {key: v[0] for key, v in best.items() if v[0] != key[0]}
+    n_wrapped = 0
+    for mid, m in lins.items():
+        shapes = seen.get(mid, set())
+        table = {(mm, dt): padmap[(mm, kk, nn, dt)] for (mm, kk, nn, dt) in shapes if (mm, kk, nn, dt) in padmap}
+        if not table:
+            continue
+
+        def fwd(x, _m=m, _table=table):
+            rows = x.numel() // x.shape[-1]
+            m2 = _table.get((rows, x.dtype))
+            if m2 is None:
+                return F.linear(x, _m.weight, _m.bias)
+            x2 = F.pad(x.reshape(rows, x.shape[-1]), (0, 0, 0, m2 - rows))
+            return F.linear(x2, _m.weight, _m.bias)[:rows].reshape(*x.shape[:-1], _m.out_features)
+        m.forward = fwd
+        n_wrapped += 1
+    adapter.mpad_table = {f"M={k[0]} K={k[1]} N={k[2]} {k[3]}": {"pad_to": v[0], "ms_at_M": round(v[1], 4),
+                                                                  "ms_at_pad": round(v[2], 4)} for k, v in best.items()}
+    pads = {k: v for k, v in adapter.mpad_table.items() if v["pad_to"] != int(k.split()[0][2:])}
+    return f"linear_mpad({scope}): {n_wrapped} Linear modules padded; shapes padded: {pads}"
+
+
 PREPS = {"bf16_base": prep_bf16_base, "bf16_vision": prep_bf16_vision, "bf16_norms": prep_bf16_norms,
-         "bf16_both": prep_bf16_both, "eager_bf16": prep_eager_bf16, "static_posids": prep_smolvlm_static_posids}
+         "bf16_both": prep_bf16_both, "eager_bf16": prep_eager_bf16, "static_posids": prep_smolvlm_static_posids,
+         "linear_mpad": prep_linear_mpad}
+ADAPTER_PREPS = {"linear_mpad"}                 # preps that need the adapter (an input to run), not only the policy
 
 
 # ------------------------------------------------------------------------------------------------ the rungs
@@ -291,7 +370,7 @@ def apply_rung(adapter, key):
             and "static_posids" not in preps:
         preps.insert(0, "static_posids")       # SmolVLA's vision cannot be captured without it (Orin finding)
     for p in preps:
-        desc["preps"].append(PREPS[p](adapter.policy))
+        desc["preps"].append(PREPS[p](adapter) if p in ADAPTER_PREPS else PREPS[p](adapter.policy))
     if r["autotune"]:
         desc["autotune"] = force_gemm_autotune()
     t0 = time.perf_counter()
@@ -308,3 +387,13 @@ def apply_rung(adapter, key):
     desc["compile_wrap_s"] = time.perf_counter() - t0
     desc["ae_compiled"] = any(p in ("ae", "whole") for p, _, _ in r["targets"])
     return desc
+
+
+# ------------------------------------------------------------------------------------------------ E4i candidates
+EXTRA["lerobot"].update({r["key"]: r for r in [
+    _r("eager_bf16_mpad", "eager_bf16 + Linear M padded to the fastest measured M' (lm + expert)", "lerobot", "high",
+       preps=["eager_bf16", "linear_mpad"], note="labelled variant: changes no math (GEMM rows are independent)"),
+    _r("bf16_both_graphs_mpad", "bf16_both_graphs + Linear M padding (lm + expert)", "lerobot", "high",
+       [("ae", G, False), ("vis", G, True), ("vlm", G, True)], ["bf16_both", "linear_mpad"],
+       note="labelled variant: changes no math (GEMM rows are independent)"),
+]})
