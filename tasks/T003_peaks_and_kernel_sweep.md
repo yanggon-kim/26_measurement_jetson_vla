@@ -57,3 +57,25 @@ After `results/<date>_E1_peak/` (the ceilings are what T004–T008 wait for), an
 ## Status (appended by the on-device agent)
 
 status: claimed 2026-10-22
+status: done 2026-10-22
+- result directories: `results/20261022_E1_peak/` (ceilings, `hw_constants.json`, `validation.csv`),
+  `results/20261022_E1_peak_backtoback/`, `results/20261022_E1_state_probe/`, `results/20261022_E2_ae_kernels_v3/`
+  (authoritative E2), `results/20261022_E2_ae_kernels_v2/` (fast state), `results/20261022_E1_bw_gemm_stream/`,
+  `results/20261022_E1_load_latency_v2/`; superseded: `results/20261022_E2_ae_kernels/`, `results/20261022_E1_load_latency/`
+- report: `reports/E1_E2_microbench.md`
+- bench commits: dbacfe5 (micro_peak), d7c67fe (validation, E2), 3e3a1b9 (review fixes), 6b9a209 / 5b799a9 (state probe,
+  gate probe), the hw_constants_build rebuild in a93c58e; closing commit 09bb687
+- deviations:
+  - compute ceiling = highest rate in isolated or back-to-back mode, both listed with the sustained rate (STATUS.md question);
+  - E2 kernel time from CUDA-graph replay; E2 floors from weight bytes only;
+  - result-file names per part and process; superseded v1 directories kept with SUPERSEDED.md;
+  - added: back-to-back ceilings, state probe, GEMM-stream addendum, E2 ncu check, `memory_state_probe()` in the gate.
+- independent review (P0): done. Findings fixed:
+  - ceiling modes;
+  - the bandwidth-limited claim, retracted;
+  - pointer chase contaminated by L2 hits, re-measured;
+  - E2 cold-set wrap, re-measured;
+  - validation units;
+  - two wrong E2 statements;
+  - undisclosed selection bias, now disclosed;
+  - sources for the derived FP32 figure.

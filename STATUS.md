@@ -4,7 +4,7 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-T002 done 2026-10-22 (commit 3a5417b). T003 (peaks, counter validation, expert kernel sweep) claimed 2026-10-22. Owner's priorities (2026-10-22): the task order stays T002 → T015; the
+T002 done 2026-10-22 (commit 3a5417b). T003 done 2026-10-22. Next: T004 (baseline latency, all six models). Owner's priorities (2026-10-22): the task order stays T002 → T015; the
 latency breakdown for `eager_fp32` and `best_bf16` of all six models (T004, T005) comes first, then the ncu analysis,
 **`best_bf16` before `eager_fp32` inside T006–T008** (the mode order inside a task is not fixed by the plan).
 
@@ -17,6 +17,13 @@ install anything.
 *(none open. H2 — Hugging Face login + Cosmos-Reason2 licence — resolved 2026-10-22, see the log in `STATUS.md`.)*
 
 ## Questions for the research side
+- 2026-10-22 — **A hidden performance state changes the expert's timings by up to 1.26×** (T003,
+  `results/20261022_E1_state_probe/`). After ≈ 55 s of sustained heavy GPU load (≈ 75 °C), cold weight-streaming
+  GEMMs (the π0 expert's pattern) run at ≈ 245 instead of ≈ 166 GB/s for a few seconds; int8 GEMMs jump 258 → 330 TOP/s.
+  No readable clock changes. Model inference loops may or may not enter this state. Conservative reading until
+  answered: every timing run classifies the state (`bench/gate.py: memory_state_probe()`) before and after each block;
+  baselines are reported in the **normal** state; blocks that end in the fast state are flagged and, where they
+  change a phase share, repeated after a cool-down. Is the normal state the right baseline for the PIM comparison?
 - 2026-10-22 — **Roofline ceiling: burst or sustained?** (T002) VDD_GPU is current-limited at 5,060 mA (≈ 100 W).
   A bf16 4096³ GEMM loop delivers 99.5 TFLOP/s for the first 0.5 s, then a sustained median of 93.97 TFLOP/s (−5.6 %),
   falling further as the die warms (91.9 at 60 s, 80 °C), with
@@ -41,10 +48,10 @@ install anything.
   pins in `docs/00_context.md` look like the Orin's resolved snapshots, which would make them consistent.
 
 ## Repository size (protocol §6f)
-After T002 (2026-10-22): `du -sh results/` 3.3 M · `du -sh .git` 5.6 M · `size-pack` 2.35 MiB · largest committed
-files: `env/tool_help/ncu_query_metrics_chip_gb10b.txt` 919,077 B; `results/20261022_E0_oc_throttle/raw/tegrastats.log`
-268,880 B; `results/20261022_E0_platform_MAXN/raw/tegrastats_idle_60s.log` 263,076 B;
-`results/20261022_E0_toolcheck/raw/ncu_limit_1000_tiny.ncu-rep.zst` 255,888 B; `…/raw/ncu_toy_raw.csv` 170,350 B.
+After T003 (2026-10-22): `du -sh results/` 11 M · `du -sh .git` 9.5 M · `size-pack` 2.35 MiB (newer objects still
+loose) · largest committed files: `env/tool_help/ncu_query_metrics_chip_gb10b.txt` 919,077 B;
+`results/20261022_E2_ae_kernels/raw/samples.csv` 528,212 B; `results/20261022_E2_ae_kernels_v3/raw/samples.csv`
+528,174 B; `results/20261022_E2_ae_kernels_v2/raw/samples.csv` 527,989 B; `results/20261022_E1_peak/raw/latency_samples_bw_p1.csv` 515,156 B.
 
 ## Log
 - 2026-10-22 T001 claimed; fixtures copied to `bench/fixtures/`.
@@ -57,3 +64,4 @@ files: `env/tool_help/ncu_query_metrics_chip_gb10b.txt` 919,077 B; `results/2026
 - 2026-10-22 T001 closed done-partial (N1.7 smoke waits for H2); docs/00 L2 and docs/05 A8(b) hints corrected in place.
 - 2026-10-22 H2 resolved by the owner (HF login, licence accepted); Cosmos-Reason2-2B @ 9ce19a19 downloaded; N1.7 smoke passes (P 273, S 41); T001 done.
 - 2026-10-22 T002 done: locked 1575 MHz; idle module power 33.27 W; VDD_GPU over-current limit ≈ 100 W found (sustained GEMM −5.6 %, temperature-dependent, invisible to devfreq); gate.py now records OC deltas. Independent review fixed.
+- 2026-10-22 T003 done: BW 258.2 GB/s; bf16 129.8 / int8 330.6 / tf32 62.4 / fp32 6.43 T(FL)OP/s; counters validated (0.1 %); expert projections 3.29 ms/step (1.37× floor); DRAM latency ≈ 520 ns; hidden fast memory-path state found. Independent review: 3 conclusions corrected (ceiling modes, bandwidth claim retracted, latency v2).
