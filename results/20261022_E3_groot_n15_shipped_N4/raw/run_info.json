@@ -1,0 +1,122 @@
+{
+ "model": "groot_n15",
+ "precision_mode": "shipped",
+ "precision_flags_before_load": {
+  "float32_matmul_precision": "highest",
+  "cuda_matmul_allow_tf32": false,
+  "cudnn_allow_tf32": true,
+  "bf16_reduced_precision_reduction": true
+ },
+ "precision_flags_after_load": {
+  "float32_matmul_precision": "highest",
+  "cuda_matmul_allow_tf32": false,
+  "cudnn_allow_tf32": true
+ },
+ "n_default": 4,
+ "steps": [
+  4
+ ],
+ "warmup": 20,
+ "timed": 100,
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49,
+  "shapes": {
+   "llm": [
+    1,
+    814,
+    2048
+   ],
+   "dit_hidden": [
+    1,
+    49,
+    1536
+   ],
+   "dit_encoder": [
+    1,
+    814,
+    2048
+   ]
+  }
+ },
+ "param_dtypes": [
+  "torch.bfloat16"
+ ],
+ "wall_s": 46.58155918121338,
+ "throttled_by_N": {
+  "4": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  }
+ },
+ "memory_state_by_N": {
+  "4": [
+   {
+    "probe_us_per_call": 50.33,
+    "state": "normal",
+    "gpu_C": "39781"
+   },
+   {
+    "probe_us_per_call": 49.7,
+    "state": "normal",
+    "gpu_C": "46968"
+   }
+  ]
+ }
+}

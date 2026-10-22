@@ -1,0 +1,190 @@
+{
+  "date_utc": "2026-10-22T08:45:02Z",
+  "experiment": "E3 eager end-to-end latency, N sweep",
+  "task": "T004 step 4",
+  "model": "groot_n15",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "precision": "shipped: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': True}; param dtypes ['torch.bfloat16']",
+  "rung": "shipped eager path",
+  "compile_mode": "none (eager)",
+  "variant": "n/a",
+  "num_denoise_steps": "sweep [4] (default 4)",
+  "action_horizon": "see tokens.json / obs_shapes",
+  "prefix_tokens": 814,
+  "suffix_tokens": 49,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "2d47fb9",
+  "command": "source env/thor_env.sh; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/groot15/bin/python <repo>/bench/run_e3.py --model groot_n15 --precision shipped --steps <default N> --out <repo>/results/20261022_E3_groot_n15_shipped_N4",
+  "throttled": {
+    "4": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    }
+  },
+  "memory_path_state": {
+    "4": [
+      {
+        "probe_us_per_call": 50.33,
+        "state": "normal",
+        "gpu_C": "39781"
+      },
+      {
+        "probe_us_per_call": 49.7,
+        "state": "normal",
+        "gpu_C": "46968"
+      }
+    ]
+  },
+  "provenance": {
+    "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+    "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+    "checkpoint": "nvidia/GR00T-N1.5-3B",
+    "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+    "embodiment_tag": "oxe_droid",
+    "obs_shapes": {
+      "video.exterior_image_1": [
+        1,
+        256,
+        256,
+        3
+      ],
+      "video.exterior_image_2": [
+        1,
+        256,
+        256,
+        3
+      ],
+      "video.wrist_image": [
+        1,
+        256,
+        256,
+        3
+      ],
+      "state.eef_position": [
+        1,
+        3
+      ],
+      "state.eef_rotation": [
+        1,
+        3
+      ],
+      "state.gripper_position": [
+        1,
+        1
+      ]
+    },
+    "weights_check": {
+      "checked": 400,
+      "matched": 400,
+      "files": [
+        "model-00001-of-00003.safetensors",
+        "model-00002-of-00003.safetensors",
+        "model-00003-of-00003.safetensors"
+      ],
+      "verdict": "real weights"
+    },
+    "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+  },
+  "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "40343",
+    "gpu-thermal": "38968",
+    "cpu-thermal": "40343",
+    "soc012-thermal": "37781",
+    "soc345-thermal": "37781"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_start.json",
+      "sha256": "8eafde06a55bb23f84d9c614bdcca6c226bc1deb6764dc142ab1844092aca41a",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "f8c199c23ce37b13a1927f17ce417d3f504c69236671e8b65c9b4daaa1689cd3",
+      "bytes": 3195,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_4.json",
+      "sha256": "acfb02c2816b47a035f7c3f270e35c5bc69ce870fe4c7bbaa4a0c679bc705854",
+      "bytes": 1628,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_e3.stdout.log",
+      "sha256": "9b0f5a7e0b84312c5fd4dc021d678e023265eb33b96bc4708007c818bbe63fb5",
+      "bytes": 2119,
+      "kind": "stdout",
+      "produced_by": "bench/run_e3.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_info.json",
+      "sha256": "1415b5d2b9bd452db0e3ab0718dd6af4435898a03a0bd08bb46eaee5a6f96c57",
+      "bytes": 2197,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "c44549a1833660622c9a4f2a70b4f47cbc58cf167de2a10c53f9a23eb4460d08",
+      "bytes": 12630,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "latency_samples.csv",
+      "sha256": "dec8a3315c591fc2240eae35bc053f6255db29e9b370ad3cd2b6dc0aa53112c3",
+      "bytes": 71852,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    }
+  ]
+}
