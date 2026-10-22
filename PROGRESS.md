@@ -34,7 +34,7 @@ closed the task.
 ticked). Tick a cell with `[x]` and the result directory that delivers it.
 
 **Ceilings:** [ ] `hw_constants.json` with measured bandwidth, TFLOP/s per dtype and ridge (T003) · [ ] DRAM-byte
-and FLOP counters validated (T003) · [ ] nsys binary secrets test (T001)
+and FLOP counters validated (T003) · [x] nsys binary secrets test (T001): **NOT CLEAN** — nsys binaries never committed; ncu reports clean (`results/20261022_E0_secrets_test/`)
 
 | model | mode | latency: vision / prefix / expert (T005) | roofline: parts + every kernel (T006) | bottleneck: ncu per part (T007) + SASS of dominant kernels (T008) |
 |---|---|---|---|---|

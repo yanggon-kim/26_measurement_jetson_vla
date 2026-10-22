@@ -1,0 +1,190 @@
+{
+  "date_utc": "2026-10-22T03:32:19Z",
+  "experiment": "E0 secrets re-test (A17)",
+  "task": "T001 step 6",
+  "model": "n/a: toy",
+  "model_repo": "n/a: toy",
+  "model_commit": "n/a: toy",
+  "checkpoint": "n/a: toy",
+  "checkpoint_revision": "n/a: toy",
+  "precision": "bf16 toy linear",
+  "rung": "n/a: toy",
+  "compile_mode": "eager",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a: toy",
+  "action_horizon": "n/a: toy",
+  "prefix_tokens": "n/a: toy",
+  "suffix_tokens": "n/a: toy",
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": "n/a: capture only",
+  "hw_constants_source": "n/a: T003 has not run",
+  "bench_commit": "dd7302d17adca40b222d97d89f9b58e55c0bf3dc",
+  "command": [
+    "env THOR_CANARY_SECRET=canary_$(openssl rand -hex 16) setsid sleep 900 &   (value kept in scratch/ only; 2nd run: sleep 3600, killed after the scan)",
+    "nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi --capture-range-end=stop -f true -o scratch/20261022_E0_secrets_test/toy_normal_shell python bench/nsys_toy.py",
+    "env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN -u GITHUB_TOKEN -u GH_TOKEN HF_HUB_OFFLINE=1 nsys profile ... -o scratch/20261022_E0_secrets_test/toy_token_vars_unset python bench/nsys_toy.py",
+    "variant (information only): nsys profile ... --sample=none --cpuctxsw=none ... -o toy_nosample / toy_nosample2",
+    "nsys export --type sqlite -f true -o <name>.sqlite <name>.nsys-rep",
+    "env/rootdo.sh ncu --clock-control none --set full --nvtx --nvtx-include toy/ --profile-from-start off -o scratch/20261022_E0_secrets_test/ncu_toy_canary2 -f python bench/ncu_toy.py --case linear  (copied to raw/)",
+    "python bench/secrets_scan.py --out <scan>.csv --canary-file <canary> <files>"
+  ],
+  "throttled": "n/a: not a timing run",
+  "nsys_version": "2025.3.2.367-253236224375v0",
+  "ncu_version": "2025.3.0.0 (build 36273991)",
+  "ncu_set": "full",
+  "ncu_filter": "--nvtx --nvtx-include toy/",
+  "ncu_metrics": "n/a: --set full",
+  "cuobjdump_version": "13.0.39",
+  "ncu_sm_frequency_hz": "n/a: not used",
+  "verdict": "NOT CLEAN: nsys .nsys-rep and .sqlite are never committed on this device; .gitignore keeps its two nsys lines. ncu reports: clean (profiled process runs under env -i via env/rootdo.sh) and are committed after a per-file scan.",
+  "notes": "Classes scanned: the canary literal, every token-like variable of the agent's environment (name ~ token|secret|key|session|auth, value >= 8 chars), ~/.cache/huggingface/token (absent), and the protocol 3.5 regexes. Byte offsets only; matched bytes never written. The first canary (sleep 900) expired before some later ncu captures; canary2 (sleep 3600) was alive for ncu_toy_canary2 and toy_nosample2.",
+  "raw_files": [
+    {
+      "path": "raw/capture_ncu_canary2.stdout.log",
+      "sha256": "f92989a2f4aee386fd6273ba675a6e1d9fa91d08e20165ce1ccfbaa112694a55",
+      "bytes": 463,
+      "kind": "stdout",
+      "produced_by": "nsys / ncu stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/capture_normal_shell.stdout.log",
+      "sha256": "f890bd8209e103fac9093f40d4e55082fbc76fb46cb9150838a0b13fdf34b559",
+      "bytes": 1104,
+      "kind": "stdout",
+      "produced_by": "nsys / ncu stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/capture_nosample.stdout.log",
+      "sha256": "3f90352c346401ec847b039eadc1229e5627e3738db84c8015aaef4271c1992b",
+      "bytes": 694,
+      "kind": "stdout",
+      "produced_by": "nsys / ncu stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/capture_nosample2.stdout.log",
+      "sha256": "2ff02af417902682307d5272d112ea4c291d662542fe70ff2abdd8b3aff30706",
+      "bytes": 702,
+      "kind": "stdout",
+      "produced_by": "nsys / ncu stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/capture_token_vars_unset.stdout.log",
+      "sha256": "084720fc3e048e3e10f50030bf0bb467f81b80373d44e47b27de102561b3aa69",
+      "bytes": 1093,
+      "kind": "stdout",
+      "produced_by": "nsys / ncu stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_canary2.ncu-rep.zst",
+      "sha256": "c21280c0635ff8a841d3286257c4ee833c86a03db4ae0ce5c88e0f1af7c673c3",
+      "bytes": 65233,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_secrets_test/raw/ncu_toy_canary2.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_secrets_test/raw/ncu_toy_canary2.ncu-rep.zst"
+      },
+      "original": {
+        "name": "ncu_toy_canary2.ncu-rep",
+        "sha256": "cda9c4e8ff98748f2fc0c757124a61cdc878d7465855468ef483961bc2d91837",
+        "bytes": 1148813
+      }
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_normal_shell.nsys-rep",
+      "sha256": "f6a7423c15ef72884e916971367c578f7b4d09b034f52e46560c28ea3dfc6143",
+      "bytes": 142247,
+      "kind": "nsys-rep",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_normal_shell.sqlite",
+      "sha256": "e3f562fd669b902f2d4fb167768d42e438669a68b16b81494b1f1dc8013e8f70",
+      "bytes": 421888,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_nosample.nsys-rep",
+      "sha256": "41e1beec15e3e33f7dfd9d031f2b98f7858d56f026e45508ab60ef6f62d0c65d",
+      "bytes": 134786,
+      "kind": "nsys-rep",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_nosample.sqlite",
+      "sha256": "2a94a67b9ef5267b1a6ab28ef59ba2e1901432bdb488cb4c1f59d05f62ca3240",
+      "bytes": 385024,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_nosample2.nsys-rep",
+      "sha256": "c2cd1ea306e70ffe4340fd0dff5383c804aea727904db05649f353f2d40d077d",
+      "bytes": 137125,
+      "kind": "nsys-rep",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_nosample2.sqlite",
+      "sha256": "087e4689e17f4e2a056c77306a2e3dcf43276ee34abbfc483f9e317817a98729",
+      "bytes": 393216,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_token_vars_unset.nsys-rep",
+      "sha256": "58fa01c75579ab0175f036ce56eb74de448cfbbc714530601559573119384784",
+      "bytes": 142474,
+      "kind": "nsys-rep",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    },
+    {
+      "path": "scratch/20261022_E0_secrets_test/toy_token_vars_unset.sqlite",
+      "sha256": "b202f04a040c8231d142c4f03263e616e727bd2477c5034b51fab4cee35a6196",
+      "bytes": 434176,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys profile / nsys export",
+      "secrets_scan": "NOT CLEAN (see scan_*.csv)",
+      "committed": false,
+      "reason": "contains the canary of an unrelated process and the agent harness session token (class and offset in scan_*.csv)",
+      "regenerate": "see command list; needs a live canary process"
+    }
+  ]
+}
