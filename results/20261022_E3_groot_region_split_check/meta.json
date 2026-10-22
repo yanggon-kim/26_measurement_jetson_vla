@@ -1,0 +1,230 @@
+{
+  "date_utc": "2026-10-22T09:23:11Z",
+  "experiment": "E3 GR00T region split check v2",
+  "task": "T004 step 2",
+  "model": "groot_n17, groot_n16, groot_n15",
+  "model_repo": "Isaac-GR00T 376ba890 / 9b37aa1c / 4af2b622",
+  "model_commit": "see results/20261022_E3_<model>_eager_Nsweep/meta.json",
+  "checkpoint": "as in each model's E3 directory",
+  "checkpoint_revision": "as in each model's E3 directory",
+  "precision": "eager_fp32",
+  "rung": "eager_fp32",
+  "compile_mode": "none (eager)",
+  "variant": "n/a",
+  "num_denoise_steps": 4,
+  "action_horizon": "model default",
+  "prefix_tokens": "see E3 tokens.json",
+  "suffix_tokens": "see E3 tokens.json",
+  "batch": 1,
+  "n_warmup": 10,
+  "n_timed": "2 inferences captured per model",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "5521cc7e28554dc42e89090f70d7d1f95a75e456",
+  "bench_commit_per_step": {
+    "regions.py, nsys_regions_target.py, region_split_check.py": "c34fd33"
+  },
+  "command": [
+    "per model: python bench/gate.py > raw/gate_before_<m>.json; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi --capture-range-end=stop -f true -o scratch/20261022_E3_groot_region_split_check/<m> <venv>/bin/python bench/nsys_regions_target.py --model <m> --inferences 2",
+    "nsys stats -r cuda_gpu_trace,cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_api_sum,nvtx_sum,nvtx_kern_sum,nvtx_gpu_proj_trace -f csv -o nsys/<m> <rep>",
+    "python bench/region_split_check.py --nsys-prefix nsys/<m> --e3 results/20261022_E3_<m>_eager_Nsweep_v2 --model <m> --n <default N> --out results/20261022_E3_groot_region_split_check",
+    "zstd -19 -T0 nsys/*.csv above 1 MB (originals in scratch/, hashes in nsys_csv_compressed)"
+  ],
+  "throttled": "n/a: profiled, not timed",
+  "nsys_version": "2025.3.2.367-253236224375v0",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "nsys_csv_compressed": [
+    {
+      "file": "groot_n15_cuda_gpu_trace.csv",
+      "bytes": "2060483",
+      "sha256": "26fda53fc99e6788b75cb1aa72c215f802e63c14c2a9028dd33d8f273ad2a7ff"
+    },
+    {
+      "file": "groot_n16_cuda_gpu_trace.csv",
+      "bytes": "2562450",
+      "sha256": "8688ceedf4764c1587f41dff66389e42a7d6a7dc9841fc7035e284b6e9477105"
+    },
+    {
+      "file": "groot_n17_cuda_gpu_trace.csv",
+      "bytes": "3130376",
+      "sha256": "f747fc9478d3ae523600a110b3c964c5017121935c2367e5ee17a7e396d9e317"
+    }
+  ],
+  "notes": "Regions after the T004 review: vlm_prefix = decoder stack, backbone_lm_head separate. Sums from results/20261022_E3_<m>_eager_Nsweep_v2.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39531",
+    "gpu-thermal": "38468",
+    "cpu-thermal": "37781",
+    "soc012-thermal": "39531",
+    "soc345-thermal": "37375"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_before_groot_n15.json",
+      "sha256": "cb0c9328abce22cc8b2afd81387670053446a8dbeb55f7540c8dea7caa435cd1",
+      "bytes": 3249,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_groot_n16.json",
+      "sha256": "1013e63b323e2d3892c5783f0ec86613489b4ecec5f5301d9a7d4d953c6ad9f0",
+      "bytes": 3249,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_groot_n17.json",
+      "sha256": "1e6ed7e06761349dc8f1f52e446cc7a70fe09d99795acf8edf17ed1aa040752e",
+      "bytes": 3249,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_groot_n15.stdout.log",
+      "sha256": "b346a5786608a54cb9ae5ef6bddd0cf20d15f867551945a1dbd9503a6dac4742",
+      "bytes": 2840,
+      "kind": "stdout",
+      "produced_by": "nsys profile + bench/nsys_regions_target.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_groot_n16.stdout.log",
+      "sha256": "78da14e5061a7b67e35a3c7b516919c13ae3490af942e9ac013e8e5d1a34a79c",
+      "bytes": 11083,
+      "kind": "stdout",
+      "produced_by": "nsys profile + bench/nsys_regions_target.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_groot_n17.stdout.log",
+      "sha256": "43bbcc145c41f0036426d0ac7d8606d8658ef37340c5f56ab5f907058155f3b2",
+      "bytes": 2798,
+      "kind": "stdout",
+      "produced_by": "nsys profile + bench/nsys_regions_target.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_stats_groot_n15.stdout.log",
+      "sha256": "2f2e69e2c0d542c8fc77501dd3d0bcdd52e0366ba286a13adadf6f864bfb1de2",
+      "bytes": 2966,
+      "kind": "stdout",
+      "produced_by": "nsys stats",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_stats_groot_n16.stdout.log",
+      "sha256": "dda2959fd0d47cef4e8a53c8ff41d6dab3a2f22cb754b2b620438a9368f6bd68",
+      "bytes": 2966,
+      "kind": "stdout",
+      "produced_by": "nsys stats",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_stats_groot_n17.stdout.log",
+      "sha256": "bb56531edd4607447a8341406d1779bcb8fa965a87cf95fd497493e471286995",
+      "bytes": 2966,
+      "kind": "stdout",
+      "produced_by": "nsys stats",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "scratch/20261022_E3_groot_region_split_check/groot_n17.nsys-rep",
+      "sha256": "8bb0cd6aa3ee8ab794537e540d73b1bbf742421a3735b58f1836f1259be2c4c0",
+      "bytes": 1104711,
+      "kind": "nsys-rep",
+      "produced_by": "nsys",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide environment (results/20261022_E0_secrets_test)",
+      "regenerate": "see command; model groot_n17"
+    },
+    {
+      "path": "scratch/20261022_E3_groot_region_split_check/groot_n17.sqlite",
+      "sha256": "384028a720581af0f60c9c78ee1e3b2ac0b487388c9626dd18209fdefd124f47",
+      "bytes": 2760704,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide environment (results/20261022_E0_secrets_test)",
+      "regenerate": "see command; model groot_n17"
+    },
+    {
+      "path": "scratch/20261022_E3_groot_region_split_check/groot_n16.nsys-rep",
+      "sha256": "494674101fa92beb032d7a97382da5739e622e8abbc8c44d4c772ff14acdb90f",
+      "bytes": 1011717,
+      "kind": "nsys-rep",
+      "produced_by": "nsys",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide environment (results/20261022_E0_secrets_test)",
+      "regenerate": "see command; model groot_n16"
+    },
+    {
+      "path": "scratch/20261022_E3_groot_region_split_check/groot_n16.sqlite",
+      "sha256": "b0b5bf25503c850d37b410c5098b8e27e58600ecb4da21320d0e0da5229dcb13",
+      "bytes": 2424832,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide environment (results/20261022_E0_secrets_test)",
+      "regenerate": "see command; model groot_n16"
+    },
+    {
+      "path": "scratch/20261022_E3_groot_region_split_check/groot_n15.nsys-rep",
+      "sha256": "8ed479f3d90f04f71c5ad271908b56e23e2ce83c2d4945fbb49889bb88810a26",
+      "bytes": 845170,
+      "kind": "nsys-rep",
+      "produced_by": "nsys",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide environment (results/20261022_E0_secrets_test)",
+      "regenerate": "see command; model groot_n15"
+    },
+    {
+      "path": "scratch/20261022_E3_groot_region_split_check/groot_n15.sqlite",
+      "sha256": "582f60e4d8b9c4000f7df12084c4e1f5d4fa30153c9573f6bee8ec3633af6e77",
+      "bytes": 2052096,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide environment (results/20261022_E0_secrets_test)",
+      "regenerate": "see command; model groot_n15"
+    }
+  ]
+}
