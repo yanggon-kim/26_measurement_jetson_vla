@@ -62,8 +62,8 @@ def main():
         "caveat": "devfreq reports the requested clock; the over-current throttle (gpu_power_limit) is not visible in it",
         "cross_check": "ncu SM frequency 1.5735 GHz (results/20261022_E0_toolcheck); tegrastats GR3D_FREQ 1574 MHz"}
     lim = open(f"{R}/raw/power_limits.txt").read()
-    warn = int(re.search(r"VDD_GPU curr_max=(\d+)", lim).group(1))
-    crit = int(re.search(r"VDD_GPU curr_crit=(\d+)", lim).group(1))
+    m = re.search(r"VDD_GPU curr_max=(\d+) curr_crit=(\d+)", lim)
+    warn, crit = int(m.group(1)), int(m.group(2))
     vbus = st.median(float(r["mV"]) for r in csv.DictReader(open(f"{R}/idle_power.csv")) if r["rail"] == "VDD_GPU") / 1000
     hw["gpu_power_limit"] = {
         "vdd_gpu_current_warning_mA": warn, "vdd_gpu_current_critical_mA": crit, "vdd_gpu_bus_V_idle_median": vbus,
