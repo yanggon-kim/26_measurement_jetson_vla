@@ -1,0 +1,564 @@
+{
+  "date_utc": "2026-10-22T15:12:25Z",
+  "experiment": "E4 Part B optimisation ladder (GR00T, cumulative)",
+  "task": "T005",
+  "model": "groot_n17",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+  "rung": "per row: ae_compile, ae_graphs, all_compile_autotune, eager_fp32, eager_tf32, llm_compile, llm_graphs, vis_compile, vis_graphs, vlm_compile, vlm_graphs",
+  "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+  "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+  "num_denoise_steps": "4 (extra N per rung for the slope: by_N in the row files)",
+  "action_horizon": 40,
+  "prefix_tokens": 273,
+  "suffix_tokens": 41,
+  "batch": 1,
+  "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "f5e8f94",
+  "command": "bash bench/queues/t005_ladders.sh 20261022  (groot_n17: cd /tmp; ~/venvs/groot17/bin/python <repo>/bench/opt_ladder.py --model groot_n17 --out <repo>/results/20261022_E4d_groot_n17_ladder --rungs <11 GR00T rungs> --slope-steps 2,6 --slope-rungs all; paused at rung boundaries for T005 diagnostics)",
+  "throttled": {
+    "ae_compile_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "ae_graphs_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "all_compile_autotune_N4": {},
+    "eager_fp32_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "eager_tf32_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "llm_compile_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "llm_graphs_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "vis_compile_N4": {},
+    "vis_graphs_N4": {},
+    "vlm_compile_N4": {},
+    "vlm_graphs_N4": {}
+  },
+  "memory_path_state": {
+    "ae_compile_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "ae_graphs_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "all_compile_autotune_N4": {},
+    "eager_fp32_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "eager_tf32_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "llm_compile_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "llm_graphs_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "vis_compile_N4": {},
+    "vis_graphs_N4": {},
+    "vlm_compile_N4": {},
+    "vlm_graphs_N4": {}
+  },
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "40687",
+    "gpu-thermal": "40687",
+    "cpu-thermal": "39500",
+    "soc012-thermal": "39593",
+    "soc345-thermal": "39687"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "a4b6b8c71ed4d01a608e5af16984aad9ba3539214ade8909c8d42f3a019162ee",
+      "bytes": 3438,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "7794ae579d136c35785d189ebc0a14e4bd20dfc42f6dedd6eb0989d25ee5fcb5",
+      "bytes": 63804,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/traceback_all_compile_autotune_N4.txt",
+      "sha256": "2824a3b3b243b1e714c54fa7af3b01f5fed6e77dfb23475ad897a537925903d4",
+      "bytes": 39364,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/traceback_vis_compile_N4.txt",
+      "sha256": "2824a3b3b243b1e714c54fa7af3b01f5fed6e77dfb23475ad897a537925903d4",
+      "bytes": 39364,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/traceback_vis_graphs_N4.txt",
+      "sha256": "22feb6ff664c4811e630f83477ec1ddc9ed963c3ca6cc4efb89f74b6e10515f4",
+      "bytes": 39542,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/traceback_vlm_compile_N4.txt",
+      "sha256": "2824a3b3b243b1e714c54fa7af3b01f5fed6e77dfb23475ad897a537925903d4",
+      "bytes": 39364,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/traceback_vlm_graphs_N4.txt",
+      "sha256": "2824a3b3b243b1e714c54fa7af3b01f5fed6e77dfb23475ad897a537925903d4",
+      "bytes": 39364,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_compile_N2.csv",
+      "sha256": "fc892faf17bbfb9dddd3fbcc1cffdc8e9141b93a23488209d0f4ff19dd67b138",
+      "bytes": 32227,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_compile_N4.csv",
+      "sha256": "d9140f7d7c7ea18692125216cff743c1baa5b20ab670bd2d325202847d1302b0",
+      "bytes": 32280,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_compile_N6.csv",
+      "sha256": "879373446f3a08acc3aa9ec557a8cf1d4db1c4cafc3118a93ca3c53203077b2a",
+      "bytes": 32235,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_graphs_N2.csv",
+      "sha256": "a5f96113554c819882d292025c0635f44bb11ddb56bf807694dd2f368112b7fa",
+      "bytes": 32235,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_graphs_N4.csv",
+      "sha256": "cc0ee3485f38eabb83d52ba4713b49d362098786af62c141532a2acfe64ff8cc",
+      "bytes": 32286,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_graphs_N6.csv",
+      "sha256": "e7c6c7a0f0f625a4384d4eb08e87ef00e63ce1dba06ab19da0e9562ebb249310",
+      "bytes": 32193,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_fp32_N2.csv",
+      "sha256": "ecefbe218c89d09b6974b1359220e93f95457a4b85930e32c66782033aec5a94",
+      "bytes": 55626,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_fp32_N4.csv",
+      "sha256": "ce78bd8ebe040462e1b7e7e0315496a3fc8e0991a00aad1429a722dd2079c1d0",
+      "bytes": 78798,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_fp32_N6.csv",
+      "sha256": "f869d5caaa8c17d22ee2dc948be3ea1ae35d584be95ca91143824f0f3285612e",
+      "bytes": 102169,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_tf32_N2.csv",
+      "sha256": "a1f30aaf2a5ddcd2d87a0c054799274777b3d08f6c19f9f35cbb17bc535db37f",
+      "bytes": 55596,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_tf32_N4.csv",
+      "sha256": "b8ade46b8304d00b86ff1e4e4f0c1a6320b109489ed0c97c146ca054f5b2a1cc",
+      "bytes": 78810,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_tf32_N6.csv",
+      "sha256": "23da58aed99b1f340b851d5d1b8ea3322551fb83ff36f75c3bd246213502a7fc",
+      "bytes": 102247,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_compile_N2.csv",
+      "sha256": "011902caa4f9e1f3404b071a62e216a8edd14f370d0b2fa04cc70273b15854c4",
+      "bytes": 32209,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_compile_N4.csv",
+      "sha256": "69475abd7051a4f92c3b30803aa0d6201987cc7a99bda93d78063d9d8398c80d",
+      "bytes": 32186,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_compile_N6.csv",
+      "sha256": "2c3a518b04b0d8676db91d9325fe96a73486886a476604803f9e64858d3f3f8d",
+      "bytes": 32151,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_graphs_N2.csv",
+      "sha256": "17401d72dff76e0157095529b3c95d001d69b9f5c44e4423c909085ddf4c9ff5",
+      "bytes": 32270,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_graphs_N4.csv",
+      "sha256": "ce60b1b8615f09aed09f811a32ec9a22ea26d5d2ea3b0526fd07d73e6236a82c",
+      "bytes": 32214,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_graphs_N6.csv",
+      "sha256": "b5adc734c7833b16ae7023267ed15adfc490ce80e9585a20b828dd0ff99fddf1",
+      "bytes": 32162,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/ae_compile_N4.npz",
+      "sha256": "2794c81f3dbf8963e825b11bd9a1c44b164bf51097a2d57edcc299d3ed3ec2f3",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/ae_graphs_N4.npz",
+      "sha256": "3b6e37d9659ed4ee20f3f4daa160ebe3dd60c8f67150786e2f4d4e3ff55d8b0a",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/eager_fp32_N4.npz",
+      "sha256": "c6baa5ce0dfba722899fbbbc7c7c823ef337a53931bbfd02b68912b20df03e4e",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/eager_tf32_N4.npz",
+      "sha256": "c6baa5ce0dfba722899fbbbc7c7c823ef337a53931bbfd02b68912b20df03e4e",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/llm_compile_N4.npz",
+      "sha256": "f1b5994d46442e2b5a5941946d683583b33f0e1f509cea7913e102870127583c",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/llm_graphs_N4.npz",
+      "sha256": "c3464cb39b0785a0ba96b4c20b21c7f0e43772fdb8167cd79ba1201617d8168f",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/ae_compile_N4.json",
+      "sha256": "a1563e26871de2ce9983ec72424e8ce092de147d984d330f4db809f8903cf2f8",
+      "bytes": 11955,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/ae_graphs_N4.json",
+      "sha256": "1eb68d22e9159128a9abc2698dd1332ef0a046b5047c9ccc26d4a9bb32f84741",
+      "bytes": 11937,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/all_compile_autotune_N4.json",
+      "sha256": "d9767269d3481c36f57977584249e1a1ae8705125e2db09b423672f75ebbe30a",
+      "bytes": 3177,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/eager_fp32_N4.json",
+      "sha256": "9f6b58c4c832396fb9435b2b7275e87dedc63ea7373eefa04f0dd824370cae79",
+      "bytes": 21057,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/eager_tf32_N4.json",
+      "sha256": "4e1fed48d66db1d524099e7f9178f1942da8b27b2551bb68e1af7f81ab074149",
+      "bytes": 21095,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/llm_compile_N4.json",
+      "sha256": "1dfa427ea976a8bbb5911553492558f4e48eb127da1182c5d33bd48021ce688f",
+      "bytes": 12075,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/llm_graphs_N4.json",
+      "sha256": "ee6083a8db8e04cccb7343f348a2984584a5b32227854115b81e826dcaba2d28",
+      "bytes": 12029,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vis_compile_N4.json",
+      "sha256": "84680e553266df4dc102ab166e01a317e0e636ccd868475eddee8d8fa6954906",
+      "bytes": 2989,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vis_graphs_N4.json",
+      "sha256": "8f152bc7d0c6f5663c706bcf3615fbf2976ead6cbf1882821be442c71578ef19",
+      "bytes": 2988,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vlm_compile_N4.json",
+      "sha256": "02ed27718f03db0ec9c15954492f9fe9ed3479b85ec9199882c57bbf1b814ca5",
+      "bytes": 3066,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vlm_graphs_N4.json",
+      "sha256": "b806b60fcf8292547f3fa0f4bc45c89c6f6d1a72dff5645ff48d1252227ae99b",
+      "bytes": 3044,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/ae_compile_N4.log",
+      "sha256": "6adff7b5c9198e22e4d11b44bc894a14308220882ab9859664e5e6bcc56715d9",
+      "bytes": 6481,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/ae_graphs_N4.log",
+      "sha256": "74114e49360bca8900a35e0861a56eca8a550a18523a7d4845ec6939ac0a1f30",
+      "bytes": 4351,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/all_compile_autotune_N4.log",
+      "sha256": "399f87ec2ce33bda7ad0efdfc0e5f4a728eec47d17cbff946690dd278465af77",
+      "bytes": 66766,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/eager_fp32_N4.log",
+      "sha256": "d9c4f13a201fda093e0775ef3efd52271edcc08bf4e7b109f3fc5ab26598bd1b",
+      "bytes": 1938,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/eager_tf32_N4.log",
+      "sha256": "e0f10137c289d8a537d70db658ccb18a5d7997b4d6ebc911577d0b536b8bc064",
+      "bytes": 1938,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/llm_compile_N4.log",
+      "sha256": "729563934c5332d218dbc1d7bf942fc65a165cbc56e4c40e1ed107bdd208bd71",
+      "bytes": 147319,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/llm_graphs_N4.log",
+      "sha256": "b5b7495a099bbbfaa6def35fb766f9dc857c17c1853e9372dcf922ad1cc4a842",
+      "bytes": 149020,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vis_compile_N4.log",
+      "sha256": "42ade346a1818896e654f3855f7eaa008c906bc034fd776ce7fd1f09433f335a",
+      "bytes": 63850,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vis_graphs_N4.log",
+      "sha256": "9be17157a2f6398c1e99063501cf435892eb1eb33c9e06f5765e8768768f6dbb",
+      "bytes": 65454,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vlm_compile_N4.log",
+      "sha256": "ab8f18ebed8237f7697465867dd5eca8ac9b9669123d96da3238f0fa6b1beb72",
+      "bytes": 63850,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vlm_graphs_N4.log",
+      "sha256": "1c9a31ef0c1cee19d8ce1b8845a0a9ac475cc67c9bca4a29b5f714aa0b8d097c",
+      "bytes": 63849,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    }
+  ]
+}

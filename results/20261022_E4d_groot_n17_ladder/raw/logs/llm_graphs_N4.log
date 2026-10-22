@@ -1,0 +1,823 @@
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.62it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.60it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.38it/s]
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks] Graph break: torch.compile cannot properly resume from this graph break, which results in a skip.
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks] torch.compile will skip tracing the frame wrapper (/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py line 961) and fall back to eager.
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks] The graph break occurred in the following user code:
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 834, in forward
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]     attention_mask = create_causal_mask(
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py", line 825, in create_causal_mask
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]     causal_mask = mask_interface(
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py", line 558, in flash_attention_mask
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks]     if attention_mask.all():
+V1022 23:05:41.866000 1878091 torch/_dynamo/convert_frame.py:2015] [0/0] [__graph_breaks] 
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py:558
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] User code traceback:
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     raise SystemExit(main())
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return child(a)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     one()
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return ad.iteration()
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = self.model(
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1223, in forward
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = self.language_model(
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/rungs.py", line 382, in _cl
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return clone_graph_outputs(_c(*a, **k))
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 834, in forward
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     attention_mask = create_causal_mask(
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py", line 825, in create_causal_mask
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     causal_mask = mask_interface(
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py", line 558, in flash_attention_mask
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     if attention_mask.all():
+V1022 23:05:41.979000 1878091 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py:558
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 23:05:43.365000 1878091 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/masking_utils.py:558
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks] Graph Break Reason: Data-dependent branching
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks] 
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:43.684000 1878091 torch/_dynamo/symbolic_convert.py:4282] [5/0] [__graph_breaks] 
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] User code traceback:
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     raise SystemExit(main())
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return child(a)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     one()
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return ad.iteration()
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = self.model(
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1223, in forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = self.language_model(
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/rungs.py", line 382, in _cl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return clone_graph_outputs(_c(*a, **k))
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 850, in forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     layer_outputs = decoder_layer(
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return super().__call__(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 502, in forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     hidden_states, _ = self.self_attn(
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 444, in forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     attn_output, attn_weights = attention_interface(
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py", line 66, in flash_attention_forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     attn_output = _flash_attention_forward(
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 632, in _flash_attention_forward
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     elif is_fa_with_varlen_kwargs or is_fa_with_position_ids:
+V1022 23:05:44.133000 1878091 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+W1022 23:05:44.414000 1878091 torch/_inductor/utils.py:1679] [7/0] Not enough SMs to use max_autotune_gemm mode
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1022 23:05:47.264000 1878091 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1022 23:05:47.441000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:47.471000 1878091 torch/_dynamo/guards.py:4514] [9/1] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:47.471000 1878091 torch/_dynamo/guards.py:4514] [9/1] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:47.471000 1878091 torch/_dynamo/guards.py:4514] [9/1] [__recompiles]     - 9/0: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] 
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] Data-dependent branching
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] 
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] 
+V1022 23:05:47.583000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] 
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] 
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] 
+V1022 23:05:47.711000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] 
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] 
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] 
+V1022 23:05:47.828000 1878091 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:48.132000 1878091 torch/_dynamo/guards.py:4514] [10/1] [__recompiles] Recompiling function wrapped_func in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py:120
+V1022 23:05:48.132000 1878091 torch/_dynamo/guards.py:4514] [10/1] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:48.132000 1878091 torch/_dynamo/guards.py:4514] [10/1] [__recompiles]     - 10/0: len(args) == 2                                           # func_name = f"{args[0].__class__.__name__}.{func_name}"  # transformers/utils/deprecation.py:125 in wrapped_func
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] 
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] Data-dependent branching
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] 
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] 
+V1022 23:05:48.211000 1878091 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks] 
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks] 
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks] 
+V1022 23:05:48.325000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks] 
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks] Data-dependent branching
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks] 
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks] 
+V1022 23:05:50.104000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks] Graph Break Reason: Data-dependent branching
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks] 
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:50.206000 1878091 torch/_dynamo/symbolic_convert.py:4282] [14/0] [__graph_breaks] 
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:335
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] 
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] Dynamic shape operator
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] 
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] 
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] User code traceback:
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     raise SystemExit(main())
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return child(a)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     one()
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return ad.iteration()
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     outputs = self.model(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1223, in forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     outputs = self.language_model(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/rungs.py", line 382, in _cl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return clone_graph_outputs(_c(*a, **k))
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 850, in forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     layer_outputs = decoder_layer(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return super().__call__(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 502, in forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     hidden_states, _ = self.self_attn(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 444, in forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     attn_output, attn_weights = attention_interface(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py", line 66, in flash_attention_forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     attn_output = _flash_attention_forward(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 634, in _flash_attention_forward
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     q, k, v, (cu_seq_lens_q, cu_seq_lens_k), (max_length_q, max_length_k) = _prepare_from_posids(
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 393, in _prepare_from_posids
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     (cu_seq_lens_q, cu_seq_lens_k), (max_length_q, max_length_k) = prepare_fa_kwargs_from_position_ids(position_ids)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 335, in prepare_fa_kwargs_from_position_ids
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks]     indices_q = (position_ids == 0).nonzero().view(-1)
+V1022 23:05:50.486000 1878091 torch/_dynamo/symbolic_convert.py:4275] [15/0] [__graph_breaks] 
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:335
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks] 
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks] Dynamic shape operator
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks] 
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks] 
+V1022 23:05:50.535000 1878091 torch/_dynamo/symbolic_convert.py:4282] [16/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:335
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks] 
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks] Dynamic shape operator
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks] 
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks] 
+V1022 23:05:50.625000 1878091 torch/_dynamo/symbolic_convert.py:4282] [17/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] Graph break from `Tensor.item()`, consider setting:
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0]     torch._dynamo.config.capture_scalar_outputs = True
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] or:
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] to include these operations in the captured graph.
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] 
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] Graph break: from user code at:
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 354, in torch_dynamo_resume_in_prepare_fa_kwargs_from_position_ids_at_335
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0]     max_length_q = max_length_q.item()
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] 
+W1022 23:05:50.943000 1878091 torch/_dynamo/variables/tensor.py:1079] [18/0] 
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:354
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] 
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] Unsupported Tensor.item() call with capture_scalar_outputs=False
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   Explanation: Dynamo does not support tracing `Tensor.item()` with config.capture_scalar_outputs=False.
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   Hint: Set `torch._dynamo.config.capture_scalar_outputs = True` or `export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1` to include these operations in the captured graph.
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] 
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   Developer debug context: call_method TensorVariable() item () {}
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] 
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0124.html
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] User code traceback:
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     raise SystemExit(main())
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return child(a)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     one()
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return ad.iteration()
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     outputs = self.model(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1223, in forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     outputs = self.language_model(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/rungs.py", line 382, in _cl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return clone_graph_outputs(_c(*a, **k))
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 850, in forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     layer_outputs = decoder_layer(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return super().__call__(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1031, in wrapped_forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     output = orig_forward(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 502, in forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     hidden_states, _ = self.self_attn(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 444, in forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     attn_output, attn_weights = attention_interface(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py", line 66, in flash_attention_forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     attn_output = _flash_attention_forward(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 634, in _flash_attention_forward
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     q, k, v, (cu_seq_lens_q, cu_seq_lens_k), (max_length_q, max_length_k) = _prepare_from_posids(
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 393, in _prepare_from_posids
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     (cu_seq_lens_q, cu_seq_lens_k), (max_length_q, max_length_k) = prepare_fa_kwargs_from_position_ids(position_ids)
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 354, in prepare_fa_kwargs_from_position_ids
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks]     max_length_q = max_length_q.item()
+V1022 23:05:50.945000 1878091 torch/_dynamo/symbolic_convert.py:4275] [18/0] [__graph_breaks] 
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:881
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace BINARY_SUBSCR: a binary subscript, e.g. x[attr]:
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] 
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] Dynamic shape operator
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] 
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] 
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] User code traceback:
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     raise SystemExit(main())
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return child(a)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     one()
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return ad.iteration()
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     outputs = self.model(
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1223, in forward
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     outputs = self.language_model(
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/rungs.py", line 382, in _cl
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     return clone_graph_outputs(_c(*a, **k))
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 863, in forward
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     hidden_states = self._deepstack_process(
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 881, in _deepstack_process
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks]     local_this = hidden_states[visual_pos_masks, :].clone() + visual_embeds
+V1022 23:05:52.363000 1878091 torch/_dynamo/symbolic_convert.py:4275] [26/0] [__graph_breaks] 
+cudagraph partition due to CUDAGraph-unsafe custom ops
+cudagraph partition into 2 partitions
+V1022 23:05:52.665000 1878091 torch/_dynamo/guards.py:4514] [9/2] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:52.665000 1878091 torch/_dynamo/guards.py:4514] [9/2] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:52.665000 1878091 torch/_dynamo/guards.py:4514] [9/2] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:52.665000 1878091 torch/_dynamo/guards.py:4514] [9/2] [__recompiles]     - 9/0: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks] 
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks] Data-dependent branching
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks] 
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks] 
+V1022 23:05:52.817000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/2] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:52.841000 1878091 torch/_dynamo/guards.py:4514] [9/3] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:52.841000 1878091 torch/_dynamo/guards.py:4514] [9/3] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:52.841000 1878091 torch/_dynamo/guards.py:4514] [9/3] [__recompiles]     - 9/2: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:52.841000 1878091 torch/_dynamo/guards.py:4514] [9/3] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:52.841000 1878091 torch/_dynamo/guards.py:4514] [9/3] [__recompiles]     - 9/0: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks] 
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks] Data-dependent branching
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks] 
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks] 
+V1022 23:05:52.954000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/3] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:52.980000 1878091 torch/_dynamo/guards.py:4514] [12/1] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:415
+V1022 23:05:52.980000 1878091 torch/_dynamo/guards.py:4514] [12/1] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:52.980000 1878091 torch/_dynamo/guards.py:4514] [12/1] [__recompiles]     - 12/0: past_key_values.layers[0].is_initialized == False        # if not self.is_initialized:  # transformers/cache_utils.py:116 in update
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks] 
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks] Data-dependent branching
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks] 
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks] 
+V1022 23:05:53.056000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:53.151000 1878091 torch/_dynamo/guards.py:4514] [13/1] [__recompiles] Recompiling function flash_attention_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py:14
+V1022 23:05:53.151000 1878091 torch/_dynamo/guards.py:4514] [13/1] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:53.151000 1878091 torch/_dynamo/guards.py:4514] [13/1] [__recompiles]     - 13/0: module.layer_idx == 0                                    # layer_idx=module.layer_idx if hasattr(module, "layer_idx") else None,  # transformers/integrations/flash_attention.py:80 in flash_attention_forward (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks] 
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks] Data-dependent branching
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks] 
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks] 
+V1022 23:05:53.179000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:53.223000 1878091 torch/_dynamo/guards.py:4514] [9/4] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:53.223000 1878091 torch/_dynamo/guards.py:4514] [9/4] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:53.223000 1878091 torch/_dynamo/guards.py:4514] [9/4] [__recompiles]     - 9/3: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.223000 1878091 torch/_dynamo/guards.py:4514] [9/4] [__recompiles]     - 9/2: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.223000 1878091 torch/_dynamo/guards.py:4514] [9/4] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.223000 1878091 torch/_dynamo/guards.py:4514] [9/4] [__recompiles]     - 9/0: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks] 
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks] Data-dependent branching
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks] 
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks] 
+V1022 23:05:53.374000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/4] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles]     - 9/4: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles]     - 9/3: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles]     - 9/2: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.398000 1878091 torch/_dynamo/guards.py:4514] [9/5] [__recompiles]     - 9/0: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks] 
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks] Data-dependent branching
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks] 
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks] 
+V1022 23:05:53.508000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/5] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:53.534000 1878091 torch/_dynamo/guards.py:4514] [12/2] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:415
+V1022 23:05:53.534000 1878091 torch/_dynamo/guards.py:4514] [12/2] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:53.534000 1878091 torch/_dynamo/guards.py:4514] [12/2] [__recompiles]     - 12/1: past_key_values.layers[1].is_initialized == False        # if not self.is_initialized:  # transformers/cache_utils.py:116 in update
+V1022 23:05:53.534000 1878091 torch/_dynamo/guards.py:4514] [12/2] [__recompiles]     - 12/0: past_key_values.layers[0].is_initialized == False        # if not self.is_initialized:  # transformers/cache_utils.py:116 in update
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks] 
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks] Data-dependent branching
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks] 
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks] 
+V1022 23:05:53.608000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/2] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:53.702000 1878091 torch/_dynamo/guards.py:4514] [13/2] [__recompiles] Recompiling function flash_attention_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py:14
+V1022 23:05:53.702000 1878091 torch/_dynamo/guards.py:4514] [13/2] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:53.702000 1878091 torch/_dynamo/guards.py:4514] [13/2] [__recompiles]     - 13/1: module.layer_idx == 1                                    # layer_idx=module.layer_idx if hasattr(module, "layer_idx") else None,  # transformers/integrations/flash_attention.py:80 in flash_attention_forward (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:05:53.702000 1878091 torch/_dynamo/guards.py:4514] [13/2] [__recompiles]     - 13/0: module.layer_idx == 0                                    # layer_idx=module.layer_idx if hasattr(module, "layer_idx") else None,  # transformers/integrations/flash_attention.py:80 in flash_attention_forward (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks] 
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks] Data-dependent branching
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks] 
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks] 
+V1022 23:05:53.730000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/2] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     - 9/5: len(collected_outputs['hidden_states']) == 3             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     - 9/4: len(collected_outputs['hidden_states']) == 3             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     - 9/3: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     - 9/2: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:53.774000 1878091 torch/_dynamo/guards.py:4514] [9/6] [__recompiles]     - 9/0: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks] 
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks] Data-dependent branching
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks] 
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks] 
+V1022 23:05:54.161000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/6] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/6: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/5: len(collected_outputs['hidden_states']) == 3             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/4: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/3: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/2: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.187000 1878091 torch/_dynamo/guards.py:4514] [9/7] [__recompiles]     - 9/0: ___check_obj_id(orig_forward.__code__, 923823600), type=<code object wrapped_forward at 0x37106df0, file "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1021>  # output = orig_forward(*args, **kwargs)  # transformers/utils/generic.py:1031 in wrapped_forward
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks] 
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks] Data-dependent branching
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks] 
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks] 
+V1022 23:05:54.299000 1878091 torch/_dynamo/symbolic_convert.py:4282] [9/7] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:54.326000 1878091 torch/_dynamo/guards.py:4514] [12/3] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:415
+V1022 23:05:54.326000 1878091 torch/_dynamo/guards.py:4514] [12/3] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:54.326000 1878091 torch/_dynamo/guards.py:4514] [12/3] [__recompiles]     - 12/2: past_key_values.layers[2].is_initialized == False        # if not self.is_initialized:  # transformers/cache_utils.py:116 in update
+V1022 23:05:54.326000 1878091 torch/_dynamo/guards.py:4514] [12/3] [__recompiles]     - 12/1: past_key_values.layers[1].is_initialized == False        # if not self.is_initialized:  # transformers/cache_utils.py:116 in update
+V1022 23:05:54.326000 1878091 torch/_dynamo/guards.py:4514] [12/3] [__recompiles]     - 12/0: past_key_values.layers[0].is_initialized == False        # if not self.is_initialized:  # transformers/cache_utils.py:116 in update
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks] 
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks] Data-dependent branching
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks] 
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks] 
+V1022 23:05:54.401000 1878091 torch/_dynamo/symbolic_convert.py:4282] [12/3] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:54.497000 1878091 torch/_dynamo/guards.py:4514] [13/3] [__recompiles] Recompiling function flash_attention_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py:14
+V1022 23:05:54.497000 1878091 torch/_dynamo/guards.py:4514] [13/3] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:54.497000 1878091 torch/_dynamo/guards.py:4514] [13/3] [__recompiles]     - 13/2: module.layer_idx == 2                                    # layer_idx=module.layer_idx if hasattr(module, "layer_idx") else None,  # transformers/integrations/flash_attention.py:80 in flash_attention_forward (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:05:54.497000 1878091 torch/_dynamo/guards.py:4514] [13/3] [__recompiles]     - 13/1: module.layer_idx == 1                                    # layer_idx=module.layer_idx if hasattr(module, "layer_idx") else None,  # transformers/integrations/flash_attention.py:80 in flash_attention_forward (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:05:54.497000 1878091 torch/_dynamo/guards.py:4514] [13/3] [__recompiles]     - 13/0: module.layer_idx == 0                                    # layer_idx=module.layer_idx if hasattr(module, "layer_idx") else None,  # transformers/integrations/flash_attention.py:80 in flash_attention_forward (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py:632
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks] 
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks] Data-dependent branching
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks]   Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks]   Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks]   Hint: Use `torch.cond` to express dynamic control flow.
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks] 
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks]   Developer debug context: attempted to jump with TensorVariable()
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks] 
+V1022 23:05:54.526000 1878091 torch/_dynamo/symbolic_convert.py:4282] [13/3] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles] Recompiling function wrapped_forward in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/7: len(collected_outputs['hidden_states']) == 4             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/6: len(collected_outputs['hidden_states']) == 4             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/5: len(collected_outputs['hidden_states']) == 3             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/4: len(collected_outputs['hidden_states']) == 3             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/3: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/2: len(collected_outputs['hidden_states']) == 2             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/1: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+V1022 23:05:54.570000 1878091 torch/_dynamo/guards.py:4514] [9/8] [__recompiles]     - 9/0: not collected_outputs                                    # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+W1022 23:05:54.571000 1878091 torch/_dynamo/convert_frame.py:1676] [9/8] torch._dynamo hit config.recompile_limit (8)
+W1022 23:05:54.571000 1878091 torch/_dynamo/convert_frame.py:1676] [9/8]    function: 'wrapped_forward' (/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py:1021)
+W1022 23:05:54.571000 1878091 torch/_dynamo/convert_frame.py:1676] [9/8]    last reason: 9/7: len(collected_outputs['hidden_states']) == 4             # if key == "hidden_states" and len(collected_outputs[key]) == 0:  # transformers/utils/generic.py:1023 in wrapped_forward
+W1022 23:05:54.571000 1878091 torch/_dynamo/convert_frame.py:1676] [9/8] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+W1022 23:05:54.571000 1878091 torch/_dynamo/convert_frame.py:1676] [9/8] To diagnose recompilation issues, see https://pytorch.org/docs/main/compile/programming_model.recompilation.html
+llm_graphs N=4: e2e 149.90 | vision 29.43 | prefix 31.99 | ae 63.04 | graphs during timed 0 | throttled False | state normal->normal
+V1022 23:07:54.690000 1878091 torch/_dynamo/guards.py:4514] [31/1] [__recompiles] Recompiling function inner in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:67
+V1022 23:07:54.690000 1878091 torch/_dynamo/guards.py:4514] [31/1] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:07:54.690000 1878091 torch/_dynamo/guards.py:4514] [31/1] [__recompiles]     - 31/0: fn.__self__.num_inference_timesteps == 4                 # dt = 1.0 / self.num_inference_timesteps  # src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py:355 in get_action_with_features (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+llm_graphs N=2: e2e 119.39 | vision 29.05 | prefix 30.56 | ae 33.37 | graphs during timed 0 | throttled False | state normal->normal
+V1022 23:08:59.131000 1878091 torch/_dynamo/guards.py:4514] [31/2] [__recompiles] Recompiling function inner in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:67
+V1022 23:08:59.131000 1878091 torch/_dynamo/guards.py:4514] [31/2] [__recompiles]     triggered by the following guard failure(s):
+V1022 23:08:59.131000 1878091 torch/_dynamo/guards.py:4514] [31/2] [__recompiles]     - 31/1: fn.__self__.num_inference_timesteps == 2                 # dt = 1.0 / self.num_inference_timesteps  # src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py:355 in get_action_with_features (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 23:08:59.131000 1878091 torch/_dynamo/guards.py:4514] [31/2] [__recompiles]     - 31/0: fn.__self__.num_inference_timesteps == 4                 # dt = 1.0 / self.num_inference_timesteps  # src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py:355 in get_action_with_features (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+llm_graphs N=6: e2e 179.70 | vision 29.01 | prefix 30.40 | ae 94.44 | graphs during timed 0 | throttled False | state normal->normal

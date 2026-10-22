@@ -1,0 +1,483 @@
+Traceback (most recent call last):
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+    one()
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+    return ad.iteration()
+           ^^^^^^^^^^^^^^
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+    act = self.policy.get_action(self.obs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+    action, info = self._get_action(observation, options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+    model_pred = self.model.get_action(**collated_inputs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+    return _orig(*a, **k)
+           ^^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+    backbone_outputs = self.backbone(backbone_inputs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+    return _orig(*a, **k)
+           ^^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+    outputs = self.model(**vl_input, output_hidden_states=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+    outputs = self.model(
+              ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1138, in forward
+    image_embeds, deepstack_image_embeds = self.get_image_features(pixel_values, image_grid_thw)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+    return _orig(*a, **k)
+           ^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 953, in compile_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1061, in get_image_features
+    image_embeds, deepstack_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 716, in forward
+    pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 719, in torch_dynamo_resume_in_forward_at_716
+    rotary_pos_emb = self.rot_pos_emb(grid_thw)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 727, in torch_dynamo_resume_in_forward_at_719
+    cu_seqlens = torch.repeat_interleave(grid_thw[:, 1] * grid_thw[:, 2], grid_thw[:, 0]).cumsum(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 2202, in __call__
+    result = self._torchdynamo_orig_backend(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1945, in __call__
+    result = self._inner_convert(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 707, in __call__
+    result = _compile(
+             ^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1752, in _compile
+    guarded_code, tracer_output = compile_inner(code, one_graph, hooks)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_utils_internal.py", line 97, in wrapper_function
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1433, in compile_inner
+    return _compile_inner(code, one_graph, hooks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1467, in _compile_inner
+    dynamo_output = compile_frame(
+                    ^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1341, in compile_frame
+    bytecode, tracer_output = transform_code_object(code, transform)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/bytecode_transformation.py", line 1600, in transform_code_object
+    tracer_output = transformations(instructions, code_options)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 1313, in transform
+    tracer_output = trace_frame(
+                    ^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 328, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 838, in trace_frame
+    run_tracer()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/convert_frame.py", line 819, in run_tracer
+    tracer.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/nn_module.py", line 1147, in call_function
+    return variables.UserFunctionVariable(fn, source=source).call_function(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 1148, in call_function
+    return self.obj.call_method(tx, self.name, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 280, in call_method
+    return fn_vt.call_function(tx, [self.objvar] + args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 1450, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 1450, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/nn_module.py", line 1147, in call_function
+    return variables.UserFunctionVariable(fn, source=source).call_function(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 2582, in CALL_FUNCTION_EX
+    self.call_function(fn, argsvars.items, kwargsvars)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 3807, in CALL
+    self._call(inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 3798, in _call
+    self.call_function(fn, args, kwargs)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 1148, in call_function
+    return self.obj.call_method(tx, self.name, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 849, in call_method
+    return self.call_apply(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/misc.py", line 794, in call_apply
+    return fn_vt.call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 685, in call_function
+    return super().call_function(tx, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py", line 401, in call_function
+    return tx.inline_user_function_return(self, [*self.self_args(), *args], kwargs)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1262, in inline_user_function_return
+    return InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4718, in inline_call
+    return tracer.inline_call_()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 4935, in inline_call_
+    self.run()
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1654, in run
+    while self.step():
+          ^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1334, in step
+    self.dispatch_table[inst.opcode](self, inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 866, in wrapper
+    return inner_fn(self, inst)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 3807, in CALL
+    self._call(inst)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 3798, in _call
+    self.call_function(fn, args, kwargs)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/symbolic_convert.py", line 1240, in call_function
+    self.push(fn.call_function(self, args, kwargs))  # type: ignore[arg-type]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/lazy.py", line 229, in realize_and_forward
+    return getattr(self.realize(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/torch.py", line 1596, in call_function
+    tensor_variable = wrap_fx_proxy(
+                      ^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 2795, in wrap_fx_proxy
+    return wrap_fx_proxy_cls(target_cls=TensorVariable, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 2861, in wrap_fx_proxy_cls
+    out = _wrap_fx_proxy(
+          ^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/variables/builder.py", line 2972, in _wrap_fx_proxy
+    example_value = get_fake_value(proxy.node, tx, allow_non_graph_fake=True)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 3626, in get_fake_value
+    raise TorchRuntimeError(msg).with_traceback(e.__traceback__) from None
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 3524, in get_fake_value
+    ret_val = wrap_fake_exception(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 2966, in wrap_fake_exception
+    return fn()
+           ^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 3525, in <lambda>
+    lambda: run_node(tx.output, node, args, kwargs, nnmodule)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 3735, in run_node
+    raise RuntimeError(make_error_message(e)).with_traceback(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/utils.py", line 3694, in run_node
+    return node.target(*args, **kwargs)  # type: ignore[operator]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_ops.py", line 1209, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+torch._dynamo.exc.TorchRuntimeError: Dynamo failed to run FX node with fake tensors: call_function flash_attn._flash_attn_varlen_forward(*(FakeTensor(..., device='cuda:0', size=(1024, 16, 64), dtype=torch.bfloat16), FakeTensor(..., device='cuda:0', size=(1024, 16, 64), dtype=torch.bfloat16), FakeTensor(..., device='cuda:0', size=(1024, 16, 64), dtype=torch.bfloat16), FakeTensor(..., device='cuda:0', size=(5,), dtype=torch.int32), FakeTensor(..., device='cuda:0', size=(5,), dtype=torch.int32), FakeTensor(..., device='cuda:0', size=(), dtype=torch.int32), FakeTensor(..., device='cuda:0', size=(), dtype=torch.int32), 0.0, 0.125), **{'causal': False, 'window_size_left': -1, 'window_size_right': -1, 'softcap': 0.0, 'alibi_slopes': None, 'return_softmax': False, 'block_table': None}): got RuntimeError("flash_attn::_flash_attn_varlen_forward() Expected a value of type 'int' for argument 'max_seqlen_q' but instead found type 'FakeTensor'.\nPosition: 5\nValue: FakeTensor(..., device='cuda:0', size=(), dtype=torch.int32)\nDeclaration: flash_attn::_flash_attn_varlen_forward(Tensor q, Tensor k, Tensor v, Tensor cu_seqlens_q, Tensor cu_seqlens_k, SymInt max_seqlen_q, SymInt max_seqlen_k, float dropout_p, float softmax_scale, bool causal, SymInt window_size_left=-1, SymInt window_size_right=-1, float softcap=0., Tensor? alibi_slopes=None, bool return_softmax=False, Tensor? block_table=None, Tensor? leftpad_k=None, Tensor? seqused_k=None, bool zero_tensors=False) -> (Tensor, Tensor, Tensor, Tensor)\nCast error details: Unable to cast Python instance of type <class 'torch._subclasses.fake_tensor.FakeTensor'> to C++ type '?' (#define PYBIND11_DETAILED_ERROR_MESSAGES or compile in debug mode for details)")
+
+from user code:
+   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 739, in torch_dynamo_resume_in_forward_at_727
+    hidden_states = blk(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 267, in forward
+    hidden_states = hidden_states + self.attn(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 208, in forward
+    attn_output, _ = attention_interface(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/integrations/flash_attention.py", line 66, in flash_attention_forward
+    attn_output = _flash_attention_forward(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 647, in _flash_attention_forward
+    out = flash_varlen_fn(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/flash_attn/flash_attn_interface.py", line 1453, in flash_attn_varlen_func
+    return FlashAttnVarlenFunc.apply(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/flash_attn/flash_attn_interface.py", line 935, in forward
+    out_padded, softmax_lse, S_dmask, rng_state = _wrapped_flash_attn_varlen_forward(
+
+Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+

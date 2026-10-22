@@ -1,0 +1,55 @@
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.50it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.42it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.22it/s]
+W1022 22:30:48.219000 1842688 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3464: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  current_size = base.storage().size()
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "addmm", "best_time": 0.12902399897575378}
+AUTOTUNE addmm(280x2048, 280x2048, 2048x2048)
+strides: [0, 1], [2048, 1], [1, 2048]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  addmm 0.1290 ms 100.0% 
+  bias_addmm 0.1471 ms 87.7% 
+SingleProcess AUTOTUNE benchmarking takes 0.1047 seconds and 0.0004 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.08380799740552902}
+AUTOTUNE addmm(41x1536, 41x1536, 1536x1536)
+strides: [0, 1], [1536, 1], [1, 1536]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0838 ms 100.0% 
+  addmm 0.0851 ms 98.5% 
+SingleProcess AUTOTUNE benchmarking takes 0.0936 seconds and 0.0001 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "addmm", "best_time": 0.09929600358009338}
+AUTOTUNE addmm(273x1536, 273x2048, 2048x1536)
+strides: [0, 1], [2048, 1], [1, 2048]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  addmm 0.0993 ms 100.0% 
+  bias_addmm 0.1240 ms 80.1% 
+SingleProcess AUTOTUNE benchmarking takes 0.0973 seconds and 0.0002 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.05942400172352791}
+AUTOTUNE addmm(41x1024, 41x1536, 1536x1024)
+strides: [0, 1], [1536, 1], [1, 1536]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0594 ms 100.0% 
+  addmm 0.0620 ms 95.8% 
+SingleProcess AUTOTUNE benchmarking takes 0.0903 seconds and 0.0001 seconds precompiling for 2 choices
+ae_compile N=4: e2e 144.35 | vision 29.12 | prefix 25.09 | ae 63.31 | graphs during timed 0 | throttled False | state normal->normal
+V1022 22:32:42.222000 1842688 torch/_dynamo/guards.py:4514] [0/1] [__recompiles] Recompiling function inner in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:67
+V1022 22:32:42.222000 1842688 torch/_dynamo/guards.py:4514] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V1022 22:32:42.222000 1842688 torch/_dynamo/guards.py:4514] [0/1] [__recompiles]     - 0/0: fn.__self__.num_inference_timesteps == 4                 # dt = 1.0 / self.num_inference_timesteps  # src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py:355 in get_action_with_features (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+ae_compile N=2: e2e 116.13 | vision 29.30 | prefix 25.45 | ae 34.08 | graphs during timed 0 | throttled False | state normal->normal
+V1022 22:34:06.595000 1842688 torch/_dynamo/guards.py:4514] [0/2] [__recompiles] Recompiling function inner in /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:67
+V1022 22:34:06.595000 1842688 torch/_dynamo/guards.py:4514] [0/2] [__recompiles]     triggered by the following guard failure(s):
+V1022 22:34:06.595000 1842688 torch/_dynamo/guards.py:4514] [0/2] [__recompiles]     - 0/1: fn.__self__.num_inference_timesteps == 2                 # dt = 1.0 / self.num_inference_timesteps  # src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py:355 in get_action_with_features (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1022 22:34:06.595000 1842688 torch/_dynamo/guards.py:4514] [0/2] [__recompiles]     - 0/0: fn.__self__.num_inference_timesteps == 4                 # dt = 1.0 / self.num_inference_timesteps  # src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py:355 in get_action_with_features (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+ae_compile N=6: e2e 179.46 | vision 29.64 | prefix 25.59 | ae 96.24 | graphs during timed 0 | throttled False | state normal->normal

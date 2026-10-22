@@ -1,0 +1,394 @@
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.69it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.68it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.46it/s]
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:649
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Data dependent operator
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Developer debug context: aten._local_scalar_dense.default
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] User code traceback:
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     raise SystemExit(main())
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return child(a)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     one()
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return ad.iteration()
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     outputs = self.model(
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1138, in forward
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.get_image_features(pixel_values, image_grid_thw)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1061, in get_image_features
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 716, in forward
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 649, in fast_pos_embed_interpolate
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     h_idxs = torch.linspace(0, self.num_grid_per_side - 1, h)
+V1022 22:57:24.756000 1871059 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:649
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] 
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] Data dependent operator
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] 
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Developer debug context: aten._local_scalar_dense.default
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] 
+V1022 22:57:25.425000 1871059 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3464: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  current_size = base.storage().size()
+Autotune Choices Stats:
+{"num_choices": 8, "num_triton_choices": 7, "best_kernel": "convolution", "best_time": 1.3148800134658813, "best_triton_pos": 1, "best_triton_time": 1.544927954673767, "best_triton_kernel": "triton_convolution3d_3", "best_triton_kernel_desc": "ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=128, BLOCK_N=128, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=8"}
+AUTOTUNE convolution(1024x3x2x16x16, 1024x3x2x16x16)
+strides: [1536, 512, 256, 16, 1], [1536, 512, 256, 16, 1]
+dtypes: torch.bfloat16, torch.bfloat16
+  convolution 1.3149 ms 100.0% 
+  triton_convolution3d_3 1.5449 ms 85.1% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=128, BLOCK_N=128, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=8
+  triton_convolution3d_1 1.8360 ms 71.6% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=256, BLOCK_N=64, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=4
+  triton_convolution3d_6 1.8587 ms 70.7% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=256, BLOCK_N=64, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=8
+  triton_convolution3d_5 1.8956 ms 69.4% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=256, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=8
+  triton_convolution3d_0 1.8985 ms 69.3% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=256, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=4
+  triton_convolution3d_4 2.4668 ms 53.3% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=2, num_warps=4
+  triton_convolution3d_2 5.6127 ms 23.4% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=1024, BLOCK_N=16, GROUPS=1, KERNEL_D=2, KERNEL_H=16, KERNEL_W=16, PADDING_D=0, PADDING_H=0, PADDING_W=0, STRIDE_D=2, STRIDE_H=16, STRIDE_W=16, UNROLL=False, num_stages=1, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.5154 seconds and 0.4193 seconds precompiling for 8 choices
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:649
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] 
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] Data dependent operator
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]   Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]   Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] 
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]   Developer debug context: aten._local_scalar_dense.default
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] 
+V1022 22:57:28.965000 1871059 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] Graph break from `Tensor.item()`, consider setting:
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0]     torch._dynamo.config.capture_scalar_outputs = True
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] or:
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] to include these operations in the captured graph.
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] 
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] Graph break: from user code at:
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 719, in torch_dynamo_resume_in_forward_at_716
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0]     rotary_pos_emb = self.rot_pos_emb(grid_thw)
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 606, in rot_pos_emb
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0]     max_hw = int(grid_thw[:, 1:].max().item())
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] 
+W1022 22:57:29.000000 1871059 torch/_dynamo/variables/tensor.py:1079] [3/0] 
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:606
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] Unsupported Tensor.item() call with capture_scalar_outputs=False
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Explanation: Dynamo does not support tracing `Tensor.item()` with config.capture_scalar_outputs=False.
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Hint: Set `torch._dynamo.config.capture_scalar_outputs = True` or `export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1` to include these operations in the captured graph.
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   Developer debug context: call_method TensorVariable() item () {}
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0124.html
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] User code traceback:
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     raise SystemExit(main())
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return child(a)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     one()
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return ad.iteration()
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = self.model(
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1138, in forward
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.get_image_features(pixel_values, image_grid_thw)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1061, in get_image_features
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 719, in forward
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     rotary_pos_emb = self.rot_pos_emb(grid_thw)
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 606, in rot_pos_emb
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks]     max_hw = int(grid_thw[:, 1:].max().item())
+V1022 22:57:29.001000 1871059 torch/_dynamo/symbolic_convert.py:4275] [3/0] [__graph_breaks] 
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:606
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] Unsupported Tensor.item() call with capture_scalar_outputs=False
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Explanation: Dynamo does not support tracing `Tensor.item()` with config.capture_scalar_outputs=False.
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Hint: Set `torch._dynamo.config.capture_scalar_outputs = True` or `export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1` to include these operations in the captured graph.
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]   Developer debug context: call_method TensorVariable() item () {}
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks] 
+V1022 22:57:29.996000 1871059 torch/_dynamo/symbolic_convert.py:4282] [4/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0124.html
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:610
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] 
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] Unsupported Tensor.item() call with capture_scalar_outputs=False
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   Explanation: Dynamo does not support tracing `Tensor.item()` with config.capture_scalar_outputs=False.
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   Hint: Set `torch._dynamo.config.capture_scalar_outputs = True` or `export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1` to include these operations in the captured graph.
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] 
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   Developer debug context: call_method TensorVariable() item () {}
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] 
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0124.html
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] User code traceback:
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     raise SystemExit(main())
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return child(a)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     one()
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return ad.iteration()
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     outputs = self.model(
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1138, in forward
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.get_image_features(pixel_values, image_grid_thw)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1061, in get_image_features
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 719, in forward
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     rotary_pos_emb = self.rot_pos_emb(grid_thw)
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 610, in rot_pos_emb
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks]     total_tokens = int(torch.prod(grid_thw, dim=1).sum().item())
+V1022 22:57:30.547000 1871059 torch/_dynamo/symbolic_convert.py:4275] [5/0] [__graph_breaks] 
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:617
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] Data dependent operator
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   Developer debug context: aten._local_scalar_dense.default
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] User code traceback:
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     raise SystemExit(main())
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return child(a)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     one()
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return ad.iteration()
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = self.model(
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1138, in forward
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.get_image_features(pixel_values, image_grid_thw)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1061, in get_image_features
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 719, in forward
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     rotary_pos_emb = self.rot_pos_emb(grid_thw)
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 617, in rot_pos_emb
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks]     block_rows = torch.arange(merged_h, device=device)  # block row indices
+V1022 22:57:31.607000 1871059 torch/_dynamo/symbolic_convert.py:4275] [6/0] [__graph_breaks] 
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] Graph break in user code at /home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py:727
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] 
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] Dynamic shape operator
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   Explanation: Operator `aten.repeat_interleave.Tensor`'s output shape depends on input Tensor data.
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] 
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   Developer debug context: aten.repeat_interleave.Tensor
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] 
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] User code traceback:
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     raise SystemExit(main())
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return child(a)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     one()
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return ad.iteration()
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 135, in iteration
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     act = self.policy.get_action(self.obs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/policy.py", line 102, in get_action
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     action, info = self._get_action(observation, options)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 417, in _get_action
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     model_pred = self.model.get_action(**collated_inputs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 611, in get_action
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     backbone_outputs = self.backbone(backbone_inputs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 362, in forward
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     outputs = self.model(**vl_input, output_hidden_states=True)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1344, in forward
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     outputs = self.model(
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/generic.py", line 1072, in wrapper
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     outputs = func(self, *args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1138, in forward
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.get_image_features(pixel_values, image_grid_thw)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 324, in w
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return _orig(*a, **k)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 1061, in get_image_features
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     image_embeds, deepstack_image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 727, in forward
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks]     cu_seqlens = torch.repeat_interleave(grid_thw[:, 1] * grid_thw[:, 2], grid_thw[:, 0]).cumsum(
+V1022 22:57:31.645000 1871059 torch/_dynamo/symbolic_convert.py:4275] [7/0] [__graph_breaks] 
+all_compile_autotune_N4: FAILED TorchRuntimeError: Dynamo failed to run FX node with fake tensors: call_function flash_attn._flash_attn_varlen_forward(*(FakeTensor(..., device='cuda:0', size=(1024, 16, 64), dtype=torch.bfloat16), FakeTensor(..., device='cuda:0', size=(1024, 16, 64), dtype=torch.bfloat16), FakeTensor(..., device='cuda:0', size=(1024, 16, 64), dtype=torch.bfloat16), FakeTensor(..., device='cuda:0', size=(5,), dtype=torch.int32), Fak

@@ -1,0 +1,112 @@
+{
+ "experiment": "E4 Part B optimisation ladder (GR00T, cumulative)",
+ "task": "T005",
+ "model": "groot_n17",
+ "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+ "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+ "checkpoint": "nvidia/GR00T-N1.7-3B",
+ "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+ "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+ "rung": "per row: ae_compile, ae_graphs, all_compile_autotune, eager_fp32, eager_tf32, llm_compile, llm_graphs, vis_compile, vis_graphs, vlm_compile, vlm_graphs",
+ "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+ "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+ "num_denoise_steps": "4 (extra N per rung for the slope: by_N in the row files)",
+ "action_horizon": 40,
+ "prefix_tokens": 273,
+ "suffix_tokens": 41,
+ "batch": 1,
+ "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "f5e8f94",
+ "command": "bash bench/queues/t005_ladders.sh 20261022  (groot_n17: cd /tmp; ~/venvs/groot17/bin/python <repo>/bench/opt_ladder.py --model groot_n17 --out <repo>/results/20261022_E4d_groot_n17_ladder --rungs <11 GR00T rungs> --slope-steps 2,6 --slope-rungs all; paused at rung boundaries for T005 diagnostics)",
+ "throttled": {
+  "ae_compile_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  },
+  "ae_graphs_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  },
+  "all_compile_autotune_N4": {},
+  "eager_fp32_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  },
+  "eager_tf32_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  },
+  "llm_compile_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  },
+  "llm_graphs_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  },
+  "vis_compile_N4": {},
+  "vis_graphs_N4": {},
+  "vlm_compile_N4": {},
+  "vlm_graphs_N4": {}
+ },
+ "memory_path_state": {
+  "ae_compile_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  },
+  "ae_graphs_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  },
+  "all_compile_autotune_N4": {},
+  "eager_fp32_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  },
+  "eager_tf32_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  },
+  "llm_compile_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  },
+  "llm_graphs_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  },
+  "vis_compile_N4": {},
+  "vis_graphs_N4": {},
+  "vlm_compile_N4": {},
+  "vlm_graphs_N4": {}
+ },
+ "produced_by": {
+  "_N": "bench/opt_ladder.py (child)",
+  ".log": "bench/opt_ladder.py child stdout with TORCH_LOGS=recompiles,graph_breaks",
+  "traceback_": "bench/opt_ladder.py",
+  "secrets_scan": "bench/secrets_scan.py"
+ },
+ "also_raw": [],
+ "nsys_version": "n/a",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "cuobjdump_version": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv."
+}
