@@ -17,3 +17,4 @@ GR00T and LIBERO environments: `env/INSTALL_LOG_groot_libero.md`.
 | 2026-10-22 | `git clone` + `checkout` into `~/src/`: lerobot f0d2b37b, Isaac-GR00T 376ba890 / 9b37aa1c (n1d6) / 4af2b622 (n1d5), LIBERO 8f1084e3 | pinned | A14 | ok |
 | 2026-10-22 | `bash env/setup_lerobot.sh` (→ `~/venvs/lerobot`) | torch 2.10.0+cu130, transformers 5.3.0, lerobot 0.4.5 editable | π0, π0.5, SmolVLA | ok |
 | 2026-10-22 | `uv pip install sentencepiece` in `~/venvs/lerobot` (added to `setup_lerobot.sh`) | 0.2.2 | the ungated tokenizer is a bare `tokenizer.model`; converting it needs sentencepiece (without it transformers fell back to a TikToken extractor and failed) | ok |
+| 2026-10-22 | `uv pip install ninja` in `~/venvs/base` | 1.13.2 | torch's load_inline needs ninja to build the T003 pointer-chase kernel | ok |

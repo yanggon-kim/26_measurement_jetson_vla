@@ -33,6 +33,7 @@ for t in cuobjdump nvdisasm nvcc ptxas; do ln -sf "$R/usr/local/cuda-13.0/bin/$t
 uv venv -q --clear --python /usr/bin/python3.12 "$HOME/venvs/base"
 uv pip install -q --python "$HOME/venvs/base/bin/python" --index-url https://download.pytorch.org/whl/cu130 \
     torch==2.10.0 torchvision==0.25.0
+uv pip install -q --python "$HOME/venvs/base/bin/python" ninja   # torch load_inline (T003 pointer chase)
 uv pip freeze --python "$HOME/venvs/base/bin/python" > "$REPO/env/requirements_base.txt"
 
 uv venv -q --clear --python /usr/bin/python3.12 "$HOME/venvs/tools"
