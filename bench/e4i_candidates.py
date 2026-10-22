@@ -173,6 +173,10 @@ def groot_candidates():
         ("all_compile_ae_at_mpad", [ae_at, vis_d, llm_d], ["linear_mpad"], "parts", None),
         ("vlm_graphs_ae_at_mpad", [ae_at, vis_d, llm_g], ["linear_mpad"], "parts", None),
         ("all_compile_ae_vis_at_mpad", [ae_at, vis_at, llm_d], ["linear_mpad"], "parts", None),
+        # stage 2, after N1.6's stage 1 showed linear_mpad slows GR00T's vision and compiled prefix: unpadded variants
+        ("all_compile_ae_vis_at", [ae_at, vis_at, llm_d], [], "parts", None),
+        ("vlm_graphs_ae_at", [ae_at, vis_d, llm_g], [], "parts", None),
+        ("llm_compile_ae_at", [ae_at, llm_d], [], "parts", None),
         ("all_compile_autotune_scalar", [ae, vis_ng, llm_ng], ["capture_scalar"], True, ["groot_n17"]),
         ("vlm_graphs_autotune_scalar", [ae, vis_ng, llm_g], ["capture_scalar"], True, ["groot_n17"]),
     ]
