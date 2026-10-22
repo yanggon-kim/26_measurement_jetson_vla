@@ -214,7 +214,14 @@ def prep_linear_mpad(adapter, scope="lm_expert", span=256, step=16, reps=20):
             ts.append(s.elapsed_time(e))
         return statistics.median(ts)
     best = {}
-    for shapes in seen.values():
+    fixed = getattr(adapter, "mpad_fixed", None)   # replay of a recorded table (--rung best_bf16): no re-tuning
+    if fixed is not None:
+        for shapes in seen.values():
+            for (m, k, n, dt) in shapes:
+                v = fixed.get(f"M={m} K={k} N={n} {dt}")
+                if v is not None:
+                    best[(m, k, n, dt)] = (int(v["pad_to"]), float("nan"), float("nan"))
+    for shapes in ([] if fixed is not None else seen.values()):
         for (m, k, n, dt) in shapes:
             if (m, k, n, dt) in best or m < 16:
                 continue
@@ -242,6 +249,8 @@ def prep_linear_mpad(adapter, scope="lm_expert", span=256, step=16, reps=20):
                                                                   "ms_at_pad": round(v[2], 4)} for k, v in best.items()}
     pads = {k: v for k, v in adapter.mpad_table.items() if v["pad_to"] != int(k.split()[0][2:])}
     scope = "backbone+action_head" if adapter.family == "groot" else scope
+    if fixed is not None:
+        scope += ", replayed from the recorded best_bf16 table"
     return f"linear_mpad({scope}): {n_wrapped} Linear modules padded; shapes padded: {pads}"
 
 

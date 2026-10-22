@@ -58,6 +58,11 @@ def resolve_best(model):
     return d["models"][model]["rung"], fs[-1]
 
 
+def mpad_table_of(model, src):
+    t = json.load(open(src))["models"][model].get("mpad_table")
+    return t if isinstance(t, dict) else None
+
+
 def flatten_actions(obj):
     """Every tensor / ndarray in an action structure, flattened in a fixed key order, as one float32 vector."""
     import numpy as np
@@ -108,6 +113,9 @@ def child(a):
                                                 "soctherm_oc_event_cnt", "thermal_zones_mC")}
         ad = E3.make_adapter(a.model)
         ad.name, ad.family = a.model, RG.family_of(a.model)
+        if a.mpad_table:
+            ad.mpad_fixed = json.load(open(a.mpad_table))
+            row["mpad_table_replayed_from"] = a.mpad_table
         row["provenance"] = ad.provenance
         if ad.family == "groot":
             ad.capture_tokens()
@@ -243,9 +251,16 @@ def parent(a):
     best_src = {}
     for key in keys:
         real = key
+        mpad_arg = []
         if key == "best_bf16":
             real, src = resolve_best(a.model)
             best_src = {"best_bf16": real, "source": os.path.relpath(src, REPO)}
+            tab = mpad_table_of(a.model, src)
+            if tab:
+                tp = os.path.join(os.path.abspath(a.out), "raw", "mpad_table_best_bf16.json")
+                os.makedirs(os.path.dirname(tp), exist_ok=True)
+                json.dump(tab, open(tp, "w"), indent=1)
+                mpad_arg = ["--mpad-table", tp]
         RG.get(a.model, real)                     # fail early on a typo
         tag = f"{real}_N{a.n}"
         if os.path.exists(os.path.join(a.out, "raw", "rows", tag + ".json")) and not a.redo:
@@ -254,7 +269,7 @@ def parent(a):
         slope = a.slope_steps if (a.slope_rungs == "all" or real in a.slope_rungs.split(",")) else ""
         cmd = [sys.executable, os.path.abspath(__file__), "--model", a.model, "--out", os.path.abspath(a.out),
                "--single", real, "--n", str(a.n), "--warmup", str(a.warmup), "--warmup-max", str(a.warmup_max),
-               "--timed", str(a.timed), "--save-actions", str(a.save_actions), "--slope-steps", slope]
+               "--timed", str(a.timed), "--save-actions", str(a.save_actions), "--slope-steps", slope] + mpad_arg
         env = dict(os.environ, TORCH_LOGS="recompiles,graph_breaks",
                    TORCHINDUCTOR_CACHE_DIR=os.path.join(cache_root, real, "inductor"),
                    TRITON_CACHE_DIR=os.path.join(cache_root, real, "triton"))
@@ -336,6 +351,7 @@ def main():
     ap.add_argument("--save-actions", type=int, default=10)
     ap.add_argument("--pause", type=int, default=20, help="seconds between children (memory reclaim, cool-down)")
     ap.add_argument("--redo", action="store_true")
+    ap.add_argument("--mpad-table", default="", help="internal: replay this linear_mpad table instead of tuning")
     ap.add_argument("--merge-only", action="store_true")
     a = ap.parse_args()
     if not a.n:
