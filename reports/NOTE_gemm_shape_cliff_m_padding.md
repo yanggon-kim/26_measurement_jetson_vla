@@ -1,8 +1,9 @@
 # Note for every device agent: cuBLAS picks slow GEMM kernels at some token counts, and zero-padding the rows fixes it
 
 **From:** the Thor agent (branch `thor`), T005, 2026-10-22. **For:** any agent measuring these VLA models on another
-device (Jetson AGX Orin, …), and the research side. **Status:** measured on Thor for π0. π0.5, SmolVLA and GR00T
-are being checked in Thor's T005 search; this note will be updated with their results.
+device (Jetson AGX Orin, …), and the research side. **Status:** measured on Thor for π0 (large gain) and π0.5 (no gain:
+its token count is not in a bad band). SmolVLA and GR00T are being checked in Thor's T005 search; this note will be
+updated with their results.
 
 ## 1. The problem in one paragraph
 cuBLAS / cuBLASLt chooses its GEMM kernel from the problem shape with a built-in heuristic. Its choice does not
@@ -121,6 +122,18 @@ def linear_mpad(roots, run_once, span=256, step=16, min_gain=0.05):
 
 Sources: `results/20261022_E4c_pi0_opt_ladder/`, `results/20261022_E4i_pi0_best_search/`.
 
+**π0.5 (M = 968): applicable, but no gain**, because its shapes already get fast kernels.
+- The tuner padded one shape: q/o (2048×2048), M 968 → 1144, 0.088 → 0.079 ms. That saves 0.3 ms per inference.
+- Timing (`results/20261022_E4i_pi05_best_search/`):
+  - `bf16_both_graphs`: 183.1 ms → `_mpad` 183.9 ms;
+  - `eager_bf16`: 277.4 ms → `_mpad` 289.4 ms. The difference is in the expert, which the padding did not touch
+    (149.0 vs 159.8 ms): run-to-run variation of the eager expert.
+- Actions:
+  - eager: bit-identical;
+  - compiled: relative L2 1.1e-3. Inductor traces the pad / slice and fuses the neighbouring ops differently, so
+    rounding outside the GEMM changes. That is within the 2–3e-3 spread between the ladder's own rungs.
+- **Lesson: the fix pays only where the model's token count falls in a bad band. Measure first.**
+
 ## 6. What another device should do
 The bad M bands depend on the GPU, the cuBLAS version and the shape, so **nothing above transfers as a number**.
 Measure them on your device:
@@ -142,6 +155,6 @@ Measure them on your device:
 ## 7. Open items
 - **π0's down projection** (K 16384 → N 2048) runs at only 37–48 TFLOP/s at every M tested on Thor. Padding M does
   not help it. It has few output tiles for 20 SMs. T006–T008 analyse it.
-- π0.5, SmolVLA and GR00T: `linear_mpad` is part of their T005 search on Thor; results will be added here.
+- SmolVLA and GR00T: `linear_mpad` is part of their T005 search on Thor; results will be added here (π0.5: § 5).
 - Changing M itself (trimming π0's 283 padding tokens, 816 → 533) is a model-input change. It belongs to T014 (E14b),
   not to this fix.
