@@ -1,0 +1,101 @@
+{
+  "date_utc": "2026-10-22T08:45:20Z",
+  "experiment": "GR00T N1.7 expert-time bimodality vs memory-path state",
+  "task": "T004 (follow-up)",
+  "model": "groot_n17",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B (+ nvidia/Cosmos-Reason2-2B @ 9ce19a19)",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "precision": "eager_fp32 and shipped (one CSV each)",
+  "rung": "n/a",
+  "compile_mode": "none (eager)",
+  "variant": "memory_state_probe() before every iteration",
+  "num_denoise_steps": 4,
+  "action_horizon": 40,
+  "prefix_tokens": 273,
+  "suffix_tokens": 41,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 150,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "98e8329449815273cdd00033060a68223e1aac9d",
+  "command": [
+    "for p in eager_fp32 shipped: cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/groot17/bin/python <repo>/bench/state_vs_latency.py --model groot_n17 --precision $p --iters 150 --out <repo>/results/20261022_E3_groot_n17_state_vs_latency/state_vs_latency_$p.csv"
+  ],
+  "throttled": "not recorded per iteration (VDD_GPU per iteration in the CSVs)",
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "Repeats in scratch/ were diagnostic and are not kept as results; their counts are quoted in summary.md.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39437",
+    "gpu-thermal": "38750",
+    "cpu-thermal": "39437",
+    "soc012-thermal": "37187",
+    "soc345-thermal": "37468"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/state_vs_latency_eager_fp32.stdout.log",
+      "sha256": "6866df2c80c121e9219fad9776aca606f29068cc8b4b2e1bca32dc012e813d2e",
+      "bytes": 236,
+      "kind": "stdout",
+      "produced_by": "bench/state_vs_latency.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/state_vs_latency_shipped.stdout.log",
+      "sha256": "847f2aff69544cb27a9bee869cee98abd4fbd6c4dd010dfc8f14907f84df3acd",
+      "bytes": 233,
+      "kind": "stdout",
+      "produced_by": "bench/state_vs_latency.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "state_vs_latency_eager_fp32.csv",
+      "sha256": "b5197f4c16d2ac855acc86bcb0a203698361c73afa5c56030aa097d2a963bd1d",
+      "bytes": 17872,
+      "kind": "other",
+      "produced_by": "bench/state_vs_latency.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "state_vs_latency_shipped.csv",
+      "sha256": "62d2942cf535a309dcb23b3315e288651eca6810e42494398ad590f0bcc1cf21",
+      "bytes": 17836,
+      "kind": "other",
+      "produced_by": "bench/state_vs_latency.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
