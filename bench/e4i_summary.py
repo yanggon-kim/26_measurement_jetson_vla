@@ -10,7 +10,10 @@ Eligibility for best_bf16 (rules fixed before choosing; every exclusion is liste
   1. measured at the model's default N, with the per-part split (regions on: vision, vlm_prefix, ae_total present);
   2. no graph compiled during the timed loop; not throttled; the timed block started in the normal memory-path state;
   3. BF16 weights: fp32 parameters <= 1 % of all parameter bytes (the rest stays fp32 for a stated reason);
-  4. actions finite, and relative L2 vs eager_fp32 <= 1e-2 on the 10 seeded inferences (equivalence.csv).
+  4. actions finite, and relative L2 vs eager_fp32 (10 seeded inferences, equivalence.csv) <= max(1e-2, 1.5 x the
+     model's compile-only reference): `ae_graphs` measured in the search directory (GR00T: with fallback_random, so
+     seeded noise matches eager; the ladder's compiled GR00T rows drew different noise) or in the ladder (LeRobot).
+     Fixed before the search results were read; plain compilation alone sets each model's numerical spread.
 best_bf16 = the eligible row with the lowest e2e median. Reported beside it: the fastest row overall (any rung, including
 e2e-only whole-policy compiles), the fastest eligible row on LeRobot's own code path (no attention-backend switch), and
 the eligible row with the largest action-expert share.
@@ -92,12 +95,13 @@ def eligibility(r):
     if r.get("actions_finite") is False:
         why.append("non-finite actions")
     e = r["_eq"].get("eager_fp32")
+    bound = r.get("_bound", REL_L2_MAX)
     if e is None:
         why.append("no equivalence row vs eager_fp32")
     else:
         try:
-            if float(e["rel_l2"]) > REL_L2_MAX:
-                why.append(f"actions differ from eager_fp32 by rel L2 {float(e['rel_l2']):.2e} > {REL_L2_MAX:.0e}")
+            if float(e["rel_l2"]) > bound:
+                why.append(f"actions differ from eager_fp32 by rel L2 {float(e['rel_l2']):.2e} > bound {bound:.2e}")
         except ValueError:
             why.append(f"equivalence: {e['max_abs']}")
     return why
@@ -154,7 +158,12 @@ def main():
         rows = rows_for(m)
         if not rows:
             continue
+        refs = [r for r in rows if r["rung"] == "ae_graphs" and r["status"] == "measured" and r["_eq"].get("eager_fp32")
+                and (not m.startswith("groot") or "_E4i_" in r["_dir"])]
+        ref_l2 = float(refs[-1]["_eq"]["eager_fp32"]["rel_l2"]) if refs else 0.0
+        bound = max(REL_L2_MAX, 1.5 * ref_l2)
         for r in rows:
+            r["_bound"] = bound
             r["_why"] = eligibility(r)
         elig = [r for r in rows if not r["_why"]]
         meas = [r for r in rows if r["status"] == "measured"]
@@ -178,7 +187,8 @@ def main():
                 "label": d.get("label"), "compiled": d.get("compiled"), "preps": d.get("preps"),
                 "precision_flags": d.get("precision_flags"), "autotune": d.get("autotune") or "off",
                 "regions": d.get("regions"), "mpad_table": best.get("mpad_table", "n/a"),
-                "e2e_ms": part(best, "e2e_wall"), "reproduce": f"bench/opt_ladder.py --model {m} --rung best_bf16 --out <dir>",
+                "e2e_ms": part(best, "e2e_wall"), "equivalence_bound_rel_l2": bound,
+                "compile_reference": refs[-1]["_dir"] + ":ae_graphs" if refs else "none", "reproduce": f"bench/opt_ladder.py --model {m} --rung best_bf16 --out <dir>",
                 "fastest_overall": {"rung": fastest_any["rung"], "e2e_ms": part(fastest_any, "e2e_wall"),
                                     "dir": fastest_any["_dir"], "eligible": not fastest_any["_why"],
                                     "why_not": "; ".join(fastest_any["_why"])},
