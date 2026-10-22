@@ -1,0 +1,158 @@
+{
+  "date_utc": "2026-10-22T04:06:20Z",
+  "experiment": "E0 addenda (T001 review fixes)",
+  "task": "T001 steps 1, 4g, 7, 8",
+  "model": "groot_n16, groot_n15 (token counts); no model for the device facts",
+  "model_repo": "Isaac-GR00T (https://github.com/NVIDIA/Isaac-GR00T)",
+  "model_commit": {
+    "groot_n16": "9b37aa1ce69c73c6d165233fa88128283bba4508",
+    "groot_n15": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96"
+  },
+  "checkpoint": {
+    "groot_n16": "nvidia/GR00T-N1.6-3B",
+    "groot_n15": "nvidia/GR00T-N1.5-3B",
+    "hashes": "checkpoint_files.csv covers all six checkpoints and SmolVLM2"
+  },
+  "checkpoint_revision": {
+    "groot_n16": "d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+    "groot_n15": "869830fc749c35f34771aa5209f923ac57e4564e"
+  },
+  "precision": "GR00T shipped bf16",
+  "rung": "n/a: not a ladder rung",
+  "compile_mode": "eager",
+  "variant": "token count via forward pre-hooks",
+  "num_denoise_steps": 4,
+  "action_horizon": "16",
+  "prefix_tokens": {
+    "groot_n16": 284,
+    "groot_n15": 814
+  },
+  "suffix_tokens": {
+    "groot_n16": 51,
+    "groot_n15": 49
+  },
+  "batch": 1,
+  "n_warmup": 0,
+  "n_timed": "n/a: one get_action, not timed",
+  "hw_constants_source": "n/a: T003 has not run",
+  "bench_commit": "431fed7d06aa1170476f8afd3dbae9e7590b0df2",
+  "command": [
+    "cd /tmp; HF_HUB_OFFLINE=1 ~/venvs/groot{16,15}/bin/python <repo>/bench/groot_tokens.py --version groot_n{16,15} --out <repo>/results/20261022_E0_addenda",
+    "torch.cuda.get_device_properties(0) -> raw/gpu_properties.json",
+    "cat /sys/class/devfreq/{gpu-gpc-0,gpu-nvd-0}/{available_frequencies,min_freq,max_freq,cur_freq,governor} -> raw/devfreq.txt",
+    "apt-cache policy nvidia-jetpack nvidia-l4t-core cuda-toolkit-13-0 -> raw/apt_jetpack.txt",
+    "thermal zones, hwmon names, pwm1, df -h / -> raw/thermal_fan_disk.txt",
+    "cuobjdump --list-text <venv>/nvidia/cu13/lib/libcublasLt.so.13 -> raw/cublaslt_list_text.txt (+ sm_ string counts)",
+    "sha256 of every file of the pinned HF snapshots -> checkpoint_files.csv"
+  ],
+  "throttled": "n/a: no timing",
+  "notes": "Filled after the independent T001 review: values that env/README.md cited without a saved file. devfreq was read with jetson_clocks applied (min = max); available_frequencies does not depend on the lock.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "37843",
+    "gpu-thermal": "37781",
+    "cpu-thermal": "37843",
+    "soc012-thermal": "36500",
+    "soc345-thermal": "36562"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/apt_jetpack.txt",
+      "sha256": "646934ac3b61c895264f456c5744c1ee724a392cb58a8b0ee12c7a6a811f8225",
+      "bytes": 1149,
+      "kind": "other",
+      "produced_by": "apt-cache",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cublaslt_list_text.txt.zst",
+      "sha256": "c4b8cf0563fb969b92a625aa6d093d9703589e15cdffe87e84ef023142a91290",
+      "bytes": 166449,
+      "kind": "other",
+      "produced_by": "cuobjdump --list-text",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_addenda/raw/cublaslt_list_text.txt -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_addenda/raw/cublaslt_list_text.txt.zst"
+      },
+      "original": {
+        "name": "cublaslt_list_text.txt",
+        "sha256": "59f909fa430330c2ea7962b40d95f8a6ed02a17b89badc13773e3723d8311cc2",
+        "bytes": 8394005
+      }
+    },
+    {
+      "path": "raw/cublaslt_list_text_sm_strings.txt",
+      "sha256": "38b1fb7e3ef1633b1c28c51279c0a0f314bc652f9733ffdaf4d4510ebdb6e5be",
+      "bytes": 192,
+      "kind": "other",
+      "produced_by": "cuobjdump --list-text",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/devfreq.txt",
+      "sha256": "5eae5af3d533284d9d0aa80f0eb7ca83fc92021df0cd4a8a8f7687599b481090",
+      "bytes": 4199,
+      "kind": "other",
+      "produced_by": "cat",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gpu_properties.json",
+      "sha256": "3fc911dd68847891f15efc158e43ce12ae2bcff61fe5b8ee96871708a54bc0df",
+      "bytes": 683,
+      "kind": "other",
+      "produced_by": "torch",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/thermal_fan_disk.txt",
+      "sha256": "9760db7186d12ac97b4cc9241b0dcb4e93c0b2dd86c963d23f85f7cfcc53c0fd",
+      "bytes": 709,
+      "kind": "other",
+      "produced_by": "cat/grep/df",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/tokens_groot_n15.stdout.log",
+      "sha256": "2f723dd7cb839cf6a0f4577590d6a36a5093dd726d52562ed2ed75bbe00886a9",
+      "bytes": 2672,
+      "kind": "stdout",
+      "produced_by": "bench/groot_tokens.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/tokens_groot_n16.stdout.log",
+      "sha256": "7eb609a7657782f58f492f6b90f51a729002ae53423c7036064191fd83b50d14",
+      "bytes": 11220,
+      "kind": "stdout",
+      "produced_by": "bench/groot_tokens.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
