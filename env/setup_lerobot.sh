@@ -80,3 +80,8 @@ rm -f "$CONSTRAINTS"
 echo "LeRobot environment ready: $VENV  (pins: env/requirements_lerobot.txt)"
 echo "PaliGemma tokenizer: ungated copy ~/models/paligemma_tokenizer/tokenizer.model"
 echo "  sha256 8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6 (env/README.md)"
+
+# T005 E4i (2026-10-22): flash-attn for the attention-backend candidates (bench/e4i_candidates.py). The same prebuilt
+# Jetson AI Lab SBSA cu130 wheel the GR00T venvs use; --no-deps keeps the PyTorch.org torch build.
+uv pip install -q --python "$HOME/venvs/lerobot/bin/python" --no-deps \
+    --index-url "https://pypi.jetson-ai-lab.io/sbsa/cu130/+simple" "flash-attn==2.8.4"
