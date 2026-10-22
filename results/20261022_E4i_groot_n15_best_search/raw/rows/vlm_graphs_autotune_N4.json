@@ -1,0 +1,306 @@
+{
+ "model": "groot_n15",
+ "rung": "vlm_graphs_autotune",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "012661b",
+  "files_sha256": {
+   "opt_ladder.py": "9e23fd6d939a6868",
+   "rungs.py": "9acdfca64ffffc8b",
+   "e4i_candidates.py": "ed2380c56e88b4af",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-22T20:52:09Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4422,
+   "oc3": 128105
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "42031",
+   "gpu-thermal": "42031",
+   "cpu-thermal": "40812",
+   "soc012-thermal": "40468",
+   "soc345-thermal": "40937"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49
+ },
+ "rung_desc": {
+  "rung": "vlm_graphs_autotune",
+  "label": "GR00T E4i candidate: ae@reduce-overhead, vis@max-autotune-no-cudagraphs, llm@reduce-overhead + forced GEMM autotuning",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [],
+  "compiled": [
+   "FlowmatchingActionHead.get_action@reduce-overhead+clone",
+   "Eagle2_5_VLForConditionalGeneration.extract_feature@max-autotune-no-cudagraphs",
+   "Qwen3Model.forward@reduce-overhead+clone"
+  ],
+  "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.695321838837117,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 5448327040
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 12.498064041137695,
+     "mean_ms": 12.502065896987915,
+     "p5_ms": 12.386015892028809,
+     "p95_ms": 12.6430082321167,
+     "min_ms": 12.364768028259277,
+     "max_ms": 13.538080215454102,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 22.02015972137451,
+     "mean_ms": 22.039560279846192,
+     "p5_ms": 21.898303985595703,
+     "p95_ms": 22.16739273071289,
+     "min_ms": 21.880159378051758,
+     "max_ms": 23.160032272338867,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 20.313599586486816,
+     "mean_ms": 20.34581310272217,
+     "p5_ms": 19.98543930053711,
+     "p95_ms": 20.867040634155273,
+     "min_ms": 19.74163246154785,
+     "max_ms": 21.5677433013916,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 55.305503845214844,
+     "mean_ms": 55.31291660308838,
+     "p5_ms": 54.86729431152344,
+     "p95_ms": 55.90377426147461,
+     "min_ms": 54.67987060546875,
+     "max_ms": 56.52867126464844,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 35.47028923034668,
+     "mean_ms": 35.42388900756836,
+     "p5_ms": 35.28860855102539,
+     "p95_ms": 35.602176666259766,
+     "min_ms": 34.3474235534668,
+     "max_ms": 35.77939224243164,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 92.17951965332031,
+     "mean_ms": 92.09587272644043,
+     "p5_ms": 91.32608032226562,
+     "p95_ms": 92.79523468017578,
+     "min_ms": 90.31155395507812,
+     "max_ms": 94.79971313476562,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 108.04160754196346,
+     "mean_ms": 105.55161047261208,
+     "p5_ms": 99.45320803672075,
+     "p95_ms": 109.31554390117526,
+     "min_ms": 98.55322726070881,
+     "max_ms": 112.8513989970088,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 15.761729968711734,
+     "mean_ms": 13.455737746171653,
+     "p5_ms": 8.140613477677107,
+     "p95_ms": 17.095008734613657,
+     "min_ms": 8.120707467198372,
+     "max_ms": 18.8321112729609,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 38.13330706208944,
+     "mean_ms": 35.58609528820962,
+     "p5_ms": 29.8283522836864,
+     "p95_ms": 39.267542611807585,
+     "min_ms": 29.4752368144691,
+     "max_ms": 41.52721777930856,
+     "n": 100
+    }
+   },
+   "first_call_s": 180.10749949607998,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 5940384768,
+   "control_frequency_hz": 9.465507874510264,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 49.3,
+    "state": "normal",
+    "gpu_C": "49750"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.1,
+    "state": "normal",
+    "gpu_C": "51906"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  112
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 3577,
+   "unique_graphs": 12
+  },
+  "inductor": {
+   "pattern_matcher_count": 2416,
+   "pattern_matcher_nodes": 2881,
+   "fxgraph_cache_miss": 11,
+   "async_compile_cache_miss": 820,
+   "generated_module_cache_miss": 520,
+   "generated_module_cache_hit": 11881,
+   "select_algorithm_precompile": 30,
+   "select_algorithm_num_precompiles": 531,
+   "select_algorithm_autotune": 30,
+   "benchmarking.InductorBenchmarker.benchmark": 314,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 904,
+   "extern_calls": 450,
+   "async_compile_cache_hit": 160,
+   "triton_bundler_save_kernel": 7624,
+   "triton_bundler_save_static_autotuner": 8,
+   "coordesc_tuning_bench": 49,
+   "pad_mm_bench": 12,
+   "triton_bundler_load_static_autotuner": 1,
+   "fxgraph_cache_hit": 1,
+   "cudagraph_recorded_non_static_inputs": 5
+  },
+  "graph_break": {
+   "Data-dependent branching\n  Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.\n  Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.\n  Hint: Use `torch.cond` to express dynamic control flow.\n\n  Developer debug context: attempted to jump with TensorVariable()\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html": 4
+  }
+ },
+ "mpad_table": "n/a: linear_mpad not applied",
+ "wall_s": 217.109290599823
+}
