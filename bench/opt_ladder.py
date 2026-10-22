@@ -214,6 +214,8 @@ def child(a):
             np.savez(os.path.join(out, "raw", "actions", f"{tag}.npz"), actions=A, seeds=np.arange(5000, 5000 + a.save_actions))
             row["actions_finite"] = bool(np.isfinite(A).all())
             row["actions_shape"] = list(A.shape)
+        row["inductor_counters"] = {k: dict(v) for k, v in counters.items() if k in ("inductor", "stats", "graph_break")}
+        row["mpad_table"] = getattr(ad, "mpad_table", "n/a: linear_mpad not applied")
         if undo:
             undo()
         row["status"] = "measured"

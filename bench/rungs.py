@@ -179,14 +179,15 @@ def prep_linear_mpad(adapter, scope="lm_expert", span=256, step=16, reps=20):
     import statistics
     import torch.nn.functional as F
     policy = adapter.policy
-    if adapter.family != "lerobot":
-        raise NotApplicable("linear_mpad is implemented for the LeRobot models")
-    pg = getattr(policy.model, adapter.spec.container)
-    if scope == "all":
+    if adapter.family == "groot":
+        roots = [policy.model.backbone, policy.model.action_head]
+    elif scope == "all":
         roots = [policy.model]
-    elif hasattr(pg, "paligemma"):
+    elif hasattr(getattr(policy.model, adapter.spec.container), "paligemma"):
+        pg = getattr(policy.model, adapter.spec.container)
         roots = [pg.paligemma.model.language_model, pg.gemma_expert]
     else:
+        pg = getattr(policy.model, adapter.spec.container)
         roots = [pg.vlm.model.text_model, pg.lm_expert]
     lins = {id(m): m for r in roots for m in r.modules() if isinstance(m, torch.nn.Linear)}
     seen, hooks = {}, []
@@ -240,6 +241,7 @@ def prep_linear_mpad(adapter, scope="lm_expert", span=256, step=16, reps=20):
     adapter.mpad_table = {f"M={k[0]} K={k[1]} N={k[2]} {k[3]}": {"pad_to": v[0], "ms_at_M": round(v[1], 4),
                                                                   "ms_at_pad": round(v[2], 4)} for k, v in best.items()}
     pads = {k: v for k, v in adapter.mpad_table.items() if v["pad_to"] != int(k.split()[0][2:])}
+    scope = "backbone+action_head" if adapter.family == "groot" else scope
     return f"linear_mpad({scope}): {n_wrapped} Linear modules padded; shapes padded: {pads}"
 
 
@@ -370,9 +372,26 @@ def apply_rung(adapter, key):
             and "static_posids" not in preps:
         preps.insert(0, "static_posids")       # SmolVLA's vision cannot be captured without it (Orin finding)
     for p in preps:
-        desc["preps"].append(PREPS[p](adapter) if p in ADAPTER_PREPS else PREPS[p](adapter.policy))
+        if p.startswith("attn:"):
+            import e4i_candidates as EC
+            _, pre, exp = p.split(":")
+            desc["preps"].append(EC.prep_attn(adapter, pre, exp))
+        elif p == "no_attn_fusion":
+            import e4i_candidates as EC
+            desc["preps"].append(EC.prep_no_attn_fusion(adapter))
+        elif p == "capture_scalar":
+            import torch._dynamo.config as DC
+            DC.capture_scalar_outputs = True
+            desc["preps"].append("torch._dynamo.config.capture_scalar_outputs = True")
+        else:
+            desc["preps"].append(PREPS[p](adapter) if p in ADAPTER_PREPS else PREPS[p](adapter.policy))
     if r["autotune"]:
         desc["autotune"] = force_gemm_autotune()
+    if adapter.family == "groot" and any(p == "ae" for p, _, _ in r["targets"]):
+        import torch._inductor.config as IC
+        IC.fallback_random = True
+        desc["fallback_random"] = ("torch._inductor.config.fallback_random = True: the compiled action head draws its "
+                                   "seeded noise from aten's RNG, as eager does (equivalence check)")
     t0 = time.perf_counter()
     for part, mode, clone in r["targets"]:
         obj, attr = owner(adapter, part)
@@ -397,3 +416,13 @@ EXTRA["lerobot"].update({r["key"]: r for r in [
        [("ae", G, False), ("vis", G, True), ("vlm", G, True)], ["bf16_both", "linear_mpad"],
        note="labelled variant: changes no math (GEMM rows are independent)"),
 ]})
+
+
+
+def _register_e4i():
+    import e4i_candidates as EC
+    EXTRA["lerobot"].update({r["key"]: r for r in EC.candidates()})
+    EXTRA["groot"].update({r["key"]: r for r in EC.groot_candidates()})
+
+
+_register_e4i()
