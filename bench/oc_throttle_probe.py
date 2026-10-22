@@ -3,7 +3,8 @@
 The soctherm OC event counters (hwmon `soctherm_oc`, ocN_event_cnt, ocN_throt_en) rose during the T002 clock probe
 while devfreq cur_freq stayed at the locked 1575 MHz. devfreq reports the requested clock, not a hardware slow-down,
 so this measures what the GPU actually delivers: a fixed bf16 GEMM issued in 0.5 s slices; per slice the achieved
-TFLOP/s (CUDA events), the OC counter deltas, devfreq cur_freq and the VIN / VDD_GPU power (sysfs).
+TFLOP/s (CUDA events), the OC counter deltas, devfreq cur_freq, the VIN / VDD_GPU power (sysfs) and the gpu / tj
+temperatures (thermal zones), so a drift can be attributed to current limiting or to temperature.
 
 python bench/oc_throttle_probe.py --seconds 20 --n 4096 --out results/<run>/oc_throttle_probe.csv
 """
@@ -27,6 +28,16 @@ def hw(name):
 def rd(p):
     with open(p) as f:
         return f.read().strip()
+
+
+def zone_c(name):
+    for z in glob.glob("/sys/class/thermal/thermal_zone*"):
+        if rd(f"{z}/type") == name:
+            try:
+                return int(rd(f"{z}/temp")) / 1e3
+            except (OSError, ValueError):
+                return float("nan")
+    return float("nan")
 
 
 def main():
@@ -68,6 +79,8 @@ def main():
                "devfreq_hz": int(rd("/sys/class/devfreq/gpu-gpc-0/cur_freq")),
                "vin_W": round(int(rd(f"{ina238}/power1_input")) / 1e6, 2),
                "vdd_gpu_W": round(int(rd(f"{ina3221}/in{gpu_ch}_input")) * int(rd(f"{ina3221}/curr{gpu_ch}_input")) / 1e6, 2)}
+        for z in ("gpu-thermal", "tj-thermal"):
+            row[z.replace("-thermal", "_C")] = round(zone_c(z), 2)
         for f, c, p in zip(ocf, cur, prev):
             row[os.path.basename(f).replace("_event_cnt", "_delta")] = c - p
         prev = cur
