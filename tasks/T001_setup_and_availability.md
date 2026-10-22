@@ -132,10 +132,10 @@ clean), after step 8, and at the close.
 ## Status (appended by the on-device agent)
 
 status: claimed 2026-10-22
-status: done-partial 2026-10-22 — missing: GR00T N1.7's smoke test at its pinned configuration (its backbone
-`nvidia/Cosmos-Reason2-2B` is gated; H2 in STATUS.md / PROGRESS.md). Everything else in the acceptance list is met.
+status: done 2026-10-22 — every acceptance item met. (Closed as done-partial first; GR00T N1.7's smoke test waited for
+H2 — gated backbone `nvidia/Cosmos-Reason2-2B` — which the owner resolved the same day; N1.7 passes, commit 181ee2d.)
 - result directories: `results/20261022_E0_toolcheck/`, `results/20261022_E0_secrets_test/`,
-  `results/20261022_E0_smoke_models/`, `results/20261022_E0_addenda/` (review fixes)
+  `results/20261022_E0_smoke_models/`, `results/20261022_E0_addenda/` (review fixes), `results/20261022_E0_smoke_groot_n17/` (after H2)
 - report: `reports/E0_setup.md`; environment: `env/README.md` (matrix, facts, rail table, flag spellings)
 - bench commits: 1fad8d5 (tools), 93a0d80 (LeRobot harness), 021128d (GR00T harness), 431fed7 (groot_tokens, meta fix);
   closing result commit d49b72d

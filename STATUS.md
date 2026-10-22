@@ -4,8 +4,7 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-T001 closed as done-partial (2026-10-22, commit d49b72d): everything except GR00T N1.7's pinned smoke test,
-which waits for H2. Next: T002 (platform record).
+T001 done (2026-10-22, commit 181ee2d): all six models pass the smoke test. Next: T002 (platform record).
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -13,22 +12,14 @@ runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /
 install anything.
 
 ## Needs the human
-- [ ] H2 Hugging Face login + the Cosmos-Reason2 licence — why: GR00T N1.7's checkpoint loads its VLM backbone
-  config / processor from `nvidia/Cosmos-Reason2-2B`, which is gated (`gated: auto`, HTTP 401 without a token).
-  Blocks: the N1.7 smoke test (T001 step 8) and every N1.7 row of T004–T015. The other five models do not need it.
-  Check after: `~/venvs/tools/bin/hf auth whoami && HF_HUB_OFFLINE=0 ~/venvs/tools/bin/hf download nvidia/Cosmos-Reason2-2B config.json --local-dir /tmp/cosmos_check`
-  ```text
-  1. In a browser, signed in to Hugging Face: open https://huggingface.co/nvidia/Cosmos-Reason2-2B and accept the licence.
-  2. On the Thor, in a terminal (the token is stored in ~/.cache/huggingface/token, outside the repository):
-     ~/venvs/tools/bin/hf auth login
-  ```
-  (The agent downloads the repo itself afterwards and scans every raw file for the token, protocol §3.5.)
+*(none open. H2 — Hugging Face login + Cosmos-Reason2 licence — resolved 2026-10-22, see the log in `STATUS.md`.)*
 
 ## Questions for the research side
 - 2026-10-22 — **Pin a revision for `nvidia/Cosmos-Reason2-2B`?** `docs/00_context.md` pins the GR00T N1.7
   checkpoint but not the backbone repo its config names (`model_name: nvidia/Cosmos-Reason2-2B`), which
-  `Gr00tPolicy` loads at run time. Conservative reading until answered: download `main` once, record its commit in
-  `env/README.md` and every N1.7 `meta.json`, and load only that snapshot.
+  `Gr00tPolicy` loads at run time. Done meanwhile (conservative reading): `main` downloaded once on 2026-10-22 =
+  **9ce19a195e423419c349abfc86fd07178b230561**, recorded in `env/README.md` and every N1.7 `meta.json`; only that
+  snapshot is used. Please confirm or name another revision.
 - 2026-10-22 — **The GPU is shared.** Other users run long sessions on this Thor (one is another Claude session,
   "[thor] 2bit kernel"). VDD_GPU swung 6.7–30.8 W (10 s sysfs sample; 36.7 W instantaneous in tegrastats) with nothing of ours running. On Thor `nvidia-smi` lists no
   processes, so gate item 5 ("no other GPU job") cannot be checked per process. Proposed check before every
@@ -55,3 +46,4 @@ files: `env/tool_help/ncu_query_metrics_chip_gb10b.txt` 919,077 B; `results/2026
 - 2026-10-22 Smoke: π0, π0.5, SmolVLA, GR00T N1.6, N1.5 pass; N1.7 blocked (gated backbone, H2); LIBERO renders.
 - 2026-10-22 Independent review of T001: 14 findings fixed (addenda directory, columns.txt, roofline-section metrics, flags, hashes, GR00T P/S, rail ranges, meta fields).
 - 2026-10-22 T001 closed done-partial (N1.7 smoke waits for H2); docs/00 L2 and docs/05 A8(b) hints corrected in place.
+- 2026-10-22 H2 resolved by the owner (HF login, licence accepted); Cosmos-Reason2-2B @ 9ce19a19 downloaded; N1.7 smoke passes (P 273, S 41); T001 done.

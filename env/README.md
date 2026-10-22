@@ -96,10 +96,10 @@ dies with its docker container. Samples: `results/20261022_E0_toolcheck/raw/powe
 | A10 | ncu permission | toy ncu | unprivileged or root | ERR_NVGPUCTRPERM unprivileged; works as root | ok | `env/rootdo.sh ncu` | — |
 | A11 | power monitor, tegrastats | hwmon, tegrastats | rail table | 4 rails, tegrastats ok | ok | — | — |
 | A12 | clocks, power mode | nvpmodel, jetson_clocks, devfreq, EMC | max-perf mode | MAXN (id 0) current; jetson_clocks works via rootdo | ok | — | — |
-| A13 | Hugging Face | downloads | public; PaliGemma tokenizer ungated route | 6 checkpoints public ✓; ungated tokenizer ✓ (sha256 match); **N1.7's backbone `nvidia/Cosmos-Reason2-2B` gated** | **blocked** (N1.7 only) | ungated tokenizer + local `tokenizer_config.json` (21 valid tokens = Orin's 533 − 512) | **H2** |
+| A13 | Hugging Face | downloads | public; PaliGemma tokenizer ungated route | 6 checkpoints public ✓; ungated tokenizer ✓ (sha256 match); N1.7's backbone `nvidia/Cosmos-Reason2-2B` gated | ok | ungated tokenizer + local `tokenizer_config.json` (21 valid tokens = Orin's 533 − 512); H2 resolved by the owner 2026-10-22 (token in `~/.cache/huggingface/token`, scanned for in every raw file) | H2 (resolved) |
 | A14 | model code | clone + checkout | pinned commits | all five at their pins | ok | — | — |
 | A15 | LIBERO | MUJOCO_GL=egl import + render | renders | renders on the GPU (EGL) | ok | mujoco 2.3.7 built from source; X11 headers via `apt-get download` | — |
-| A16 | one inference per model | smoke | finite actions | π0, π0.5, SmolVLA, N1.6, N1.5 pass; N1.7 blocked by A13 | partial | — | H2 |
+| A16 | one inference per model | smoke | finite actions | all six pass (N1.7 after H2: `results/20261022_E0_smoke_groot_n17/`) | ok | — | — |
 | A17 | nsys secrets | canary test | verdict | NOT CLEAN | ok (verdict recorded) | `.gitignore` unchanged | — |
 
 ## 4. Per model
@@ -109,7 +109,7 @@ dies with its docker container. Samples: `results/20261022_E0_toolcheck/raw/powe
 | π0 | `~/venvs/lerobot` (lerobot 0.4.5 editable, transformers 5.3.0) | lerobot f0d2b37bebddf7e8852cb624712da0ad564601b6 | `lerobot/pi0_libero_finetuned_v044` @ 45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f | pass: P 816 (533 valid), S 51, actions [1, 50, 7] |
 | π0.5 | same | same | `lerobot/pi05_libero_base` @ a217bfd3b14673cf2ce597e69997ab21866438dd (fp32) | pass: P 968 (574), S 50 |
 | SmolVLA | same (+ `HuggingFaceTB/SmolVLM2-500M-Video-Instruct` @ 7b375e1b73b11138ff12fe22c8f2822d8fe03467) | same | `lerobot/smolvla_base` @ d9f33c94a60fb382c90dea2164c96845bd955e28 | pass: P 177 (151), S 50, actions [1, 50, 6] |
-| GR00T N1.7 | `~/venvs/groot17` (transformers 4.57.6, flash-attn 2.8.4) | Isaac-GR00T 376ba890cff8c9de64d71d982772a9c36185fdd7 | `nvidia/GR00T-N1.7-3B` @ 2fc962b973bccdd5d8ce4f67cc63b264d6886495 | **blocked**: gated backbone (H2) |
+| GR00T N1.7 | `~/venvs/groot17` (transformers 4.57.6, flash-attn 2.8.4) | Isaac-GR00T 376ba890cff8c9de64d71d982772a9c36185fdd7 | `nvidia/GR00T-N1.7-3B` @ 2fc962b973bccdd5d8ce4f67cc63b264d6886495 | pass after H2 (`oxe_droid_relative_eef_relative_joint`): P 273, S 41; backbone `nvidia/Cosmos-Reason2-2B` @ 9ce19a195e423419c349abfc86fd07178b230561 (`main` on 2026-10-22, not pinned by the docs) |
 | GR00T N1.6 | `~/venvs/groot16` (transformers 4.51.3, flash-attn 2.8.4) | n1d6 9b37aa1ce69c73c6d165233fa88128283bba4508 | `nvidia/GR00T-N1.6-3B` @ d0814e7ecb19202e7c8468b46098b0b7ef3a6d61 | pass (`robocasa_panda_omron`): P 284, S 51 (`results/20261022_E0_addenda/`) |
 | GR00T N1.5 | `~/venvs/groot15` (own env; torch 2.10 instead of N1.5's 2.5.1/2.8.0, no cu130 build of those) | n1d5 4af2b622892f7dcb5aae5a3fb70bcb02dc217b96 | `nvidia/GR00T-N1.5-3B` @ 869830fc749c35f34771aa5209f923ac57e4564e | pass (`oxe_droid`): P 814, S 49 |
 | LIBERO | `~/venvs/libero` (mujoco 2.3.7, robosuite 1.4.1) | LIBERO 8f1084e3132a39270c3a13ebe37270a43ece2a01 | — | render pass |

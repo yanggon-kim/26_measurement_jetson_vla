@@ -1,7 +1,7 @@
 # E0 setup — T001: stack, tools, access, checkpoints, one inference per model (Jetson AGX Thor, 2026-10-22)
 
 ## Answer
-The Thor is ready to measure for five of the six models; **GR00T N1.7 waits for one human item (H2)**.
+The Thor is ready to measure all six models. (GR00T N1.7 needed one human item, H2: the owner accepted the gated backbone's licence and logged in to Hugging Face the same day.)
 
 | requirement | result | evidence |
 |---|---|---|
@@ -15,11 +15,10 @@ The Thor is ready to measure for five of the six models; **GR00T N1.7 waits for 
 | tensor FLOPs | `sm__ops_path_tensor_*` counts executed (tile-padded) MMA operations; tensor-pipe and TMA/TMEM instruction counters exist | same |
 | nsys binaries | **NOT CLEAN**: they embed other processes' environments (canary + harness token). Never committed | `results/20261022_E0_secrets_test/` |
 | rails | VIN (ina238, module input [ASSUMPTION]), VDD_GPU, VDD_CPU_SOC_MSS, VIN_SYS_5V0 (ina3221); no separate DRAM rail | `env/README.md` §2 |
-| models | π0, π0.5, SmolVLA, GR00T N1.6, N1.5: **pass** (real weights, finite actions, eager and compiled per-step callable); N1.7: **blocked** (gated backbone `nvidia/Cosmos-Reason2-2B`); LIBERO renders | `results/20261022_E0_smoke_models/smoke.csv` |
+| models | all six **pass** (real weights, finite actions, eager and compiled per-step callable); N1.7 after H2 with backbone `nvidia/Cosmos-Reason2-2B` @ 9ce19a19, P 273 / S 41; LIBERO renders | `results/20261022_E0_smoke_models/smoke.csv`, `results/20261022_E0_smoke_groot_n17/` |
 
 Measured: nothing in T001 is a performance result. The smoke and stack-check timings are labelled smoke tests
-(GPU shared with other users). Derived: the toy's analytic bytes and FLOPs (shapes × dtype sizes). Not measured: GR00T
-N1.7 inference (H2). GR00T P and S were read after the review with forward hooks: N1.6 P 284 / S 51,
+(GPU shared with other users). Derived: the toy's analytic bytes and FLOPs (shapes × dtype sizes). GR00T P and S were read after the review with forward hooks: N1.6 P 284 / S 51,
 N1.5 P 814 / S 49 (`results/20261022_E0_addenda/`).
 
 ## Conditions
@@ -52,7 +51,7 @@ N1.5 P 814 / S 49 (`results/20261022_E0_addenda/`).
 6. **GR00T N1.7's backbone is gated.**
    - The environment was verified with a public Qwen3-VL-2B stand-in config (not the pinned configuration): all
      1,031 GR00T parameters came from the checkpoint, and the actions were finite.
-   - Pinned smoke: H2.
+   - Pinned smoke: H2, resolved by the owner the same day; passes (`results/20261022_E0_smoke_groot_n17/`).
 7. **GR00T N1.5 cannot use its own torch pin** (2.5.1 / 2.8.0; no CUDA 13 build exists). It runs on torch 2.10.0+cu130
    in its own environment. flash-attn 2.8.4 comes prebuilt from the Jetson AI Lab SBSA index, so nothing was built.
 8. **nsys leak.** The leak persisted with `--sample=none --cpuctxsw=none` (information only).
@@ -91,12 +90,12 @@ Every command, with its exact flags, is in the `meta.json` of the three result d
 ## Self-review (protocol §11)
 | check | result |
 |---|---|
-| `env/README.md` holds the matrix and every listed fact (or why it is missing) | yes (N1.7 smoke: blocked, H2) |
-| every requirement ok, or missing / blocked with an H-item in both boxes | yes: A13 / A16 partial for N1.7 → H2 in `STATUS.md` and `PROGRESS.md` |
+| `env/README.md` holds the matrix and every listed fact (or why it is missing) | yes |
+| every requirement ok, or missing / blocked with an H-item in both boxes | yes: all ok; H2 (N1.7) was raised in both boxes and resolved |
 | CUDA PyTorch route with `torch.compile` in four modes | yes (route a, with CUDA 13 `ptxas`) |
 | toy nsys and toy ncu ran; `metric_presence.csv` answers the three 4d questions | yes |
 | nsys-binary verdict recorded, `.gitignore` matches | NOT CLEAN; `.gitignore` unchanged |
-| each model has a smoke result | 5 pass, N1.7 blocked with the error and what was tried |
+| each model has a smoke result | all six pass (N1.7 after H2) |
 | `env/setup_*.sh`, `requirements_*.txt`, `INSTALL_LOG.md`, `tool_help/` committed | yes |
 | every number traces to `results/` or a stated command | yes after the review fixes (the addenda directory holds the formerly unsaved facts) |
 | `meta.json` complete, no null, hashes | yes (sha256 / bytes of every committed raw file recomputed by the reviewer) |
