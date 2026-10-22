@@ -1,0 +1,66 @@
+/home/jameskimh/venvs/groot15/lib/python3.12/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`use_fast` is set to `True` but the image processor class does not have a fast version.  Falling back to the slow version.
+Model not found or avail in the huggingface hub. Loading from local path: /home/jameskimh/.cache/huggingface/hub/models--nvidia--GR00T-N1.5-3B/snapshots/869830fc749c35f34771aa5209f923ac57e4564e
+Loading pretrained dual brain from /home/jameskimh/.cache/huggingface/hub/models--nvidia--GR00T-N1.5-3B/snapshots/869830fc749c35f34771aa5209f923ac57e4564e
+Tune backbone vision tower: True
+Tune backbone LLM: False
+Tune action head projector: True
+Tune action head DiT: True
+Model not found or avail in the huggingface hub. Loading from local path: /home/jameskimh/.cache/huggingface/hub/models--nvidia--GR00T-N1.5-3B/snapshots/869830fc749c35f34771aa5209f923ac57e4564e
+Tune backbone llm: False
+Tune backbone visual: True
+Total number of DiT parameters:  550386688
+Total number of SelfAttentionTransformer parameters:  201433088
+Tune action head projector: True
+Tune action head diffusion model: True
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 50.16it/s]
+W1023 00:27:47.711000 1945180 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+/home/jameskimh/venvs/groot15/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3464: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  current_size = base.storage().size()
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.15292799472808838}
+AUTOTUNE addmm(814x2048, 814x2048, 2048x2048)
+strides: [0, 1], [2048, 1], [1, 2048]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.1529 ms 100.0% 
+  addmm 0.1563 ms 97.9% 
+SingleProcess AUTOTUNE benchmarking takes 0.1087 seconds and 0.0004 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.07971200346946716}
+AUTOTUNE addmm(49x1536, 49x1536, 1536x1536)
+strides: [0, 1], [1536, 1], [1, 1536]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0797 ms 100.0% 
+  addmm 0.0860 ms 92.7% 
+SingleProcess AUTOTUNE benchmarking takes 0.0992 seconds and 0.0001 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.13315199315547943}
+AUTOTUNE addmm(814x1536, 814x2048, 2048x1536)
+strides: [0, 1], [2048, 1], [1, 2048]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.1332 ms 100.0% 
+  addmm 0.1381 ms 96.4% 
+SingleProcess AUTOTUNE benchmarking takes 0.1064 seconds and 0.0002 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.06143999844789505}
+AUTOTUNE addmm(49x1024, 49x1536, 1536x1024)
+strides: [0, 1], [1536, 1], [1, 1536]
+dtypes: torch.bfloat16, torch.bfloat16, torch.bfloat16
+  bias_addmm 0.0614 ms 100.0% 
+  addmm 0.0655 ms 93.7% 
+SingleProcess AUTOTUNE benchmarking takes 0.0968 seconds and 0.0002 seconds precompiling for 2 choices
+Tune backbone llm: False
+Tune backbone visual: True
+Tune action head projector: True
+Tune action head diffusion model: True
+ae_compile N=4: e2e 135.20 | vision 19.24 | prefix 31.31 | ae 44.81 | graphs during timed 0 | throttled False | state normal->normal
+V1023 00:29:34.262000 1945180 torch/_dynamo/guards.py:4514] [0/1] [__recompiles] Recompiling function inner in /home/jameskimh/venvs/groot15/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:67
+V1023 00:29:34.262000 1945180 torch/_dynamo/guards.py:4514] [0/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 00:29:34.262000 1945180 torch/_dynamo/guards.py:4514] [0/1] [__recompiles]     - 0/0: fn.__self__.num_inference_timesteps == 4                 # dt = 1.0 / num_steps  # src/Isaac-GR00T-n1d5/gr00t/model/action_head/flow_matching_action_head.py:371 in get_action (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+ae_compile N=2: e2e 115.82 | vision 19.16 | prefix 31.34 | ae 26.15 | graphs during timed 0 | throttled False | state normal->normal
+V1023 00:30:52.340000 1945180 torch/_dynamo/guards.py:4514] [0/2] [__recompiles] Recompiling function inner in /home/jameskimh/venvs/groot15/lib/python3.12/site-packages/torch/_dynamo/external_utils.py:67
+V1023 00:30:52.340000 1945180 torch/_dynamo/guards.py:4514] [0/2] [__recompiles]     triggered by the following guard failure(s):
+V1023 00:30:52.340000 1945180 torch/_dynamo/guards.py:4514] [0/2] [__recompiles]     - 0/1: fn.__self__.num_inference_timesteps == 2                 # dt = 1.0 / num_steps  # src/Isaac-GR00T-n1d5/gr00t/model/action_head/flow_matching_action_head.py:371 in get_action (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+V1023 00:30:52.340000 1945180 torch/_dynamo/guards.py:4514] [0/2] [__recompiles]     - 0/0: fn.__self__.num_inference_timesteps == 4                 # dt = 1.0 / num_steps  # src/Isaac-GR00T-n1d5/gr00t/model/action_head/flow_matching_action_head.py:371 in get_action (HINT: torch.compile considers integer attributes of the nn.Module to be static. If you are observing recompilation, you might want to make this integer dynamic using torch._dynamo.config.allow_unspec_int_on_nn_module = True, or convert this integer into a tensor.)
+ae_compile N=6: e2e 153.87 | vision 19.33 | prefix 31.28 | ae 63.34 | graphs during timed 0 | throttled False | state normal->normal

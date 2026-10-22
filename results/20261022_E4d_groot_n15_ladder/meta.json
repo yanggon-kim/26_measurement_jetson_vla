@@ -1,0 +1,724 @@
+{
+  "date_utc": "2026-10-22T16:16:37Z",
+  "experiment": "E4 Part B optimisation ladder (GR00T, cumulative)",
+  "task": "T005",
+  "model": "groot_n15",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+  "rung": "per row: ae_compile, ae_graphs, all_compile_autotune, eager_fp32, eager_tf32, llm_compile, llm_graphs, vis_compile, vis_graphs, vlm_compile, vlm_graphs",
+  "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+  "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+  "num_denoise_steps": "4 (extra N per rung for the slope: by_N in the row files)",
+  "action_horizon": 16,
+  "prefix_tokens": 814,
+  "suffix_tokens": 49,
+  "batch": 1,
+  "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "de2f681 (bench/rungs.py with linear_mpad added; the ladder rungs' code is unchanged from f5e8f94)",
+  "command": "bash bench/queues/t005_ladders.sh 20261022  (groot_n15: cd /tmp; ~/venvs/groot15/bin/python <repo>/bench/opt_ladder.py --model groot_n15 --out <repo>/results/20261022_E4d_groot_n15_ladder --rungs <11 GR00T rungs> --slope-steps 2,6 --slope-rungs all)",
+  "throttled": {
+    "ae_compile_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "ae_graphs_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "all_compile_autotune_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "eager_fp32_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "eager_tf32_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "llm_compile_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "llm_graphs_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "vis_compile_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "vis_graphs_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "vlm_compile_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    },
+    "vlm_graphs_N4": {
+      "4": false,
+      "2": false,
+      "6": false
+    }
+  },
+  "memory_path_state": {
+    "ae_compile_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "ae_graphs_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "all_compile_autotune_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "eager_fp32_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "eager_tf32_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "llm_compile_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "llm_graphs_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "vis_compile_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "vis_graphs_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "vlm_compile_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    },
+    "vlm_graphs_N4": {
+      "4": "normal->normal",
+      "2": "normal->normal",
+      "6": "normal->normal"
+    }
+  },
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39093",
+    "gpu-thermal": "37718",
+    "cpu-thermal": "39093",
+    "soc012-thermal": "36218",
+    "soc345-thermal": "36656"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "9f3eda5aa7ce772cafb818104a508a356283717ffc2a1ce52c889af8246edc1f",
+      "bytes": 4115,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "11b9038df03723e859b5605c1dbdccd91d6bae162c3e9b92c9b7f17966dcb1a7",
+      "bytes": 81638,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/samples/ae_compile_N2.csv",
+      "sha256": "45f891fcf12a9dafd39549457de93ae5ee0655ebe9d58bb45e2776fa84c7785b",
+      "bytes": 32189,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_compile_N4.csv",
+      "sha256": "723b116534a900f48a95458bf304a8a0901c661bbe4e2e0c95f6e85dbcca6f96",
+      "bytes": 32207,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_compile_N6.csv",
+      "sha256": "5e2f7feb20d570a07e5f73c8270ac7fd0750c3c4812081dce0ff031a81f30830",
+      "bytes": 32157,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_graphs_N2.csv",
+      "sha256": "a8fc7d2139e8c8f420d5646b70459ccc80a9f3bce3787c1f8657366cfc62ca61",
+      "bytes": 32210,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_graphs_N4.csv",
+      "sha256": "adb35e0dcb8317c6b3e6720571e63595f0faa6ce9c6d4688b4f397c9243fae39",
+      "bytes": 32223,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_graphs_N6.csv",
+      "sha256": "5dd6e8df2e496131c68a2a4694aac6e14942d273aeb78e9fb23363578c419d2b",
+      "bytes": 32164,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/all_compile_autotune_N2.csv",
+      "sha256": "45b9a751a24b456a0c7f7ca6201256b005101a586f16e9450668bade4887507d",
+      "bytes": 32114,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/all_compile_autotune_N4.csv",
+      "sha256": "c9d4d00c0b2216d380243a1c733b9cf2f44fd8a225f3520def59bb4c99fec1be",
+      "bytes": 32174,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/all_compile_autotune_N6.csv",
+      "sha256": "222545593b497d3c73ad4a1be30eb64ea020e33ae5b3c9a4488fce0f79781681",
+      "bytes": 32336,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_fp32_N2.csv",
+      "sha256": "4b60756d633efad095c4eabe0f07b4ca95f549efa5e7d8966862265db28919a9",
+      "bytes": 55748,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_fp32_N4.csv",
+      "sha256": "2a1ae69c41bd19183b3222965313f847bd4063b4938ea45ab06453dc13442007",
+      "bytes": 79064,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_fp32_N6.csv",
+      "sha256": "4322efdb09f316a37a8a9d923b4daa643ce1d551b1cebb8f8523588ff5dcf9fe",
+      "bytes": 102463,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_tf32_N2.csv",
+      "sha256": "b7e5bd6db19d4d36d8998716ba4b4f49a3d815a372115deeb63fcd8dbb218f89",
+      "bytes": 55684,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_tf32_N4.csv",
+      "sha256": "2b3b9280ed055a5bbdbc38768be600a53e10bd91ccfca2a28796a2151638fcc8",
+      "bytes": 79109,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_tf32_N6.csv",
+      "sha256": "7383599eb1d2f914d5103562acbc9f514a3a2a7071ff5daf2feaa551a6f4afc9",
+      "bytes": 102399,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_compile_N2.csv",
+      "sha256": "4b1d724bcad57fb76636cb7f2200c6cba213514cab03d3ee8da6b81485af133b",
+      "bytes": 32244,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_compile_N4.csv",
+      "sha256": "d87e905c5627098d5b89a4d8577ad3cf895228c9a299486132ed0e7174bf1512",
+      "bytes": 32265,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_compile_N6.csv",
+      "sha256": "8715d59a07ee9ae7b66789a3dc9336218ea403e96eccb895045ca632ba27fea0",
+      "bytes": 32216,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_graphs_N2.csv",
+      "sha256": "e24042ffc9c385e4efd0cae05fb01dc722cf93a28eba2cf3bf5d9de4c1dc17cb",
+      "bytes": 32203,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_graphs_N4.csv",
+      "sha256": "2d1a1c163fad59320b470642cca0fefa0b53754070154234c91f291e4c0ca479",
+      "bytes": 32284,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/llm_graphs_N6.csv",
+      "sha256": "c8502512b77d1b304c967b4492a7d731efbd5736abcb6a807374b18912fb3f96",
+      "bytes": 32191,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vis_compile_N2.csv",
+      "sha256": "8fab4652e7f191fe219836d91dd123f80634052e6a7a5cd1ef342f445cef1b2e",
+      "bytes": 32158,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vis_compile_N4.csv",
+      "sha256": "faba4d252b08025c8c5c1680a143e7b6da4a9454ca41a170de2e7ba48cd3d854",
+      "bytes": 32204,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vis_compile_N6.csv",
+      "sha256": "d8e83e21c62510a180d2c73a6ebbfc3404618c664e096d4d51556bca6d331748",
+      "bytes": 32172,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vis_graphs_N2.csv",
+      "sha256": "b04835c797daffc97ae3639f372a06602949ad599737da33a5284f12d23117da",
+      "bytes": 32143,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vis_graphs_N4.csv",
+      "sha256": "8a2d80a6563134511e7f786611e9055181614974bb3b4558d90ce1ea5ba9a4ff",
+      "bytes": 32229,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vis_graphs_N6.csv",
+      "sha256": "d3e4e324d6836c886ba45fa4767333949b244f2a8807dd990b1010fedb1c546a",
+      "bytes": 32134,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vlm_compile_N2.csv",
+      "sha256": "877b986980435e9c74ebdae9a09b5fd58733ded6423fb8075267f0747db3aa2d",
+      "bytes": 32225,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vlm_compile_N4.csv",
+      "sha256": "e6d2d904286a5d334631b1e78ca2ff19beb305a9bd184b98deb4392979643de8",
+      "bytes": 32323,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vlm_compile_N6.csv",
+      "sha256": "df82d81a0675a2e5e59eb4deed375eb632e55aa86335547b53aa63f3b04203a7",
+      "bytes": 32274,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vlm_graphs_N2.csv",
+      "sha256": "df4914603972ee7ff5211f1a27581d1db95c6787e7ed4fa007229b4dabdef25a",
+      "bytes": 32240,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vlm_graphs_N4.csv",
+      "sha256": "f358e08c1a40a82be516a9bf2caeccd1410448473c0c0617d1f6c0c5b192d8cb",
+      "bytes": 32328,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/vlm_graphs_N6.csv",
+      "sha256": "4461a7fcb0f138c4ca205825a40b9f2db14c03b560a3d3ff413405d2050f5adb",
+      "bytes": 32253,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/ae_compile_N4.npz",
+      "sha256": "3886185ae5c527ebd5890ce9b6f28592f8557c4f68fd6ecfe25350c5cea2d12d",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/ae_graphs_N4.npz",
+      "sha256": "911451cb3f93d2181b1823adf3a736844d6514f61b20c011bd8c016aa24c9a1f",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/all_compile_autotune_N4.npz",
+      "sha256": "70c90bcae102d62e41631975944b89271621b9e919d48fe22f8eb78e1cdfecd5",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/eager_fp32_N4.npz",
+      "sha256": "2c3d93c15599d53ec549c7877e81cdc97b1b3ed6d4e05089483968bcee57e9bd",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/eager_tf32_N4.npz",
+      "sha256": "2c3d93c15599d53ec549c7877e81cdc97b1b3ed6d4e05089483968bcee57e9bd",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/llm_compile_N4.npz",
+      "sha256": "d873c3809cb14056fda732807143e73a7fdd1592e71591ab2f28c5be51a93770",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/llm_graphs_N4.npz",
+      "sha256": "404bb7500e9c16598bd0b81188ee7f8cf0abf00174f29f015600d436805acc73",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/vis_compile_N4.npz",
+      "sha256": "87d93c4500fedadbd3f0cb36985dff00ed8456d8bd676f91d2b00b58fbb2131b",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/vis_graphs_N4.npz",
+      "sha256": "d7850b0c02db4d6d89a7639e9702c30049005c5c3d4fa2793b8fefd517a75532",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/vlm_compile_N4.npz",
+      "sha256": "6314003b4d3e614b1d050ff02ef3c8644db18967f3d904feb80b029b3a674363",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/vlm_graphs_N4.npz",
+      "sha256": "d8e389238dcf3c05c4e0124c36c886a149ea8c64f62684d347f355b0a5c39bb5",
+      "bytes": 5070,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/ae_compile_N4.json",
+      "sha256": "1bf8db0d761c6f5aeef8ab0bfad8d8498d959289a6a101c4773dc0d09cc63bba",
+      "bytes": 11869,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/ae_graphs_N4.json",
+      "sha256": "850d28a2c5a1236a2e960341c0242543946dd768373f5a3cf950944121edde9a",
+      "bytes": 11874,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/all_compile_autotune_N4.json",
+      "sha256": "cf8219e912b8f3d8bdd520ce7ff56c2bd88f4594d2397925022f9b10a0026296",
+      "bytes": 12186,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/eager_fp32_N4.json",
+      "sha256": "05d4d2bcc8ebd5ec542ab5fa922b0b82c5f0a874a00677a87245d29c6cbf5dac",
+      "bytes": 20978,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/eager_tf32_N4.json",
+      "sha256": "f9b79be0f4afd74181caa74a9d58adf563a1535c593615a0c735e09c779e1a35",
+      "bytes": 21049,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/llm_compile_N4.json",
+      "sha256": "8b92f671f69fd0cdb39158e9a9d72cb832ce037b07f85e50fde94e627ae8a276",
+      "bytes": 12011,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/llm_graphs_N4.json",
+      "sha256": "12d6f1ceaeb4b12e2fa03d630350404b054d82ad23c31fff5575817d7480bfcc",
+      "bytes": 11960,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vis_compile_N4.json",
+      "sha256": "20654b02953fc944e5f9e39619a1b91f3045e3e89d695b18f44886e10a1868ca",
+      "bytes": 11935,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vis_graphs_N4.json",
+      "sha256": "9f36b46bb4f538a278299af6970b21b84d12a7a1a61199b15679d300d6c80a5e",
+      "bytes": 11930,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vlm_compile_N4.json",
+      "sha256": "1a8ea4238c78eb1c2c372905c9324d334be1d14f473bd55b7ebe0ca344f0f718",
+      "bytes": 12062,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/vlm_graphs_N4.json",
+      "sha256": "47200de7da1cfffb8a87441c7eca71fad2cd834c69f7bdea10bf48aedc9e1fe2",
+      "bytes": 12046,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/ae_compile_N4.log",
+      "sha256": "75f06d455fb3283f01de8fe4d5122802888c5eb4f9783092708dd390d98dbe66",
+      "bytes": 6553,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/ae_graphs_N4.log",
+      "sha256": "179009f04eace1169aae8a7787216c81cb27e2bae067049396dbfe1c24d58195",
+      "bytes": 4413,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/all_compile_autotune_N4.log",
+      "sha256": "e6d325a2c3334290999cd647d10adf09cc4559a663271eb6b0e784a246c78976",
+      "bytes": 109027,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/eager_fp32_N4.log",
+      "sha256": "63b6dcb3c2cd30e18412c159eee3684cb8bd47a8868c45f80cd104c4eebf626f",
+      "bytes": 2035,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/eager_tf32_N4.log",
+      "sha256": "86429a39a434f6f2e0239c687c29ca54c8389f86a866281143fdb2bb2ee46e57",
+      "bytes": 2035,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/llm_compile_N4.log",
+      "sha256": "8ccdc6d8b617b1a15152c1a3b2934366c94e983b6b26018399a4435dbfd98d55",
+      "bytes": 41837,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/llm_graphs_N4.log",
+      "sha256": "570be0acff5e3a451507b19a2ad07986f81171a58372df0fc61e3c498e421a7b",
+      "bytes": 42476,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vis_compile_N4.log",
+      "sha256": "610cf9cfe63b9f9fdba192da3b57fe0529bfe68d8dd6014fa9aa4604680e7bd5",
+      "bytes": 5691,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vis_graphs_N4.log",
+      "sha256": "76d2bbcc99dd82cf2662044807aac96536b5886ae53f892cb7b74b2b9185c158",
+      "bytes": 4416,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vlm_compile_N4.log",
+      "sha256": "3640fc586897feb4a380e8f4c695ec5502e5666a766d3b44b1dc070379d4b949",
+      "bytes": 43115,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/vlm_graphs_N4.log",
+      "sha256": "9c1807e70bfe7a9278ad8627e536481dadbba774d26762349f618af456fda81f",
+      "bytes": 43754,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    }
+  ]
+}
