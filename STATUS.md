@@ -17,6 +17,11 @@ install anything.
 *(none open. H2 — Hugging Face login + Cosmos-Reason2 licence — resolved 2026-10-22, see the log in `STATUS.md`.)*
 
 ## Questions for the research side
+- 2026-10-22 — **For every device agent: cuBLAS picks slow GEMM kernels at some token counts; zero-padding the rows
+  fixes it, bit-identically** (`reports/NOTE_gemm_shape_cliff_m_padding.md`). π0's prefix gate/up GEMM at M = 816 runs
+  at 31 instead of ≈ 110 TFLOP/s on Thor; padding to M = 1024 cut π0's optimised frame 211.7 → 170.9 ms with
+  identical actions. The Orin's own E4h data shows the same class of problem in π0's down projection (5.55 ms, SM 26 %).
+  Please pass the note to the Orin agent.
 - 2026-10-22 — **GR00T's shipped code computes logits it discards** (T004, `results/20261022_E3_groot_region_split_check/`).
   The backbone's vocabulary `lm_head` runs on every prefix token and costs 3.5 / 3.9 / 19.9 ms per inference
   (N1.7 / N1.6 / N1.5; 14 % of N1.5's e2e). The Orin folded it into the prefix (backbone − vision). Conservative reading
@@ -81,3 +86,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-22 T002 done: locked 1575 MHz; idle module power 33.27 W; VDD_GPU over-current limit ≈ 100 W found (sustained GEMM −5.6 %, temperature-dependent, invisible to devfreq); gate.py now records OC deltas. Independent review fixed.
 - 2026-10-22 T003 done: BW 258.2 GB/s; bf16 129.8 / int8 330.6 / tf32 62.4 / fp32 6.43 T(FL)OP/s; counters validated (0.1 %); expert projections 3.29 ms/step (1.37× floor); DRAM latency ≈ 520 ns; hidden fast memory-path state found. Independent review: 3 conclusions corrected (ceiling modes, bandwidth claim retracted, latency v2).
 - 2026-10-22 T004 done: E3 for six models (v2 GR00T after review), E4 π0 stock modes (best whole max-autotune 360.7 ms, ≤ 15 %); unused GR00T lm_head found; N1.7 process-to-process expert variation (72–86 ms) open. Two independent review passes fixed.
+- 2026-10-22 T005: pi0 prefix slower than pi0.5's traced to a cuBLASLt kernel-choice cliff at M = 816 (gate/up GEMM 3.8x slower); fixed by linear_mpad (bit-identical); note for other agents in reports/NOTE_gemm_shape_cliff_m_padding.md.
