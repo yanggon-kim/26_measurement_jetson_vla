@@ -1,0 +1,70 @@
+{
+ "device": "NVIDIA Jetson AGX Thor Developer Kit",
+ "gpu_name": "NVIDIA Thor",
+ "compute_capability": "11.0",
+ "gpu_arch": "sm_110",
+ "sm_count": 20,
+ "power_mode": {
+  "id": "0",
+  "name": "MAXN"
+ },
+ "gpu_clock_locked_hz": {
+  "value": 1575000000,
+  "source": "results/20261022_E0_platform_MAXN/clock_probe.csv: median of 200 devfreq cur_freq samples at 20 Hz during a 10 s bf16 4096^3 GEMM loop, jetson_clocks applied; min = max = median (constant)",
+  "cross_check": "ncu SM frequency 1.5735 GHz under --clock-control none (results/20261022_E0_toolcheck); tegrastats GR3D_FREQ 1574 MHz"
+ },
+ "emc_hz": 4266000000,
+ "l2_bytes": 33554432,
+ "smem_per_sm_bytes": 233472,
+ "smem_per_block_optin_bytes": 232448,
+ "max_warps_per_sm": 48,
+ "max_threads_per_sm": 1536,
+ "regs_per_sm": 65536,
+ "warp_size": 32,
+ "ncu_cross_check": {
+  "device__attribute_multiprocessor_count": 20,
+  "device__attribute_l2_cache_size": 33554432,
+  "device__attribute_max_shared_memory_per_multiprocessor": 233472,
+  "device__attribute_max_registers_per_multiprocessor": 65536,
+  "device__attribute_max_threads_per_multiprocessor": 1536,
+  "device__attribute_fbp_count": 4,
+  "device__attribute_global_memory_bus_width": 0,
+  "device__attribute_max_warps_per_multiprocessor": 48,
+  "device__attribute_max_blocks_per_multiprocessor": 24,
+  "device__attribute_num_schedulers_per_multiprocessor": 4,
+  "device__attribute_num_l2s_per_fbp": 6,
+  "device__attribute_max_persisting_l2_cache_size": 25165824,
+  "device__attribute_max_gpu_frequency_khz": 1048576,
+  "device__attribute_max_mem_frequency_khz": 0
+ },
+ "ncu_cross_check_note": "max_gpu_frequency_khz (and clock_rate) read 1,048,576 = 2^20, a placeholder on this integrated GPU, not a clock; global_memory_bus_width and memory clock read 0 (unified LPDDR5X, no discrete frame buffer). The clock comes from devfreq.",
+ "memory": {
+  "type": "LPDDR5X",
+  "bus_width_bits": 256,
+  "spec_GBps": 273,
+  "spec_source": "NVIDIA Jetson AGX Thor product page (spec, not measured; docs/00_context.md hint)"
+ },
+ "measured_bw_GBps": "n/a: T003 (E1)",
+ "measured_tflops": "n/a: T003 (E1)",
+ "ridge_flop_per_byte": "n/a: T003 (E1)",
+ "spec_tflops": "n/a: T003 records NVIDIA's published figures where they exist",
+ "counter_validation": "n/a: T003",
+ "source_runs": [
+  "results/20261022_E0_platform_MAXN"
+ ],
+ "gpu_power_limit": {
+  "vdd_gpu_current_warning_mA": 5060,
+  "vdd_gpu_current_critical_mA": 6080,
+  "vdd_gpu_bus_V_idle": 19.76,
+  "vdd_gpu_limit_W_derived": 100.0,
+  "oc_throttle": "soctherm oc2 and oc3 have throt_en=1; oc3 fires when VDD_GPU reaches the warning limit",
+  "effect_measured": {
+   "bf16_gemm_4096_first_slice_tflops": 99.529,
+   "bf16_gemm_4096_sustained_median_tflops": 93.966,
+   "slowdown_pct": 5.6,
+   "source": "results/20261022_E0_platform_MAXN/oc_throttle_probe_bf16.csv"
+  },
+  "devfreq_shows_it": false,
+  "source": "results/20261022_E0_platform_MAXN/raw/power_limits.txt (ina3221 curr1_max / curr1_crit), oc_throttle_probe_bf16.csv"
+ }
+}

@@ -1,0 +1,329 @@
+{
+  "date_utc": "2026-10-22T04:45:02Z",
+  "experiment": "E0 platform record",
+  "task": "T002",
+  "model": "n/a: platform record",
+  "model_repo": "n/a",
+  "model_commit": "n/a",
+  "checkpoint": "n/a",
+  "checkpoint_revision": "n/a",
+  "precision": "clock probe: bf16 4096^3 GEMM",
+  "rung": "n/a",
+  "compile_mode": "n/a: eager GEMM loop only",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a",
+  "action_horizon": "n/a",
+  "prefix_tokens": "n/a",
+  "suffix_tokens": "n/a",
+  "batch": "n/a",
+  "n_warmup": "clock probe: 2 s idle before load",
+  "n_timed": "clock probe: 200 samples at 20 Hz over 10 s; idle power: 600 samples per rail at 10 Hz over 60 s",
+  "hw_constants_source": "this directory (static half); T003 completes it",
+  "bench_commit": "9382739ee73f895d48375c91988156a4d5c6607c",
+  "command": [
+    "source env/thor_env.sh",
+    "python bench/platform_record.py --out results/20261022_E0_platform_MAXN   (runs bench/gate.py, applies nothing new: jetson_clocks already applied this boot)",
+    "python bench/gate.py > raw/gate_before_clock_probe.json",
+    "python bench/gpu_clock_probe.py --seconds 10 --hz 20 --out clock_probe.csv",
+    "python bench/gate.py > raw/gate_before_idle_power.json",
+    "env/rootdo.sh tegrastats --interval 100 --logfile raw/tegrastats_idle_60s.log & ; nvidia-smi utilization each 1 s > raw/gpu_util_during_idle.txt & ; python bench/power_sample.py --seconds 60 --hz 10 --out idle_power.csv; env/rootdo.sh tegrastats --stop",
+    "cat ina3221 currN_max/currN_crit, ina238 power1_max, soctherm_oc/* > raw/power_limits.txt",
+    "python bench/gate.py > raw/gate_before_oc_probe.json; python bench/oc_throttle_probe.py --seconds 20 --n 4096 --dtype bfloat16 --out oc_throttle_probe_bf16.csv"
+  ],
+  "throttled": {
+    "idle_power": false,
+    "clock_probe": "true: soctherm oc3 rose by 1,566 events during the 10 s GEMM loop (gate_before_clock_probe.json vs gate_before_idle_power.json) although devfreq stayed at 1575 MHz",
+    "oc_throttle_probe": "true by design (5,245 oc3 events)"
+  },
+  "notes": "Every gate check passed before each step. GPU utilisation 0 % in 60 of 62 1-s samples during the idle window (1 % in 2). ina3221 current resolution 20 mA (0.40 W at 19.76 V) quantises the per-sample rail power. VIN (module power, [ASSUMPTION]) includes the fan at full speed (jetson_clocks --fan). VDD_GPU is current-limited at 5,060 mA (\u2248 100 W): sustained heavy GPU load triggers soctherm oc3 throttling invisible to devfreq; a bf16 4096^3 GEMM loop drops from 99.5 TFLOP/s (first 0.5 s) to 94.0 TFLOP/s median. Every later run records OC event deltas (bench/gate.py throttle_verdict).",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "42875",
+    "gpu-thermal": "42531",
+    "cpu-thermal": "42875",
+    "soc012-thermal": "41000",
+    "soc345-thermal": "41375"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/clock_probe.stdout.log",
+      "sha256": "608cdc3c1b1b9c212c24c67c1900cee9c0925d7913006fafc17e4c85397d0cb1",
+      "bytes": 141,
+      "kind": "stdout",
+      "produced_by": "bench/gpu_clock_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_cpu_governors_freqs.txt",
+      "sha256": "68b1c0b88baf26abd10bf9ae8a25d06ffea8e43528dd3c661d65c63dfb99548c",
+      "bytes": 955,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_devfreq.txt",
+      "sha256": "68a2e0b5da24d1140c2fbad0543cbf459ee169f0e045655934f4c2f45b9cc748",
+      "bytes": 5935,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_df.txt",
+      "sha256": "8e8d2107414de8cafb91c8b358a4e834b90181c3c09214af7094a3dce1ba6761",
+      "bytes": 145,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_dpkg_nvidia.txt",
+      "sha256": "c1ff8d1fd7f386ac130f5506617fc47ac7921136207ef189287884b72593fccb",
+      "bytes": 8079,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_driver.txt",
+      "sha256": "b8b96dd4da41c4355b97344faa2a57686a67ecc58821954c394a0feb560d9410",
+      "bytes": 282,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_emc_rate.txt",
+      "sha256": "7663d98d2d6f70cfe735916cc03fd85ab14cf8599ce84bb8510634d41a1fe9d1",
+      "bytes": 73,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_free.txt",
+      "sha256": "1205b656b7309e3581f9809a3496dcd1d162aa962b2ed7b1d56f2a5d20ef6bcb",
+      "bytes": 217,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_free_bytes.txt",
+      "sha256": "93d5bc237972ea5f0efc53bfc46c353839203f32d2596728a51b762a14dab381",
+      "bytes": 219,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_hwmon.txt",
+      "sha256": "8f4a68f3eccb7d17644a4841c899b36d4b23417496dd00b96e07b7e95aecc447",
+      "bytes": 745,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_jetson_clocks_show.txt",
+      "sha256": "d5c7572d168ca419a0d2ffb59a03cc5b88de84ba07166e63ed1cf59b47e694fa",
+      "bytes": 2069,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_jetson_clocks_show_before_gate.txt",
+      "sha256": "7cca8941de0b5baa55d673478220a07e2cd6e9f655d946ab0775dd69300a3ef5",
+      "bytes": 2032,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_lsblk.txt",
+      "sha256": "1cacc8586d709c1380cf4ded13dc9b4a7cad0fd743fdc3e7d11b57645a9ff7c5",
+      "bytes": 1949,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_lscpu.txt",
+      "sha256": "b012ae62db98fd517f3bb2649e11e23c794c804dd4995667e1dd254c4bb1e8f1",
+      "bytes": 2129,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_nv_tegra_release.txt",
+      "sha256": "82c52d4b958d48ef46089ca6e7779fbbb07551fc63de0fd94385702b99df9956",
+      "bytes": 273,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_nvcc.txt",
+      "sha256": "d4d6a853af13267af64d3cdf8b9b09e837a09628c91b66414adc6b6a94893854",
+      "bytes": 252,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_nvidia_smi.txt",
+      "sha256": "43843ec81fde33e225faa078713d3f256b1d7e5b390139338654bd053bbe9bbf",
+      "bytes": 1702,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_nvpmodel_q_verbose.txt",
+      "sha256": "bd49cef3d37333c62e1e1c55e1c0bcd608640bc6af2629084bc8a9a867236086",
+      "bytes": 7227,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_python_versions.txt",
+      "sha256": "cc351243bdf96e364d467fd8c03f629c8844ca2892368b25ba05015be279f92c",
+      "bytes": 228,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_swapon.txt",
+      "sha256": "49f8a5978f379853bfc31a729b0c97415ffc04f6a8ba98fd63c4e7ac6315fe70",
+      "bytes": 117,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_thermal.txt",
+      "sha256": "fd875208467ed54c4a7b5d4f1d0206d19e4d7059ecab93edab9a1117190d908d",
+      "bytes": 367,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/cmd_uname.txt",
+      "sha256": "8061550d4817e86ddef30b1068788426d66c8a00fc56ba8349cc5ebe3433b649",
+      "bytes": 115,
+      "kind": "other",
+      "produced_by": "bench/platform_record.py (shell commands named inside each file)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_clock_probe.json",
+      "sha256": "6aec21f6a7d342d4eb63dc7674de840017d0d5f8aa13d455067eafea57af282c",
+      "bytes": 3066,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_idle_power.json",
+      "sha256": "ea411fd49d9116a916ebbea968f8971e0b60d6723335b35583abe79dc54f0ffe",
+      "bytes": 3066,
+      "kind": "power-log",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_oc_probe.json",
+      "sha256": "08ba0492e3bfea9dccc910cce2be193688fe0c6ba38accc2b8c0ff1b1ad43118",
+      "bytes": 3084,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gpu_util_during_idle.txt",
+      "sha256": "8ee8a3028e16402e74e5be401d1ddb5fb9a4f298b19866f2d689a85331913f12",
+      "bytes": 682,
+      "kind": "other",
+      "produced_by": "nvidia-smi",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/idle_power.stdout.log",
+      "sha256": "6a19da62e9ca3507cca9ab05cde1deb4bc1c04b48b0e1a663968ec382e17f735",
+      "bytes": 184,
+      "kind": "stdout",
+      "produced_by": "bench/power_sample.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nvpmodel.conf",
+      "sha256": "e0a0a56650d9befb550666ecae4b062613177f70d472850378b4d4f02438bf26",
+      "bytes": 14216,
+      "kind": "other",
+      "produced_by": "copy of /etc/nvpmodel.conf",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/oc_throttle_probe_bf16.stdout.log",
+      "sha256": "082db81b01a74f05db0f6e9a3b826b5f4fa82e8f167772183ad40455e6e394c2",
+      "bytes": 119,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/platform_record.stdout.log",
+      "sha256": "8bd922effe78790610cc4e299a33a3abc0d2b01391edc0ec4281ebc45c9b847c",
+      "bytes": 201,
+      "kind": "stdout",
+      "produced_by": "bench/platform_record.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/power_limits.txt",
+      "sha256": "41091af83229c6a949f4018bee27cb6b58827e5dab6354c1877f2e622f0063aa",
+      "bytes": 663,
+      "kind": "power-log",
+      "produced_by": "cat of hwmon sysfs",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/tegrastats_idle_60s.log",
+      "sha256": "b8bad3219431c80023bf257761a29ce053295da8dcc14d4f9c8418c1ac959647",
+      "bytes": 263076,
+      "kind": "tegrastats",
+      "produced_by": "tegrastats via env/rootdo.sh",
+      "secrets_scan": "clean"
+    }
+  ]
+}
