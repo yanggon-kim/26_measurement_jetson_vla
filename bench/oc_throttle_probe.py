@@ -14,7 +14,11 @@ import glob
 import os
 import time
 
+import sys
+
 import torch
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def hw(name):
@@ -45,21 +49,36 @@ def main():
     ap.add_argument("--seconds", type=float, default=20.0)
     ap.add_argument("--slice-s", type=float, default=0.5)
     ap.add_argument("--n", type=int, default=4096)
-    ap.add_argument("--dtype", default="bfloat16")
+    ap.add_argument("--dtype", default="bfloat16",
+                    help="same operand (x @ x, the T002 probe): any torch dtype name; distinct operands: one of "
+                         "fp32, tf32, bf16, fp16, int8, fp8_e4m3 (bench/micro_peak.gemm_case)")
+    ap.add_argument("--operands", choices=["same", "distinct"], default="same",
+                    help="same: x @ x (T002); distinct: A @ B as in E1 (T003 back-to-back ceilings)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     oc, ina238, ina3221 = hw("soctherm_oc"), hw("ina238"), hw("ina3221")
     ocf = sorted(glob.glob(f"{oc}/oc*_event_cnt"))
     gpu_ch = next(n for n in "123" if rd(f"{ina3221}/in{n}_label") == "VDD_GPU")
-    dt = getattr(torch, a.dtype)
-    x = torch.randn(a.n, a.n, device="cuda", dtype=dt)
+    if a.operands == "same":
+        dt = getattr(torch, a.dtype)
+        x = torch.randn(a.n, a.n, device="cuda", dtype=dt)
+        fn = lambda: x @ x  # noqa: E731
+    else:
+        import micro_peak
+        if a.dtype == "tf32":
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.set_float32_matmul_precision("high")
+        else:
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.set_float32_matmul_precision("highest")
+        fn = micro_peak.gemm_case(a.dtype, a.n)[0]
     flop = 2 * a.n ** 3
     for _ in range(20):
-        x @ x
+        fn()
     torch.cuda.synchronize()
     t_gemm = time.perf_counter()
     for _ in range(50):
-        x @ x
+        fn()
     torch.cuda.synchronize()
     per_slice = max(1, int(a.slice_s / ((time.perf_counter() - t_gemm) / 50)))
     rows = []
@@ -69,7 +88,7 @@ def main():
         s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
         s.record()
         for _ in range(per_slice):
-            x @ x
+            fn()
         e.record()
         e.synchronize()
         ms = s.elapsed_time(e)

@@ -5,8 +5,8 @@ pinned revision): hidden 1024, intermediate 4096, 8 query heads × 256, 1 KV hea
   q 1024→2048, k 1024→256, v 1024→256, o 2048→1024, gate / up 1024→4096, down 4096→1024
 
 Per projection and S ∈ {1, 2, 4, 8, 16, 32, 51, 64, 128, 256}, y = F.linear(x[S, K], W[N, K]), bf16:
-  kernel_ms     KERNEL time per call: CUDA-graph replay of 100-200 calls, events around the replay ÷ calls (no Python,
-                no launch path). "cold": the calls cycle through distinct copies of the layers' weights, working set
+  kernel_ms     KERNEL time per call: CUDA-graph replay of ≥ 100 calls (a whole number of passes over the weight copies),
+                events around the replay ÷ calls (no Python, no launch path; includes the gaps between graph nodes). "cold": the calls cycle through distinct copies of the layers' weights, working set
                 ≥ 3× the 32 MiB L2, so each call streams its weight from DRAM; "hot": one weight, resident in L2
   chain_ms      CUDA events around 1,000 calls issued back to back from Python ÷ 1,000 (the plan's "CUDA events over
                 1,000 calls"): GPU-timeline time per call = max(kernel, CPU issue), since launches are asynchronous
@@ -151,7 +151,10 @@ def proj_rows(W, nl, peaks):
             oc0 = gate.oc_counts()
             ch = ev_time(cold, reps=1000, warm=50, n=10, tag={**tag, "mode": "chain_event_cold_1000"})
             iss = issue_time(cold, tag={**tag, "mode": "issue_cold_1000"})
-            n_g = min(max(100, len(ws)), 200)          # the replay touches every copy: working set ≥ 3× L2
+            # a whole number of passes over the copies (≥ 100 calls), so no copy is reused before all others: the
+            # first version replayed min(max(100, copies), 200) calls, which for q / o (24 copies) wrapped after 4
+            # calls and reused ws[0..3] within ~16 MiB, under the L2 size (T003 review)
+            n_g = len(ws) * -(-100 // len(ws))
             kc = graph_time([lambda x=x, w=ws[i % len(ws)]: F.linear(x, w) for i in range(n_g)],
                             tag={**tag, "mode": f"graph_cold_{n_g}"})
             kh = graph_time([hot] * 100, tag={**tag, "mode": "graph_hot_100"})

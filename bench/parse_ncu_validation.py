@@ -37,7 +37,9 @@ def main():
         log = os.path.join(a.dir, "raw", f"val_{case}.stdout.log")
         ana = json.loads(next(l for l in open(log) if l.startswith("ANALYTIC ")).split(" ", 1)[1])
         rows = list(csv.reader(open(raw)))
-        hdr = rows[0]
+        hdr, units = rows[0], dict(zip(rows[0], rows[1]))
+        to_ns = {"ns": 1.0, "nsecond": 1.0, "us": 1e3, "usecond": 1e3, "ms": 1e6, "msecond": 1e6, "s": 1e9, "second": 1e9}
+        to_hz = {"hz": 1.0, "khz": 1e3, "mhz": 1e6, "ghz": 1e9, "cycle/second": 1.0, "cycle/nsecond": 1e9, "cycle/usecond": 1e6}
         for li, vals in enumerate(rows[2:]):
             d = dict(zip(hdr, vals))
             fill = num(d.get("lts__d_sectors_fill_sysmem.sum", 0)) * 32
@@ -63,8 +65,9 @@ def main():
                  "ratio_simt_flops": round(simt / ana["flops"], 4) if ana["flops"] else "",
                  "ratio_tensor_flops": round(tensor / ana["flops"], 4) if ana["flops"] else "",
                  "tensor_counters_nonzero": json.dumps(tensor_by_src),
-                 "duration_ns": d.get("gpu__time_duration.sum", ""),
-                 "sm_hz": d.get("sm__cycles_elapsed.avg.per_second", ""),
+                 "duration_ns": round(num(d.get("gpu__time_duration.sum", 0)) * to_ns[units["gpu__time_duration.sum"].lower()], 1),
+                 "sm_hz": round(num(d.get("sm__cycles_elapsed.avg.per_second", 0))
+                                * to_hz[units["sm__cycles_elapsed.avg.per_second"].lower()]),
                  "notes": "; ".join(x for x in (ana.get("bytes_note", ""), ana.get("flops_note", "")) if x)}
             out.append(r)
     with open(os.path.join(a.dir, "validation.csv"), "w", newline="") as f:

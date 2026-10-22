@@ -1,7 +1,12 @@
 """T003 step 4 (optional): dependent-load latency by pointer chasing, per working-set size.
 
 One thread of one block follows a random single cycle through a buffer of 128-byte-spaced 32-bit indices (each hop
-lands on a new cache line; the random order defeats prefetching), --hops dependent loads. Measured per hop:
+lands on a new cache line; the random order defeats prefetching).
+  working set ≤ L2: --hops dependent loads after a warm pass (many passes over the cycle: L1 / L2 hit latency).
+  working set > L2: before every repeat the L2 is flushed by writing a 256 MiB buffer, the walk starts at a random
+                    line and is at most one full cycle long (no line visited twice), so every load misses L2.
+                    (First version: every repeat restarted at the same line and walked 200,000 lines = 25.6 MB,
+                    which fits the 32 MiB L2, so repeats 1-4 partly hit L2 -- T003 review.) Measured per hop:
 SM cycles (clock64 inside the kernel) and ns (CUDA events around the kernel ÷ hops). Sizes span L1, L2 (32 MiB) and
 DRAM. The kernel is compiled on the device with torch.utils.cpp_extension.load_inline (nvcc 13.0, sm_110).
 
@@ -66,20 +71,32 @@ def main():
     if not g0["gate_pass"]:
         raise SystemExit(f"gate failed {g0['checks']}")
     rows = []
+    L2 = 33554432
+    flush = torch.empty(256 << 20, dtype=torch.uint8, device="cuda")
+    g = torch.Generator().manual_seed(1)
     for kib in [int(x) for x in a.sizes_kib.split(",")]:
         nxt, start = build_chain(kib * 1024)
-        mod.run(nxt, 10000, start)                      # warm: touches the chain once (pages, TLB)
+        lines = kib * 1024 // 128
+        beyond = kib * 1024 > L2
+        hops = min(lines, 1_000_000) if beyond else a.hops
+        mod.run(nxt, min(lines, 10000), start)          # touches pages / TLB once
         torch.cuda.synchronize()
+        cpu_next = nxt.cpu() if beyond else None
         for r in range(a.reps):
+            st = start
+            if beyond:
+                st = int(cpu_next[int(torch.randint(0, lines, (1,), generator=g)) * 32])   # a random line of the cycle
+                flush.fill_(r & 0xFF)
+                torch.cuda.synchronize()
             s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
             s.record()
-            out, cyc = mod.run(nxt, a.hops, start)
+            out, cyc = mod.run(nxt, hops, st)
             e.record()
             e.synchronize()
             ms = s.elapsed_time(e)
-            rows.append({"size_KiB": kib, "rep": r, "hops": a.hops, "cycles_per_load": round(cyc.item() / a.hops, 2),
-                         "ns_per_load": round(ms * 1e6 / a.hops, 2), "kernel_ms": round(ms, 4),
-                         "lines_in_cycle": kib * 1024 // 128})
+            rows.append({"size_KiB": kib, "rep": r, "hops": hops, "cycles_per_load": round(cyc.item() / hops, 2),
+                         "ns_per_load": round(ms * 1e6 / hops, 2), "kernel_ms": round(ms, 4),
+                         "lines_in_cycle": lines, "l2_flushed_cold_walk": beyond})
         print(kib, "KiB:", rows[-1]["cycles_per_load"], "cycles,", rows[-1]["ns_per_load"], "ns", flush=True)
         del nxt
         torch.cuda.empty_cache()
