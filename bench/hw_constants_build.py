@@ -32,6 +32,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--e1", required=True)
     ap.add_argument("--t002", required=True)
+    ap.add_argument("--b2b", default="", help="directory of back-to-back probes (bench/oc_throttle_probe.py --operands distinct)")
     a = ap.parse_args()
     hw = json.load(open(a.t002))
     bw_rows, fl_rows = [], []
@@ -69,6 +70,10 @@ def main():
         "spread_ratio": kern_best[best_k]["spread_ratio"],
         "per_process_best_of_best_kernel": per_proc,
         "between_process_ratio": round(max(per_proc.values()) / min(per_proc.values()), 4),
+        "median_over_all_repeats_of_best_kernel": round(sorted(f(r["GBps"]) for r in bw_rows if r["kernel"] == best_k)[
+            len([r for r in bw_rows if r["kernel"] == best_k]) // 2], 2),
+        "selection_note": "best = the highest of the per-repeat medians (3 sizes x 5 repeats x 2 processes) -- an optimistic "
+                          "estimator by construction (a peak); the median over all repeats of the same kernel is listed",
         "n_processes": len(procs),
         "definition": "GB/s = bytes read + written ÷ median per-call time of one repeat (100 calls); best = highest repeat median"}
 
@@ -88,18 +93,57 @@ def main():
                               "all_calls_median_TFLOPps": f(r["TFLOPps"]), "oc_event_delta": int(r["oc_event_delta"]),
                               "kernel": [k for k in r["kernel_names"].split(" | ") if "Memset" not in k],
                               "rel_err": r["rel_err"], "row": f"{r['_file']}: gemm {r['dtype']} {r['shape']} proc={r['proc']}"}
+    # back-to-back probes: the same ceiling shapes issued without per-call synchronisation
+    b2b = {}
+    if a.b2b:
+        import statistics as st
+        for p in sorted(glob.glob(os.path.join(a.b2b, "backtoback_*.csv"))):
+            name = os.path.basename(p)[len("backtoback_"):-4]
+            dt, n = name.rsplit("_", 1)
+            rows = list(csv.DictReader(open(p)))
+            tfv = [float(r["tflops"]) for r in rows]
+            first_oc = next((i for i, r in enumerate(rows) if int(r["oc3_delta"]) > 0), len(rows))
+            b2b.setdefault(dt, {})[f"{n}^3"] = {
+                "first_slice_TFLOPps": tfv[0], "median_TFLOPps": round(st.median(tfv), 3), "max_slice_TFLOPps": max(tfv),
+                "max_slice_index": tfv.index(max(tfv)),
+                "sustained_median_TFLOPps": round(st.median(tfv[first_oc:]), 3) if first_oc < len(rows) else None,
+                "first_slice_with_oc_event": first_oc if first_oc < len(rows) else "none",
+                "oc3_events": sum(int(r["oc3_delta"]) for r in rows), "slices": len(rows), "slice_s": 0.5,
+                "gpu_C_last": float(rows[-1]["gpu_C"]), "source": os.path.relpath(p)}
     sustained_best = {}
     for r in fl_rows:
         v = f(r.get("sustained_TFLOPps"))
         if r.get("correct") == "True" and v is not None and (r["dtype"] not in sustained_best or v > sustained_best[r["dtype"]]["value"]):
             sustained_best[r["dtype"]] = {"value": v, "shape": r["shape"], "process": r["proc"],
                                           "row": f"{r['_file']}: gemm {r['dtype']} {r['shape']} proc={r['proc']}"}
+    for dt, v in tf.items():
+        v["back_to_back"] = b2b.get(dt, {}).get(v["shape"], "n/a: not probed back to back")
+        v["isolated_calls_TFLOPps"] = v["value"]
+        v["value_mode"] = "isolated calls (E1, synchronised per call, burst = before any OC event)"
+        bb = v["back_to_back"]
+        if isinstance(bb, dict) and bb["max_slice_TFLOPps"] > v["value"]:
+            v["value"] = bb["max_slice_TFLOPps"]
+            v["value_mode"] = ("back to back, the fastest 0.5 s slice (exceeds the isolated-call rate; tensor throughput "
+                               "on this device is state-dependent, see value_mode_note)")
+            v["row"] = bb["source"] + f": slice {bb['max_slice_index']}"
+        v["value_mode_note"] = ("Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran "
+                                "258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same "
+                                "1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents "
+                                "a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, "
+                                "not measured. The ceiling is the highest rate measured in either mode.")
+        bb = v["back_to_back"]
+        v["sustained_TFLOPps"] = (bb.get("sustained_median_TFLOPps") or bb.get("median_TFLOPps")) if isinstance(bb, dict) else None
+        v["sustained_definition"] = ("back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py "
+                                     "--operands distinct): median of the slices from the first soctherm OC event on, or "
+                                     "of all slices if none occurred")
     hw["measured_tflops"] = {
         "fp32": tf.get("fp32"), "tf32": tf.get("tf32"), "bf16": tf.get("bf16"), "fp16": tf.get("fp16"),
         "int8": tf.get("int8"), "fp8_record_only": tf.get("fp8_e4m3"),
         "sustained_best_per_dtype": sustained_best,
-        "definition": "value = highest BURST median (calls before the row's first soctherm OC event, after a cool-down) "
-                      "over n and processes; sustained = median of the calls under OC throttling (≈ 100 W VDD_GPU limit)"}
+        "definition": "value = the highest rate measured in either mode at the dtype's best shape: isolated calls (E1, "
+                      "median of the calls before the row's first soctherm OC event, after a cool-down) or back to back "
+                      "(the fastest 0.5 s slice); sustained_TFLOPps = back-to-back median from the first "
+                      "OC event on (≈ 100 W VDD_GPU limit). Both modes are listed per dtype."}
     bw = hw["measured_bw_GBps"]["best"]["value"]
     hw["ridge_flop_per_byte"] = {k: round(v["value"] * 1e12 / (bw * 1e9), 2)
                                  for k, v in (("fp32", tf.get("fp32")), ("tf32", tf.get("tf32")),
@@ -108,7 +152,10 @@ def main():
     hw["ridge_flop_per_byte"]["definition"] = "measured ceiling TFLOP/s ÷ measured best GB/s"
     hw["spec_tflops"] = {"fp4_sparse": 2070, "fp4_sparse_note": "\"2070 TFLOPS (FP4—Sparse)\"; NVIDIA publishes no dense or "
                          "per-dtype tensor figure for Thor", "fp32_simt_derived": round(2560 * 2 * 1.575e9 / 1e12, 3),
-                         "fp32_simt_derived_note": "derived, not published: 2,560 CUDA cores × 2 FLOP/FMA × 1.575 GHz (locked clock)",
+                         "fp32_simt_derived_note": "derived, not published: 2,560 CUDA cores (NVIDIA spec page: "
+                                                   "'2560-core NVIDIA Blackwell architecture GPU') × 2 FLOP/FMA × 1.575 GHz "
+                                                   "(locked clock, results/20261022_E0_platform_MAXN/clock_probe.csv); 20 SMs × "
+                                                   "128 FP32 lanes = 2,560 agrees with the device's SM count",
                          "spec_source": SPEC_URL}
     hw["memory"]["spec_GBps"] = 273
     hw["memory"]["spec_source"] = SPEC_URL + ": \"128 GB 256-bit LPDDR5X\", \"273 GB/s\""

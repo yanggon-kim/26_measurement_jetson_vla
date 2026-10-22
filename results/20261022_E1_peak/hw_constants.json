@@ -155,16 +155,18 @@
    "p2": 253.82
   },
   "between_process_ratio": 1.0174,
+  "median_over_all_repeats_of_best_kernel": 250.32,
+  "selection_note": "best = the highest of the per-repeat medians (3 sizes x 5 repeats x 2 processes) -- an optimistic estimator by construction (a peak); the median over all repeats of the same kernel is listed",
   "n_processes": 2,
   "definition": "GB/s = bytes read + written \u00f7 median per-call time of one repeat (100 calls); best = highest repeat median"
  },
  "measured_tflops": {
   "fp32": {
-   "value": 6.425,
+   "value": 6.427,
    "shape": "16384^3",
    "process": "p1",
    "burst_n_calls": 30,
-   "sustained_TFLOPps": null,
+   "sustained_TFLOPps": 6.426,
    "sustained_n_calls": 0,
    "all_calls_median_TFLOPps": 6.425,
    "oc_event_delta": 0,
@@ -172,14 +174,31 @@
     "void cutlass::Kernel2<cutlass_80_simt_sgemm_256x128_8x4_nn_align1>(cutlass_80_simt_sgemm_256x128_8x4_nn_align1::Params)"
    ],
    "rel_err": "2.289e-06",
-   "row": "results/20261022_E1_peak/latency_summary_gemm_p1.csv: gemm fp32 16384^3 proc=p1"
+   "row": "results/20261022_E1_peak_backtoback/backtoback_fp32_16384.csv: slice 1",
+   "back_to_back": {
+    "first_slice_TFLOPps": 6.424,
+    "median_TFLOPps": 6.426,
+    "max_slice_TFLOPps": 6.427,
+    "max_slice_index": 1,
+    "sustained_median_TFLOPps": null,
+    "first_slice_with_oc_event": "none",
+    "oc3_events": 0,
+    "slices": 22,
+    "slice_s": 0.5,
+    "gpu_C_last": 65.69,
+    "source": "results/20261022_E1_peak_backtoback/backtoback_fp32_16384.csv"
+   },
+   "isolated_calls_TFLOPps": 6.425,
+   "value_mode": "back to back, the fastest 0.5 s slice (exceeds the isolated-call rate; tensor throughput on this device is state-dependent, see value_mode_note)",
+   "value_mode_note": "Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran 258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same 1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, not measured. The ceiling is the highest rate measured in either mode.",
+   "sustained_definition": "back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py --operands distinct): median of the slices from the first soctherm OC event on, or of all slices if none occurred"
   },
   "tf32": {
    "value": 62.369,
    "shape": "1024^3",
    "process": "p2",
    "burst_n_calls": 100,
-   "sustained_TFLOPps": null,
+   "sustained_TFLOPps": 61.825,
    "sustained_n_calls": 0,
    "all_calls_median_TFLOPps": 62.369,
    "oc_event_delta": 0,
@@ -187,14 +206,31 @@
     "cutlass3x_sm100_tensorop_s256x256x8tf32gemm_f32_f32_f32_f32_f32_256x256x32_0_nnn_align4_2sm_bias_f32_relu"
    ],
    "rel_err": "2.936e-04",
-   "row": "results/20261022_E1_peak/latency_summary_gemm_p2.csv: gemm tf32 1024^3 proc=p2"
+   "row": "results/20261022_E1_peak/latency_summary_gemm_p2.csv: gemm tf32 1024^3 proc=p2",
+   "back_to_back": {
+    "first_slice_TFLOPps": 61.816,
+    "median_TFLOPps": 61.825,
+    "max_slice_TFLOPps": 61.877,
+    "max_slice_index": 57,
+    "sustained_median_TFLOPps": null,
+    "first_slice_with_oc_event": "none",
+    "oc3_events": 0,
+    "slices": 61,
+    "slice_s": 0.5,
+    "gpu_C_last": 75.5,
+    "source": "results/20261022_E1_peak_backtoback/backtoback_tf32_1024.csv"
+   },
+   "isolated_calls_TFLOPps": 62.369,
+   "value_mode": "isolated calls (E1, synchronised per call, burst = before any OC event)",
+   "value_mode_note": "Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran 258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same 1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, not measured. The ceiling is the highest rate measured in either mode.",
+   "sustained_definition": "back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py --operands distinct): median of the slices from the first soctherm OC event on, or of all slices if none occurred"
   },
   "bf16": {
    "value": 129.789,
    "shape": "2048^3",
    "process": "p1",
    "burst_n_calls": 100,
-   "sustained_TFLOPps": null,
+   "sustained_TFLOPps": 104.308,
    "sustained_n_calls": 0,
    "all_calls_median_TFLOPps": 129.789,
    "oc_event_delta": 0,
@@ -202,14 +238,31 @@
     "nvjet_sm110_tst_128x128_64x8_2x1_2cta_v_bz_NNT"
    ],
    "rel_err": "1.656e-03",
-   "row": "results/20261022_E1_peak/latency_summary_gemm_p1.csv: gemm bf16 2048^3 proc=p1"
+   "row": "results/20261022_E1_peak/latency_summary_gemm_p1.csv: gemm bf16 2048^3 proc=p1",
+   "back_to_back": {
+    "first_slice_TFLOPps": 111.299,
+    "median_TFLOPps": 104.308,
+    "max_slice_TFLOPps": 111.299,
+    "max_slice_index": 0,
+    "sustained_median_TFLOPps": 104.308,
+    "first_slice_with_oc_event": 0,
+    "oc3_events": 14806,
+    "slices": 57,
+    "slice_s": 0.5,
+    "gpu_C_last": 73.69,
+    "source": "results/20261022_E1_peak_backtoback/backtoback_bf16_2048.csv"
+   },
+   "isolated_calls_TFLOPps": 129.789,
+   "value_mode": "isolated calls (E1, synchronised per call, burst = before any OC event)",
+   "value_mode_note": "Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran 258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same 1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, not measured. The ceiling is the highest rate measured in either mode.",
+   "sustained_definition": "back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py --operands distinct): median of the slices from the first soctherm OC event on, or of all slices if none occurred"
   },
   "fp16": {
    "value": 129.82,
    "shape": "2048^3",
    "process": "p2",
    "burst_n_calls": 100,
-   "sustained_TFLOPps": null,
+   "sustained_TFLOPps": 95.196,
    "sustained_n_calls": 0,
    "all_calls_median_TFLOPps": 129.82,
    "oc_event_delta": 0,
@@ -217,14 +270,31 @@
     "nvjet_sm110_hsh_128x128_64x8_2x1_2cta_v_bz_NNT"
    ],
    "rel_err": "2.069e-04",
-   "row": "results/20261022_E1_peak/latency_summary_gemm_p2.csv: gemm fp16 2048^3 proc=p2"
+   "row": "results/20261022_E1_peak/latency_summary_gemm_p2.csv: gemm fp16 2048^3 proc=p2",
+   "back_to_back": {
+    "first_slice_TFLOPps": 109.139,
+    "median_TFLOPps": 95.196,
+    "max_slice_TFLOPps": 109.139,
+    "max_slice_index": 0,
+    "sustained_median_TFLOPps": 95.196,
+    "first_slice_with_oc_event": 0,
+    "oc3_events": 7853,
+    "slices": 53,
+    "slice_s": 0.5,
+    "gpu_C_last": 76.66,
+    "source": "results/20261022_E1_peak_backtoback/backtoback_fp16_2048.csv"
+   },
+   "isolated_calls_TFLOPps": 129.82,
+   "value_mode": "isolated calls (E1, synchronised per call, burst = before any OC event)",
+   "value_mode_note": "Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran 258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same 1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, not measured. The ceiling is the highest rate measured in either mode.",
+   "sustained_definition": "back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py --operands distinct): median of the slices from the first soctherm OC event on, or of all slices if none occurred"
   },
   "int8": {
-   "value": 258.404,
+   "value": 330.616,
    "shape": "8192^3",
    "process": "p2",
    "burst_n_calls": 100,
-   "sustained_TFLOPps": null,
+   "sustained_TFLOPps": 313.139,
    "sustained_n_calls": 0,
    "all_calls_median_TFLOPps": 258.404,
    "oc_event_delta": 0,
@@ -232,14 +302,31 @@
     "cutlass3x_sm100_tensorop_i256x256x32gemm_s8_s8_s32_s32_s32_256x256x128_0_nnn_align16_2sm_bias_s32_relu"
    ],
    "rel_err": "0.000e+00",
-   "row": "results/20261022_E1_peak/latency_summary_gemm_p2.csv: gemm int8 8192^3 proc=p2"
+   "row": "results/20261022_E1_peak_backtoback/backtoback_int8_8192.csv: slice 41",
+   "back_to_back": {
+    "first_slice_TFLOPps": 257.989,
+    "median_TFLOPps": 258.119,
+    "max_slice_TFLOPps": 330.616,
+    "max_slice_index": 41,
+    "sustained_median_TFLOPps": 313.139,
+    "first_slice_with_oc_event": 42,
+    "oc3_events": 1550,
+    "slices": 64,
+    "slice_s": 0.5,
+    "gpu_C_last": 77.41,
+    "source": "results/20261022_E1_peak_backtoback/backtoback_int8_8192.csv"
+   },
+   "isolated_calls_TFLOPps": 258.404,
+   "value_mode": "back to back, the fastest 0.5 s slice (exceeds the isolated-call rate; tensor throughput on this device is state-dependent, see value_mode_note)",
+   "value_mode_note": "Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran 258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same 1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, not measured. The ceiling is the highest rate measured in either mode.",
+   "sustained_definition": "back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py --operands distinct): median of the slices from the first soctherm OC event on, or of all slices if none occurred"
   },
   "fp8_record_only": {
    "value": 302.921,
    "shape": "4096^3",
    "process": "p1",
    "burst_n_calls": 100,
-   "sustained_TFLOPps": null,
+   "sustained_TFLOPps": 192.656,
    "sustained_n_calls": 0,
    "all_calls_median_TFLOPps": 302.921,
    "oc_event_delta": 0,
@@ -247,7 +334,24 @@
     "nvjet_sm110_qqtst_128x256_128x6_2x1_2cta_v_bz_TNT"
    ],
    "rel_err": "1.660e-03",
-   "row": "results/20261022_E1_peak/latency_summary_gemm_p1.csv: gemm fp8_e4m3 4096^3 proc=p1"
+   "row": "results/20261022_E1_peak/latency_summary_gemm_p1.csv: gemm fp8_e4m3 4096^3 proc=p1",
+   "back_to_back": {
+    "first_slice_TFLOPps": 196.98,
+    "median_TFLOPps": 192.656,
+    "max_slice_TFLOPps": 196.98,
+    "max_slice_index": 0,
+    "sustained_median_TFLOPps": 192.656,
+    "first_slice_with_oc_event": 0,
+    "oc3_events": 9406,
+    "slices": 62,
+    "slice_s": 0.5,
+    "gpu_C_last": 77.59,
+    "source": "results/20261022_E1_peak_backtoback/backtoback_fp8_e4m3_4096.csv"
+   },
+   "isolated_calls_TFLOPps": 302.921,
+   "value_mode": "isolated calls (E1, synchronised per call, burst = before any OC event)",
+   "value_mode_note": "Tensor GEMM rates depend on a state the clocks do not show: int8 8192^3 back to back ran 258 TOP/s for 20 s, then 313-331 TOP/s with VDD_GPU rising 83 -> 99.7 W at the same 1575 MHz devfreq; bf16 / fp8 ran slower back to back than as isolated calls. ncu documents a 'Tensor Core boost state' (--pipeline-boost-state); a boost state is the hypothesis, not measured. The ceiling is the highest rate measured in either mode.",
+   "sustained_definition": "back-to-back A @ B at the ceiling shape for 30 s (bench/oc_throttle_probe.py --operands distinct): median of the slices from the first soctherm OC event on, or of all slices if none occurred"
   },
   "sustained_best_per_dtype": {
    "fp8_e4m3": {
@@ -257,14 +361,14 @@
     "row": "results/20261022_E1_peak/latency_summary_gemm_p2.csv: gemm fp8_e4m3 4096^3 proc=p2"
    }
   },
-  "definition": "value = highest BURST median (calls before the row's first soctherm OC event, after a cool-down) over n and processes; sustained = median of the calls under OC throttling (\u2248 100 W VDD_GPU limit)"
+  "definition": "value = the highest rate measured in either mode at the dtype's best shape: isolated calls (E1, median of the calls before the row's first soctherm OC event, after a cool-down) or back to back (the fastest 0.5 s slice); sustained_TFLOPps = back-to-back median from the first OC event on (\u2248 100 W VDD_GPU limit). Both modes are listed per dtype."
  },
  "ridge_flop_per_byte": {
-  "fp32": 24.88,
+  "fp32": 24.89,
   "tf32": 241.52,
   "bf16": 502.61,
   "fp16": 502.73,
-  "int8": 1000.67,
+  "int8": 1280.32,
   "fp8_record_only": 1173.07,
   "definition": "measured ceiling TFLOP/s \u00f7 measured best GB/s"
  },
@@ -272,7 +376,7 @@
   "fp4_sparse": 2070,
   "fp4_sparse_note": "\"2070 TFLOPS (FP4\u2014Sparse)\"; NVIDIA publishes no dense or per-dtype tensor figure for Thor",
   "fp32_simt_derived": 8.064,
-  "fp32_simt_derived_note": "derived, not published: 2,560 CUDA cores \u00d7 2 FLOP/FMA \u00d7 1.575 GHz (locked clock)",
+  "fp32_simt_derived_note": "derived, not published: 2,560 CUDA cores (NVIDIA spec page: '2560-core NVIDIA Blackwell architecture GPU') \u00d7 2 FLOP/FMA \u00d7 1.575 GHz (locked clock, results/20261022_E0_platform_MAXN/clock_probe.csv); 20 SMs \u00d7 128 FP32 lanes = 2,560 agrees with the device's SM count",
   "spec_source": "https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/ (accessed 2026-10-22)"
  },
  "counter_validation": {
