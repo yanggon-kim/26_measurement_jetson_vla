@@ -1,0 +1,11 @@
+model,region,bytes_read,flops,dominant_param_dtype,peak_dtype,peak_GBps,peak_TFLOPps,floor_mem_ms,floor_compute_ms,floor_ms,bound,peak_source,note
+groot_n15,vision,857427584,664685568000,torch.bfloat16,bf16,258.23,129.789,3.3204,5.1213,5.1213,compute,measured: results/20261022_E1_peak/hw_constants.json,weights of the vision part (+ projector)
+groot_n15,vision,857427584,664685568000,torch.bfloat16,n/a: no published per-dtype spec,273.0,n/a,3.1408,n/a,3.1408,memory,spec,weights of the vision part (+ projector)
+groot_n15,vlm_prefix,1208068096,1015887107840,torch.bfloat16,bf16,258.23,129.789,4.6783,7.8272,7.8272,compute,measured: results/20261022_E1_peak/hw_constants.json,VLM / LLM weights once
+groot_n15,vlm_prefix,1208068096,1015887107840,torch.bfloat16,n/a: no published per-dtype spec,273.0,n/a,4.4252,n/a,4.4252,memory,spec,VLM / LLM weights once
+groot_n15,ae_step,1123918912,125365665792,torch.bfloat16,bf16,258.23,129.789,4.3524,0.9659,4.3524,memory,measured: results/20261022_E1_peak/hw_constants.json,one step (ae_step[0]): expert weights + the hand-over it reads ({'ae_dit_encoder_hidden_states': 6668288})
+groot_n15,ae_step,1123918912,125365665792,torch.bfloat16,n/a: no published per-dtype spec,273.0,n/a,4.1169,n/a,4.1169,memory,spec,one step (ae_step[0]): expert weights + the hand-over it reads ({'ae_dit_encoder_hidden_states': 6668288})
+groot_n15,ae_total,1530222656,850937577472,torch.bfloat16,bf16,258.23,129.789,5.9258,6.5563,6.5563,compute,measured: results/20261022_E1_peak/hw_constants.json,N=4: bytes read at least once (expert weights once + hand-over); FLOPs of all steps
+groot_n15,ae_total,1530222656,850937577472,torch.bfloat16,n/a: no published per-dtype spec,273.0,n/a,5.6052,n/a,5.6052,memory,spec,N=4: bytes read at least once (expert weights once + hand-over); FLOPs of all steps
+groot_n15,ae_total_restream,4495675648,501462663168,torch.bfloat16,bf16,258.23,129.789,17.4096,3.8637,17.4096,memory,measured: results/20261022_E1_peak/hw_constants.json,N=4: expert weights re-read every step (they exceed the 32 MiB L2)
+groot_n15,ae_total_restream,4495675648,501462663168,torch.bfloat16,n/a: no published per-dtype spec,273.0,n/a,16.4677,n/a,16.4677,memory,spec,N=4: expert weights re-read every step (they exceed the 32 MiB L2)

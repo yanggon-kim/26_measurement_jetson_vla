@@ -1,0 +1,216 @@
+{
+ "experiment": "E3 eager end-to-end latency, N sweep",
+ "task": "T004 step 4",
+ "model": "groot_n15",
+ "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+ "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+ "checkpoint": "nvidia/GR00T-N1.5-3B",
+ "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+ "precision": "eager_fp32: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': False, 'bf16_reduced_precision_reduction': True}; param dtypes ['torch.bfloat16']",
+ "rung": "eager_fp32",
+ "compile_mode": "none (eager)",
+ "variant": "n/a",
+ "num_denoise_steps": "sweep [1, 2, 4, 6, 8, 10] (default 4)",
+ "action_horizon": 16,
+ "prefix_tokens": 814,
+ "suffix_tokens": 49,
+ "batch": 1,
+ "n_warmup": 20,
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "c34fd33",
+ "command": "source env/thor_env.sh; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/groot15/bin/python <repo>/bench/run_e3.py --model groot_n15  --out <repo>/results/20261022_E3_groot_n15_eager_Nsweep_v2 --hw <repo>/results/20261022_E1_peak/hw_constants.json",
+ "throttled": {
+  "8": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "10": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "6": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "1": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "2": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "4": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  }
+ },
+ "memory_path_state": {
+  "8": [
+   {
+    "probe_us_per_call": 48.82,
+    "state": "normal",
+    "gpu_C": "44812"
+   },
+   {
+    "probe_us_per_call": 48.65,
+    "state": "normal",
+    "gpu_C": "49468"
+   }
+  ],
+  "10": [
+   {
+    "probe_us_per_call": 50.8,
+    "state": "normal",
+    "gpu_C": "45218"
+   },
+   {
+    "probe_us_per_call": 48.66,
+    "state": "normal",
+    "gpu_C": "49812"
+   }
+  ],
+  "6": [
+   {
+    "probe_us_per_call": 50.67,
+    "state": "normal",
+    "gpu_C": "44250"
+   },
+   {
+    "probe_us_per_call": 48.92,
+    "state": "normal",
+    "gpu_C": "49375"
+   }
+  ],
+  "1": [
+   {
+    "probe_us_per_call": 50.36,
+    "state": "normal",
+    "gpu_C": "39843"
+   },
+   {
+    "probe_us_per_call": 48.86,
+    "state": "normal",
+    "gpu_C": "48062"
+   }
+  ],
+  "2": [
+   {
+    "probe_us_per_call": 48.82,
+    "state": "normal",
+    "gpu_C": "42156"
+   },
+   {
+    "probe_us_per_call": 48.98,
+    "state": "normal",
+    "gpu_C": "49093"
+   }
+  ],
+  "4": [
+   {
+    "probe_us_per_call": 50.74,
+    "state": "normal",
+    "gpu_C": "43375"
+   },
+   {
+    "probe_us_per_call": 50.76,
+    "state": "normal",
+    "gpu_C": "48937"
+   }
+  ]
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "produced_by": {
+  "per_N": "bench/run_e3.py",
+  "run_info": "bench/run_e3.py",
+  "gate_start": "bench/gate.py",
+  "run_e3": "bench/run_e3.py (stdout)",
+  "meta_fields": "bench/e3_finalise.py",
+  "secrets_scan": "bench/secrets_scan.py",
+  "latency_samples": "bench/run_e3.py"
+ },
+ "also_raw": [
+  "latency_samples.csv"
+ ],
+ "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state."
+}
