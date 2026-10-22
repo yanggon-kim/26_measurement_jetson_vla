@@ -32,8 +32,8 @@ closed the task.
 `eager_fp32` = baseline; `best_bf16` = the fastest BF16 configuration T005 finds (its rung name goes in the cell when
 ticked). Tick a cell with `[x]` and the result directory that delivers it.
 
-**Ceilings:** [ ] `hw_constants.json` with measured bandwidth, TFLOP/s per dtype and ridge (T003) · [ ] DRAM-byte
-and FLOP counters validated (T003) · [x] nsys binary secrets test (T001): **NOT CLEAN** — nsys binaries never committed; ncu reports clean (`results/20261022_E0_secrets_test/`)
+**Ceilings:** [x] `hw_constants.json` with measured bandwidth, TFLOP/s per dtype and ridge (T003): `results/20261022_E1_peak/` · [x] DRAM-byte
+and FLOP counters validated (T003): `results/20261022_E1_peak/validation.csv` · [x] nsys binary secrets test (T001): **NOT CLEAN** — nsys binaries never committed; ncu reports clean (`results/20261022_E0_secrets_test/`)
 
 | model | mode | latency: vision / prefix / expert (T005) | roofline: parts + every kernel (T006) | bottleneck: ncu per part (T007) + SASS of dominant kernels (T008) |
 |---|---|---|---|---|
