@@ -33,6 +33,37 @@ from contextlib import contextmanager
 import torch
 
 
+def _register_flash_attn_flops():
+    """FlopCounterMode has formulas for aten's attention ops, not for the flash_attn package's custom ops, which the
+    GR00T backbones call (flash_attention_2). Register them so their attention FLOPs are counted:
+      fixed length  q [B, Sq, H, D], k [B, Sk, Hk, D]: 4 * B * H * D * Sq * Sk (causal, Sq == Sk: Sq (Sq + 1) / 2 pairs)
+      varlen        q [total_q, H, D], cu_seqlens_q / _k: the same summed over the packed sequences"""
+    try:
+        import flash_attn  # noqa: F401
+        from torch.utils.flop_counter import register_flop_formula
+        ops = torch.ops.flash_attn
+    except Exception:
+        return False
+
+    def pairs(sq, sk, causal):
+        return sq * (sq + 1) // 2 if causal and sq == sk else sq * sk
+
+    @register_flop_formula(ops._flash_attn_forward, get_raw=True)
+    def _fa(q, k, v, dropout_p, softmax_scale, causal, *args, out_val=None, **kw):
+        b, sq, h, d = q.shape
+        return 4 * b * h * d * pairs(sq, k.shape[1], causal)
+
+    @register_flop_formula(ops._flash_attn_varlen_forward, get_raw=True)
+    def _fav(q, k, v, cu_q, cu_k, max_q, max_k, dropout_p, softmax_scale, causal, *args, out_val=None, **kw):
+        h, d = q.shape[1], q.shape[2]
+        lq, lk = cu_q.tolist(), cu_k.tolist()
+        return sum(4 * h * d * pairs(lq[i + 1] - lq[i], lk[i + 1] - lk[i], causal) for i in range(len(lq) - 1))
+    return True
+
+
+FLASH_ATTN_FLOPS_REGISTERED = _register_flash_attn_flops()
+
+
 def tensor_bytes(obj, seen=None) -> int:
     """Bytes of every distinct tensor reachable through lists / tuples / dicts / cache objects."""
     seen = set() if seen is None else seen
@@ -62,6 +93,7 @@ class Recorder:
         self.account = account
         self.stack: list[str] = []
         self.flops: dict[str, int] = {}
+        self.flop_ops: dict[str, dict] = {}
         self.params: dict[str, dict[int, int]] = {}
         self.kv_bytes: dict[str, int] = {}
         self.counts: dict[str, int] = {}
@@ -118,6 +150,9 @@ class Recorder:
             return
         m.__exit__(None, None, None)
         self.flops[name] = self.flops.get(name, 0) + m.get_total_flops()
+        ops = self.flop_ops.setdefault(name, {})
+        for op, c in m.get_flop_counts().get("Global", {}).items():
+            ops[str(op)] = ops.get(str(op), 0) + int(c)
         if name in self.stack:
             self.stack.remove(name)
 
@@ -187,7 +222,9 @@ class Recorder:
             for b, dt in d.values():
                 t[dt] = t.get(dt, 0) + b
             by_dtype[r] = t
-        return {"flops": dict(self.flops), "kv_bytes": dict(self.kv_bytes), "calls": dict(self.counts),
+        return {"flops": dict(self.flops), "flop_ops": dict(self.flop_ops),
+                "flash_attn_flop_formulas_registered": FLASH_ATTN_FLOPS_REGISTERED,
+                "kv_bytes": dict(self.kv_bytes), "calls": dict(self.counts),
                 "param_bytes": {r: sum(t.values()) for r, t in by_dtype.items()}, "param_bytes_by_dtype": by_dtype}
 
 
