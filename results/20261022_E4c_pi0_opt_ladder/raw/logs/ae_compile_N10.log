@@ -1,0 +1,81 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph break in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] copy.deepcopy()
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] User code traceback:
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 347, in <module>
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     raise SystemExit(main())
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 341, in main
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return child(a)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 141, in child
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     one()
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 131, in one
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return ad.iteration()
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return self.denoise_step(
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 276, in denoise_step
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return _orig(*a, **kw)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V1022 19:14:34.637000 1723517 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+W1022 19:14:36.173000 1723517 torch/_inductor/utils.py:1679] [0/0_1] Not enough SMs to use max_autotune_gemm mode
+/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3464: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  current_size = base.storage().size()
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "addmm", "best_time": 0.0098879998549819}
+AUTOTUNE addmm(1x1024, 1x32, 32x1024)
+strides: [0, 1], [32, 1], [1, 32]
+dtypes: torch.float32, torch.float32, torch.float32
+  addmm 0.0099 ms 100.0% 
+  bias_addmm 0.0100 ms 99.4% 
+SingleProcess AUTOTUNE benchmarking takes 0.0941 seconds and 0.0002 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.008063999935984612}
+AUTOTUNE addmm(50x1024, 50x32, 32x1024)
+strides: [0, 1], [32, 1], [1, 32]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.0081 ms 100.0% 
+  addmm 0.0135 ms 59.7% 
+SingleProcess AUTOTUNE benchmarking takes 0.0975 seconds and 0.0002 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.0716480016708374}
+AUTOTUNE addmm(50x1024, 50x1024, 1024x1024)
+strides: [0, 1], [1024, 1], [1, 1024]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.0716 ms 100.0% 
+  addmm 0.0759 ms 94.4% 
+SingleProcess AUTOTUNE benchmarking takes 0.1029 seconds and 0.0002 seconds precompiling for 2 choices
+Autotune Choices Stats:
+{"num_choices": 2, "num_triton_choices": 0, "best_kernel": "bias_addmm", "best_time": 0.010912000201642513}
+AUTOTUNE addmm(50x32, 50x1024, 1024x32)
+strides: [0, 1], [1024, 1], [1, 1024]
+dtypes: torch.float32, torch.float32, torch.float32
+  bias_addmm 0.0109 ms 100.0% 
+  addmm 0.0143 ms 76.1% 
+SingleProcess AUTOTUNE benchmarking takes 0.0926 seconds and 0.0002 seconds precompiling for 2 choices
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /home/jameskimh/.cache/huggingface/hub/models--lerobot--pi0_libero_finetuned_v044/snapshots/45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+ae_compile N=10: e2e 272.05 | vision 55.37 | prefix 126.79 | ae 87.17 | graphs during timed 0 | throttled False | state normal->normal

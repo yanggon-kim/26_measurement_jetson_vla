@@ -1,0 +1,389 @@
+{
+ "model": "pi0",
+ "rung": "whole_graphs",
+ "N": 10,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "gate_start": {
+  "time_utc": "2026-10-22T10:47:35Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4309,
+   "oc3": 127685
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "41750",
+   "gpu-thermal": "40500",
+   "cpu-thermal": "39718",
+   "soc012-thermal": "41750",
+   "soc345-thermal": "39218"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "shipped_config": {
+   "compile_model": "True",
+   "compile_mode": "max-autotune",
+   "gradient_checkpointing": "True",
+   "num_inference_steps": "10",
+   "dtype": "bfloat16",
+   "chunk_size": "50"
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "checkpoint_file": "model.safetensors",
+   "verdict": "real weights"
+  },
+  "batch_info": {
+   "image_keys": [
+    "observation.images.image",
+    "observation.images.image2"
+   ],
+   "tokenizer": {
+    "dir": "/home/jameskimh/models/paligemma_tokenizer",
+    "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+    "tokenizer_config": {
+     "tokenizer_class": "GemmaTokenizer",
+     "add_bos_token": true,
+     "add_eos_token": false,
+     "bos_token": "<bos>",
+     "eos_token": "<eos>",
+     "pad_token": "<pad>",
+     "unk_token": "<unk>",
+     "model_max_length": 1000000000000000019884624838656
+    }
+   }
+  },
+  "action_horizon": 50
+ },
+ "tokens": {
+  "prefix_tokens_P": 816,
+  "prefix_tokens_valid": 533,
+  "suffix_tokens_S": 51,
+  "suffix_tokens_valid": 51,
+  "n_images": 3,
+  "language_tokens": 48,
+  "language_tokens_valid": 21,
+  "chunk_size": 50
+ },
+ "rung_desc": {
+  "rung": "whole_graphs",
+  "label": "compile sample_actions with CUDA graphs (LeRobot's own path); e2e only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [],
+  "compiled": [
+   "PI0Pytorch.sample_actions@reduce-overhead"
+  ],
+  "autotune": "",
+  "regions": false,
+  "note": "",
+  "compile_wrap_s": 0.6897824979387224,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.float32": 1672662080,
+  "torch.bfloat16": 7219707904
+ },
+ "by_N": {
+  "10": {
+   "regions": {
+    "preprocess_wall": {
+     "median_ms": 0.5870633758604527,
+     "mean_ms": 0.5899667600169778,
+     "p5_ms": 0.5698339082300663,
+     "p95_ms": 0.6159162148833275,
+     "min_ms": 0.5631018429994583,
+     "max_ms": 0.7018139585852623,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 232.9468261450529,
+     "mean_ms": 232.99049445427954,
+     "p5_ms": 231.98461811989546,
+     "p95_ms": 234.13618095219135,
+     "min_ms": 231.23443312942982,
+     "max_ms": 235.64485600218177,
+     "n": 100
+    },
+    "postprocess_wall": {
+     "median_ms": 0.15741214156150818,
+     "mean_ms": 0.1597112650051713,
+     "p5_ms": 0.15346193686127663,
+     "p95_ms": 0.1735086552798748,
+     "min_ms": 0.14797179028391838,
+     "max_ms": 0.1934911124408245,
+     "n": 100
+    },
+    "e2e_full_wall": {
+     "median_ms": 233.68519567884505,
+     "mean_ms": 233.7401724793017,
+     "p5_ms": 232.7145989984274,
+     "p95_ms": 234.87829184159636,
+     "min_ms": 231.97795124724507,
+     "max_ms": 236.4002438262105,
+     "n": 100
+    }
+   },
+   "first_call_s": 82.202048137784,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 9072112128,
+   "control_frequency_hz": 4.277158223272508,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 47.46,
+    "state": "normal",
+    "gpu_C": "42656"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 48.96,
+    "state": "normal",
+    "gpu_C": "45812"
+   }
+  },
+  "2": {
+   "regions": {
+    "preprocess_wall": {
+     "median_ms": 0.5507501773536205,
+     "mean_ms": 0.5528833903372288,
+     "p5_ms": 0.5336110480129719,
+     "p95_ms": 0.584952998906374,
+     "min_ms": 0.515500083565712,
+     "max_ms": 0.595396850258112,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 169.57004577852786,
+     "mean_ms": 169.57020993344486,
+     "p5_ms": 168.6139260418713,
+     "p95_ms": 170.45865580439568,
+     "min_ms": 168.04577969014645,
+     "max_ms": 171.36168386787176,
+     "n": 100
+    },
+    "postprocess_wall": {
+     "median_ms": 0.1507219858467579,
+     "mean_ms": 0.15208642464131117,
+     "p5_ms": 0.1464630477130413,
+     "p95_ms": 0.1600179821252823,
+     "min_ms": 0.14343485236167908,
+     "max_ms": 0.18126936629414558,
+     "n": 100
+    },
+    "e2e_full_wall": {
+     "median_ms": 170.2738415915519,
+     "mean_ms": 170.2751797484234,
+     "p5_ms": 169.3454459309578,
+     "p95_ms": 171.16256337612867,
+     "min_ms": 168.7343525700271,
+     "max_ms": 172.06685803830624,
+     "n": 100
+    }
+   },
+   "first_call_s": 0.17147949803620577,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 9072112128,
+   "control_frequency_hz": 5.870858895196685,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 50.38,
+    "state": "normal",
+    "gpu_C": "47250"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 50.79,
+    "state": "normal",
+    "gpu_C": "48593"
+   }
+  },
+  "6": {
+   "regions": {
+    "preprocess_wall": {
+     "median_ms": 0.5674392450600863,
+     "mean_ms": 0.5690234759822488,
+     "p5_ms": 0.5535469390451908,
+     "p95_ms": 0.5869260057806969,
+     "min_ms": 0.5429540760815144,
+     "max_ms": 0.6157592870295048,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 201.41417905688286,
+     "mean_ms": 201.4905423251912,
+     "p5_ms": 200.7452859543264,
+     "p95_ms": 202.50551495701075,
+     "min_ms": 199.94842493906617,
+     "max_ms": 202.87739485502243,
+     "n": 100
+    },
+    "postprocess_wall": {
+     "median_ms": 0.15374599024653435,
+     "mean_ms": 0.15510242898017168,
+     "p5_ms": 0.1488877460360527,
+     "p95_ms": 0.16414793208241463,
+     "min_ms": 0.14070328325033188,
+     "max_ms": 0.19397074356675148,
+     "n": 100
+    },
+    "e2e_full_wall": {
+     "median_ms": 202.1368679124862,
+     "mean_ms": 202.21466823015362,
+     "p5_ms": 201.46821113303304,
+     "p95_ms": 203.20800505578518,
+     "min_ms": 200.67400811240077,
+     "max_ms": 203.5986427217722,
+     "n": 100
+    }
+   },
+   "first_call_s": 0.20198594173416495,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 9072112128,
+   "control_frequency_hz": 4.943791352162828,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 49.1,
+    "state": "normal",
+    "gpu_C": "48031"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.19,
+    "state": "normal",
+    "gpu_C": "48750"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  350
+ ],
+ "wall_s": 328.2157242298126
+}
