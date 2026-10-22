@@ -7,13 +7,21 @@ result directory inside a long task (`AGENTS.md`, "Close the task"). Three secti
 closed the task.
 
 ## Needs the human
-*(none yet. Each item: `- [ ] H<n> <title> — why … Blocks … Check after …` with the exact commands, as in
-`docs/05_setup.md` §3; identical to the box in `STATUS.md`.)*
+- [ ] H2 Hugging Face login + the Cosmos-Reason2 licence — why: GR00T N1.7's checkpoint loads its VLM backbone
+  config / processor from `nvidia/Cosmos-Reason2-2B`, which is gated (`gated: auto`, HTTP 401 without a token).
+  Blocks: the N1.7 smoke test (T001 step 8) and every N1.7 row of T004–T015. The other five models do not need it.
+  Check after: `~/venvs/tools/bin/hf auth whoami && HF_HUB_OFFLINE=0 ~/venvs/tools/bin/hf download nvidia/Cosmos-Reason2-2B config.json --local-dir /tmp/cosmos_check`
+  ```text
+  1. In a browser, signed in to Hugging Face: open https://huggingface.co/nvidia/Cosmos-Reason2-2B and accept the licence.
+  2. On the Thor, in a terminal (the token is stored in ~/.cache/huggingface/token, outside the repository):
+     ~/venvs/tools/bin/hf auth login
+  ```
+  (The agent downloads the repo itself afterwards and scans every raw file for the token, protocol §3.5.)
 
 ## Tasks
 | task | what | priority | state | date | commit | headline (with its number) |
 |---|---|---|---|---|---|---|
-| [T001](tasks/T001_setup_and_availability.md) | setup and availability | P0 | claimed | 2026-10-22 | | |
+| [T001](tasks/T001_setup_and_availability.md) | setup and availability | P0 | done-partial (N1.7 smoke waits for H2) | 2026-10-22 | d49b72d | MAXN, 20 SMs, sm_110, L2 32 MiB; torch 2.10.0+cu130 OK; 5 of 6 models pass smoke; no dram__ counters (L2 sysmem 1.003× analytic); nsys binaries NOT CLEAN |
 | [T002](tasks/T002_platform_record.md) | platform record (E0) | P0 | todo | | | |
 | [T003](tasks/T003_peaks_and_kernel_sweep.md) | peaks → `hw_constants.json` (E1), expert kernel sweep (E2) | P0 | todo | | | |
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | todo | | | |
@@ -44,8 +52,8 @@ and FLOP counters validated (T003) · [x] nsys binary secrets test (T001): **NOT
 | π0.5 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
 | SmolVLA | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
 | SmolVLA | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.7 | `eager_fp32` | [ ] blocked (H2) | [ ] blocked (H2) | [ ] ncu · [ ] SASS — blocked (H2) |
+| GR00T N1.7 | `best_bf16` | [ ] blocked (H2) | [ ] blocked (H2) | [ ] ncu · [ ] SASS — blocked (H2) |
 | GR00T N1.6 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.6 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.5 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |

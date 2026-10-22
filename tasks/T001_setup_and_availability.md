@@ -132,3 +132,21 @@ clean), after step 8, and at the close.
 ## Status (appended by the on-device agent)
 
 status: claimed 2026-10-22
+status: done-partial 2026-10-22 — missing: GR00T N1.7's smoke test at its pinned configuration (its backbone
+`nvidia/Cosmos-Reason2-2B` is gated; H2 in STATUS.md / PROGRESS.md). Everything else in the acceptance list is met.
+- result directories: `results/20261022_E0_toolcheck/`, `results/20261022_E0_secrets_test/`,
+  `results/20261022_E0_smoke_models/`, `results/20261022_E0_addenda/` (review fixes)
+- report: `reports/E0_setup.md`; environment: `env/README.md` (matrix, facts, rail table, flag spellings)
+- bench commits: 1fad8d5 (tools), 93a0d80 (LeRobot harness), 021128d (GR00T harness), 431fed7 (groot_tokens, meta fix);
+  closing result commit d49b72d
+- deviations:
+  - no sudo; root through docker (`env/rootdo.sh`, owner-approved);
+  - Triton pointed at CUDA 13 `ptxas` (`env/thor_env.sh`);
+  - LeRobot loads from the pinned snapshot directory (lerobot drops `revision` and returns a random model);
+  - the ungated PaliGemma tokenizer needs `sentencepiece`;
+  - GR00T N1.5 runs on torch 2.10.0+cu130 (its own pins have no CUDA 13 build);
+  - the bf16 GEMM check used an fp64 reference;
+  - `jetson_clocks` was applied part-way through (step 4e);
+  - nsys verdict NOT CLEAN (`.gitignore` unchanged);
+  - factual hint corrections in `docs/00_context.md` (L2 = 32 MiB) and `docs/05_setup.md` A8(b) (`jp7/cu130` → `sbsa/cu130`);
+  - independent review: findings fixed (`reports/E0_setup.md`, Deviations).
