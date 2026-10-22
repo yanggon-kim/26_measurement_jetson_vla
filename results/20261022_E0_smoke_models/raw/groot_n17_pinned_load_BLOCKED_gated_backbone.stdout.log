@@ -1,0 +1,64 @@
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1014, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1121, in _hf_hub_download_to_cache_dir
+    _raise_on_head_call_error(head_call_error, force_download, local_files_only)
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1653, in _raise_on_head_call_error
+    raise LocalEntryNotFoundError(
+huggingface_hub.errors.LocalEntryNotFoundError: Cannot find the requested files in the disk cache and outgoing traffic has been disabled. To enable hf.co look-ups and downloads online, set 'local_files_only' to False.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t001/groot_checks/load_n17.py", line 10, in <module>
+    policy = Gr00tPolicy(embodiment_tag=tag, model_path=ckpt, device="cuda")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/policy/gr00t_policy.py", line 109, in __init__
+    model = AutoModel.from_pretrained(model_dir)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 604, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4971, in from_pretrained
+    model = cls(config, *model_args, **model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/gr00t_n1d7/gr00t_n1d7.py", line 530, in __init__
+    self.backbone = backbone_cls(
+                    ^^^^^^^^^^^^^
+  File "/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/qwen3_backbone.py", line 183, in __init__
+    self.model = Qwen3VLForConditionalGeneration.from_pretrained(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_utils.py", line 277, in _wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4843, in from_pretrained
+    config, model_kwargs = cls.config_class.from_pretrained(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/configuration_utils.py", line 622, in from_pretrained
+    config_dict, kwargs = cls.get_config_dict(pretrained_model_name_or_path, **kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/configuration_utils.py", line 662, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/configuration_utils.py", line 721, in _get_config_dict
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/utils/hub.py", line 553, in cached_files
+    raise OSError(
+OSError: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.

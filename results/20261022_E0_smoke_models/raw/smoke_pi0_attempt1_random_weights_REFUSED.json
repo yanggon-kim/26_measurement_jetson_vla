@@ -1,0 +1,23 @@
+{
+  "model": "pi0",
+  "label": "smoke test, not a measurement",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "n_field": "num_inference_steps",
+  "N": 10,
+  "load_s": 183.21670753788203,
+  "shipped_config": {
+    "compile_model": "True",
+    "compile_mode": "max-autotune",
+    "gradient_checkpointing": "True",
+    "num_inference_steps": "10",
+    "dtype": "bfloat16",
+    "chunk_size": "50"
+  },
+  "param_dtypes": [
+    "torch.bfloat16",
+    "torch.float32"
+  ],
+  "error": "SystemExit: WEIGHT INTEGRITY FAILED: 8/400 tensors of lerobot/pi0_libero_finetuned_v044 match",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/smoke_lerobot.py\", line 55, in main\n    res[\"weights\"] = lc.assert_real_weights(policy, spec)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/lerobot_common.py\", line 83, in assert_real_weights\n    raise SystemExit(f\"WEIGHT INTEGRITY FAILED: {matched}/{checked} tensors of {spec.checkpoint} match\")\nSystemExit: WEIGHT INTEGRITY FAILED: 8/400 tensors of lerobot/pi0_libero_finetuned_v044 match\n"
+}

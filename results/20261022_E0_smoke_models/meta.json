@@ -1,0 +1,197 @@
+{
+  "date_utc": "2026-10-22T03:56:37Z",
+  "experiment": "E0 smoke models (A16)",
+  "task": "T001 step 8",
+  "model": "pi0, pi05, smolvla, groot_n17 (blocked), groot_n16, groot_n15",
+  "model_repo": "lerobot (https://github.com/huggingface/lerobot); Isaac-GR00T (https://github.com/NVIDIA/Isaac-GR00T)",
+  "model_commit": {
+    "lerobot": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+    "groot_n17": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+    "groot_n16": "9b37aa1ce69c73c6d165233fa88128283bba4508",
+    "groot_n15": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96"
+  },
+  "checkpoint": {
+    "pi0": "lerobot/pi0_libero_finetuned_v044",
+    "pi05": "lerobot/pi05_libero_base",
+    "smolvla": "lerobot/smolvla_base",
+    "groot_n17": "nvidia/GR00T-N1.7-3B",
+    "groot_n16": "nvidia/GR00T-N1.6-3B",
+    "groot_n15": "nvidia/GR00T-N1.5-3B"
+  },
+  "checkpoint_revision": {
+    "pi0": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+    "pi05": "a217bfd3b14673cf2ce597e69997ab21866438dd",
+    "smolvla": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+    "groot_n17": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+    "groot_n16": "d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+    "groot_n15": "869830fc749c35f34771aa5209f923ac57e4564e"
+  },
+  "precision": "each checkpoint's shipped dtypes (pi0 bf16+fp32, pi05 fp32, smolvla bf16+fp32, GR00T bf16); default matmul precision",
+  "rung": "n/a: smoke test, not a ladder rung",
+  "compile_mode": "eager; then torch.compile(mode='default') of the per-step callable (LeRobot model.denoise_step; GR00T action_head.model)",
+  "variant": "smoke",
+  "num_denoise_steps": "each model's default: pi0/pi05/smolvla 10, GR00T 4",
+  "action_horizon": "pi0/pi05/smolvla 50, GR00T 16 (N1.6/N1.5)",
+  "prefix_tokens": {
+    "pi0": "816 (533 valid)",
+    "pi05": "968 (574 valid)",
+    "smolvla": "177 (151 valid)",
+    "groot": "n/a: not read in the smoke test (T004 measures it)"
+  },
+  "suffix_tokens": {
+    "pi0": 51,
+    "pi05": 50,
+    "smolvla": 50,
+    "groot": "n/a: not read in the smoke test"
+  },
+  "batch": 1,
+  "n_warmup": 3,
+  "n_timed": 5,
+  "hw_constants_source": "n/a: T003 has not run",
+  "bench_commit": "021128d956663b90abbafc9d1f97bf1954b4ef62",
+  "command": [
+    "source env/thor_env.sh; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/lerobot/bin/python bench/smoke_lerobot.py --model {pi0,pi05,smolvla} --out results/20261022_E0_smoke_models",
+    "cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/groot{16,15}/bin/python <repo>/bench/smoke_groot.py --version groot_n{16,15} --out <repo>/results/20261022_E0_smoke_models",
+    "LIBERO: the check at the end of env/setup_libero.sh (MUJOCO_GL=egl)"
+  ],
+  "throttled": "not assessed: smoke test; jetson_clocks applied this boot, but the GPU was shared with other users' sessions",
+  "notes": "Smoke tests, NOT measurements: wall clock of 5 calls after 3 warm-ups, GPU shared with other users, nothing here may be quoted as a latency. pi0 attempts 1 and 2 kept in raw/: attempt 1 loaded RANDOM weights (lerobot from_pretrained drops the revision, falls back to random init; refused by the weight check), attempt 2 failed for want of sentencepiece.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "37781",
+    "gpu-thermal": "37500",
+    "cpu-thermal": "37781",
+    "soc012-thermal": "35906",
+    "soc345-thermal": "36343"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/groot_n17_backbone_gating_check.txt",
+      "sha256": "d4ef84940d1ff69fddaabfe07e0ecdc661059170fb95505291f1823f583c5867",
+      "bytes": 260,
+      "kind": "other",
+      "produced_by": "subagent env check scripts (scratch/t001/groot_checks) / curl",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n17_pinned_load_BLOCKED_gated_backbone.stdout.log",
+      "sha256": "d8656d23e3f6958c8b45660206fe48c08fb4f3a306c959424c866f8aa5d37246",
+      "bytes": 5190,
+      "kind": "stdout",
+      "produced_by": "subagent env check scripts (scratch/t001/groot_checks) / curl",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n17_standin_qwen3vl_env_check_NOT_PINNED.stdout.log",
+      "sha256": "44788b12efb47e3c27db9e124637d39b129596f94a148b873190842bfb830997",
+      "bytes": 2337,
+      "kind": "stdout",
+      "produced_by": "subagent env check scripts (scratch/t001/groot_checks) / curl",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/libero_setup_and_render_check.stdout.log",
+      "sha256": "c3a6c4d08ac153d70c5484c8a7ab70025920d0a4a15ed08b554e716ed8da6d77",
+      "bytes": 1999,
+      "kind": "stdout",
+      "produced_by": "env/setup_libero.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_groot_n15.stdout.log",
+      "sha256": "28c89fe95cc91eeedb3189568c2188e1ff35e3f7dfd3a9bbcf89c071360d0c72",
+      "bytes": 3616,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_groot_n16.stdout.log",
+      "sha256": "5361ff169e2ee4351141094c80173b41730a30010c221dbb7b1b253f6acf9cda",
+      "bytes": 12083,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_pi0.stdout.log",
+      "sha256": "ba012731fe582c22dbb70706e5dd3f125bcb5ac87ce24ed18897243ca3540461",
+      "bytes": 3253,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_pi05.stdout.log",
+      "sha256": "f19ddde3c2cd1a3a51ee86d33c9e08564af3195b1607eef355350ca74d7004f2",
+      "bytes": 3411,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_pi0_attempt1_random_weights_REFUSED.json",
+      "sha256": "aade4be89ae288748da6845f994749491984ca640f6fc81c77136c693e59103a",
+      "bytes": 1249,
+      "kind": "other",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_pi0_attempt1_random_weights_REFUSED.stdout.log",
+      "sha256": "23a90446062a666001caf68210901761588a51cefcf8f626ef3c10cbf7d89707",
+      "bytes": 1248,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_pi0_attempt2_no_sentencepiece_FAILED.json",
+      "sha256": "a6c022d45b60cade5206e0a11e138d1b277650bf3ba615b8fcdaeb044b5f9606",
+      "bytes": 6727,
+      "kind": "other",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_pi0_attempt2_no_sentencepiece_FAILED.stdout.log",
+      "sha256": "3948bf3f34bcfba69c979db444679f8c6cda2f7d6d8d0c2473cfdd05d69fcd2e",
+      "bytes": 2267,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smoke_smolvla.stdout.log",
+      "sha256": "fcfb6d495e134f98a2c4b978d61c0f331be09e17b6b6d245551981ab8a5641e3",
+      "bytes": 2782,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_lerobot.py or bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}

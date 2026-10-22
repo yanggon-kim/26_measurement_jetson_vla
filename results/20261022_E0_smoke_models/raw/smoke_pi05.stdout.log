@@ -1,0 +1,107 @@
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/_inductor/compile_fx.py:321: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+W1022 12:50:42.936000 1519748 torch/_inductor/utils.py:1679] [0/0_1] Not enough SMs to use max_autotune_gemm mode
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /home/jameskimh/.cache/huggingface/hub/models--lerobot--pi05_libero_base/snapshots/a217bfd3b14673cf2ce597e69997ab21866438dd
+✓ Loaded state dict from model.safetensors
+Remapped 812 state dict keys
+All keys loaded successfully!
+{
+ "model": "pi05",
+ "label": "smoke test, not a measurement",
+ "checkpoint": "lerobot/pi05_libero_base",
+ "checkpoint_revision": "a217bfd3b14673cf2ce597e69997ab21866438dd",
+ "n_field": "num_inference_steps",
+ "N": 10,
+ "load_s": 178.07192564709112,
+ "shipped_config": {
+  "compile_model": "False",
+  "compile_mode": "max-autotune",
+  "gradient_checkpointing": "False",
+  "num_inference_steps": "10",
+  "dtype": "float32",
+  "chunk_size": "50"
+ },
+ "param_dtypes": [
+  "torch.float32"
+ ],
+ "weights": {
+  "checked": 400,
+  "matched": 400,
+  "checkpoint_file": "model.safetensors",
+  "verdict": "real weights"
+ },
+ "batch": {
+  "image_keys": [
+   "observation.images.image",
+   "observation.images.image2"
+  ],
+  "tokenizer": {
+   "dir": "/home/jameskimh/models/paligemma_tokenizer",
+   "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+   "tokenizer_config": {
+    "tokenizer_class": "GemmaTokenizer",
+    "add_bos_token": true,
+    "add_eos_token": false,
+    "bos_token": "<bos>",
+    "eos_token": "<eos>",
+    "pad_token": "<pad>",
+    "unk_token": "<unk>",
+    "model_max_length": 1000000000000000019884624838656
+   }
+  }
+ },
+ "tokens": {
+  "prefix_tokens_P": 968,
+  "prefix_tokens_valid": 574,
+  "suffix_tokens_S": 50,
+  "suffix_tokens_valid": 50,
+  "n_images": 3,
+  "language_tokens": 200,
+  "language_tokens_valid": 62,
+  "chunk_size": 50
+ },
+ "eager": {
+  "ok": true,
+  "action_shape": [
+   1,
+   50,
+   7
+  ],
+  "finite": true,
+  "wall_ms_5_calls": [
+   1434.5724321901798,
+   1442.8511657752097,
+   1428.3001800067723,
+   1503.0074412934482,
+   1518.8698382116854
+  ],
+  "peak_mem_bytes": 16898864640
+ },
+ "compiled_denoise_step": {
+  "ok": true,
+  "mode": "default",
+  "warmup_plus_timed_s": 34.63293690420687,
+  "action_shape": [
+   1,
+   50,
+   7
+  ],
+  "finite": true,
+  "wall_ms_5_calls": [
+   1452.2032053209841,
+   1594.7464229539037,
+   1555.408962070942,
+   1390.3361009433866,
+   2083.1494526937604
+  ],
+  "peak_mem_bytes": 16898871808,
+  "rel_l2_diff_vs_eager_same_seed": 7.55796705220746e-08
+ }
+}
