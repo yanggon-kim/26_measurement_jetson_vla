@@ -4,9 +4,12 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-T004 done 2026-10-22 (commit ce769e5). Next: T005 (optimisation ladder and `best_bf16`, deliverable 1). Owner's priorities (2026-10-22): the task order stays T002 → T015; the
-latency breakdown for `eager_fp32` and `best_bf16` of all six models (T004, T005) comes first, then the ncu analysis,
-**`best_bf16` before `eager_fp32` inside T006–T008** (the mode order inside a task is not fixed by the plan).
+**T005 paused by the owner (2026-10-22 ≈ 17:20 UTC); no job is running.** Resume point, provisional numbers and the
+exact restart commands: `PROGRESS.md`, "T005 resume point". Done: six ladders, two diagnostics (the π0 GEMM M-cliff and
+its `linear_mpad` fix), E4i stage 1 for all six models. Next: the open checks (fp32 islands in π0.5 / SmolVLA, N1.5
+graph-correctness, `all_compile_autotune` re-measure), E4i stage 2, `best_bf16` + confirmation runs, π0 N = 4, Part A,
+the reports, the review. Owner's priorities (2026-10-22): the latency breakdown for `eager_fp32` and `best_bf16` of
+all six models first, then the ncu analysis, `best_bf16` before `eager_fp32` inside T006–T008.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -87,3 +90,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-22 T003 done: BW 258.2 GB/s; bf16 129.8 / int8 330.6 / tf32 62.4 / fp32 6.43 T(FL)OP/s; counters validated (0.1 %); expert projections 3.29 ms/step (1.37× floor); DRAM latency ≈ 520 ns; hidden fast memory-path state found. Independent review: 3 conclusions corrected (ceiling modes, bandwidth claim retracted, latency v2).
 - 2026-10-22 T004 done: E3 for six models (v2 GR00T after review), E4 π0 stock modes (best whole max-autotune 360.7 ms, ≤ 15 %); unused GR00T lm_head found; N1.7 process-to-process expert variation (72–86 ms) open. Two independent review passes fixed.
 - 2026-10-22 T005: pi0 prefix slower than pi0.5's traced to a cuBLASLt kernel-choice cliff at M = 816 (gate/up GEMM 3.8x slower); fixed by linear_mpad (bit-identical); note for other agents in reports/NOTE_gemm_shape_cliff_m_padding.md.
+- 2026-10-22 T005: six ladders done; E4i stage 1 done for all six models (N1.5 9/10); attention-backend switches (SDPA / flash-attn) all slower than Inductor's own fusion of eager attention; forced autotuning helps experts, hurts vision/prefix; paused by the owner, resume point in PROGRESS.md.
