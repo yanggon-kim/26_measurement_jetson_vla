@@ -1,0 +1,286 @@
+{
+ "model": "pi0",
+ "rung": "bf16_mpad_whole_graphs",
+ "N": 10,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "gate_start": {
+  "time_utc": "2026-10-22T16:58:55Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4311,
+   "oc3": 127694
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "38218",
+   "gpu-thermal": "38218",
+   "cpu-thermal": "37000",
+   "soc012-thermal": "36968",
+   "soc345-thermal": "36875"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "shipped_config": {
+   "compile_model": "True",
+   "compile_mode": "max-autotune",
+   "gradient_checkpointing": "True",
+   "num_inference_steps": "10",
+   "dtype": "bfloat16",
+   "chunk_size": "50"
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "checkpoint_file": "model.safetensors",
+   "verdict": "real weights"
+  },
+  "batch_info": {
+   "image_keys": [
+    "observation.images.image",
+    "observation.images.image2"
+   ],
+   "tokenizer": {
+    "dir": "/home/jameskimh/models/paligemma_tokenizer",
+    "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+    "tokenizer_config": {
+     "tokenizer_class": "GemmaTokenizer",
+     "add_bos_token": true,
+     "add_eos_token": false,
+     "bos_token": "<bos>",
+     "eos_token": "<eos>",
+     "pad_token": "<pad>",
+     "unk_token": "<unk>",
+     "model_max_length": 1000000000000000019884624838656
+    }
+   }
+  },
+  "action_horizon": 50
+ },
+ "tokens": {
+  "prefix_tokens_P": 816,
+  "prefix_tokens_valid": 533,
+  "suffix_tokens_S": 51,
+  "suffix_tokens_valid": 51,
+  "n_images": 3,
+  "language_tokens": 48,
+  "language_tokens_valid": 21,
+  "chunk_size": 50
+ },
+ "rung_desc": {
+  "rung": "bf16_mpad_whole_graphs",
+  "label": "bf16 casts + mpad + sample_actions compiled with graphs (e2e only)",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 74 layer-norm modules -> bf16 (own parameters only)",
+   "linear_mpad(lm_expert): 72 Linear modules padded; shapes padded: {'M=816 K=2048 N=256 torch.bfloat16': {'pad_to': 880, 'ms_at_M': 0.0252, 'ms_at_pad': 0.0213}, 'M=816 K=2048 N=16384 torch.bfloat16': {'pad_to': 1024, 'ms_at_M': 1.6706, 'ms_at_pad': 0.5755}}"
+  ],
+  "compiled": [
+   "PI0Pytorch.sample_actions@reduce-overhead"
+  ],
+  "autotune": "",
+  "regions": false,
+  "note": "",
+  "compile_wrap_s": 0.6796967592090368,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 8049542624,
+  "torch.float32": 12992640
+ },
+ "by_N": {
+  "10": {
+   "regions": {
+    "preprocess_wall": {
+     "median_ms": 0.6413408555090427,
+     "mean_ms": 0.6422007037326694,
+     "p5_ms": 0.6159618496894836,
+     "p95_ms": 0.6738216616213322,
+     "min_ms": 0.5960259586572647,
+     "max_ms": 0.6963219493627548,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 165.89423129335046,
+     "mean_ms": 165.8491199463606,
+     "p5_ms": 165.0242330506444,
+     "p95_ms": 166.7659687809646,
+     "min_ms": 164.29493902251124,
+     "max_ms": 167.47544100508094,
+     "n": 100
+    },
+    "postprocess_wall": {
+     "median_ms": 0.16107410192489624,
+     "mean_ms": 0.1623364118859172,
+     "p5_ms": 0.15404587611556053,
+     "p95_ms": 0.17471285536885262,
+     "min_ms": 0.1440742053091526,
+     "max_ms": 0.2079429104924202,
+     "n": 100
+    },
+    "e2e_full_wall": {
+     "median_ms": 166.69812239706516,
+     "mean_ms": 166.65365706197917,
+     "p5_ms": 165.8132034353912,
+     "p95_ms": 167.57802199572325,
+     "min_ms": 165.11488985270262,
+     "max_ms": 168.25799504294991,
+     "n": 100
+    }
+   },
+   "first_call_s": 87.40256395284086,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7,
+    7
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 8265894912,
+   "control_frequency_hz": 5.998103307923944,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 47.47,
+    "state": "normal",
+    "gpu_C": "42031"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.11,
+    "state": "normal",
+    "gpu_C": "45531"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  350
+ ],
+ "inductor_counters": {
+  "graph_break": {
+   "copy.deepcopy()\n  Explanation: Dynamo does not support copy.deepcopy()\n  Hint: Avoid calling copy.deepcopy()\n  Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\n\n  Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html": 3
+  },
+  "stats": {
+   "calls_captured": 4905,
+   "unique_graphs": 7
+  },
+  "inductor": {
+   "fxgraph_cache_miss": 7,
+   "extern_calls": 987,
+   "async_compile_cache_miss": 125,
+   "triton_bundler_save_kernel": 912,
+   "triton_bundler_save_static_autotuner": 7,
+   "benchmarking.InductorBenchmarker.benchmark": 81,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 103,
+   "pattern_matcher_count": 3077,
+   "pattern_matcher_nodes": 3653,
+   "async_compile_cache_hit": 62,
+   "pad_mm_bench": 11,
+   "cudagraph_recorded_non_static_inputs": 398
+  }
+ },
+ "mpad_table": {
+  "M=816 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 816,
+   "ms_at_M": 0.0682,
+   "ms_at_pad": 0.0682
+  },
+  "M=816 K=2048 N=256 torch.bfloat16": {
+   "pad_to": 880,
+   "ms_at_M": 0.0252,
+   "ms_at_pad": 0.0213
+  },
+  "M=816 K=2048 N=16384 torch.bfloat16": {
+   "pad_to": 1024,
+   "ms_at_M": 1.6706,
+   "ms_at_pad": 0.5755
+  },
+  "M=816 K=16384 N=2048 torch.bfloat16": {
+   "pad_to": 816,
+   "ms_at_M": 1.2251,
+   "ms_at_pad": 1.2251
+  },
+  "M=51 K=1024 N=2048 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0216,
+   "ms_at_pad": 0.0216
+  },
+  "M=51 K=1024 N=256 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0207,
+   "ms_at_pad": 0.0207
+  },
+  "M=51 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0211,
+   "ms_at_pad": 0.0211
+  },
+  "M=51 K=1024 N=4096 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0234,
+   "ms_at_pad": 0.0234
+  },
+  "M=51 K=4096 N=1024 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0249,
+   "ms_at_pad": 0.0249
+  }
+ },
+ "wall_s": 283.1767635345459
+}

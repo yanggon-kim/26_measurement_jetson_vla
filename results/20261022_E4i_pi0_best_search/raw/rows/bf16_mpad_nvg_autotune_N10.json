@@ -1,0 +1,510 @@
+{
+ "model": "pi0",
+ "rung": "bf16_mpad_nvg_autotune",
+ "N": 10,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "gate_start": {
+  "time_utc": "2026-10-22T16:48:21Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4311,
+   "oc3": 127693
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "37781",
+   "gpu-thermal": "37781",
+   "cpu-thermal": "36718",
+   "soc012-thermal": "36343",
+   "soc345-thermal": "36437"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "shipped_config": {
+   "compile_model": "True",
+   "compile_mode": "max-autotune",
+   "gradient_checkpointing": "True",
+   "num_inference_steps": "10",
+   "dtype": "bfloat16",
+   "chunk_size": "50"
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "checkpoint_file": "model.safetensors",
+   "verdict": "real weights"
+  },
+  "batch_info": {
+   "image_keys": [
+    "observation.images.image",
+    "observation.images.image2"
+   ],
+   "tokenizer": {
+    "dir": "/home/jameskimh/models/paligemma_tokenizer",
+    "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+    "tokenizer_config": {
+     "tokenizer_class": "GemmaTokenizer",
+     "add_bos_token": true,
+     "add_eos_token": false,
+     "bos_token": "<bos>",
+     "eos_token": "<eos>",
+     "pad_token": "<pad>",
+     "unk_token": "<unk>",
+     "model_max_length": 1000000000000000019884624838656
+    }
+   }
+  },
+  "action_horizon": 50
+ },
+ "tokens": {
+  "prefix_tokens_P": 816,
+  "prefix_tokens_valid": 533,
+  "suffix_tokens_S": 51,
+  "suffix_tokens_valid": 51,
+  "n_images": 3,
+  "language_tokens": 48,
+  "language_tokens_valid": 21,
+  "chunk_size": 50
+ },
+ "rung_desc": {
+  "rung": "bf16_mpad_nvg_autotune",
+  "label": "bf16 casts + mpad + compile (nvg) + forced GEMM autotuning",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 74 layer-norm modules -> bf16 (own parameters only)",
+   "linear_mpad(lm_expert): 90 Linear modules padded; shapes padded: {'M=816 K=2048 N=256 torch.bfloat16': {'pad_to': 992, 'ms_at_M': 0.0255, 'ms_at_pad': 0.0222}, 'M=816 K=2048 N=16384 torch.bfloat16': {'pad_to': 1024, 'ms_at_M': 1.7405, 'ms_at_pad': 0.5796}, 'M=816 K=16384 N=2048 torch.bfloat16': {'pad_to': 976, 'ms_at_M': 1.6179, 'ms_at_pad': 1.4104}}"
+  ],
+  "compiled": [
+   "PI0Pytorch.denoise_step@reduce-overhead",
+   "PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone",
+   "PaliGemmaWithExpertModel.forward@max-autotune-no-cudagraphs"
+  ],
+  "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+  "regions": true,
+  "note": "",
+  "compile_wrap_s": 0.6847911537624896,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 8049542624,
+  "torch.float32": 12992640
+ },
+ "by_N": {
+  "10": {
+   "regions": {
+    "vision": {
+     "median_ms": 29.891808032989502,
+     "mean_ms": 29.894806356430053,
+     "p5_ms": 29.81187152862549,
+     "p95_ms": 29.99193572998047,
+     "min_ms": 29.771552085876465,
+     "max_ms": 30.128223419189453,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 73.28174209594727,
+     "mean_ms": 73.29405067443848,
+     "p5_ms": 72.52092742919922,
+     "p95_ms": 74.02201843261719,
+     "min_ms": 72.2001953125,
+     "max_ms": 74.51875305175781,
+     "n": 100
+    },
+    "ae_step[0]": {
+     "median_ms": 6.640544176101685,
+     "mean_ms": 6.660490870475769,
+     "p5_ms": 6.524223804473877,
+     "p95_ms": 6.835872173309326,
+     "min_ms": 6.473663806915283,
+     "max_ms": 7.035583972930908,
+     "n": 100
+    },
+    "ae_step[1]": {
+     "median_ms": 6.449824094772339,
+     "mean_ms": 6.447253766059876,
+     "p5_ms": 6.303808212280273,
+     "p95_ms": 6.56771183013916,
+     "min_ms": 6.244287967681885,
+     "max_ms": 6.6808319091796875,
+     "n": 100
+    },
+    "ae_step[2]": {
+     "median_ms": 6.393440008163452,
+     "mean_ms": 6.3985209560394285,
+     "p5_ms": 6.284287929534912,
+     "p95_ms": 6.4969282150268555,
+     "min_ms": 6.243743896484375,
+     "max_ms": 6.557216167449951,
+     "n": 100
+    },
+    "ae_step[3]": {
+     "median_ms": 6.359488010406494,
+     "mean_ms": 6.368273606300354,
+     "p5_ms": 6.2506561279296875,
+     "p95_ms": 6.503680229187012,
+     "min_ms": 6.213568210601807,
+     "max_ms": 6.681248188018799,
+     "n": 100
+    },
+    "ae_step[4]": {
+     "median_ms": 6.362111806869507,
+     "mean_ms": 6.365494065284729,
+     "p5_ms": 6.257215976715088,
+     "p95_ms": 6.458399772644043,
+     "min_ms": 6.201568126678467,
+     "max_ms": 6.55347204208374,
+     "n": 100
+    },
+    "ae_step[5]": {
+     "median_ms": 6.324624061584473,
+     "mean_ms": 6.337006731033325,
+     "p5_ms": 6.226528167724609,
+     "p95_ms": 6.437056064605713,
+     "min_ms": 6.20252799987793,
+     "max_ms": 6.620192050933838,
+     "n": 100
+    },
+    "ae_step[6]": {
+     "median_ms": 6.3323681354522705,
+     "mean_ms": 6.334375023841858,
+     "p5_ms": 6.225823879241943,
+     "p95_ms": 6.412928104400635,
+     "min_ms": 6.185120105743408,
+     "max_ms": 6.477727890014648,
+     "n": 100
+    },
+    "ae_step[7]": {
+     "median_ms": 6.315583944320679,
+     "mean_ms": 6.3232326459884645,
+     "p5_ms": 6.226719856262207,
+     "p95_ms": 6.41264009475708,
+     "min_ms": 6.172736167907715,
+     "max_ms": 6.544960021972656,
+     "n": 100
+    },
+    "ae_step[8]": {
+     "median_ms": 6.325007915496826,
+     "mean_ms": 6.323708152770996,
+     "p5_ms": 6.206975936889648,
+     "p95_ms": 6.464352130889893,
+     "min_ms": 6.160736083984375,
+     "max_ms": 6.562464237213135,
+     "n": 100
+    },
+    "ae_step[9]": {
+     "median_ms": 6.313311815261841,
+     "mean_ms": 6.318369917869568,
+     "p5_ms": 6.208223819732666,
+     "p95_ms": 6.418272018432617,
+     "min_ms": 6.176896095275879,
+     "max_ms": 6.612800121307373,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 64.67961502075195,
+     "mean_ms": 64.54063804626465,
+     "p5_ms": 63.48064041137695,
+     "p95_ms": 65.21190643310547,
+     "min_ms": 63.24931335449219,
+     "max_ms": 65.64096069335938,
+     "n": 100
+    },
+    "preprocess_wall": {
+     "median_ms": 0.6179651245474815,
+     "mean_ms": 0.6173920165747404,
+     "p5_ms": 0.575479120016098,
+     "p95_ms": 0.6639421917498112,
+     "min_ms": 0.5491282790899277,
+     "max_ms": 0.6951559334993362,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 170.40817392989993,
+     "mean_ms": 170.35410752054304,
+     "p5_ms": 169.3017240613699,
+     "p95_ms": 171.25182505697012,
+     "min_ms": 167.91955288499594,
+     "max_ms": 172.05307027325034,
+     "n": 100
+    },
+    "postprocess_wall": {
+     "median_ms": 0.15678186900913715,
+     "mean_ms": 0.15914401039481163,
+     "p5_ms": 0.14836015179753304,
+     "p95_ms": 0.1774439588189125,
+     "min_ms": 0.14337897300720215,
+     "max_ms": 0.21498044952750206,
+     "n": 100
+    },
+    "e2e_full_wall": {
+     "median_ms": 171.17530689574778,
+     "mean_ms": 171.1306435475126,
+     "p5_ms": 170.0286390259862,
+     "p95_ms": 172.05827590078115,
+     "min_ms": 168.64230018109083,
+     "max_ms": 172.82697511836886,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 2.617982719093561,
+     "mean_ms": 2.6246124434098603,
+     "p5_ms": 2.562583550810814,
+     "p95_ms": 2.6940860375761986,
+     "min_ms": 2.5171648152172565,
+     "max_ms": 2.7554987482726574,
+     "n": 100
+    },
+    "ae_step_individual[0]": {
+     "median_ms": 6.640544176101685,
+     "mean_ms": 6.660490870475769,
+     "p5_ms": 6.524223804473877,
+     "p95_ms": 6.835872173309326,
+     "min_ms": 6.473663806915283,
+     "max_ms": 7.035583972930908,
+     "n": 100
+    },
+    "ae_step_individual[1]": {
+     "median_ms": 6.449824094772339,
+     "mean_ms": 6.447253766059876,
+     "p5_ms": 6.303808212280273,
+     "p95_ms": 6.56771183013916,
+     "min_ms": 6.244287967681885,
+     "max_ms": 6.6808319091796875,
+     "n": 100
+    },
+    "ae_step_individual[2]": {
+     "median_ms": 6.393440008163452,
+     "mean_ms": 6.3985209560394285,
+     "p5_ms": 6.284287929534912,
+     "p95_ms": 6.4969282150268555,
+     "min_ms": 6.243743896484375,
+     "max_ms": 6.557216167449951,
+     "n": 100
+    },
+    "ae_step_individual[3]": {
+     "median_ms": 6.359488010406494,
+     "mean_ms": 6.368273606300354,
+     "p5_ms": 6.2506561279296875,
+     "p95_ms": 6.503680229187012,
+     "min_ms": 6.213568210601807,
+     "max_ms": 6.681248188018799,
+     "n": 100
+    },
+    "ae_step_individual[4]": {
+     "median_ms": 6.362111806869507,
+     "mean_ms": 6.365494065284729,
+     "p5_ms": 6.257215976715088,
+     "p95_ms": 6.458399772644043,
+     "min_ms": 6.201568126678467,
+     "max_ms": 6.55347204208374,
+     "n": 100
+    },
+    "ae_step_individual[5]": {
+     "median_ms": 6.324624061584473,
+     "mean_ms": 6.337006731033325,
+     "p5_ms": 6.226528167724609,
+     "p95_ms": 6.437056064605713,
+     "min_ms": 6.20252799987793,
+     "max_ms": 6.620192050933838,
+     "n": 100
+    },
+    "ae_step_individual[6]": {
+     "median_ms": 6.3323681354522705,
+     "mean_ms": 6.334375023841858,
+     "p5_ms": 6.225823879241943,
+     "p95_ms": 6.412928104400635,
+     "min_ms": 6.185120105743408,
+     "max_ms": 6.477727890014648,
+     "n": 100
+    },
+    "ae_step_individual[7]": {
+     "median_ms": 6.315583944320679,
+     "mean_ms": 6.3232326459884645,
+     "p5_ms": 6.226719856262207,
+     "p95_ms": 6.41264009475708,
+     "min_ms": 6.172736167907715,
+     "max_ms": 6.544960021972656,
+     "n": 100
+    },
+    "ae_step_individual[8]": {
+     "median_ms": 6.325007915496826,
+     "mean_ms": 6.323708152770996,
+     "p5_ms": 6.206975936889648,
+     "p95_ms": 6.464352130889893,
+     "min_ms": 6.160736083984375,
+     "max_ms": 6.562464237213135,
+     "n": 100
+    },
+    "ae_step_individual[9]": {
+     "median_ms": 6.313311815261841,
+     "mean_ms": 6.318369917869568,
+     "p5_ms": 6.208223819732666,
+     "p95_ms": 6.418272018432617,
+     "min_ms": 6.176896095275879,
+     "max_ms": 6.612800121307373,
+     "n": 100
+    }
+   },
+   "first_call_s": 139.75077081797644,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": 6.381630396842956,
+   "peak_mem_allocated_bytes": 8388568576,
+   "control_frequency_hz": 5.837923459096412,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 47.96,
+    "state": "normal",
+    "gpu_C": "44375"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 48.84,
+    "state": "normal",
+    "gpu_C": "47812"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  350
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 3741,
+   "unique_graphs": 4
+  },
+  "inductor": {
+   "pattern_matcher_count": 1845,
+   "pattern_matcher_nodes": 2205,
+   "fxgraph_cache_miss": 4,
+   "async_compile_cache_miss": 665,
+   "generated_module_cache_miss": 432,
+   "generated_module_cache_hit": 8652,
+   "select_algorithm_precompile": 26,
+   "select_algorithm_num_precompiles": 443,
+   "select_algorithm_autotune": 26,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 800,
+   "benchmarking.InductorBenchmarker.benchmark": 305,
+   "async_compile_cache_hit": 114,
+   "extern_calls": 226,
+   "triton_bundler_save_kernel": 5944,
+   "triton_bundler_save_static_autotuner": 4,
+   "cudagraph_recorded_non_static_inputs": 401,
+   "coordesc_tuning_bench": 113,
+   "pad_mm_bench": 11
+  },
+  "graph_break": {
+   "copy.deepcopy()\n  Explanation: Dynamo does not support copy.deepcopy()\n  Hint: Avoid calling copy.deepcopy()\n  Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\n\n  Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html": 1
+  }
+ },
+ "mpad_table": {
+  "M=816 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 816,
+   "ms_at_M": 0.0702,
+   "ms_at_pad": 0.0702
+  },
+  "M=816 K=2048 N=256 torch.bfloat16": {
+   "pad_to": 992,
+   "ms_at_M": 0.0255,
+   "ms_at_pad": 0.0222
+  },
+  "M=816 K=2048 N=16384 torch.bfloat16": {
+   "pad_to": 1024,
+   "ms_at_M": 1.7405,
+   "ms_at_pad": 0.5796
+  },
+  "M=816 K=16384 N=2048 torch.bfloat16": {
+   "pad_to": 976,
+   "ms_at_M": 1.6179,
+   "ms_at_pad": 1.4104
+  },
+  "M=51 K=1024 N=2048 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0218,
+   "ms_at_pad": 0.0218
+  },
+  "M=51 K=1024 N=256 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0217,
+   "ms_at_pad": 0.0217
+  },
+  "M=51 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0214,
+   "ms_at_pad": 0.0214
+  },
+  "M=51 K=1024 N=4096 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0224,
+   "ms_at_pad": 0.0224
+  },
+  "M=51 K=4096 N=1024 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0248,
+   "ms_at_pad": 0.0248
+  }
+ },
+ "wall_s": 336.04360795021057
+}

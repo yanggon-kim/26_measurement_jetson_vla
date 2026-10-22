@@ -1,0 +1,656 @@
+{
+  "date_utc": "2026-10-22T17:39:13Z",
+  "experiment": "E4i best_bf16 search, stage 1 (pi0)",
+  "task": "T005",
+  "model": "pi0",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+  "rung": "per row: bf16_both_graphs_mpad, bf16_mpad_graphs, bf16_mpad_graphs_attn_eager_sdpa, bf16_mpad_graphs_attn_sdpa_eager, bf16_mpad_graphs_attn_sdpa_sdpa, bf16_mpad_graphs_autotune, bf16_mpad_graphs_nofuse, bf16_mpad_nvg, bf16_mpad_nvg_attn_fa2_eager, bf16_mpad_nvg_attn_fa2_sdpa, bf16_mpad_nvg_attn_sdpa_sdpa, bf16_mpad_nvg_autotune, bf16_mpad_whole_graphs, bf16_mpad_whole_graphs_autotune, eager_bf16_mpad",
+  "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+  "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+  "num_denoise_steps": "10 (extra N per rung for the slope: by_N in the row files)",
+  "action_horizon": 50,
+  "prefix_tokens": 816,
+  "suffix_tokens": 51,
+  "batch": 1,
+  "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "de2f681 (eager_bf16_mpad, bf16_both_graphs_mpad); ff56d03 (stage-1 candidates via bench/queues/t005_e4i.sh)",
+  "command": "~/venvs/lerobot/bin/python bench/opt_ladder.py --model pi0 --out results/20261022_E4i_pi0_best_search --rungs <candidates: bench/queues/t005_e4i.sh>",
+  "throttled": {
+    "bf16_both_graphs_mpad_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_attn_eager_sdpa_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_attn_sdpa_eager_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_attn_sdpa_sdpa_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_autotune_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_nofuse_N10": {
+      "10": false
+    },
+    "bf16_mpad_nvg_N10": {
+      "10": false
+    },
+    "bf16_mpad_nvg_attn_fa2_eager_N10": {
+      "10": false
+    },
+    "bf16_mpad_nvg_attn_fa2_sdpa_N10": {
+      "10": false
+    },
+    "bf16_mpad_nvg_attn_sdpa_sdpa_N10": {
+      "10": false
+    },
+    "bf16_mpad_nvg_autotune_N10": {
+      "10": false
+    },
+    "bf16_mpad_whole_graphs_N10": {
+      "10": false
+    },
+    "bf16_mpad_whole_graphs_autotune_N10": {
+      "10": false
+    },
+    "eager_bf16_mpad_N10": {
+      "10": false
+    }
+  },
+  "memory_path_state": {
+    "bf16_both_graphs_mpad_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_attn_eager_sdpa_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_attn_sdpa_eager_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_attn_sdpa_sdpa_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_autotune_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_nofuse_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_nvg_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_nvg_attn_fa2_eager_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_nvg_attn_fa2_sdpa_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_nvg_attn_sdpa_sdpa_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_nvg_autotune_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_whole_graphs_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_whole_graphs_autotune_N10": {
+      "10": "normal->normal"
+    },
+    "eager_bf16_mpad_N10": {
+      "10": "normal->normal"
+    }
+  },
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39656",
+    "gpu-thermal": "38750",
+    "cpu-thermal": "39656",
+    "soc012-thermal": "37250",
+    "soc345-thermal": "37593"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "41644a82dad7b5cb9580af755085c8727aee5f0b1fdbb55ea949e40c834ddf46",
+      "bytes": 4201,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "d3a0115bacaa93db943f12e30d0e161234edaa654536c89e641e19c971dcc165",
+      "bytes": 83201,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/samples/bf16_both_graphs_mpad_N10.csv",
+      "sha256": "86725eb1183934278865e2fd7aab96e358ffeb97b5038e2d0fdab4bc520d552a",
+      "bytes": 111736,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_N10.csv",
+      "sha256": "23ae5a274d29630d969466fd6568964e94d6671ffdbf55966f06fe61d5f180d2",
+      "bytes": 112106,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_attn_eager_sdpa_N10.csv",
+      "sha256": "2481a8ba5cb19d92aab27233e5e2fd49701399afd111e8348cc1aae0eca7e710",
+      "bytes": 111932,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_attn_sdpa_eager_N10.csv",
+      "sha256": "0bae008be00b823df96ba79b6b2d7ff50c8f1c889c12038570afa297f79590ce",
+      "bytes": 111940,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_attn_sdpa_sdpa_N10.csv",
+      "sha256": "24aa93de178bf613117e62b98b753a8a54212333922e8bfea22438e9755571a4",
+      "bytes": 112001,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_autotune_N10.csv",
+      "sha256": "6c855edc9956abbd52806fe8ff6b4e49866c3cf69adc23f69eda3f750f919666",
+      "bytes": 112112,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_nofuse_N10.csv",
+      "sha256": "272a3910daf246b660454860f5f65ce460397b2d11ebefed834a59d27f1bd99c",
+      "bytes": 111860,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_nvg_N10.csv",
+      "sha256": "14558d0d7c29add0b9f1b01591f72c31f301e4d09a69b7237f9adbd5d16d08a3",
+      "bytes": 112063,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_nvg_attn_fa2_eager_N10.csv",
+      "sha256": "4d4880c3ce05d62879182d73fa4eacb518c6f59af143c519f7cec934921a847d",
+      "bytes": 112011,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_nvg_attn_fa2_sdpa_N10.csv",
+      "sha256": "22960efcaae73a6536949b3ddeb693f72f88a4ff57acc49c1435c8844412c3f9",
+      "bytes": 111670,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_nvg_attn_sdpa_sdpa_N10.csv",
+      "sha256": "27c575ccc5eebbc0f5cfcb4764081dd2d751dc50151c5e267f3677519b833a2d",
+      "bytes": 111907,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_nvg_autotune_N10.csv",
+      "sha256": "59acd37b076791043615ac0a65ba8f67d66af431f12201f370a070fb4a3925fa",
+      "bytes": 112096,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_whole_graphs_N10.csv",
+      "sha256": "f6cecf5c4bc0c37997954ddaf9988884205057ded3315ec2d174423c1f44f84b",
+      "bytes": 15959,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_whole_graphs_autotune_N10.csv",
+      "sha256": "6b82166e1edf25952dec5e812bd9d9e0a30bbd88aa767ad1d84292853a3e4524",
+      "bytes": 15982,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/eager_bf16_mpad_N10.csv",
+      "sha256": "55e9f99921e81fa671c54bcb93baddae0205dfc29d25694c6f913f7bc52475ab",
+      "bytes": 113755,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_both_graphs_mpad_N10.npz",
+      "sha256": "36134d7766485be4f250b60c3713d5e9ca57b24b26fb153a92de5c3f9dc367f0",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_N10.npz",
+      "sha256": "db144b9f824077f66141295f110f651e5f2b74a3ba4574c2730828156e07eab7",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_attn_eager_sdpa_N10.npz",
+      "sha256": "89b23ba449242e7bb4a0963bd902503884e44aaf824316797e18cc25c5bd1106",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_attn_sdpa_eager_N10.npz",
+      "sha256": "56051e0d76f084fb635a2ba452b5c7c238d02ea4ddf5b38372ac23f6a0fe2215",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_attn_sdpa_sdpa_N10.npz",
+      "sha256": "0677a404eceae93c47ab78addbaee499b7ed2d749d2c74bbae876eef62558715",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_autotune_N10.npz",
+      "sha256": "52a5b909b7b8709914fe6e355c4d3f95b210183636f89bf2bce2ee4daf1cbeb5",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_nofuse_N10.npz",
+      "sha256": "64230ce6fef61962f820cb555fd705cd9dd38afe22c0a39ab73fa7319dbd3158",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_nvg_N10.npz",
+      "sha256": "5539be9da1a88661f97f30bf4704263551f9905954bba0ee9659a75171f327db",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_nvg_attn_fa2_eager_N10.npz",
+      "sha256": "45e9ba214441b0576fc9c121e4c28a66251cd019a4bfb5cafcac0657a8797353",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_nvg_attn_fa2_sdpa_N10.npz",
+      "sha256": "ffbf4fc8e8385eb3ca4c7f038d36a98e3aef20c28ff315a7cf0b3954edeec802",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_nvg_attn_sdpa_sdpa_N10.npz",
+      "sha256": "4c702ff6eea4797604fa4b3edcebb605c5a960b905e3c94b3a7eea9c2e3a5142",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_nvg_autotune_N10.npz",
+      "sha256": "591ab7432a9ca4c6d342c2eb5d78eb69c3218d4f9abd852435a1bcb12b58234a",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_whole_graphs_N10.npz",
+      "sha256": "76861b18503bc5acdf49c6bd2dfe7bd87e2fa0a459683dd772d7f7aa0c4a8fb4",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_whole_graphs_autotune_N10.npz",
+      "sha256": "a9b79ff6c734350fb0c7e02e74b9dcf1f4315b10dfd807023da1c375f71fc4b0",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/eager_bf16_mpad_N10.npz",
+      "sha256": "71858da7032da79f43ab490445fd088096496ec2079d50afc7fd3ecc83406591",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_both_graphs_mpad_N10.json",
+      "sha256": "800cd1d6d89c09c303cf9d24eacef15209a7abec65a5be750e208202de2a5cb3",
+      "bytes": 11418,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_N10.json",
+      "sha256": "58253e840766835a4ba3f00a4aba794dcf503b72847b8775e4048527071afd2f",
+      "bytes": 13387,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_attn_eager_sdpa_N10.json",
+      "sha256": "5de6aa58c9aa19994c3471550f4e160d548bf49dc9a8a6ba8bbebcdf471a063e",
+      "bytes": 13560,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_attn_sdpa_eager_N10.json",
+      "sha256": "262b2bb22f2513930bfb8b69cf87ae76dbf816d6ceac6272656c121768839b06",
+      "bytes": 13550,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_attn_sdpa_sdpa_N10.json",
+      "sha256": "c9617964195a99e5083de50af686719f6faacd3cc74c327eb935293a1ea3d75b",
+      "bytes": 13612,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_autotune_N10.json",
+      "sha256": "78276faee2a0ee6f23b994c201a77a7aff2aa872f4d9af045b79f12850b23a28",
+      "bytes": 13708,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_nofuse_N10.json",
+      "sha256": "48cd923f6db115b3329c8d0d078e6d6addad39862f2c03f84dca682ed3e8fbce",
+      "bytes": 13570,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_nvg_N10.json",
+      "sha256": "2504b1721fd9a08091f210114b16ebe0302b2f6fcec6f5d2eecf34b8f909cb35",
+      "bytes": 13421,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_nvg_attn_fa2_eager_N10.json",
+      "sha256": "4a8ba5fe76d3c91a1f837f3779d2535f6d73fb445866f9136f05953d0e796408",
+      "bytes": 14855,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_nvg_attn_fa2_sdpa_N10.json",
+      "sha256": "9e0aa895fc4d5f4e22042fa8185655425293281ed4f6bf84af6235eeb0b7f7d8",
+      "bytes": 14861,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_nvg_attn_sdpa_sdpa_N10.json",
+      "sha256": "fec5159a178e0f4a56f344e93b7aaf97364c831c9e300bfb368f0a79d5bbd7f7",
+      "bytes": 13722,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_nvg_autotune_N10.json",
+      "sha256": "87b6510e47d37ffe2ed4cf86a619db7b42242c20fffecd453815dcb47a6f2a67",
+      "bytes": 13825,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_whole_graphs_N10.json",
+      "sha256": "f674c735a1f59eecfded51a88388787f3cf7698ce1495f4296b774dd829bb436",
+      "bytes": 7244,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_whole_graphs_autotune_N10.json",
+      "sha256": "79e4bf27e3b0e2d4670a4a4f6720acd3c7abe86047f3fc6c0000a9010b57fe3d",
+      "bytes": 7532,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/eager_bf16_mpad_N10.json",
+      "sha256": "e939adee44cbc216ade4aec412ec6f9d46b64d78f29c320864116cac258e9a84",
+      "bytes": 11288,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_both_graphs_mpad_N10.log",
+      "sha256": "81c8334501a050bb22da8ffac002b84a6ff114167db4fe4d11d298a697b4a7b4",
+      "bytes": 6925,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_N10.log",
+      "sha256": "633a7150a3f070d77c279091a6443b3e6921b2f565794253e75356ed6f8279f8",
+      "bytes": 6920,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_attn_eager_sdpa_N10.log",
+      "sha256": "9d4559873f2e1b381075446a5c47e712252d59fa40cb2d1edc92606cfc3895bb",
+      "bytes": 6936,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_attn_sdpa_eager_N10.log",
+      "sha256": "16b3395ff580b1f2035f08904a8324118fc97310c5c0d51d5223a5063831dc18",
+      "bytes": 6936,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_attn_sdpa_sdpa_N10.log",
+      "sha256": "45ceae449072ab49947ce29142d6cff3a4bf1d3e4c3a089b66fc8fee58b5c814",
+      "bytes": 6935,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_autotune_N10.log",
+      "sha256": "85a0ecae20c1f6ef4519b195771a9208a9f6bbfa35c1b11a4ea8ba4759c41005",
+      "bytes": 66004,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_nofuse_N10.log",
+      "sha256": "2f66a6b51197c0a885896c22d0a61ffbd5f4cb54a6962279552cbac5bb5de64b",
+      "bytes": 6927,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_nvg_N10.log",
+      "sha256": "af9811893b49e1c23dc52b7af572c72ed47653551e172de52ee6c9d9cfdd0c47",
+      "bytes": 6917,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_nvg_attn_fa2_eager_N10.log",
+      "sha256": "9ca90f0291932dcc2c23fda64aacbe0dc9c74f1fd4184293ed1a22beb32a3469",
+      "bytes": 64222,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_nvg_attn_fa2_sdpa_N10.log",
+      "sha256": "2b3e032004e53ce522901a2ed08d3e280ce1c60f9a105eb24f65a8fc20c86a87",
+      "bytes": 64221,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_nvg_attn_sdpa_sdpa_N10.log",
+      "sha256": "1748eff4281e8d503a27f59ee7a21b0b4baaa90063623d1c2c17cdf8578157e9",
+      "bytes": 6932,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_nvg_autotune_N10.log",
+      "sha256": "264fe98039ca71e52ab275ed924e6eb4428b3e3731f4b3a10db73990b0d7f7dc",
+      "bytes": 65687,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_whole_graphs_N10.log",
+      "sha256": "7e3289c318d55579d7adfdf19b2928e8b91ea569049baf41ac875033f8416b8a",
+      "bytes": 12327,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_whole_graphs_autotune_N10.log",
+      "sha256": "9563d6d543a83fb8b04abd280d5a477877b549a66b4979f9fbb4a7bb4339138c",
+      "bytes": 71150,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/eager_bf16_mpad_N10.log",
+      "sha256": "10e6b238ffb2f6bd74ffdb637cc32a9e63b1319097fad9ad111e150a754fda32",
+      "bytes": 897,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    }
+  ]
+}
