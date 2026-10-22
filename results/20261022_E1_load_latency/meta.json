@@ -1,0 +1,85 @@
+{
+  "date_utc": "2026-10-22T05:32:17Z",
+  "model_repo": "n/a",
+  "model_commit": "n/a",
+  "rung": "n/a",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a",
+  "action_horizon": "n/a",
+  "prefix_tokens": "n/a",
+  "suffix_tokens": "n/a",
+  "batch": 1,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "38653812b02f152d1012c87c69c9cb9a62b6710e",
+  "nsys_version": "n/a: not used",
+  "cuobjdump_version": "n/a: not used",
+  "experiment": "E1 step 4: dependent-load latency (pointer chase)",
+  "task": "T003 step 4 (optional)",
+  "model": "n/a",
+  "checkpoint": "n/a",
+  "checkpoint_revision": "n/a",
+  "precision": "int32 indices",
+  "compile_mode": "custom CUDA kernel via torch load_inline (nvcc 13.0, -O3, sm_110)",
+  "n_warmup": "10,000 hops per size",
+  "n_timed": "5 kernels x 200,000 dependent loads per size",
+  "command": [
+    "PTRCHASE_BUILD=scratch/t003/ptrchase python bench/load_latency.py --out results/20261022_E1_load_latency/load_latency.csv"
+  ],
+  "throttled": false,
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "Cycles from clock64 inside the kernel; ns from CUDA events / hops. Repeats beyond L2 vary widely (64 MiB 482-636 cycles; 1 GiB 384-775): report medians with the range.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "38031",
+    "gpu-thermal": "37656",
+    "cpu-thermal": "38031",
+    "soc012-thermal": "37500",
+    "soc345-thermal": "36375"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/load_latency.stdout.log",
+      "sha256": "27e6681a7ca99547ae462a4acbcbaf387d74b02e1dad2dd61ac5deed176cc258",
+      "bytes": 347,
+      "kind": "stdout",
+      "produced_by": "bench/load_latency.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "load_latency.csv",
+      "sha256": "3a4cba77f76f73cc36514fdfd2af8e07350d2126c3b86d47be1c2322d7649a96",
+      "bytes": 2194,
+      "kind": "other",
+      "produced_by": "bench/load_latency.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
