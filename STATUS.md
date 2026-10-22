@@ -4,7 +4,7 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-T002 done 2026-10-22 (commit 3a5417b). T003 done 2026-10-22. Next: T004 (baseline latency, all six models). Owner's priorities (2026-10-22): the task order stays T002 → T015; the
+T004 done 2026-10-22 (commit ce769e5). Next: T005 (optimisation ladder and `best_bf16`, deliverable 1). Owner's priorities (2026-10-22): the task order stays T002 → T015; the
 latency breakdown for `eager_fp32` and `best_bf16` of all six models (T004, T005) comes first, then the ncu analysis,
 **`best_bf16` before `eager_fp32` inside T006–T008** (the mode order inside a task is not fixed by the plan).
 
@@ -17,6 +17,19 @@ install anything.
 *(none open. H2 — Hugging Face login + Cosmos-Reason2 licence — resolved 2026-10-22, see the log in `STATUS.md`.)*
 
 ## Questions for the research side
+- 2026-10-22 — **GR00T's shipped code computes logits it discards** (T004, `results/20261022_E3_groot_region_split_check/`).
+  The backbone's vocabulary `lm_head` runs on every prefix token and costs 3.5 / 3.9 / 19.9 ms per inference
+  (N1.7 / N1.6 / N1.5; 14 % of N1.5's e2e). The Orin folded it into the prefix (backbone − vision). Conservative reading
+  until answered: Thor reports it as its own region and keeps it in "other"; the prefix is the decoder stack; the
+  Orin-definition prefix is reported beside it. Removing it is a model change and belongs to T014 (E14), not to the
+  `best_bf16` search. Should the PIM study count it as prefix work?
+- 2026-10-22 — **Orin vs Thor GR00T e2e are different quantities.** The Orin's GR00T e2e is `model.get_action` on
+  pre-collated inputs (`reference/orin/bench/groot_phases.py:631`); Thor's E3 e2e is `Gr00tPolicy.get_action`,
+  which includes 14.7–19.3 ms of CPU processing. Thor records both, and every Thor-vs-Orin GR00T comparison uses the
+  model call.
+- 2026-10-22 — **GR00T N1.7's expert time varies between processes** (72.2–85.7 ms at N = 4, nine runs;
+  `results/20261022_E3_groot_n17_state_vs_latency/`). Not the memory-path state. The cause is open; T006 compares a
+  fast and a slow process. Until then N1.7 numbers carry that range.
 - 2026-10-22 — **A hidden performance state changes the expert's timings by up to 1.26×** (T003,
   `results/20261022_E1_state_probe/`). After ≈ 55 s of sustained heavy GPU load (≈ 75 °C), cold weight-streaming
   GEMMs (the π0 expert's pattern) run at ≈ 245 instead of ≈ 166 GB/s for a few seconds; int8 GEMMs jump 258 → 330 TOP/s.
@@ -48,10 +61,12 @@ install anything.
   pins in `docs/00_context.md` look like the Orin's resolved snapshots, which would make them consistent.
 
 ## Repository size (protocol §6f)
-After T003 (2026-10-22): `du -sh results/` 11 M · `du -sh .git` 9.5 M · `size-pack` 2.35 MiB (newer objects still
-loose) · largest committed files: `env/tool_help/ncu_query_metrics_chip_gb10b.txt` 919,077 B;
-`results/20261022_E2_ae_kernels/raw/samples.csv` 528,212 B; `results/20261022_E2_ae_kernels_v3/raw/samples.csv`
-528,174 B; `results/20261022_E2_ae_kernels_v2/raw/samples.csv` 527,989 B; `results/20261022_E1_peak/raw/latency_samples_bw_p1.csv` 515,156 B.
+After T004 (2026-10-22): `du -sh results/` 24 M · `du -sh .git` 16 M · `size-pack` 2.35 MiB (newer objects still
+loose) · 780 files under `results/` · largest committed files: `env/tool_help/ncu_query_metrics_chip_gb10b.txt`
+919,077 B; `results/20261022_E3_groot_n15_eager_Nsweep_v2/latency_samples.csv` 541,887 B;
+`results/20261022_E3_groot_n16_eager_Nsweep_v2/latency_samples.csv` 540,151 B;
+`results/20261022_E3_groot_n17_eager_Nsweep_v2/latency_samples.csv` 540,056 B;
+`results/20261022_E2_ae_kernels/raw/samples.csv` 528,212 B.
 
 ## Log
 - 2026-10-22 T001 claimed; fixtures copied to `bench/fixtures/`.
@@ -65,3 +80,4 @@ loose) · largest committed files: `env/tool_help/ncu_query_metrics_chip_gb10b.t
 - 2026-10-22 H2 resolved by the owner (HF login, licence accepted); Cosmos-Reason2-2B @ 9ce19a19 downloaded; N1.7 smoke passes (P 273, S 41); T001 done.
 - 2026-10-22 T002 done: locked 1575 MHz; idle module power 33.27 W; VDD_GPU over-current limit ≈ 100 W found (sustained GEMM −5.6 %, temperature-dependent, invisible to devfreq); gate.py now records OC deltas. Independent review fixed.
 - 2026-10-22 T003 done: BW 258.2 GB/s; bf16 129.8 / int8 330.6 / tf32 62.4 / fp32 6.43 T(FL)OP/s; counters validated (0.1 %); expert projections 3.29 ms/step (1.37× floor); DRAM latency ≈ 520 ns; hidden fast memory-path state found. Independent review: 3 conclusions corrected (ceiling modes, bandwidth claim retracted, latency v2).
+- 2026-10-22 T004 done: E3 for six models (v2 GR00T after review), E4 π0 stock modes (best whole max-autotune 360.7 ms, ≤ 15 %); unused GR00T lm_head found; N1.7 process-to-process expert variation (72–86 ms) open. Two independent review passes fixed.

@@ -51,3 +51,44 @@ After each model's E3 directory, after the E4 directory, at the close.
 ## Status (appended by the on-device agent)
 
 status: claimed 2026-10-22
+status: done 2026-10-22
+- Result directories (current):
+  - `results/20261022_E3_{pi0,pi05,smolvla}_eager_Nsweep/` and `results/20261022_E3_{pi0,pi05,smolvla}_shipped_N10/`;
+  - `results/20261022_E3_groot_n1{7,6,5}_eager_Nsweep_v2/` and `results/20261022_E3_groot_n1{7,6,5}_shipped_N4_v2/`;
+  - split check: `results/20261022_E3_region_split_check/` (LeRobot rows) and
+    `results/20261022_E3_groot_region_split_check/`;
+  - `results/20261022_E4_pi0_compile_modes/`, `results/20261022_E3_groot_n17_state_vs_latency/`,
+    `results/20261022_E3_lerobot_accounting_flop_ops/`.
+- Superseded (kept, with `SUPERSEDED.md`): the six GR00T v1 E3 directories, and the GR00T rows of
+  `results/20261022_E3_region_split_check/`.
+- Report: `reports/E3_E4_baseline.md`.
+- bench commits: a32aa34 (E3 LeRobot), c34fd33 (review fixes: regions, accounting, E4 recompile evidence), ce769e5
+  (report).
+- Headline at the default N (`eager_fp32`), action-expert share of e2e:
+  - π0 29.7 %; π0.5 28.2 %; SmolVLA 80.6 %;
+  - GR00T N1.7 47.8 %, N1.6 54.2 %, N1.5 37.1 %. Of the model call, the Orin's GR00T definition: 54.7 / 60.9 / 42.3 %.
+  - Thor is 2.1–4.3× faster than the Orin in eager mode.
+- Independent review (P0): two passes. The first found 11 issues, all fixed with reruns (v2):
+  - the GR00T prefix definitions were inconsistent across versions;
+  - CategorySpecificLinear bytes were overcounted;
+  - restream was compared with the wrong quantity;
+  - the E4 recompile counter was dead;
+  - the N1.7 bimodality claim was weak;
+  - meta nulls.
+  The second checked the rewritten report number by number and found:
+  - a wrong speed-up claim (true for π0 only);
+  - the N1.7 share range;
+  - rounding;
+  - the directory count;
+  - missing P valid, S, peak memory and Hz.
+  All fixed. While porting T005 I also found that the Orin's GR00T e2e is the model call (GPU path); the report now
+  compares GR00T on that basis.
+- Deviations:
+  - GR00T e2e is `Gr00tPolicy.get_action`; `model_get_action` is reported beside it.
+  - GR00T `vlm_prefix` is the decoder stack, with the unused `lm_head` as its own region. Thor's prefix is therefore not
+    the Orin's (backbone − vision); both are reported.
+  - The N1.7 split sums to 0.952, not within 2 %; the remaining ≈ 2.9 ms is identified (CPU-side `get_rope_index`,
+    0.25 ms glue kernels).
+  - The nsys split check ran for `eager_fp32` only.
+  - E4 ran at N ∈ {2, 6, 10}.
+  - N1.7's expert time varies 72.2–85.7 ms between processes; the cause is open and goes to T006.
