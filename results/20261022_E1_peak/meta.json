@@ -1,0 +1,429 @@
+{
+  "date_utc": "2026-10-22T05:24:18Z",
+  "experiment": "E1 peak bandwidth, peak FLOP/s, counter validation",
+  "task": "T003 steps 1, 2, 3, 5",
+  "model": "n/a: microbenchmarks",
+  "model_repo": "n/a",
+  "model_commit": "n/a",
+  "checkpoint": "n/a",
+  "checkpoint_revision": "n/a",
+  "precision": "bandwidth: bf16 tensors; GEMM: fp32 (highest), tf32, bf16, fp16, int8, fp8 e4m3 (record only)",
+  "rung": "n/a",
+  "compile_mode": "eager",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a",
+  "action_horizon": "n/a",
+  "prefix_tokens": "n/a",
+  "suffix_tokens": "n/a",
+  "batch": "n/a",
+  "n_warmup": "20 calls per row (GEMM n = 16384: 5), after a cool-down of 2 s (bandwidth) / 5 s (GEMM)",
+  "n_timed": "bandwidth: 100 calls per repeat, 5 repeats per (kernel, size), 2 processes; GEMM: 100 calls per (dtype, n) (n = 16384: 30), 2 processes",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json (this run)",
+  "bench_commit": "c853823f8305154cbbbe6f2268ae48e8ff740422",
+  "bench_commit_per_step": {
+    "micro_peak (bw, gemm; p1, p2)": "dbacfe5",
+    "ncu validation": "d7c67fe",
+    "hw_constants_build": "c853823f8305154cbbbe6f2268ae48e8ff740422"
+  },
+  "command": [
+    "source env/thor_env.sh",
+    "for p in p1 p2; for part in bw gemm: python bench/micro_peak.py --part $part --proc-tag $p --out results/20261022_E1_peak; sleep 20",
+    "python bench/gate.py > raw/gate_before_validation.json",
+    "for c in copy_sm axpy read_sum gemv skinny_bf16 gemm_{fp32,tf32,bf16,fp16,int8,fp8}: env/rootdo.sh ncu --clock-control none --metrics <ncu/validation_metrics.txt> --nvtx --nvtx-include val/ --profile-from-start off -o raw/val_$c -f python bench/ncu_validation.py --case $c",
+    "ncu --import raw/val_$c.ncu-rep --csv --page {raw,details} > ncu/val_$c_{raw,details}.csv; python bench/parse_ncu_validation.py --dir results/20261022_E1_peak",
+    "python bench/hw_constants_build.py --e1 results/20261022_E1_peak --t002 results/20261022_E0_platform_MAXN/hw_constants.json"
+  ],
+  "throttled": "per row in latency_summary_*.csv (oc_event_delta, throttled); only gemm fp8_e4m3 4096^3 in p2 saw OC events; every other row 0",
+  "nsys_version": "n/a: not used",
+  "ncu_version": "2025.3.0.0 (build 36273991)",
+  "ncu_set": "n/a: form D, explicit metric list",
+  "ncu_filter": "--nvtx --nvtx-include val/ --profile-from-start off",
+  "ncu_metrics": "ncu/validation_metrics.txt (96 metrics)",
+  "cuobjdump_version": "n/a: not used",
+  "ncu_sm_frequency_hz": "per launch in ncu/val_*_raw.csv (sm__cycles_elapsed.avg.per_second)",
+  "notes": "The gate (bench/gate.py) passed at the start and was recorded at the end of each micro_peak process (raw/run_*.json) and before the validation. Large bf16/fp16/tf32 GEMMs lose throughput as n grows (bf16 129.8 TFLOP/s at 2048^3 -> 57.9 at 16384^3) without OC events; the validation shows the 4096^3 bf16 GEMM reads 3.57x the A+B bytes from DRAM (operands exceed the 32 MiB L2). mcc__dram_throughput_* read 0 on every validation kernel.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "40062",
+    "gpu-thermal": "38968",
+    "cpu-thermal": "40062",
+    "soc012-thermal": "37281",
+    "soc345-thermal": "37750"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_before_validation.json",
+      "sha256": "f6fffa2d65358df4307ed714b2d19dab8a256c42106289218fc0e501f7266666",
+      "bytes": 3247,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/latency_samples_bw_p1.csv",
+      "sha256": "5d05813f135916b7bf91fed29967a8a151f8642ac0e8dd9d6bbb1313e82734d2",
+      "bytes": 515156,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/latency_samples_bw_p2.csv",
+      "sha256": "e6ee432faa66cde5bbbb5b4a39fccb27cc83d54151876a7e210cb5e31d738887",
+      "bytes": 515127,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/latency_samples_gemm_p1.csv",
+      "sha256": "da5f3678cb683ad090d93eb41c218dc45ebd19af36c11eeddc5957fa922a7363",
+      "bytes": 123349,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/latency_samples_gemm_p2.csv",
+      "sha256": "47f2f8c6f0ffc16734908f753f171b2c4d0519198d1a951b36b71c3f9ece243e",
+      "bytes": 123392,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/micro_peak_bw_p1.stdout.log",
+      "sha256": "03aa822c6e0eb2f06a31b9ac977803a268b9f7010b75005cef2f102fd5b2c986",
+      "bytes": 5657,
+      "kind": "stdout",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/micro_peak_bw_p2.stdout.log",
+      "sha256": "5b70c993ea5ff6ec1bc18737194134da4933ef166fc39a0673565c3da52a43bc",
+      "bytes": 5653,
+      "kind": "stdout",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/micro_peak_gemm_p1.stdout.log",
+      "sha256": "7218331b237f9ac3e75f19888e03a9f4d940490e005d598ac58e5e0ce42c50b9",
+      "bytes": 5046,
+      "kind": "stdout",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/micro_peak_gemm_p2.stdout.log",
+      "sha256": "1c5088b6b3328ac10721ab500dba8e9cbc34c1bd59326d36d8117234f0ad656b",
+      "bytes": 5046,
+      "kind": "stdout",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_bw_p1.json",
+      "sha256": "ccb4fa62eaf23cc2bd167e2687e0fd9b2b60c572fb073f41cd2d62cf719536f9",
+      "bytes": 6703,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_bw_p2.json",
+      "sha256": "aa6a41562af5e4387554189d3ef5ff52a99ff23875b4ae631372b304ec115447",
+      "bytes": 6703,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_gemm_p1.json",
+      "sha256": "517b53a8cab9f8d19fdd18accb488d09d8e9235c4c2e185af59ca38e81eaf388",
+      "bytes": 9320,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_gemm_p2.json",
+      "sha256": "cc87683853a497fecee46ebb1f7f115581b4ac7b2f934ab1efef7f161bd3c3b7",
+      "bytes": 9321,
+      "kind": "other",
+      "produced_by": "bench/micro_peak.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_axpy.ncu-rep.zst",
+      "sha256": "0ee11b61b2c993f6ac33193fbb9f91a770c4eb64d9d74c2d66c66697a2bbdfbb",
+      "bytes": 219808,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_axpy.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_axpy.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_axpy.ncu-rep",
+        "sha256": "a30ac83fc97c135233b444bd0ed504e5d830fce7003ed1e825fd0cc4b63e07dd",
+        "bytes": 7312760
+      }
+    },
+    {
+      "path": "raw/val_axpy.stdout.log",
+      "sha256": "3dadd540260962d98ad8698e9dd4be60bf1895f7913124ac7491ab88032f395d",
+      "bytes": 629,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_copy_sm.ncu-rep.zst",
+      "sha256": "3a9e9506c230b5ead55a48f01070cf9364ccebfd848da5ad515f152e8f93aa58",
+      "bytes": 160857,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_copy_sm.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_copy_sm.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_copy_sm.ncu-rep",
+        "sha256": "0888a9921d729348b080c16dc1e1254ebf6829653b0b66a1445a50e537fb2321",
+        "bytes": 4751152
+      }
+    },
+    {
+      "path": "raw/val_copy_sm.stdout.log",
+      "sha256": "6dc1ce8d3aea357ec5c89b7d577ba944db32751bee71d4a261e37ae9573e5c7a",
+      "bytes": 523,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_bf16.ncu-rep",
+      "sha256": "64acd8a7f9b6bdf00686a949f028e5dae0876bba2dde3c0e2694088631bb5dc5",
+      "bytes": 97968,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_bf16.stdout.log",
+      "sha256": "a56155f8e72cf2f8685be22aa94618586857261f161c257133eb63c7f2b7aa61",
+      "bytes": 637,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_fp16.ncu-rep",
+      "sha256": "17f60dcd99bfdc32f7d390d4b1e44e80d745f14e921b31abf5bdbe5405917e31",
+      "bytes": 97966,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_fp16.stdout.log",
+      "sha256": "49d8c31890eb9323722fa04ba1d6d22ef5c2f70a9ada7029d3fcbe7a298447c8",
+      "bytes": 637,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_fp32.ncu-rep.zst",
+      "sha256": "6ed360913e164447a2be03f187e9fbc8ffa81fd49260ae1e77b4a09728406a9a",
+      "bytes": 178203,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemm_fp32.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemm_fp32.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_gemm_fp32.ncu-rep",
+        "sha256": "4edbd09936657958cb9173e9998aa6040abd4c8727ca81ae3146f001651f7116",
+        "bytes": 2562432
+      }
+    },
+    {
+      "path": "raw/val_gemm_fp32.stdout.log",
+      "sha256": "eb2d72405af46550dc598c98ca93e212332bd6a58b4d0fb289950b7eba0ba91c",
+      "bytes": 914,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_fp8.ncu-rep",
+      "sha256": "33e45a650afe4205d265635c994f9251c3c5ffa236563001dcfeb4df3bc8e703",
+      "bytes": 106938,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_fp8.stdout.log",
+      "sha256": "7511a027b3f5155cc69e52b4334b67f347496aa0e6afbf2a7330204c12e971fa",
+      "bytes": 634,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_int8.ncu-rep.zst",
+      "sha256": "704a3af708bd2e6ec2a3f421d0a7d9b5c63e40ad0f013489203ce86c4055d797",
+      "bytes": 291595,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemm_int8.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemm_int8.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_gemm_int8.ncu-rep",
+        "sha256": "ff0feaf7a2f641ca4ae56b2d1f23727efe9237c390b2e8c08f505d3e599d7882",
+        "bytes": 4001391
+      }
+    },
+    {
+      "path": "raw/val_gemm_int8.stdout.log",
+      "sha256": "9c65a0486f716ec63a940848c241fbf07279fa61bf8b7135daef74953a1752ce",
+      "bytes": 637,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemm_tf32.ncu-rep.zst",
+      "sha256": "2db9654738e6a7c695105230a219e4724cd2ae289ee161bb788f5ab03c54a1bd",
+      "bytes": 269251,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemm_tf32.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemm_tf32.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_gemm_tf32.ncu-rep",
+        "sha256": "00aa881ab813bf70a41c00228bd3025d98b8c74e1620eae85117880bada53af6",
+        "bytes": 4124242
+      }
+    },
+    {
+      "path": "raw/val_gemm_tf32.stdout.log",
+      "sha256": "56fa529f4b1c20999b54d38450bea150f2d15de29e61ff9d72e9e6d76480d25e",
+      "bytes": 638,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_gemv.ncu-rep.zst",
+      "sha256": "b74516ca4c0e116518a8d1563c00b92a266c876ad50f0d91349236f4891326a5",
+      "bytes": 293821,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemv.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_gemv.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_gemv.ncu-rep",
+        "sha256": "ea5706b5a925d39e93ebe6d6611264d45f052a37b390233e36a65781f68a1fc3",
+        "bytes": 8124742
+      }
+    },
+    {
+      "path": "raw/val_gemv.stdout.log",
+      "sha256": "ee3ae3f8f1f13efd2b08031876cd094b6edbc2990ce2b7b030e9846492eea4ee",
+      "bytes": 600,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_read_sum.ncu-rep.zst",
+      "sha256": "7ade496175f49ff8a9d3e72f753746bfaf9c48a66d353a73f25721275f8e5d49",
+      "bytes": 425155,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_read_sum.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E1_peak/raw/val_read_sum.ncu-rep.zst"
+      },
+      "original": {
+        "name": "val_read_sum.ncu-rep",
+        "sha256": "7bd3c981ba14529eef6260920645b3dd84095aa7e9dbf74b7bb311a89a7ea065",
+        "bytes": 11475909
+      }
+    },
+    {
+      "path": "raw/val_read_sum.stdout.log",
+      "sha256": "7a6797b22c033ed3c9f31224cbedf7301d2a291f0a92944a74984f8fac4797d1",
+      "bytes": 564,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_skinny_bf16.ncu-rep",
+      "sha256": "61bd96fc308073bfbbb74f9482d46f887c584cbd2fa5a3464131cc4afd15fb05",
+      "bytes": 99393,
+      "kind": "ncu-rep",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/val_skinny_bf16.stdout.log",
+      "sha256": "74fe92fa5ad3cc3f8e077cd4a4b854324321dbb398144f52f1ed50d70d95490d",
+      "bytes": 593,
+      "kind": "stdout",
+      "produced_by": "ncu via env/rootdo.sh + bench/ncu_validation.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
