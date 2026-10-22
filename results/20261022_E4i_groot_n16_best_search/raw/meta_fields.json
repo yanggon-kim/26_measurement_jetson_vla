@@ -1,0 +1,102 @@
+{
+ "experiment": "E4i best_bf16 search, stage 1 (GR00T N1.6)",
+ "task": "T005",
+ "model": "groot_n16",
+ "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+ "model_commit": "9b37aa1ce69c73c6d165233fa88128283bba4508",
+ "checkpoint": "nvidia/GR00T-N1.6-3B",
+ "checkpoint_revision": "d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+ "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+ "rung": "per row: ae_graphs, ae_graphs_autotune, ae_graphs_mpad, ae_graphs_mpad_autotune, all_compile_autotune_mpad, llm_compile_autotune, llm_graphs_autotune, llm_graphs_mpad_autotune, vlm_graphs_autotune, vlm_graphs_mpad_autotune",
+ "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+ "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+ "num_denoise_steps": "4 (extra N per rung for the slope: by_N in the row files)",
+ "action_horizon": 16,
+ "prefix_tokens": 284,
+ "suffix_tokens": 51,
+ "batch": 1,
+ "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "28783c8 / 2462c62 (per-row bench_provenance)",
+ "command": "cd /tmp; ~/venvs/groot16/bin/python <repo>/bench/opt_ladder.py --model groot_n16 --out <repo>/results/20261022_E4i_groot_n16_best_search --rungs <candidates: bench/queues/t005_e4i.sh>",
+ "throttled": {
+  "ae_graphs_N4": {
+   "4": false
+  },
+  "ae_graphs_autotune_N4": {
+   "4": false
+  },
+  "ae_graphs_mpad_N4": {
+   "4": false
+  },
+  "ae_graphs_mpad_autotune_N4": {
+   "4": false
+  },
+  "all_compile_autotune_mpad_N4": {
+   "4": false
+  },
+  "llm_compile_autotune_N4": {
+   "4": false
+  },
+  "llm_graphs_autotune_N4": {
+   "4": false
+  },
+  "llm_graphs_mpad_autotune_N4": {
+   "4": false
+  },
+  "vlm_graphs_autotune_N4": {
+   "4": false
+  },
+  "vlm_graphs_mpad_autotune_N4": {
+   "4": false
+  }
+ },
+ "memory_path_state": {
+  "ae_graphs_N4": {
+   "4": "normal->normal"
+  },
+  "ae_graphs_autotune_N4": {
+   "4": "normal->normal"
+  },
+  "ae_graphs_mpad_N4": {
+   "4": "normal->normal"
+  },
+  "ae_graphs_mpad_autotune_N4": {
+   "4": "normal->normal"
+  },
+  "all_compile_autotune_mpad_N4": {
+   "4": "normal->normal"
+  },
+  "llm_compile_autotune_N4": {
+   "4": "normal->normal"
+  },
+  "llm_graphs_autotune_N4": {
+   "4": "normal->normal"
+  },
+  "llm_graphs_mpad_autotune_N4": {
+   "4": "normal->normal"
+  },
+  "vlm_graphs_autotune_N4": {
+   "4": "normal->normal"
+  },
+  "vlm_graphs_mpad_autotune_N4": {
+   "4": "normal->normal"
+  }
+ },
+ "produced_by": {
+  "_N": "bench/opt_ladder.py (child)",
+  ".log": "bench/opt_ladder.py child stdout with TORCH_LOGS=recompiles,graph_breaks",
+  "traceback_": "bench/opt_ladder.py",
+  "secrets_scan": "bench/secrets_scan.py"
+ },
+ "also_raw": [],
+ "nsys_version": "n/a",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "cuobjdump_version": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv."
+}

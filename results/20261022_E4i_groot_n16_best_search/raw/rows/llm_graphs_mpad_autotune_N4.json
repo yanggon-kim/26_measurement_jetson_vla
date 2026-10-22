@@ -1,0 +1,406 @@
+{
+ "model": "groot_n16",
+ "rung": "llm_graphs_mpad_autotune",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "6fb6eae",
+  "files_sha256": {
+   "opt_ladder.py": "9e23fd6d939a6868",
+   "rungs.py": "9acdfca64ffffc8b",
+   "e4i_candidates.py": "93cd17e7aa42af64",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-22T20:10:26Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4313,
+   "oc3": 127717
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "41156",
+   "gpu-thermal": "41156",
+   "cpu-thermal": "39937",
+   "soc012-thermal": "39562",
+   "soc345-thermal": "39937"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "9b37aa1ce69c73c6d165233fa88128283bba4508",
+  "checkpoint": "nvidia/GR00T-N1.6-3B",
+  "checkpoint_revision": "d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+  "embodiment_tag": "robocasa_panda_omron",
+  "obs_shapes": {
+   "video": {
+    "res256_image_side_0": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ],
+    "res256_image_side_1": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ],
+    "res256_image_wrist_0": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ]
+   },
+   "state": {
+    "end_effector_position_relative": [
+     1,
+     1,
+     3
+    ],
+    "end_effector_rotation_relative": [
+     1,
+     1,
+     4
+    ],
+    "gripper_qpos": [
+     1,
+     1,
+     2
+    ],
+    "base_position": [
+     1,
+     1,
+     3
+    ],
+    "base_rotation": [
+     1,
+     1,
+     4
+    ]
+   }
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 284,
+  "P_dit_encoder": 284,
+  "suffix_tokens_S": 51
+ },
+ "rung_desc": {
+  "rung": "llm_graphs_mpad_autotune",
+  "label": "GR00T E4i candidate: ae@reduce-overhead, llm@reduce-overhead + linear_mpad + forced GEMM autotuning",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "linear_mpad(backbone+action_head): 218 Linear modules padded; shapes padded: {'M=972 K=1152 N=1152 torch.bfloat16': {'pad_to': 1052, 'ms_at_M': 0.0455, 'ms_at_pad': 0.0355}, 'M=972 K=4304 N=1152 torch.bfloat16': {'pad_to': 1052, 'ms_at_M': 0.1258, 'ms_at_pad': 0.08}, 'M=243 K=4608 N=2048 torch.bfloat16': {'pad_to': 339, 'ms_at_M': 0.0633, 'ms_at_pad': 0.0512}, 'M=243 K=2048 N=2048 torch.bfloat16': {'pad_to': 339, 'ms_at_M': 0.0372, 'ms_at_pad': 0.033}, 'M=284 K=2048 N=2048 torch.bfloat16': {'pad_to': 348, 'ms_at_M': 0.0484, 'ms_at_pad': 0.0331}, 'M=284 K=6144 N=2048 torch.bfloat16': {'pad_to': 332, 'ms_at_M': 0.1064, 'ms_at_pad': 0.0621}, 'M=284 K=2048 N=151680 torch.bfloat16': {'pad_to': 364, 'ms_at_M': 4.0931, 'ms_at_pad': 3.4517}, 'M=51 K=6144 N=1536 torch.bfloat16': {'pad_to': 147, 'ms_at_M': 0.0414, 'ms_at_pad': 0.0376}}"
+  ],
+  "compiled": [
+   "Gr00tN1d6ActionHead.get_action@reduce-overhead+clone",
+   "Qwen3Model.forward@reduce-overhead+clone"
+  ],
+  "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.6538132010027766,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 6573217664
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 23.907999992370605,
+     "mean_ms": 23.965740871429443,
+     "p5_ms": 23.700767517089844,
+     "p95_ms": 24.450464248657227,
+     "min_ms": 23.638559341430664,
+     "max_ms": 24.816287994384766,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 15.959648132324219,
+     "mean_ms": 15.980386896133423,
+     "p5_ms": 15.819071769714355,
+     "p95_ms": 16.255359649658203,
+     "min_ms": 15.786080360412598,
+     "max_ms": 16.443872451782227,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.5231679677963257,
+     "mean_ms": 3.5482454347610473,
+     "p5_ms": 3.4980480670928955,
+     "p95_ms": 3.607327938079834,
+     "min_ms": 3.4898879528045654,
+     "max_ms": 4.842304229736328,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 43.80415916442871,
+     "mean_ms": 43.88884269714355,
+     "p5_ms": 43.488224029541016,
+     "p95_ms": 44.4703369140625,
+     "min_ms": 43.31980895996094,
+     "max_ms": 46.12169647216797,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 53.525407791137695,
+     "mean_ms": 53.574257888793944,
+     "p5_ms": 53.40550231933594,
+     "p95_ms": 53.74860763549805,
+     "min_ms": 53.30934524536133,
+     "max_ms": 55.18521499633789,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 98.49324798583984,
+     "mean_ms": 98.60412437438964,
+     "p5_ms": 98.05897521972656,
+     "p95_ms": 99.26246643066406,
+     "min_ms": 97.9263687133789,
+     "max_ms": 102.15776062011719,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 112.5674145296216,
+     "mean_ms": 112.2332458756864,
+     "p5_ms": 108.12091594561934,
+     "p95_ms": 114.06905204057693,
+     "min_ms": 107.65881603583694,
+     "max_ms": 116.62046797573566,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 14.059594327583909,
+     "mean_ms": 13.629121501296758,
+     "p5_ms": 9.732447322458029,
+     "p95_ms": 14.78183039650321,
+     "min_ms": 9.574963320046663,
+     "max_ms": 15.865454878658056,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 19.1305338665843,
+     "mean_ms": 18.712860219329595,
+     "p5_ms": 14.808290347456932,
+     "p95_ms": 20.09744719415903,
+     "min_ms": 14.655107792466879,
+     "max_ms": 20.992015089839697,
+     "n": 100
+    }
+   },
+   "first_call_s": 194.33384373178706,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15,
+    15
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6992556544,
+   "control_frequency_hz": 8.902476327533886,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 51.3,
+    "state": "normal",
+    "gpu_C": "47500"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.41,
+    "state": "normal",
+    "gpu_C": "50531"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  192
+ ],
+ "inductor_counters": {
+  "graph_break": {
+   "Data-dependent branching\n  Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.\n  Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.\n  Hint: Use `torch.cond` to express dynamic control flow.\n\n  Developer debug context: attempted to jump with TensorVariable()\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html": 6
+  },
+  "stats": {
+   "calls_captured": 5945,
+   "unique_graphs": 15
+  },
+  "inductor": {
+   "pattern_matcher_count": 3365,
+   "pattern_matcher_nodes": 3949,
+   "fxgraph_cache_miss": 10,
+   "async_compile_cache_miss": 1206,
+   "triton_bundler_save_kernel": 9400,
+   "triton_bundler_save_static_autotuner": 8,
+   "benchmarking.InductorBenchmarker.benchmark": 170,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 673,
+   "generated_module_cache_miss": 449,
+   "select_algorithm_precompile": 25,
+   "select_algorithm_num_precompiles": 457,
+   "select_algorithm_autotune": 25,
+   "async_compile_cache_hit": 474,
+   "pad_mm_bench": 9,
+   "generated_module_cache_hit": 16626,
+   "extern_calls": 266,
+   "triton_bundler_load_static_autotuner": 13,
+   "fxgraph_cache_hit": 5,
+   "cudagraph_recorded_non_static_inputs": 7
+  }
+ },
+ "mpad_table": {
+  "M=972 K=588 N=1152 torch.bfloat16": {
+   "pad_to": 972,
+   "ms_at_M": 0.0909,
+   "ms_at_pad": 0.0909
+  },
+  "M=972 K=1152 N=1152 torch.bfloat16": {
+   "pad_to": 1052,
+   "ms_at_M": 0.0455,
+   "ms_at_pad": 0.0355
+  },
+  "M=972 K=1152 N=4304 torch.bfloat16": {
+   "pad_to": 972,
+   "ms_at_M": 0.0915,
+   "ms_at_pad": 0.0915
+  },
+  "M=972 K=4304 N=1152 torch.bfloat16": {
+   "pad_to": 1052,
+   "ms_at_M": 0.1258,
+   "ms_at_pad": 0.08
+  },
+  "M=243 K=4608 N=2048 torch.bfloat16": {
+   "pad_to": 339,
+   "ms_at_M": 0.0633,
+   "ms_at_pad": 0.0512
+  },
+  "M=243 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 339,
+   "ms_at_M": 0.0372,
+   "ms_at_pad": 0.033
+  },
+  "M=284 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 348,
+   "ms_at_M": 0.0484,
+   "ms_at_pad": 0.0331
+  },
+  "M=284 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 284,
+   "ms_at_M": 0.033,
+   "ms_at_pad": 0.033
+  },
+  "M=284 K=2048 N=6144 torch.bfloat16": {
+   "pad_to": 284,
+   "ms_at_M": 0.0717,
+   "ms_at_pad": 0.0717
+  },
+  "M=284 K=6144 N=2048 torch.bfloat16": {
+   "pad_to": 332,
+   "ms_at_M": 0.1064,
+   "ms_at_pad": 0.0621
+  },
+  "M=284 K=2048 N=151680 torch.bfloat16": {
+   "pad_to": 364,
+   "ms_at_M": 4.0931,
+   "ms_at_pad": 3.4517
+  },
+  "M=51 K=1536 N=1536 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0229,
+   "ms_at_pad": 0.0229
+  },
+  "M=284 K=2048 N=1536 torch.bfloat16": {
+   "pad_to": 284,
+   "ms_at_M": 0.0322,
+   "ms_at_pad": 0.0322
+  },
+  "M=51 K=1536 N=6144 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0332,
+   "ms_at_pad": 0.0332
+  },
+  "M=51 K=6144 N=1536 torch.bfloat16": {
+   "pad_to": 147,
+   "ms_at_M": 0.0414,
+   "ms_at_pad": 0.0376
+  },
+  "M=51 K=1536 N=1024 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0213,
+   "ms_at_pad": 0.0213
+  }
+ },
+ "wall_s": 231.3775680065155
+}

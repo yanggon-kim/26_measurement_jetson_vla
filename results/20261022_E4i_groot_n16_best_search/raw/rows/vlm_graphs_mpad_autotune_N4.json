@@ -1,0 +1,411 @@
+{
+ "model": "groot_n16",
+ "rung": "vlm_graphs_mpad_autotune",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "6fb6eae",
+  "files_sha256": {
+   "opt_ladder.py": "9e23fd6d939a6868",
+   "rungs.py": "9acdfca64ffffc8b",
+   "e4i_candidates.py": "93cd17e7aa42af64",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-22T20:20:00Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4313,
+   "oc3": 127717
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "41156",
+   "gpu-thermal": "41156",
+   "cpu-thermal": "40031",
+   "soc012-thermal": "39718",
+   "soc345-thermal": "39906"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "9b37aa1ce69c73c6d165233fa88128283bba4508",
+  "checkpoint": "nvidia/GR00T-N1.6-3B",
+  "checkpoint_revision": "d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+  "embodiment_tag": "robocasa_panda_omron",
+  "obs_shapes": {
+   "video": {
+    "res256_image_side_0": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ],
+    "res256_image_side_1": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ],
+    "res256_image_wrist_0": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ]
+   },
+   "state": {
+    "end_effector_position_relative": [
+     1,
+     1,
+     3
+    ],
+    "end_effector_rotation_relative": [
+     1,
+     1,
+     4
+    ],
+    "gripper_qpos": [
+     1,
+     1,
+     2
+    ],
+    "base_position": [
+     1,
+     1,
+     3
+    ],
+    "base_rotation": [
+     1,
+     1,
+     4
+    ]
+   }
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 284,
+  "P_dit_encoder": 284,
+  "suffix_tokens_S": 51
+ },
+ "rung_desc": {
+  "rung": "vlm_graphs_mpad_autotune",
+  "label": "GR00T E4i candidate: ae@reduce-overhead, vis@max-autotune-no-cudagraphs, llm@reduce-overhead + linear_mpad + forced GEMM autotuning",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "linear_mpad(backbone+action_head): 218 Linear modules padded; shapes padded: {'M=972 K=1152 N=1152 torch.bfloat16': {'pad_to': 1052, 'ms_at_M': 0.045, 'ms_at_pad': 0.0352}, 'M=972 K=4304 N=1152 torch.bfloat16': {'pad_to': 1052, 'ms_at_M': 0.1234, 'ms_at_pad': 0.0783}, 'M=243 K=4608 N=2048 torch.bfloat16': {'pad_to': 339, 'ms_at_M': 0.0622, 'ms_at_pad': 0.0514}, 'M=243 K=2048 N=2048 torch.bfloat16': {'pad_to': 339, 'ms_at_M': 0.0366, 'ms_at_pad': 0.033}, 'M=284 K=2048 N=2048 torch.bfloat16': {'pad_to': 348, 'ms_at_M': 0.0484, 'ms_at_pad': 0.0331}, 'M=284 K=6144 N=2048 torch.bfloat16': {'pad_to': 348, 'ms_at_M': 0.1056, 'ms_at_pad': 0.0619}, 'M=284 K=2048 N=151680 torch.bfloat16': {'pad_to': 364, 'ms_at_M': 4.1302, 'ms_at_pad': 3.4444}, 'M=51 K=6144 N=1536 torch.bfloat16': {'pad_to': 147, 'ms_at_M': 0.041, 'ms_at_pad': 0.0371}}"
+  ],
+  "compiled": [
+   "Gr00tN1d6ActionHead.get_action@reduce-overhead+clone",
+   "Eagle3_VLForConditionalGeneration.extract_feature@max-autotune-no-cudagraphs",
+   "Qwen3Model.forward@reduce-overhead+clone"
+  ],
+  "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.697240964975208,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 6573217664
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 22.95307159423828,
+     "mean_ms": 22.976554260253906,
+     "p5_ms": 22.81939125061035,
+     "p95_ms": 23.09097671508789,
+     "min_ms": 22.79859161376953,
+     "max_ms": 24.442848205566406,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 15.980607986450195,
+     "mean_ms": 16.005024347305298,
+     "p5_ms": 15.857919692993164,
+     "p95_ms": 16.17635154724121,
+     "min_ms": 15.781824111938477,
+     "max_ms": 17.21334457397461,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.522063970565796,
+     "mean_ms": 3.565695672035217,
+     "p5_ms": 3.499039888381958,
+     "p95_ms": 3.6438400745391846,
+     "min_ms": 3.478463888168335,
+     "max_ms": 5.4924798011779785,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 42.88836860656738,
+     "mean_ms": 42.94735580444336,
+     "p5_ms": 42.67488098144531,
+     "p95_ms": 43.183006286621094,
+     "min_ms": 42.59062576293945,
+     "max_ms": 45.66080093383789,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 52.13390350341797,
+     "mean_ms": 52.16035713195801,
+     "p5_ms": 51.9997444152832,
+     "p95_ms": 52.279327392578125,
+     "min_ms": 51.92505645751953,
+     "max_ms": 53.618656158447266,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 96.16689682006836,
+     "mean_ms": 96.25195320129394,
+     "p5_ms": 95.8629150390625,
+     "p95_ms": 96.463134765625,
+     "min_ms": 95.81180572509766,
+     "max_ms": 100.29519653320312,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 110.2961553260684,
+     "mean_ms": 109.73373172339052,
+     "p5_ms": 105.87870189920068,
+     "p95_ms": 111.11985705792904,
+     "min_ms": 105.6449799798429,
+     "max_ms": 114.90158317610621,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 14.145945213735104,
+     "mean_ms": 13.481778522096574,
+     "p5_ms": 9.78580142185092,
+     "p95_ms": 14.824660524725914,
+     "min_ms": 9.659421619027853,
+     "max_ms": 16.4272641800344,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 19.23114906810224,
+     "mean_ms": 18.591795983873308,
+     "p5_ms": 14.852345269173384,
+     "p95_ms": 19.968545127660036,
+     "min_ms": 14.711611445993185,
+     "max_ms": 21.47344109043479,
+     "n": 100
+    }
+   },
+   "first_call_s": 241.29110849509016,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28,
+    28
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6992284160,
+   "control_frequency_hz": 9.104890832700175,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 49.33,
+    "state": "normal",
+    "gpu_C": "48406"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.37,
+    "state": "normal",
+    "gpu_C": "51468"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  192
+ ],
+ "inductor_counters": {
+  "graph_break": {
+   "Data dependent operator\n  Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.\n  Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`\n\n  Developer debug context: aten._local_scalar_dense.default\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html": 8,
+   "Failed to trace builtin operator\n  Explanation: Dynamo does not know how to trace builtin operator `setattr` with argument types ['ABCMeta', 'str', 'function'] (has_kwargs False)\n  Hint: Avoid calling builtin `setattr` with argument types ['ABCMeta', 'str', 'function']. Consider using an equivalent alternative function/method to `setattr`.\n  Hint: If you are attempting to call a logging function (e.g. `print`), you can try adding it to `torch._dynamo.config.reorderable_logging_functions`.\n  Hint: Please report an issue to PyTorch.\n\n  Developer debug context: builtin setattr [<class 'torch._dynamo.variables.user_defined.UserDefinedClassVariable'>, <class 'torch._dynamo.variables.constant.ConstantVariable'>, <class 'torch._dynamo.variables.functions.UserFunctionVariable'>] False\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0059.html": 4,
+   "Data-dependent branching\n  Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.\n  Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.\n  Hint: Use `torch.cond` to express dynamic control flow.\n\n  Developer debug context: attempted to jump with TensorVariable()\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html": 6
+  },
+  "stats": {
+   "calls_captured": 6157,
+   "unique_graphs": 28
+  },
+  "inductor": {
+   "pattern_matcher_count": 3444,
+   "pattern_matcher_nodes": 4036,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 1021,
+   "pad_mm_bench": 15,
+   "fxgraph_cache_miss": 21,
+   "generated_module_cache_miss": 558,
+   "select_algorithm_precompile": 31,
+   "select_algorithm_num_precompiles": 571,
+   "select_algorithm_autotune": 31,
+   "async_compile_cache_miss": 961,
+   "async_compile_cache_hit": 263,
+   "triton_bundler_save_kernel": 7536,
+   "triton_bundler_save_static_autotuner": 18,
+   "benchmarking.InductorBenchmarker.benchmark": 383,
+   "coordesc_tuning_bench": 153,
+   "extern_calls": 380,
+   "generated_module_cache_hit": 16698,
+   "triton_bundler_load_static_autotuner": 18,
+   "fxgraph_cache_hit": 7,
+   "removed_pointless_view_pair": 1,
+   "cudagraph_recorded_non_static_inputs": 7
+  }
+ },
+ "mpad_table": {
+  "M=972 K=588 N=1152 torch.bfloat16": {
+   "pad_to": 972,
+   "ms_at_M": 0.0906,
+   "ms_at_pad": 0.0906
+  },
+  "M=972 K=1152 N=1152 torch.bfloat16": {
+   "pad_to": 1052,
+   "ms_at_M": 0.045,
+   "ms_at_pad": 0.0352
+  },
+  "M=972 K=1152 N=4304 torch.bfloat16": {
+   "pad_to": 972,
+   "ms_at_M": 0.0906,
+   "ms_at_pad": 0.0906
+  },
+  "M=972 K=4304 N=1152 torch.bfloat16": {
+   "pad_to": 1052,
+   "ms_at_M": 0.1234,
+   "ms_at_pad": 0.0783
+  },
+  "M=243 K=4608 N=2048 torch.bfloat16": {
+   "pad_to": 339,
+   "ms_at_M": 0.0622,
+   "ms_at_pad": 0.0514
+  },
+  "M=243 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 339,
+   "ms_at_M": 0.0366,
+   "ms_at_pad": 0.033
+  },
+  "M=284 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 348,
+   "ms_at_M": 0.0484,
+   "ms_at_pad": 0.0331
+  },
+  "M=284 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 284,
+   "ms_at_M": 0.032,
+   "ms_at_pad": 0.032
+  },
+  "M=284 K=2048 N=6144 torch.bfloat16": {
+   "pad_to": 284,
+   "ms_at_M": 0.0715,
+   "ms_at_pad": 0.0715
+  },
+  "M=284 K=6144 N=2048 torch.bfloat16": {
+   "pad_to": 348,
+   "ms_at_M": 0.1056,
+   "ms_at_pad": 0.0619
+  },
+  "M=284 K=2048 N=151680 torch.bfloat16": {
+   "pad_to": 364,
+   "ms_at_M": 4.1302,
+   "ms_at_pad": 3.4444
+  },
+  "M=51 K=1536 N=1536 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0222,
+   "ms_at_pad": 0.0222
+  },
+  "M=284 K=2048 N=1536 torch.bfloat16": {
+   "pad_to": 284,
+   "ms_at_M": 0.0327,
+   "ms_at_pad": 0.0327
+  },
+  "M=51 K=1536 N=6144 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0338,
+   "ms_at_pad": 0.0338
+  },
+  "M=51 K=6144 N=1536 torch.bfloat16": {
+   "pad_to": 147,
+   "ms_at_M": 0.041,
+   "ms_at_pad": 0.0371
+  },
+  "M=51 K=1536 N=1024 torch.bfloat16": {
+   "pad_to": 51,
+   "ms_at_M": 0.0207,
+   "ms_at_pad": 0.0207
+  }
+ },
+ "wall_s": 277.9439015388489
+}
