@@ -98,11 +98,11 @@ def assert_real_weights(policy, spec: ModelSpec, n: int = 400) -> dict:
     return {"checked": checked, "matched": matched, "checkpoint_file": os.path.basename(f), "verdict": "real weights"}
 
 
-def build_batch(policy, spec: ModelSpec, device: str = "cuda"):
-    """The real fixture (one LIBERO frame, two cameras, state, task) through the checkpoint's own processors."""
+def build_obs(policy):
+    """The raw observation (before the checkpoint's processors): the fixture's two camera views mapped positionally
+    onto the cameras this policy declares, channels-first float32 in [0, 1]; state; task."""
     import numpy as np
     from PIL import Image
-    from lerobot.policies.factory import make_pre_post_processors
 
     fixture = json.loads((FIXTURES / "observation.json").read_text())
     declared = list(getattr(policy.config, "image_features", {}) or {})
@@ -112,6 +112,15 @@ def build_batch(policy, spec: ModelSpec, device: str = "cuda"):
         obs[declared[i] if i < len(declared) else key] = torch.from_numpy(arr).permute(2, 0, 1).contiguous()
     obs["observation.state"] = torch.tensor(fixture["state"], dtype=torch.float32)
     obs["task"] = fixture["task"]
+    return obs
+
+
+def build_batch(policy, spec: ModelSpec, device: str = "cuda"):
+    """The real fixture (one LIBERO frame, two cameras, state, task) through the checkpoint's own processors."""
+    from lerobot.policies.factory import make_pre_post_processors
+
+    fixture = json.loads((FIXTURES / "observation.json").read_text())
+    obs = build_obs(policy)
     overrides = {"device_processor": {"device": device}}
     tok = None
     if spec.tokenizer_override:
