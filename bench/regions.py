@@ -308,7 +308,9 @@ def groot_parts(model):
                      f"would silently read 0 ms (the Orin's first N1.5 run did)")
 
 
-def instrument_groot(policy, rec: Recorder):
+def instrument_groot(policy, rec: Recorder, inner: bool = True):
+    """inner=False (T005: the action head is compiled): no ae_step / ae_dit hooks, because they would sit inside the
+    compiled graph and break it; ae_total (wrapped from outside) is then the only expert region."""
     model = policy.model
     ah = model.action_head
     undo = []
@@ -339,6 +341,12 @@ def instrument_groot(policy, rec: Recorder):
         return out
     ah.get_action = get_action
     undo.append(lambda: setattr(ah, "get_action", orig_get_action))
+
+    if not inner:
+        def _undo0():
+            for f in reversed(undo):
+                f()
+        return _undo0, family
 
     orig_enc = ah.action_encoder.forward
 
