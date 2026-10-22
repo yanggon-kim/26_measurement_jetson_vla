@@ -125,6 +125,14 @@ def candidates():
                          "lerobot", "high", tg, ["eager_bf16", "linear_mpad"], autotune=True))
         out.append(RG._r(f"bf16_mpad_{gname}_nofuse", f"bf16 casts + mpad + compile ({gname}), Inductor attention rewrite off",
                          "lerobot", "high", tg, ["eager_bf16", "linear_mpad", "no_attn_fusion"]))
+    # stage 2 (after stage 1 showed forced autotuning speeds pi0's expert 79.8 -> 63.1 ms but slows vision and prefix):
+    # autotune only the listed parts (mode max-autotune on them, the SM gate lifted, global max_autotune off)
+    AT = "max-autotune"
+    for name, tg in (("ae_at", [("ae", AT, False), ("vis", G, True), ("vlm", G, True)]),
+                     ("ae_vlm_at", [("ae", AT, False), ("vis", G, True), ("vlm", AT, True)]),
+                     ("ae_vis_at", [("ae", AT, False), ("vis", AT, True), ("vlm", G, True)])):
+        out.append(RG._r(f"bf16_mpad_graphs_{name}", f"bf16 casts + mpad + graphs everywhere; GEMM autotuning on {name[:-3]} only",
+                         "lerobot", "high", tg, ["eager_bf16", "linear_mpad"], autotune="parts"))
     out.append(RG._r("bf16_mpad_whole_graphs", "bf16 casts + mpad + sample_actions compiled with graphs (e2e only)",
                      "lerobot", "high", [("whole", G, False)], ["eager_bf16", "linear_mpad"], regions=False))
     out.append(RG._r("bf16_mpad_whole_graphs_autotune", "bf16_mpad_whole_graphs + forced GEMM autotuning (e2e only)",
@@ -141,6 +149,10 @@ def groot_candidates():
     import rungs as RG
     G, NG = RG.GRAPHS, RG.NOGRAPH
     ae, vis_ng, llm_ng, llm_g = ("ae", G, True), ("vis", NG, False), ("llm", NG, False), ("llm", G, True)
+    ae_at, vis_at = ("ae", "max-autotune", True), ("vis", "max-autotune-no-cudagraphs", False)
+    # stage 2 parts that must NOT autotune compile with mode "default": with the SM gate lifted, the ladder's no-graphs
+    # mode (max-autotune-no-cudagraphs) would autotune their GEMMs too
+    vis_d, llm_d = ("vis", "default", False), ("llm", "default", False)
     spec = [
         ("ae_graphs_mpad", [ae], ["linear_mpad"], False, None),
         ("ae_graphs_autotune", [ae], [], True, None),
@@ -152,9 +164,19 @@ def groot_candidates():
         ("vlm_graphs_mpad_autotune", [ae, vis_ng, llm_g], ["linear_mpad"], True, None),
         ("all_compile_autotune_mpad", [ae, vis_ng, llm_ng], ["linear_mpad"], True, None),
         ("vlm_compile_scalar", [ae, vis_ng, llm_ng], ["capture_scalar"], False, ["groot_n17"]),
+        # stage 2: autotune per part (mode max-autotune on the listed parts only)
+        ("ae_at", [ae_at], [], "parts", None),
+        ("ae_at_mpad", [ae_at], ["linear_mpad"], "parts", None),
+        ("llm_graphs_ae_at", [ae_at, llm_g], [], "parts", None),
+        ("llm_graphs_ae_at_mpad", [ae_at, llm_g], ["linear_mpad"], "parts", None),
+        ("all_compile_ae_at", [ae_at, vis_d, llm_d], [], "parts", None),
+        ("all_compile_ae_at_mpad", [ae_at, vis_d, llm_d], ["linear_mpad"], "parts", None),
+        ("vlm_graphs_ae_at_mpad", [ae_at, vis_d, llm_g], ["linear_mpad"], "parts", None),
+        ("all_compile_ae_vis_at_mpad", [ae_at, vis_at, llm_d], ["linear_mpad"], "parts", None),
         ("all_compile_autotune_scalar", [ae, vis_ng, llm_ng], ["capture_scalar"], True, ["groot_n17"]),
         ("vlm_graphs_autotune_scalar", [ae, vis_ng, llm_g], ["capture_scalar"], True, ["groot_n17"]),
     ]
     return [RG._r(k, f"GR00T E4i candidate: {', '.join(f'{p}@{m}' for p, m, _ in t)}"
-                     + (f" + {'+'.join(pr)}" if pr else "") + (" + forced GEMM autotuning" if at else ""),
+                     + (f" + {'+'.join(pr)}" if pr else "")
+                  + (" + GEMM autotuning on the max-autotune parts only" if at == "parts" else " + forced GEMM autotuning" if at else ""),
                   "groot", "high", t, pr, autotune=at, only=only) for k, t, pr, at, only in spec]

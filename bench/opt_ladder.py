@@ -95,6 +95,12 @@ def child(a):
     os.makedirs(os.path.join(out, "raw", "samples"), exist_ok=True)
     tag = f"{key}_N{a.n}"
     row = {"model": a.model, "rung": key, "N": a.n, "status": "failed", "error": "", "not_applicable_reason": ""}
+    import hashlib
+    row["bench_provenance"] = {"git_head": subprocess.run(["git", "-C", REPO, "rev-parse", "--short", "HEAD"], capture_output=True,
+                                                          text=True).stdout.strip(),
+                               "files_sha256": {f: hashlib.sha256(open(os.path.join(HERE, f), "rb").read()).hexdigest()[:16]
+                                                for f in ("opt_ladder.py", "rungs.py", "e4i_candidates.py", "regions.py",
+                                                          "run_e3.py") if os.path.exists(os.path.join(HERE, f))}}
     t_start = time.time()
     try:
         g0 = G.wait_for_gate(apply_clocks=True)

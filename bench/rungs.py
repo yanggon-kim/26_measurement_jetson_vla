@@ -334,15 +334,18 @@ def set_precision(prec):
             "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32}
 
 
-def force_gemm_autotune(backends="ATEN,TRITON"):
+def force_gemm_autotune(backends="ATEN,TRITON", global_flags=True):
     """Inductor's is_big_gpu() requires 68 SMs (torch/_inductor/utils.py:1676 in torch 2.10); Thor has 20, so
     mode="max-autotune" silently keeps cuBLAS for every GEMM. Override it, with max_autotune on for every compile."""
     import torch._inductor.config as IC
     import torch._inductor.utils as IU
     IU.is_big_gpu = lambda *a, **k: True
+    IC.max_autotune_gemm_backends = backends
+    if not global_flags:
+        # per-part autotuning (T005 E4i stage 2): only the parts compiled with mode "max-autotune*" tune their GEMMs
+        return f"is_big_gpu forced True; backends {backends}; GEMM autotuning only where mode = max-autotune*"
     IC.max_autotune = True
     IC.max_autotune_gemm = True
-    IC.max_autotune_gemm_backends = backends
     return f"is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends {backends}"
 
 
@@ -385,7 +388,9 @@ def apply_rung(adapter, key):
             desc["preps"].append("torch._dynamo.config.capture_scalar_outputs = True")
         else:
             desc["preps"].append(PREPS[p](adapter) if p in ADAPTER_PREPS else PREPS[p](adapter.policy))
-    if r["autotune"]:
+    if r["autotune"] == "parts":
+        desc["autotune"] = force_gemm_autotune(global_flags=False)
+    elif r["autotune"]:
         desc["autotune"] = force_gemm_autotune()
     if adapter.family == "groot" and any(p == "ae" for p, _, _ in r["targets"]):
         import torch._inductor.config as IC
