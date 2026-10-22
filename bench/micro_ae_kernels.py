@@ -159,7 +159,8 @@ def proj_rows(W, nl, peaks):
             oc1 = gate.oc_counts()
             flops = 2 * S * K * N
             nb = wb + 2 * S * (K + N)
-            floor = max(nb / bw, flops / fl) * 1e3
+            # DRAM floor from WEIGHT bytes only: back to back, x and the output stay in L2 (T003 follow-up)
+            floor = max(wb / bw, flops / fl) * 1e3
             rows.append({"op": p, "S": S, "K": K, "N": N, "kernel_names": " | ".join(names),
                          "kernel_cold_ms": round(kc["median"], 6), "kernel_cold_p5_ms": round(kc["p5"], 6),
                          "kernel_cold_p95_ms": round(kc["p95"], 6), "kernel_hot_ms": round(kh["median"], 6),
@@ -172,7 +173,7 @@ def proj_rows(W, nl, peaks):
                          "cold_working_set_bytes": wb * len(ws), "intensity_flop_per_B": round(flops / nb, 3),
                          "achieved_GBps": round(nb / (kc["median"] / 1e3) / 1e9, 2),
                          "achieved_TFLOPps": round(flops / (kc["median"] / 1e3) / 1e12, 4),
-                         "floor_ms": round(floor, 6), "floor_bound": "memory" if nb / bw >= flops / fl else "compute",
+                         "floor_ms": round(floor, 6), "floor_bound": "memory" if wb / bw >= flops / fl else "compute",
                          "kernel_over_floor": round(kc["median"] / floor, 3),
                          "issue_over_floor": round(iss["median"] / floor, 3),
                          "oc_event_delta": sum(oc1[k] - oc0[k] for k in oc0), "n_kernel": kc["n"]})
