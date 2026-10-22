@@ -1,0 +1,449 @@
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:lerobot.configs.policies:Device 'mps' is not available. Switching to 'cuda'.
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+W1023 03:48:29.477000 2037316 torch/_inductor/utils.py:1679] [0/0] Not enough SMs to use max_autotune_gemm mode
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] Graph break in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] 
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] 
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] 
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] User code traceback:
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 355, in <module>
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     raise SystemExit(main())
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 349, in main
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return child(a)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 147, in child
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     one()
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 137, in one
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return ad.iteration()
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 1241, in predict_action_chunk
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, tokens, masks, **kwargs)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 820, in sample_actions
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     _, past_key_values = self.paligemma_with_expert.forward(
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 260, in forward
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     out = _orig(*a, **kw)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 464, in forward
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     prefix_output = self.paligemma.model.language_model.forward(
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py", line 291, in forward
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     layer_outputs = decoder_layer(
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return super().__call__(*args, **kwargs)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py", line 171, in forward
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     hidden_states, _ = self.self_attn(
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py", line 275, in forward
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     attn_output, attn_weights = attention_interface(
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py", line 50, in thor_fa2
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks]     rows = keep[keep.any(dim=1)]                           # the queries that see anything
+V1023 03:48:36.546000 2037316 torch/_dynamo/symbolic_convert.py:4275] [1/0] [__graph_breaks] 
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] 
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] 
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks] 
+V1023 03:48:36.773000 2037316 torch/_dynamo/symbolic_convert.py:4282] [2/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1023 03:48:42.805000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1023 03:48:42.902000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] 
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] 
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks] 
+V1023 03:48:45.552000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace BINARY_SUBSCR: a binary subscript, e.g. x[attr]:
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] 
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] 
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks] 
+V1023 03:48:47.623000 2037316 torch/_dynamo/symbolic_convert.py:4282] [11/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] Graph break in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:51
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] 
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] Failed to trace builtin operator
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   Explanation: Dynamo does not know how to trace builtin operator `bool` with argument types ['Tensor'] (has_kwargs False)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   Hint: Avoid calling builtin `bool` with argument types ['Tensor']. Consider using an equivalent alternative function/method to `bool`.
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   Hint: If you are attempting to call a logging function (e.g. `print`), you can try adding it to `torch._dynamo.config.reorderable_logging_functions`.
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   Hint: Please report an issue to PyTorch.
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] 
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   Developer debug context: builtin bool [<class 'torch._dynamo.variables.tensor.TensorVariable'>] False
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] 
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0059.html
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] User code traceback:
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 355, in <module>
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     raise SystemExit(main())
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 349, in main
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return child(a)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 147, in child
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     one()
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 137, in one
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return ad.iteration()
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 1241, in predict_action_chunk
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, tokens, masks, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 820, in sample_actions
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     _, past_key_values = self.paligemma_with_expert.forward(
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 260, in forward
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     out = _orig(*a, **kw)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 464, in forward
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     prefix_output = self.paligemma.model.language_model.forward(
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py", line 291, in forward
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     layer_outputs = decoder_layer(
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return super().__call__(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py", line 171, in forward
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     hidden_states, _ = self.self_attn(
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py", line 275, in forward
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     attn_output, attn_weights = attention_interface(
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py", line 51, in thor_fa2
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks]     if not bool((rows == valid_k[None, :]).all()):
+V1023 03:48:51.534000 2037316 torch/_dynamo/symbolic_convert.py:4275] [12/0] [__graph_breaks] 
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] Graph break in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:55
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] 
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] Dynamic shape operator
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] 
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] 
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] User code traceback:
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 355, in <module>
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     raise SystemExit(main())
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 349, in main
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return child(a)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 147, in child
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     one()
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 137, in one
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return ad.iteration()
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 1241, in predict_action_chunk
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, tokens, masks, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 820, in sample_actions
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     _, past_key_values = self.paligemma_with_expert.forward(
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 260, in forward
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     out = _orig(*a, **kw)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 464, in forward
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     prefix_output = self.paligemma.model.language_model.forward(
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py", line 291, in forward
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     layer_outputs = decoder_layer(
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return super().__call__(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py", line 171, in forward
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     hidden_states, _ = self.self_attn(
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return self._call_impl(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     return forward_call(*args, **kwargs)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py", line 275, in forward
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     attn_output, attn_weights = attention_interface(
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py", line 55, in thor_fa2
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks]     idx = valid_k.nonzero().squeeze(1)
+V1023 03:48:53.835000 2037316 torch/_dynamo/symbolic_convert.py:4275] [13/0] [__graph_breaks] 
+V1023 03:48:59.537000 2037316 torch/_dynamo/guards.py:4514] [10/1] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:48:59.537000 2037316 torch/_dynamo/guards.py:4514] [10/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:48:59.537000 2037316 torch/_dynamo/guards.py:4514] [10/1] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] 
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] Dynamic shape operator
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] 
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks] 
+V1023 03:48:59.601000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:00.782000 2037316 torch/_dynamo/guards.py:4514] [10/2] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:00.782000 2037316 torch/_dynamo/guards.py:4514] [10/2] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:00.782000 2037316 torch/_dynamo/guards.py:4514] [10/2] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:00.782000 2037316 torch/_dynamo/guards.py:4514] [10/2] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks] 
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks] Dynamic shape operator
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks] 
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks] 
+V1023 03:49:00.862000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/2] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:01.479000 2037316 torch/_dynamo/guards.py:4514] [10/3] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:01.479000 2037316 torch/_dynamo/guards.py:4514] [10/3] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:01.479000 2037316 torch/_dynamo/guards.py:4514] [10/3] [__recompiles]     - 10/2: len(past_key_values.layers) == 2                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:01.479000 2037316 torch/_dynamo/guards.py:4514] [10/3] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:01.479000 2037316 torch/_dynamo/guards.py:4514] [10/3] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks] 
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks] Dynamic shape operator
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks] 
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks] 
+V1023 03:49:01.550000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/3] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:02.170000 2037316 torch/_dynamo/guards.py:4514] [10/4] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:02.170000 2037316 torch/_dynamo/guards.py:4514] [10/4] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:02.170000 2037316 torch/_dynamo/guards.py:4514] [10/4] [__recompiles]     - 10/3: len(past_key_values.layers) == 3                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:02.170000 2037316 torch/_dynamo/guards.py:4514] [10/4] [__recompiles]     - 10/2: len(past_key_values.layers) == 2                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:02.170000 2037316 torch/_dynamo/guards.py:4514] [10/4] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:02.170000 2037316 torch/_dynamo/guards.py:4514] [10/4] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks] 
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks] Dynamic shape operator
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks] 
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks] 
+V1023 03:49:02.241000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/4] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles]     - 10/4: len(past_key_values.layers) == 4                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles]     - 10/3: len(past_key_values.layers) == 3                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles]     - 10/2: len(past_key_values.layers) == 2                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.096000 2037316 torch/_dynamo/guards.py:4514] [10/5] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks] 
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks] Dynamic shape operator
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks] 
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks] 
+V1023 03:49:03.159000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/5] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     - 10/5: len(past_key_values.layers) == 5                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     - 10/4: len(past_key_values.layers) == 4                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     - 10/3: len(past_key_values.layers) == 3                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     - 10/2: len(past_key_values.layers) == 2                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.514000 2037316 torch/_dynamo/guards.py:4514] [10/6] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks] 
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks] Dynamic shape operator
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks] 
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks] 
+V1023 03:49:03.578000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/6] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/6: len(past_key_values.layers) == 6                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/5: len(past_key_values.layers) == 5                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/4: len(past_key_values.layers) == 4                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/3: len(past_key_values.layers) == 3                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/2: len(past_key_values.layers) == 2                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.929000 2037316 torch/_dynamo/guards.py:4514] [10/7] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks] 
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks] Dynamic shape operator
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks] 
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks] 
+V1023 03:49:03.994000 2037316 torch/_dynamo/symbolic_convert.py:4282] [10/7] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles] Recompiling function forward in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/7: len(past_key_values.layers) == 7                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/6: len(past_key_values.layers) == 6                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/5: len(past_key_values.layers) == 5                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/4: len(past_key_values.layers) == 4                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/3: len(past_key_values.layers) == 3                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/2: len(past_key_values.layers) == 2                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/1: len(past_key_values.layers) == 1                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+V1023 03:49:04.348000 2037316 torch/_dynamo/guards.py:4514] [10/8] [__recompiles]     - 10/0: not past_key_values.layers                               # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+W1023 03:49:04.349000 2037316 torch/_dynamo/convert_frame.py:1676] [10/8] torch._dynamo hit config.recompile_limit (8)
+W1023 03:49:04.349000 2037316 torch/_dynamo/convert_frame.py:1676] [10/8]    function: 'forward' (/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/models/gemma/modeling_gemma.py:247)
+W1023 03:49:04.349000 2037316 torch/_dynamo/convert_frame.py:1676] [10/8]    last reason: 10/7: len(past_key_values.layers) == 7                         # while len(self.layers) <= layer_idx:  # transformers/cache_utils.py:784 in update
+W1023 03:49:04.349000 2037316 torch/_dynamo/convert_frame.py:1676] [10/8] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+W1023 03:49:04.349000 2037316 torch/_dynamo/convert_frame.py:1676] [10/8] To diagnose recompilation issues, see https://pytorch.org/docs/main/compile/programming_model.recompilation.html
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] Graph break in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py:890
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] 
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] copy.deepcopy()
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] 
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] 
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] User code traceback:
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 355, in <module>
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     raise SystemExit(main())
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 349, in main
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     return child(a)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 147, in child
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     one()
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 137, in one
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     return ad.iteration()
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 1241, in predict_action_chunk
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, tokens, masks, **kwargs)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     return func(*args, **kwargs)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 857, in sample_actions
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 836, in denoise_step_partial_call
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     return self.denoise_step(
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 276, in denoise_step
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     return _orig(*a, **kw)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py", line 890, in denoise_step
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V1023 03:49:04.684000 2037316 torch/_dynamo/symbolic_convert.py:4275] [21/0] [__graph_breaks] 
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks] 
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks] Dynamic shape operator
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks] 
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks] 
+V1023 03:49:06.232000 2037316 torch/_dynamo/symbolic_convert.py:4282] [22/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks] 
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks] Dynamic shape operator
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks] 
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks] 
+V1023 03:49:06.532000 2037316 torch/_dynamo/symbolic_convert.py:4282] [23/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:06.555000 2037316 torch/_dynamo/guards.py:4514] [1/1] [__recompiles] Recompiling function forward in /home/jameskimh/src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py:452
+V1023 03:49:06.555000 2037316 torch/_dynamo/guards.py:4514] [1/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:06.555000 2037316 torch/_dynamo/guards.py:4514] [1/1] [__recompiles]     - 1/0: use_cache == True                                        # prefix_output = self.paligemma.model.language_model.forward(  # src/lerobot/src/lerobot/policies/pi05/modeling_pi05.py:464 in forward
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks] 
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks] Dynamic shape operator
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks] 
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks] 
+V1023 03:49:07.387000 2037316 torch/_dynamo/symbolic_convert.py:4282] [1/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:07.467000 2037316 torch/_dynamo/guards.py:4514] [7/1] [__recompiles] Recompiling function wrapper in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/modeling_rope_utils.py:119
+V1023 03:49:07.467000 2037316 torch/_dynamo/guards.py:4514] [7/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:07.467000 2037316 torch/_dynamo/guards.py:4514] [7/1] [__recompiles]     - 7/0: tensor 'x' size mismatch at index 1. expected 968, actual 50
+V1023 03:49:11.578000 2037316 torch/_dynamo/guards.py:4514] [8/1] [__recompiles] Recompiling function __call__ in /home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/transformers/modeling_layers.py:59
+V1023 03:49:11.578000 2037316 torch/_dynamo/guards.py:4514] [8/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:11.578000 2037316 torch/_dynamo/guards.py:4514] [8/1] [__recompiles]     - 8/0: tensor 'args[0]' size mismatch at index 1. expected 968, actual 50
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks] 
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks] Dynamic shape operator
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks] 
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks] 
+V1023 03:49:11.918000 2037316 torch/_dynamo/symbolic_convert.py:4282] [8/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:11.966000 2037316 torch/_dynamo/guards.py:4514] [9/1] [__recompiles] Recompiling function forward in /home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py:157
+V1023 03:49:11.966000 2037316 torch/_dynamo/guards.py:4514] [9/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:11.966000 2037316 torch/_dynamo/guards.py:4514] [9/1] [__recompiles]     - 9/0: use_cache == True                                        # hidden_states, _ = self.self_attn(  # src/lerobot/src/lerobot/policies/pi_gemma.py:171 in forward
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/e4i_candidates.py:50
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] 
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] Dynamic shape operator
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] 
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]   Developer debug context: aten.nonzero.default
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks] 
+V1023 03:49:12.251000 2037316 torch/_dynamo/symbolic_convert.py:4282] [9/1] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html
+V1023 03:49:14.346000 2037316 torch/_dynamo/guards.py:4514] [16/1] [__recompiles] Recompiling function torch_dynamo_resume_in_forward_at_171 in /home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py:171
+V1023 03:49:14.346000 2037316 torch/_dynamo/guards.py:4514] [16/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:14.346000 2037316 torch/_dynamo/guards.py:4514] [16/1] [__recompiles]     - 16/0: gate is None                                             # if gate is None:  # src/lerobot/src/lerobot/policies/pi_gemma.py:64 in _gated_residual
+V1023 03:49:16.984000 2037316 torch/_dynamo/guards.py:4514] [17/1] [__recompiles] Recompiling function forward in /home/jameskimh/src/lerobot/src/lerobot/policies/pi_gemma.py:111
+V1023 03:49:16.984000 2037316 torch/_dynamo/guards.py:4514] [17/1] [__recompiles]     triggered by the following guard failure(s):
+V1023 03:49:16.984000 2037316 torch/_dynamo/guards.py:4514] [17/1] [__recompiles]     - 17/0: tensor 'x' size mismatch at index 1. expected 968, actual 50
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /home/jameskimh/.cache/huggingface/hub/models--lerobot--pi05_libero_base/snapshots/a217bfd3b14673cf2ce597e69997ab21866438dd
+✓ Loaded state dict from model.safetensors
+Remapped 812 state dict keys
+All keys loaded successfully!
+bf16_mpad_nvg_attn_fa2_fa2 N=10: e2e 271.35 | vision 21.77 | prefix 73.20 | ae 173.15 | graphs during timed 0 | throttled False | state normal->normal

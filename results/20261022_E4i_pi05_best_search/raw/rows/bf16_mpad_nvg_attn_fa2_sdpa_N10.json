@@ -1,0 +1,520 @@
+{
+ "model": "pi05",
+ "rung": "bf16_mpad_nvg_attn_fa2_sdpa",
+ "N": 10,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "c7ccf29",
+  "files_sha256": {
+   "opt_ladder.py": "e29bde2d57899830",
+   "rungs.py": "4148c70bbe04b760",
+   "e4i_candidates.py": "93cd17e7aa42af64",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-22T18:40:28Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4313,
+   "oc3": 127713
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "40750",
+   "gpu-thermal": "40750",
+   "cpu-thermal": "39500",
+   "soc012-thermal": "39187",
+   "soc345-thermal": "39562"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi05_libero_base",
+  "checkpoint_revision": "a217bfd3b14673cf2ce597e69997ab21866438dd",
+  "shipped_config": {
+   "compile_model": "False",
+   "compile_mode": "max-autotune",
+   "gradient_checkpointing": "False",
+   "num_inference_steps": "10",
+   "dtype": "float32",
+   "chunk_size": "50"
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "checkpoint_file": "model.safetensors",
+   "verdict": "real weights"
+  },
+  "batch_info": {
+   "image_keys": [
+    "observation.images.image",
+    "observation.images.image2"
+   ],
+   "tokenizer": {
+    "dir": "/home/jameskimh/models/paligemma_tokenizer",
+    "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+    "tokenizer_config": {
+     "tokenizer_class": "GemmaTokenizer",
+     "add_bos_token": true,
+     "add_eos_token": false,
+     "bos_token": "<bos>",
+     "eos_token": "<eos>",
+     "pad_token": "<pad>",
+     "unk_token": "<unk>",
+     "model_max_length": 1000000000000000019884624838656
+    }
+   }
+  },
+  "action_horizon": 50
+ },
+ "tokens": {
+  "prefix_tokens_P": 968,
+  "prefix_tokens_valid": 574,
+  "suffix_tokens_S": 50,
+  "suffix_tokens_valid": 50,
+  "n_images": 3,
+  "language_tokens": 200,
+  "language_tokens_valid": 62,
+  "chunk_size": 50
+ },
+ "rung_desc": {
+  "rung": "bf16_mpad_nvg_attn_fa2_sdpa",
+  "label": "bf16 casts + mpad + compile (nvg on the prefix) + attention prefix=fa2, expert=sdpa",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only)",
+   "linear_mpad(lm_expert): 36 Linear modules padded; shapes padded: {'M=968 K=2048 N=2048 torch.bfloat16': {'pad_to': 1144, 'ms_at_M': 0.0871, 'ms_at_pad': 0.0789}}",
+   "prefix: 18 attention modules -> thor_fa2; expert: 18 attention modules -> thor_sdpa"
+  ],
+  "compiled": [
+   "PI05Pytorch.denoise_step@reduce-overhead",
+   "PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone",
+   "PaliGemmaWithExpertModel.forward@max-autotune-no-cudagraphs"
+  ],
+  "autotune": "",
+  "regions": true,
+  "note": "labelled variant: attention backend switched from LeRobot's forced eager",
+  "compile_wrap_s": 0.6925345049239695,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 8049466848,
+  "torch.float32": 474685568
+ },
+ "by_N": {
+  "10": {
+   "regions": {
+    "vision": {
+     "median_ms": 21.809792041778564,
+     "mean_ms": 21.814141755104064,
+     "p5_ms": 21.666208267211914,
+     "p95_ms": 21.969664573669434,
+     "min_ms": 21.6430082321167,
+     "max_ms": 22.061216354370117,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 71.10296249389648,
+     "mean_ms": 71.14462295532226,
+     "p5_ms": 70.28736114501953,
+     "p95_ms": 72.04022216796875,
+     "min_ms": 70.03990173339844,
+     "max_ms": 73.62480163574219,
+     "n": 100
+    },
+    "ae_step[0]": {
+     "median_ms": 10.600160121917725,
+     "mean_ms": 10.632108144760132,
+     "p5_ms": 10.476415634155273,
+     "p95_ms": 10.86627197265625,
+     "min_ms": 10.448127746582031,
+     "max_ms": 11.794015884399414,
+     "n": 100
+    },
+    "ae_step[1]": {
+     "median_ms": 10.303728103637695,
+     "mean_ms": 10.312871961593627,
+     "p5_ms": 10.215359687805176,
+     "p95_ms": 10.435456275939941,
+     "min_ms": 10.162431716918945,
+     "max_ms": 10.545920372009277,
+     "n": 100
+    },
+    "ae_step[2]": {
+     "median_ms": 10.261888027191162,
+     "mean_ms": 10.25960228919983,
+     "p5_ms": 10.167231559753418,
+     "p95_ms": 10.35814380645752,
+     "min_ms": 10.139840126037598,
+     "max_ms": 10.460351943969727,
+     "n": 100
+    },
+    "ae_step[3]": {
+     "median_ms": 10.220208168029785,
+     "mean_ms": 10.226446418762206,
+     "p5_ms": 10.129183769226074,
+     "p95_ms": 10.324128150939941,
+     "min_ms": 10.083040237426758,
+     "max_ms": 10.426015853881836,
+     "n": 100
+    },
+    "ae_step[4]": {
+     "median_ms": 10.21337604522705,
+     "mean_ms": 10.223819885253906,
+     "p5_ms": 10.130975723266602,
+     "p95_ms": 10.35251235961914,
+     "min_ms": 10.092608451843262,
+     "max_ms": 10.466496467590332,
+     "n": 100
+    },
+    "ae_step[5]": {
+     "median_ms": 10.193567752838135,
+     "mean_ms": 10.2044829082489,
+     "p5_ms": 10.122912406921387,
+     "p95_ms": 10.299903869628906,
+     "min_ms": 10.100095748901367,
+     "max_ms": 10.626591682434082,
+     "n": 100
+    },
+    "ae_step[6]": {
+     "median_ms": 10.18833589553833,
+     "mean_ms": 10.19378526687622,
+     "p5_ms": 10.107551574707031,
+     "p95_ms": 10.305888175964355,
+     "min_ms": 10.085663795471191,
+     "max_ms": 10.37161636352539,
+     "n": 100
+    },
+    "ae_step[7]": {
+     "median_ms": 10.21670389175415,
+     "mean_ms": 10.21601149559021,
+     "p5_ms": 10.111328125,
+     "p95_ms": 10.34166431427002,
+     "min_ms": 10.100128173828125,
+     "max_ms": 10.393664360046387,
+     "n": 100
+    },
+    "ae_step[8]": {
+     "median_ms": 10.217535972595215,
+     "mean_ms": 10.22250657081604,
+     "p5_ms": 10.108960151672363,
+     "p95_ms": 10.34505558013916,
+     "min_ms": 10.072223663330078,
+     "max_ms": 10.502559661865234,
+     "n": 100
+    },
+    "ae_step[9]": {
+     "median_ms": 10.203968048095703,
+     "mean_ms": 10.205237741470336,
+     "p5_ms": 10.115296363830566,
+     "p95_ms": 10.326111793518066,
+     "min_ms": 10.087519645690918,
+     "max_ms": 10.38764762878418,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 103.29110336303711,
+     "mean_ms": 103.38575454711913,
+     "p5_ms": 102.75567626953125,
+     "p95_ms": 104.40512084960938,
+     "min_ms": 102.62860870361328,
+     "max_ms": 105.60771179199219,
+     "n": 100
+    },
+    "preprocess_wall": {
+     "median_ms": 0.9118008892983198,
+     "mean_ms": 0.9217953961342573,
+     "p5_ms": 0.8624168112874031,
+     "p95_ms": 1.020592637360096,
+     "min_ms": 0.841646920889616,
+     "max_ms": 1.1105462908744812,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 198.9589282311499,
+     "mean_ms": 199.0964031079784,
+     "p5_ms": 197.84383196383715,
+     "p95_ms": 200.4618225619197,
+     "min_ms": 197.54356425255537,
+     "max_ms": 202.4789690040052,
+     "n": 100
+    },
+    "postprocess_wall": {
+     "median_ms": 0.13795820996165276,
+     "mean_ms": 0.14147065579891205,
+     "p5_ms": 0.12978678569197655,
+     "p95_ms": 0.1627677120268345,
+     "min_ms": 0.12660212814807892,
+     "max_ms": 0.19463803619146347,
+     "n": 100
+    },
+    "e2e_full_wall": {
+     "median_ms": 199.99882648698986,
+     "mean_ms": 200.15966915991157,
+     "p5_ms": 198.87531315907836,
+     "p95_ms": 201.53128542006016,
+     "min_ms": 198.54655396193266,
+     "max_ms": 203.74411717057228,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 2.74269069544971,
+     "mean_ms": 2.7518838504329324,
+     "p5_ms": 2.6527614668011665,
+     "p95_ms": 2.8737840801477432,
+     "min_ms": 2.63408749550581,
+     "max_ms": 2.996183667331934,
+     "n": 100
+    },
+    "ae_step_individual[0]": {
+     "median_ms": 10.600160121917725,
+     "mean_ms": 10.632108144760132,
+     "p5_ms": 10.476415634155273,
+     "p95_ms": 10.86627197265625,
+     "min_ms": 10.448127746582031,
+     "max_ms": 11.794015884399414,
+     "n": 100
+    },
+    "ae_step_individual[1]": {
+     "median_ms": 10.303728103637695,
+     "mean_ms": 10.312871961593627,
+     "p5_ms": 10.215359687805176,
+     "p95_ms": 10.435456275939941,
+     "min_ms": 10.162431716918945,
+     "max_ms": 10.545920372009277,
+     "n": 100
+    },
+    "ae_step_individual[2]": {
+     "median_ms": 10.261888027191162,
+     "mean_ms": 10.25960228919983,
+     "p5_ms": 10.167231559753418,
+     "p95_ms": 10.35814380645752,
+     "min_ms": 10.139840126037598,
+     "max_ms": 10.460351943969727,
+     "n": 100
+    },
+    "ae_step_individual[3]": {
+     "median_ms": 10.220208168029785,
+     "mean_ms": 10.226446418762206,
+     "p5_ms": 10.129183769226074,
+     "p95_ms": 10.324128150939941,
+     "min_ms": 10.083040237426758,
+     "max_ms": 10.426015853881836,
+     "n": 100
+    },
+    "ae_step_individual[4]": {
+     "median_ms": 10.21337604522705,
+     "mean_ms": 10.223819885253906,
+     "p5_ms": 10.130975723266602,
+     "p95_ms": 10.35251235961914,
+     "min_ms": 10.092608451843262,
+     "max_ms": 10.466496467590332,
+     "n": 100
+    },
+    "ae_step_individual[5]": {
+     "median_ms": 10.193567752838135,
+     "mean_ms": 10.2044829082489,
+     "p5_ms": 10.122912406921387,
+     "p95_ms": 10.299903869628906,
+     "min_ms": 10.100095748901367,
+     "max_ms": 10.626591682434082,
+     "n": 100
+    },
+    "ae_step_individual[6]": {
+     "median_ms": 10.18833589553833,
+     "mean_ms": 10.19378526687622,
+     "p5_ms": 10.107551574707031,
+     "p95_ms": 10.305888175964355,
+     "min_ms": 10.085663795471191,
+     "max_ms": 10.37161636352539,
+     "n": 100
+    },
+    "ae_step_individual[7]": {
+     "median_ms": 10.21670389175415,
+     "mean_ms": 10.21601149559021,
+     "p5_ms": 10.111328125,
+     "p95_ms": 10.34166431427002,
+     "min_ms": 10.100128173828125,
+     "max_ms": 10.393664360046387,
+     "n": 100
+    },
+    "ae_step_individual[8]": {
+     "median_ms": 10.217535972595215,
+     "mean_ms": 10.22250657081604,
+     "p5_ms": 10.108960151672363,
+     "p95_ms": 10.34505558013916,
+     "min_ms": 10.072223663330078,
+     "max_ms": 10.502559661865234,
+     "n": 100
+    },
+    "ae_step_individual[9]": {
+     "median_ms": 10.203968048095703,
+     "mean_ms": 10.205237741470336,
+     "p5_ms": 10.115296363830566,
+     "p95_ms": 10.326111793518066,
+     "min_ms": 10.087519645690918,
+     "max_ms": 10.38764762878418,
+     "n": 100
+    }
+   },
+   "first_call_s": 61.88548288680613,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19,
+    19
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": 10.261947202682496,
+   "peak_mem_allocated_bytes": 8832543744,
+   "control_frequency_hz": 4.992217257102323,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 48.58,
+    "state": "normal",
+    "gpu_C": "44031"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 50.25,
+    "state": "normal",
+    "gpu_C": "47812"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  350
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 2597,
+   "unique_graphs": 19
+  },
+  "inductor": {
+   "pattern_matcher_count": 1128,
+   "pattern_matcher_nodes": 1312,
+   "fxgraph_cache_miss": 11,
+   "async_compile_cache_miss": 160,
+   "extern_calls": 453,
+   "async_compile_cache_hit": 91,
+   "triton_bundler_save_kernel": 880,
+   "triton_bundler_save_static_autotuner": 11,
+   "benchmarking.InductorBenchmarker.benchmark": 222,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 236,
+   "cudagraph_recorded_non_static_inputs": 391,
+   "coordesc_tuning_bench": 132,
+   "triton_bundler_load_static_autotuner": 22,
+   "fxgraph_cache_hit": 8,
+   "pad_mm_bench": 7
+  },
+  "graph_break": {
+   "Dynamic shape operator\n  Explanation: Operator `aten.nonzero.default`'s output shape depends on input Tensor data.\n  Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`\n\n  Developer debug context: aten.nonzero.default\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html": 13,
+   "Failed to trace builtin operator\n  Explanation: Dynamo does not know how to trace builtin operator `bool` with argument types ['Tensor'] (has_kwargs False)\n  Hint: Avoid calling builtin `bool` with argument types ['Tensor']. Consider using an equivalent alternative function/method to `bool`.\n  Hint: If you are attempting to call a logging function (e.g. `print`), you can try adding it to `torch._dynamo.config.reorderable_logging_functions`.\n  Hint: Please report an issue to PyTorch.\n\n  Developer debug context: builtin bool [<class 'torch._dynamo.variables.tensor.TensorVariable'>] False\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0059.html": 1,
+   "copy.deepcopy()\n  Explanation: Dynamo does not support copy.deepcopy()\n  Hint: Avoid calling copy.deepcopy()\n  Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\n\n  Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html": 1
+  }
+ },
+ "mpad_table": {
+  "M=968 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 1144,
+   "ms_at_M": 0.0871,
+   "ms_at_pad": 0.0789
+  },
+  "M=968 K=2048 N=256 torch.bfloat16": {
+   "pad_to": 968,
+   "ms_at_M": 0.0252,
+   "ms_at_pad": 0.0252
+  },
+  "M=968 K=2048 N=16384 torch.bfloat16": {
+   "pad_to": 968,
+   "ms_at_M": 0.5921,
+   "ms_at_pad": 0.5921
+  },
+  "M=968 K=16384 N=2048 torch.bfloat16": {
+   "pad_to": 968,
+   "ms_at_M": 1.5368,
+   "ms_at_pad": 1.5368
+  },
+  "M=50 K=1024 N=2048 torch.bfloat16": {
+   "pad_to": 50,
+   "ms_at_M": 0.02,
+   "ms_at_pad": 0.02
+  },
+  "M=50 K=1024 N=256 torch.bfloat16": {
+   "pad_to": 50,
+   "ms_at_M": 0.0197,
+   "ms_at_pad": 0.0197
+  },
+  "M=50 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 50,
+   "ms_at_M": 0.0207,
+   "ms_at_pad": 0.0207
+  },
+  "M=50 K=1024 N=4096 torch.bfloat16": {
+   "pad_to": 50,
+   "ms_at_M": 0.0239,
+   "ms_at_pad": 0.0239
+  },
+  "M=50 K=4096 N=1024 torch.bfloat16": {
+   "pad_to": 50,
+   "ms_at_M": 0.0247,
+   "ms_at_pad": 0.0247
+  }
+ },
+ "wall_s": 268.34446454048157
+}
