@@ -49,3 +49,5 @@ share at the default N, ms per step both ways, floor and gap ratio per part), th
 After each model's E3 directory, after the E4 directory, at the close.
 
 ## Status (appended by the on-device agent)
+
+status: claimed 2026-10-22

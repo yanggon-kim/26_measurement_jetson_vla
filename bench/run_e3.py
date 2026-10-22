@@ -11,6 +11,8 @@ loops), write ONE result directory results/<date>_E3_<model>_eager_Nsweep/:
 Precision (--precision):
   eager_fp32  torch.set_float32_matmul_precision("highest"), TF32 off (cuda.matmul and cudnn), shipped weight dtypes
   shipped     whatever the model code and torch defaults set, recorded as found
+Memory-path state (T003): bench/gate.memory_state_probe() before and after every N block; a block starts only in the
+normal state (up to 3 min of cool-down), and both classifications are recorded.
 Timing: ≥ 20 warm-up, ≥ 100 timed inferences per N; CUDA events per region read after the iteration's synchronise;
 wall clock end to end. LeRobot: e2e = predict_action_chunk (as on the Orin); preprocess (the checkpoint's processor
 pipeline) and postprocess (its unnormaliser) are timed in the same iteration as separate wall-clock regions, and
@@ -317,8 +319,15 @@ def main():
     all_rows, summary_by_n, dev_by_n = [], {}, {}
     for n in steps:
         gn = G.wait_for_gate(apply_clocks=True)
+        ms0 = G.memory_state_probe()
+        for _ in range(6):                      # baselines in the normal memory-path state (T003 finding)
+            if ms0["state"] == "normal":
+                break
+            time.sleep(30)
+            ms0 = G.memory_state_probe()
         t0 = time.time()
         rows, dev = run_n(ad, n, a.warmup, a.timed)
+        dev["memory_state_before"], dev["memory_state_after"] = ms0, G.memory_state_probe()
         dev["gate_before"] = {k: gn[k] for k in ("time_utc", "checks", "gpu_hz", "gpu_util_pct_samples", "soctherm_oc_event_cnt",
                                                  "thermal_zones_mC")}
         dev["run_s"] = time.time() - t0
@@ -332,7 +341,8 @@ def main():
         s = summary_by_n[n]
         print(f"N={n}: e2e {s['e2e_wall']['median_ms']:.1f} ms | vision {s.get('vision', {}).get('median_ms', float('nan')):.1f}"
               f" | prefix {s.get('vlm_prefix', {}).get('median_ms', float('nan')):.1f} | ae_total "
-              f"{s.get('ae_total', {}).get('median_ms', float('nan')):.1f} | throttled {dev['throttle']['throttled']}",
+              f"{s.get('ae_total', {}).get('median_ms', float('nan')):.1f} | throttled {dev['throttle']['throttled']} | state "
+              f"{dev['memory_state_before']['state']}->{dev['memory_state_after']['state']}",
               flush=True)
     with open(os.path.join(a.out, "latency_samples.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["N", "region", "iter", "ms"])
@@ -364,7 +374,8 @@ def main():
                 "precision_flags_after_load": prec_after_load, "n_default": n_def, "steps": steps,
                 "warmup": a.warmup, "timed": a.timed, "provenance": ad.provenance, "tokens": ad.tokens,
                 "param_dtypes": sorted({str(p.dtype) for p in (ad.policy.model.parameters())}),
-                "wall_s": time.time() - t_start, "throttled_by_N": {n: d["throttle"] for n, d in dev_by_n.items()}}
+                "wall_s": time.time() - t_start, "throttled_by_N": {n: d["throttle"] for n, d in dev_by_n.items()},
+                "memory_state_by_N": {n: (d["memory_state_before"], d["memory_state_after"]) for n, d in dev_by_n.items()}}
     json.dump(run_info, open(os.path.join(a.out, "raw", "run_info.json"), "w"), indent=1, default=str)
     print("done", a.out, flush=True)
 
