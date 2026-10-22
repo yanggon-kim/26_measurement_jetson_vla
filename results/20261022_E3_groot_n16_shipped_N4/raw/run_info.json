@@ -1,0 +1,141 @@
+{
+ "model": "groot_n16",
+ "precision_mode": "shipped",
+ "precision_flags_before_load": {
+  "float32_matmul_precision": "highest",
+  "cuda_matmul_allow_tf32": false,
+  "cudnn_allow_tf32": true,
+  "bf16_reduced_precision_reduction": true
+ },
+ "precision_flags_after_load": {
+  "float32_matmul_precision": "highest",
+  "cuda_matmul_allow_tf32": false,
+  "cudnn_allow_tf32": true
+ },
+ "n_default": 4,
+ "steps": [
+  4
+ ],
+ "warmup": 20,
+ "timed": 100,
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "9b37aa1ce69c73c6d165233fa88128283bba4508",
+  "checkpoint": "nvidia/GR00T-N1.6-3B",
+  "checkpoint_revision": "d0814e7ecb19202e7c8468b46098b0b7ef3a6d61",
+  "embodiment_tag": "robocasa_panda_omron",
+  "obs_shapes": {
+   "video": {
+    "res256_image_side_0": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ],
+    "res256_image_side_1": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ],
+    "res256_image_wrist_0": [
+     1,
+     1,
+     256,
+     256,
+     3
+    ]
+   },
+   "state": {
+    "end_effector_position_relative": [
+     1,
+     1,
+     3
+    ],
+    "end_effector_rotation_relative": [
+     1,
+     1,
+     4
+    ],
+    "gripper_qpos": [
+     1,
+     1,
+     2
+    ],
+    "base_position": [
+     1,
+     1,
+     3
+    ],
+    "base_rotation": [
+     1,
+     1,
+     4
+    ]
+   }
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 284,
+  "P_dit_encoder": 284,
+  "suffix_tokens_S": 51,
+  "shapes": {
+   "llm": [
+    1,
+    284,
+    2048
+   ],
+   "dit_hidden": [
+    1,
+    51,
+    1536
+   ],
+   "dit_encoder": [
+    1,
+    284,
+    2048
+   ]
+  }
+ },
+ "param_dtypes": [
+  "torch.bfloat16"
+ ],
+ "wall_s": 43.204506397247314,
+ "throttled_by_N": {
+  "4": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  }
+ },
+ "memory_state_by_N": {
+  "4": [
+   {
+    "probe_us_per_call": 49.24,
+    "state": "normal",
+    "gpu_C": "39812"
+   },
+   {
+    "probe_us_per_call": 49.46,
+    "state": "normal",
+    "gpu_C": "45000"
+   }
+  ]
+ }
+}
