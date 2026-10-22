@@ -138,7 +138,7 @@ class GrootAdapter:
 
     def capture_tokens(self):
         """P and S as processed, from one get_action (forward pre-hooks on the LLM and the DiT)."""
-        _, _, lm, _ = R.groot_parts(self.policy.model)
+        _, _, lm, _, _ = R.groot_parts(self.policy.model)
         dit = self.policy.model.action_head.model
         seen = {}
 
@@ -296,7 +296,19 @@ def main():
     ap.add_argument("--precision", choices=["eager_fp32", "shipped"], default="eager_fp32")
     ap.add_argument("--hw", default="results/20261022_E1_peak/hw_constants.json")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--accounting-only", action="store_true",
+                    help="load, run the accounting pass at the default N, write accounting.json + tokens.json, exit")
     a = ap.parse_args()
+    if a.accounting_only:
+        os.makedirs(a.out, exist_ok=True)
+        set_precision(a.precision)
+        ad = make_adapter(a.model)
+        if isinstance(ad, GrootAdapter):
+            ad.capture_tokens()
+        acc = accounting_pass(ad, ad.n_default)
+        json.dump(acc, open(os.path.join(a.out, f"accounting_{a.model}.json"), "w"), indent=1, default=str)
+        json.dump(ad.tokens, open(os.path.join(a.out, f"tokens_{a.model}.json"), "w"), indent=1, default=str)
+        return
     if os.path.exists(a.out) and os.listdir(a.out):
         raise SystemExit(f"{a.out} exists and is not empty (protocol §5)")
     os.makedirs(os.path.join(a.out, "raw"), exist_ok=True)

@@ -158,6 +158,11 @@ def main():
                                      str(a.warmup), "--timed", str(a.timed), "--out", sub], stdout=lf,
                                     stderr=subprocess.STDOUT, env=env).returncode
             r = {"mode": mode, "target": target, "exit": rc}
+            # torch 2.10 never populates counters["recompiles"]; the evidence is the TORCH_LOGS=recompiles stream
+            # ("[__recompiles]" lines), checked against the graph-break stream of the same log (T004 review)
+            logtxt = open(os.path.join(sub, "stdout.log")).read()
+            r["recompile_log_lines"] = logtxt.count("[__recompiles]")
+            r["graph_break_log_lines"] = logtxt.count("[__graph_breaks]")
             rp = os.path.join(sub, "result.json")
             if rc == 0 and os.path.exists(rp):
                 d = json.load(open(rp))

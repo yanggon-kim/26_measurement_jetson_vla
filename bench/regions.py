@@ -14,7 +14,8 @@ GR00T (N1.7 Qwen3-VL backbone; N1.6 / N1.5 Eagle backbone):
   vlm_backbone  backbone.forward                 the enclosing call (validation: vision + vlm_prefix vs it)
   vision        Qwen3-VL: backbone.model.model.get_image_features  (visual tower incl. its merger)
                 Eagle:    <eagle model>.extract_feature            (vision_model + pixel shuffle + mlp1 projector)
-  vlm_prefix    <eagle model / qwen model>.language_model.forward
+  vlm_prefix    the LLM decoder stack: Eagle eagle.language_model.model.forward; Qwen3-VL inner.language_model.forward
+  backbone_lm_head  the vocabulary lm_head (computed by the shipped code, never used by GR00T)
   ae_total      action_head.get_action
   ae_step[i]    from action_head.action_encoder call i to call i+1 (the last one to the end of get_action): the
                 whole loop body (encoder, DiT, decoder, Euler update)
@@ -129,7 +130,15 @@ class Recorder:
                 prev = d.get(key, (0, str(module.weight.dtype)))[0]
                 d[key] = (prev + nb, str(module.weight.dtype))
             return
-        own = [(id(p), (p.numel() * p.element_size(), str(p.dtype))) for p in module.parameters(recurse=False)]
+        if type(module).__name__ == "CategorySpecificLinear" and hasattr(module, "num_categories"):
+            # GR00T's per-embodiment Linear stores W [num_categories, in, out] and b [num_categories, out] but reads only
+            # W[cat_ids] / b[cat_ids]: count the slices of the categories actually used (T004 review), not all of them
+            cat = args[1] if len(args) > 1 else None
+            ncat = int(torch.unique(cat).numel()) if torch.is_tensor(cat) else 1
+            own = [(id(p), (p.numel() * p.element_size() * ncat // module.num_categories, str(p.dtype)))
+                   for p in module.parameters(recurse=False)]
+        else:
+            own = [(id(p), (p.numel() * p.element_size(), str(p.dtype))) for p in module.parameters(recurse=False)]
         for r in self.stack:
             d = self.params.setdefault(r, {})
             for k, b in own:
@@ -277,17 +286,24 @@ def instrument_lerobot(policy, rec: Recorder, container: str):
 
 # ====================================================================== GR00T
 def groot_parts(model):
-    """(vision_owner, vision_attr, language_module, family) for this GR00T version; raises if not found."""
+    """(vision_owner, vision_attr, decoder_module, lm_head_module, family) for this GR00T version; raises if not found.
+
+    vlm_prefix is the LLM's DECODER STACK in every version. N1.5 / N1.6's eagle.language_model is a Qwen3ForCausalLM,
+    whose forward also runs the vocabulary lm_head (151,680 x 2048); N1.7's inner.language_model is the bare decoder
+    and its lm_head sits on the outer Qwen3VLForConditionalGeneration. GR00T discards the logits in all three (it keeps
+    hidden states), so the lm_head is its own region, backbone_lm_head, in all three (T004 review: the first version
+    wrapped the CausalLM for N1.5 / N1.6, putting the lm_head inside vlm_prefix, and outside it for N1.7)."""
     bb = model.backbone
     eagle = getattr(bb, "eagle_model", None)                       # N1.5
     if eagle is None and hasattr(getattr(bb, "model", None), "extract_feature"):
         eagle = bb.model                                           # N1.6
     if eagle is not None:
-        return eagle, "extract_feature", eagle.language_model, "eagle"
+        lm = eagle.language_model
+        return eagle, "extract_feature", lm.model, lm.lm_head, "eagle"
     qwen = getattr(bb, "model", None)                              # N1.7: Qwen3VLForConditionalGeneration
     inner = getattr(qwen, "model", None)
     if inner is not None and hasattr(inner, "get_image_features") and hasattr(inner, "language_model"):
-        return inner, "get_image_features", inner.language_model, "qwen3vl"
+        return inner, "get_image_features", inner.language_model, qwen.lm_head, "qwen3vl"
     raise SystemExit(f"cannot find the vision / LLM split in {type(bb).__name__}: refusing to time a region that "
                      f"would silently read 0 ms (the Orin's first N1.5 run did)")
 
@@ -296,7 +312,7 @@ def instrument_groot(policy, rec: Recorder):
     model = policy.model
     ah = model.action_head
     undo = []
-    vis_owner, vis_attr, lm, family = groot_parts(model)
+    vis_owner, vis_attr, lm, lm_head, family = groot_parts(model)
 
     def wrap_call(obj, attr, name):
         orig = getattr(obj, attr)
@@ -311,6 +327,7 @@ def instrument_groot(policy, rec: Recorder):
     wrap_call(model.backbone, "forward", "vlm_backbone")
     wrap_call(vis_owner, vis_attr, "vision")
     wrap_call(lm, "forward", "vlm_prefix")
+    wrap_call(lm_head, "forward", "backbone_lm_head")
 
     orig_get_action = ah.get_action
 

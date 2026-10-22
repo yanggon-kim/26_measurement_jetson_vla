@@ -43,16 +43,19 @@ def main():
             lines.append(f"| {k} | {v:.2f} | {float(s[k]['p5_ms']):.2f}–{float(s[k]['p95_ms']):.2f} | {v / e2e * 100:.1f} % |")
         else:
             lines.append(f"| {k} | {v:.2f} | — | {v / e2e * 100:.1f} % |")
-    for k in ("model_get_action", "outside_model", "preprocess_wall", "postprocess_wall", "e2e_full_wall", "vlm_backbone"):
+    for k in ("model_get_action", "outside_model", "preprocess_wall", "postprocess_wall", "e2e_full_wall", "vlm_backbone",
+              "backbone_lm_head"):
         if k in s:
             lines.append(f"| {k} | {g(k):.2f} | {float(s[k]['p5_ms']):.2f}–{float(s[k]['p95_ms']):.2f} | |")
     fa = fits.get("ae_total")
     st = [g(f"ae_step_individual[{j}]") for j in range(n0) if g(f"ae_step_individual[{j}]") is not None]
-    lines += ["", f"ms per denoising step: instrumented median {sum(st) / len(st):.2f} (step 0 {st[0]:.2f}, last {st[-1]:.2f}); "
+    lines += ["", f"ms per denoising step: mean of the per-step medians {sum(st) / len(st):.2f} (step 0 {st[0]:.2f}, last {st[-1]:.2f}); "
               f"slope over N {fa['b_ms_per_step'] if fa else 'n/a'} (r² {fa['r2'] if fa else 'n/a'}, ae_total = a + b·N, a = {fa['a_ms'] if fa else 'n/a'} ms)."]
     lines += ["", "| part | floor ms (measured peaks) | bound | measured ms | gap ratio |", "|---|---|---|---|---|"]
-    meas = {"vision": g("vision"), "vlm_prefix": g("vlm_prefix"), "ae_step": float(fa["b_ms_per_step"]) if fa else None,
-            "ae_total": g("ae_total"), "ae_total_restream": g("ae_total")}
+    # restream is compared with the sum of the per-step medians (it counts the steps' bytes only; GR00T's ae_total
+    # also holds a prologue -- state encoder, vl layer norm -- before the first step, T004 review)
+    meas = {"vision": g("vision"), "vlm_prefix": g("vlm_prefix"), "ae_step": float(fa["b_ms_per_step"]) if fa else sum(st) / len(st),
+            "ae_total": g("ae_total"), "ae_total_restream": sum(st)}
     for f in floors:
         mval = meas.get(f["region"])
         gap = f"{mval / float(f['floor_ms']):.2f}" if mval and float(f["floor_ms"]) else "n/a"
@@ -73,7 +76,7 @@ def main():
         "precision": f"{info['precision_mode']}: flags after load {info['precision_flags_after_load']}; param dtypes {info['param_dtypes']}",
         "rung": "eager_fp32" if info["precision_mode"] == "eager_fp32" else "shipped eager path",
         "compile_mode": "none (eager)", "variant": "n/a", "num_denoise_steps": f"sweep {info['steps']} (default {n0})",
-        "action_horizon": prov.get("action_horizon", "see tokens.json / obs_shapes"),
+        "action_horizon": prov.get("action_horizon", {"groot_n17": 40, "groot_n16": 16, "groot_n15": 16}.get(info["model"], "n/a")),
         "prefix_tokens": info["tokens"].get("prefix_tokens_P"), "suffix_tokens": info["tokens"].get("suffix_tokens_S"),
         "batch": 1, "n_warmup": info["warmup"], "n_timed": info["timed"],
         "hw_constants_source": "results/20261022_E1_peak/hw_constants.json", "bench_commit": a.bench_commit,
@@ -82,12 +85,20 @@ def main():
         "memory_path_state": {str(n): [d["memory_state_before"], d["memory_state_after"]] for n, d in per_n.items()},
         "provenance": prov,
         "produced_by": {"per_N": "bench/run_e3.py", "run_info": "bench/run_e3.py", "gate_start": "bench/gate.py",
-                        "run_e3": "bench/run_e3.py (stdout)"},
+                        "run_e3": "bench/run_e3.py (stdout)", "meta_fields": "bench/e3_finalise.py",
+                        "secrets_scan": "bench/secrets_scan.py", "latency_samples": "bench/run_e3.py"},
         "also_raw": ["latency_samples.csv"],
         "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). "
                  "Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = "
                  "parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings "
                  "for the dominant parameter dtype of the part. Every N block started in the normal memory-path state."}
+    def no_null(x):
+        if isinstance(x, dict):
+            return {k: no_null(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [no_null(v) for v in x]
+        return "n/a: not applicable to this model" if x is None else x
+    fields = no_null(fields)
     fp = f"{R}/raw/meta_fields.json"
     json.dump(fields, open(fp, "w"), indent=1, default=str)
     scan = f"{R}/raw/secrets_scan.csv"
