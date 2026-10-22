@@ -43,3 +43,5 @@ applied first (needs H1; without it, record the unlocked state and mark the run 
 At the close (one result directory per commit).
 
 ## Status (appended by the on-device agent)
+
+status: claimed 2026-10-22

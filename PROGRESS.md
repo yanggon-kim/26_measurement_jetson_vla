@@ -13,7 +13,7 @@ closed the task.
 | task | what | priority | state | date | commit | headline (with its number) |
 |---|---|---|---|---|---|---|
 | [T001](tasks/T001_setup_and_availability.md) | setup and availability | P0 | done | 2026-10-22 | 181ee2d | MAXN, 20 SMs, sm_110, L2 32 MiB; torch 2.10.0+cu130 OK; 6 of 6 models pass smoke; no dram__ counters (L2 sysmem 1.003× analytic); nsys binaries NOT CLEAN |
-| [T002](tasks/T002_platform_record.md) | platform record (E0) | P0 | todo | | | |
+| [T002](tasks/T002_platform_record.md) | platform record (E0) | P0 | claimed | 2026-10-22 | | |
 | [T003](tasks/T003_peaks_and_kernel_sweep.md) | peaks → `hw_constants.json` (E1), expert kernel sweep (E2) | P0 | todo | | | |
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | todo | | | |
 | [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | todo | | | |
