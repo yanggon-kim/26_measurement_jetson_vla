@@ -91,7 +91,8 @@ def device_state():
         "gpu_arch": "sm_%d%d" % torch.cuda.get_device_capability(),
         "l4t": rd("/etc/nv_tegra_release").splitlines()[0],
         "jetpack": dpkg,
-        "cuda": f"torch.version.cuda={torch.version.cuda}; toolkit={sh(['bash', '-c', 'nvcc --version | tail -1'])}",
+        "cuda": f"torch.version.cuda={torch.version.cuda}; toolkit="
+                f"{sh([os.path.expanduser('~/opt/bin/nvcc'), '--version']).splitlines()[-1]}",
         "driver": rd("/proc/driver/nvidia/version").splitlines()[0],
         "python": sys.version.split()[0],
         "torch": torch.__version__,
