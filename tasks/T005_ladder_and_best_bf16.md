@@ -59,3 +59,5 @@ p5/p95 per part, n, ae_share`); reports `reports/E4d_phase_balance.md` (generate
 After each model's ladder directory, after each model's search, after `E4i_summary`, at the close.
 
 ## Status (appended by the on-device agent)
+
+status: claimed 2026-10-22
