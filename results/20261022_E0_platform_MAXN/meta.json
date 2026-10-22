@@ -1,5 +1,5 @@
 {
-  "date_utc": "2026-10-22T04:45:02Z",
+  "date_utc": "2026-10-22T04:54:46Z",
   "experiment": "E0 platform record",
   "task": "T002",
   "model": "n/a: platform record",
@@ -16,10 +16,10 @@
   "prefix_tokens": "n/a",
   "suffix_tokens": "n/a",
   "batch": "n/a",
-  "n_warmup": "clock probe: 2 s idle before load",
+  "n_warmup": "clock probe: 2 s idle, no warm-up GEMMs before the sampled load; OC probe: 20 GEMMs + 50 calibration GEMMs before the timed slices; idle power: n/a",
   "n_timed": "clock probe: 200 samples at 20 Hz over 10 s; idle power: 600 samples per rail at 10 Hz over 60 s",
   "hw_constants_source": "this directory (static half); T003 completes it",
-  "bench_commit": "9382739ee73f895d48375c91988156a4d5c6607c",
+  "bench_commit": "b1bd14b77447632a7a7432a5f22abb72f07c00f9",
   "command": [
     "source env/thor_env.sh",
     "python bench/platform_record.py --out results/20261022_E0_platform_MAXN   (runs bench/gate.py, applies nothing new: jetson_clocks already applied this boot)",
@@ -31,11 +31,16 @@
     "python bench/gate.py > raw/gate_before_oc_probe.json; python bench/oc_throttle_probe.py --seconds 20 --n 4096 --dtype bfloat16 --out oc_throttle_probe_bf16.csv"
   ],
   "throttled": {
-    "idle_power": false,
-    "clock_probe": "true: soctherm oc3 rose by 1,566 events during the 10 s GEMM loop (gate_before_clock_probe.json vs gate_before_idle_power.json) although devfreq stayed at 1575 MHz",
+    "idle_power": "false, from evidence: VDD_GPU max 7.11 W over the window; oc3 was 50,577 at the gate before the window and 55,963 when raw/power_limits.txt was read ~3.5 min later, of which 5,385 were the agent's own trial OC probe (scratch, not committed) run in between -> at most 1 oc3 event in or around the idle window. The counters were not read right at its end.",
+    "clock_probe": "true: soctherm oc3 rose by 1,566 events between the gate snapshots bracketing the probe (raw/gate_before_clock_probe.json -> raw/gate_before_idle_power.json); devfreq read 1575 MHz throughout",
     "oc_throttle_probe": "true by design (5,245 oc3 events)"
   },
-  "notes": "Every gate check passed before each step. GPU utilisation 0 % in 60 of 62 1-s samples during the idle window (1 % in 2). ina3221 current resolution 20 mA (0.40 W at 19.76 V) quantises the per-sample rail power. VIN (module power, [ASSUMPTION]) includes the fan at full speed (jetson_clocks --fan). VDD_GPU is current-limited at 5,060 mA (\u2248 100 W): sustained heavy GPU load triggers soctherm oc3 throttling invisible to devfreq; a bf16 4096^3 GEMM loop drops from 99.5 TFLOP/s (first 0.5 s) to 94.0 TFLOP/s median. Every later run records OC event deltas (bench/gate.py throttle_verdict).",
+  "notes": "Every gate check passed before each step. GPU utilisation 0 % in 60 of 62 1-s samples during the idle window (1 % in 2). ina3221 current resolution 20 mA (0.40 W at 19.76 V) quantises the per-sample rail power. VIN (module power, [ASSUMPTION]) includes the fan at full speed (jetson_clocks --fan). VDD_GPU is current-limited at 5,060 mA (\u2248 100 W): sustained heavy GPU load triggers soctherm oc3 throttling invisible to devfreq; a bf16 4096^3 GEMM loop drops from 99.5 TFLOP/s (first 0.5 s) to a sustained median of 93.97 TFLOP/s (-5.6 %; slices from the first OC event on), still falling at 20 s (93.3); 60 s with temperatures: results/20261022_E0_oc_throttle. Every later run records OC event deltas (bench/gate.py throttle_verdict). Memory 131,881,750,528 B = 125,772 MiB (raw/cmd_free_bytes.txt). tegrastats --interval 100 wrote 513 lines in ~62 s (~8.3 Hz); the sysfs sampler ran at 10 Hz (600 rows). Not measured: temperature during the clock probe and the 20 s OC probe (only the gate snapshots); the 60 s re-run logs it per slice.",
+  "bench_commit_per_step": {
+    "platform_record, clock probe, idle power": "3e84ce5 (bench/gate.py, platform_record.py, gpu_clock_probe.py; power_sample.py from 1fad8d5)",
+    "oc_throttle_probe_bf16 (20 s)": "run 13:44:05-13:44:27 local on the working-tree oc_throttle_probe.py, committed unchanged 13 s later as 9382739",
+    "derived files (idle_power_summary.csv, hw_constants.json)": "bench/t002_finalise.py (b1bd14b), regenerated after the independent review"
+  },
   "power_mode": {
     "id": "0",
     "name": "MAXN",
@@ -61,11 +66,11 @@
   "triton": "3.6.0",
   "kernel": "6.8.12-tegra",
   "thermal_zones_mC": {
-    "tj-thermal": "42875",
-    "gpu-thermal": "42531",
-    "cpu-thermal": "42875",
-    "soc012-thermal": "41000",
-    "soc345-thermal": "41375"
+    "tj-thermal": "40812",
+    "gpu-thermal": "40562",
+    "cpu-thermal": "40812",
+    "soc012-thermal": "39250",
+    "soc345-thermal": "39593"
   },
   "swap": "Swap:              0           0           0",
   "raw_files": [
@@ -257,7 +262,7 @@
       "path": "raw/gate_before_idle_power.json",
       "sha256": "ea411fd49d9116a916ebbea968f8971e0b60d6723335b35583abe79dc54f0ffe",
       "bytes": 3066,
-      "kind": "power-log",
+      "kind": "other",
       "produced_by": "bench/gate.py",
       "secrets_scan": "clean"
     },
@@ -313,7 +318,7 @@
       "path": "raw/power_limits.txt",
       "sha256": "41091af83229c6a949f4018bee27cb6b58827e5dab6354c1877f2e622f0063aa",
       "bytes": 663,
-      "kind": "power-log",
+      "kind": "other",
       "produced_by": "cat of hwmon sysfs",
       "secrets_scan": "clean"
     },
@@ -323,6 +328,30 @@
       "bytes": 263076,
       "kind": "tegrastats",
       "produced_by": "tegrastats via env/rootdo.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "idle_power.csv",
+      "sha256": "d716983d676967f66706fbb3cdcf60a57420ec6fdc5f9c26c011ddccc8224794",
+      "bytes": 96795,
+      "kind": "power-log",
+      "produced_by": "bench/power_sample.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "clock_probe.csv",
+      "sha256": "857e2d0bc2a130e9bed5d6c092a176bede8840f23964d9b96fe4a85e853e1453",
+      "bytes": 7375,
+      "kind": "other",
+      "produced_by": "bench/gpu_clock_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "oc_throttle_probe_bf16.csv",
+      "sha256": "8a0b512562db911773a496a7e520481abf0b9d89008bf6fe1dc79a4956594d6b",
+      "bytes": 2320,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
       "secrets_scan": "clean"
     }
   ]

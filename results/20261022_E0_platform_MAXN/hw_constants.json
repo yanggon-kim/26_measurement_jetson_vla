@@ -10,8 +10,9 @@
  },
  "gpu_clock_locked_hz": {
   "value": 1575000000,
-  "source": "results/20261022_E0_platform_MAXN/clock_probe.csv: median of 200 devfreq cur_freq samples at 20 Hz during a 10 s bf16 4096^3 GEMM loop, jetson_clocks applied; min = max = median (constant)",
-  "cross_check": "ncu SM frequency 1.5735 GHz under --clock-control none (results/20261022_E0_toolcheck); tegrastats GR3D_FREQ 1574 MHz"
+  "source": "results/20261022_E0_platform_MAXN/clock_probe.csv: median of 200 devfreq cur_freq samples (20 Hz, 10 s bf16 4096^3 GEMM loop, jetson_clocks applied); min 1575000000 = max 1575000000",
+  "caveat": "devfreq reports the requested clock; the over-current throttle (gpu_power_limit) is not visible in it",
+  "cross_check": "ncu SM frequency 1.5735 GHz (results/20261022_E0_toolcheck); tegrastats GR3D_FREQ 1574 MHz"
  },
  "emc_hz": 4266000000,
  "l2_bytes": 33554432,
@@ -39,32 +40,71 @@
  },
  "ncu_cross_check_note": "max_gpu_frequency_khz (and clock_rate) read 1,048,576 = 2^20, a placeholder on this integrated GPU, not a clock; global_memory_bus_width and memory clock read 0 (unified LPDDR5X, no discrete frame buffer). The clock comes from devfreq.",
  "memory": {
-  "type": "LPDDR5X",
-  "bus_width_bits": 256,
+  "type": "LPDDR5X (spec, not readable on the device)",
+  "bus_width_bits": "256 (spec; ncu device__attribute_global_memory_bus_width reads 0 on this integrated GPU)",
   "spec_GBps": 273,
-  "spec_source": "NVIDIA Jetson AGX Thor product page (spec, not measured; docs/00_context.md hint)"
+  "spec_source": "NVIDIA Jetson AGX Thor product page, as quoted in docs/00_context.md (a hint, not verified here); measured bandwidth: T003"
  },
  "measured_bw_GBps": "n/a: T003 (E1)",
  "measured_tflops": "n/a: T003 (E1)",
  "ridge_flop_per_byte": "n/a: T003 (E1)",
- "spec_tflops": "n/a: T003 records NVIDIA's published figures where they exist",
+ "spec_tflops": "n/a: deferred to T003, which records NVIDIA's published per-precision figures with their sources",
  "counter_validation": "n/a: T003",
  "source_runs": [
-  "results/20261022_E0_platform_MAXN"
+  "results/20261022_E0_platform_MAXN",
+  "results/20261022_E0_oc_throttle"
  ],
  "gpu_power_limit": {
   "vdd_gpu_current_warning_mA": 5060,
   "vdd_gpu_current_critical_mA": 6080,
-  "vdd_gpu_bus_V_idle": 19.76,
+  "vdd_gpu_bus_V_idle_median": 19.76,
   "vdd_gpu_limit_W_derived": 100.0,
   "oc_throttle": "soctherm oc2 and oc3 have throt_en=1; oc3 fires when VDD_GPU reaches the warning limit",
-  "effect_measured": {
-   "bf16_gemm_4096_first_slice_tflops": 99.529,
-   "bf16_gemm_4096_sustained_median_tflops": 93.966,
-   "slowdown_pct": 5.6,
-   "source": "results/20261022_E0_platform_MAXN/oc_throttle_probe_bf16.csv"
+  "probe_20s": {
+   "source": "results/20261022_E0_platform_MAXN/oc_throttle_probe_bf16.csv",
+   "slices": 39,
+   "slice_s": 0.5,
+   "burst_first_slice_tflops": 99.529,
+   "first_slice_with_oc_event": 2,
+   "sustained_median_tflops": 93.966,
+   "sustained_last_slice_tflops": 93.295,
+   "slowdown_sustained_vs_burst_pct": 5.6,
+   "oc3_events_total": 5245,
+   "vdd_gpu_W_median_sustained": 99.7
   },
+  "probe_60s_with_temperature": {
+   "source": "results/20261022_E0_oc_throttle/oc_throttle_probe_bf16_60s.csv",
+   "slices": 114,
+   "slice_s": 0.5,
+   "burst_first_slice_tflops": 98.61,
+   "first_slice_with_oc_event": 2,
+   "sustained_median_tflops": 93.063,
+   "sustained_last_slice_tflops": 91.932,
+   "slowdown_sustained_vs_burst_pct": 5.6,
+   "oc3_events_total": 16529,
+   "vdd_gpu_W_median_sustained": 99.7,
+   "gpu_C_first": 57.47,
+   "gpu_C_last": 80.47
+  },
+  "definition": "burst = first 0.5 s slice (no OC event); sustained = median of the slices from the first OC event onward",
   "devfreq_shows_it": false,
-  "source": "results/20261022_E0_platform_MAXN/raw/power_limits.txt (ina3221 curr1_max / curr1_crit), oc_throttle_probe_bf16.csv"
+  "source": "results/20261022_E0_platform_MAXN/raw/power_limits.txt (ina3221 curr1_max / curr1_crit), results/20261022_E0_platform_MAXN/idle_power.csv (bus voltage), the two OC probe CSVs"
+ },
+ "sources": {
+  "device": "results/20261022_E0_platform_MAXN/raw/cmd_jetson_clocks_show.txt (Machine:) and /proc/device-tree/model (env/README.md)",
+  "gpu_name": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "compute_capability": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "sm_count": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "l2_bytes": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "smem_per_sm_bytes": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "smem_per_block_optin_bytes": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "max_warps_per_sm": "results/20261022_E0_platform_MAXN/gpu_properties.json (max_threads_per_multi_processor / warp_size; ncu device__attribute_max_warps_per_multiprocessor = 48)",
+  "max_threads_per_sm": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "regs_per_sm": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "warp_size": "results/20261022_E0_platform_MAXN/gpu_properties.json",
+  "gpu_arch": "results/20261022_E0_toolcheck/raw/cublaslt_sm_strings.txt and results/20261022_E0_addenda/raw/cublaslt_list_text_sm_strings.txt (cuobjdump: sm_110 / sm_110a cubins in the cuBLASLt torch loads); torch capability (11, 0) agrees",
+  "emc_hz": "results/20261022_E0_platform_MAXN/raw/cmd_emc_rate.txt",
+  "power_mode": "results/20261022_E0_platform_MAXN/raw/cmd_nvpmodel_q_verbose.txt",
+  "ncu_cross_check": "results/20261022_E0_toolcheck/raw/ncu_toy_raw.csv"
  }
 }
