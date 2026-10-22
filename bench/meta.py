@@ -24,8 +24,8 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOTDO = os.path.join(REPO, "env", "rootdo.sh")
 GPU_DEVFREQ = "/sys/class/devfreq/gpu-gpc-0"
 KIND_BY_EXT = [(".ncu-rep", "ncu-rep"), (".nsys-rep", "nsys-rep"), (".sqlite", "nsys-sqlite"), (".sass", "sass"),
-               (".ptx", "ptx"), (".cubin", "cubin"), (".stdout.log", "stdout"), ("tegrastats", "tegrastats"),
-               ("power", "power-log")]
+               (".ptx", "ptx"), (".cubin", "cubin"), (".stdout.log", "stdout"), ("tegrastats", "tegrastats")]
+POWER_LOG_PREFIXES = ("power_idle", "idle_power", "power_sample", "power.csv")
 
 
 def sh(cmd, root=False):
@@ -105,9 +105,12 @@ def device_state():
 
 
 def kind_of(path):
+    b = os.path.basename(path)
     for ext, k in KIND_BY_EXT:
-        if ext in os.path.basename(path):
+        if ext in b:
             return k
+    if b.startswith(POWER_LOG_PREFIXES) and not b.endswith(("_channels.csv", "_summary.csv")):
+        return "power-log"
     return "other"
 
 
@@ -146,6 +149,10 @@ def finalise(run_dir, fields, scan_status):
             else:
                 e = raw_entry(p, run_dir, kind_of(fn), pb, scan_status.get(fn, "n/a"))
             entries.append(e)
+    for rel in fields.pop("also_raw", []):   # per-sample files kept at the top level of the run (protocol §3.5)
+        p = os.path.join(run_dir, rel)
+        entries.append(raw_entry(p, run_dir, kind_of(p), next((v for k, v in produced.items() if k in rel), ""),
+                                 scan_status.get(os.path.basename(p), "n/a")))
     entries += extra_uncommitted
     meta = {"date_utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     meta.update(fields)
