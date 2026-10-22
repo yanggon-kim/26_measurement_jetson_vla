@@ -1,0 +1,98 @@
+{
+  "date_utc": "2026-10-22T06:23:25Z",
+  "model": "pi0 (expert weights only)",
+  "model_repo": "lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "rung": "n/a",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a",
+  "action_horizon": "n/a",
+  "prefix_tokens": "816 (attention ops: P + S keys)",
+  "suffix_tokens": "S in {1,2,4,8,16,32,51,64,128,256}",
+  "batch": 1,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "5b799a9823d466c67037b947ee7603684a2d98c3",
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "precision": "bf16",
+  "compile_mode": "eager; CUDA graph replay for kernel time",
+  "n_warmup": "50 calls (chain), 20 (issue), 10 replays (graph)",
+  "n_timed": "kernel: 30 graph replays of whole passes (>= 100 calls); chain 10 x 1,000; issue 10 x 1,000; single 100",
+  "command": [
+    "env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/lerobot/bin/python bench/micro_ae_kernels.py --hw results/20261022_E1_peak/hw_constants.json --out <dir>",
+    "python bench/e2_floors.py --e2 <dir> --hw results/20261022_E1_peak/hw_constants.json"
+  ],
+  "throttled": false,
+  "experiment": "E2 action-expert kernel sweep (pi0), v3 -- authoritative",
+  "task": "T003 step 6",
+  "bench_commit_per_step": {
+    "micro_ae_kernels.py": "3e3a1b9",
+    "e2_floors.py": "5b799a9823d466c67037b947ee7603684a2d98c3"
+  },
+  "notes": "Memory-path state normal (gate_proj S=51 49.6 us; results/20261022_E1_state_probe). Run into scratch/t003/e2_v3 as a repeatability check and promoted. OC delta 0.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "37687",
+    "gpu-thermal": "37343",
+    "cpu-thermal": "37687",
+    "soc012-thermal": "35812",
+    "soc345-thermal": "35937"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/micro_ae_kernels.stdout.log",
+      "sha256": "2efb9cefc79db4f396c9b1aa88f26408336f5fec686295c5b32016cad88e2290",
+      "bytes": 8967,
+      "kind": "stdout",
+      "produced_by": "bench/micro_ae_kernels.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run.json",
+      "sha256": "2349cb36aa03bdda64ea5cb5755825cb548b9b50b3c5c70693d52b89dadc7167",
+      "bytes": 7296,
+      "kind": "other",
+      "produced_by": "bench/micro_ae_kernels.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples.csv",
+      "sha256": "e815fe8b989563b2bb5bf47e3a93a3c97ed2d0af19d39bd69dc87af9fafbb29e",
+      "bytes": 528174,
+      "kind": "other",
+      "produced_by": "bench/micro_ae_kernels.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
