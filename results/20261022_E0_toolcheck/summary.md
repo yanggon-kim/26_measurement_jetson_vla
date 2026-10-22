@@ -15,4 +15,4 @@
 | architecture | compute capability 11.0, `sm_110`; cuBLASLt carries 1,140 `sm_110` cubins | `raw/cublaslt_sm_strings.txt` |
 | rails | VDD_GPU, VDD_CPU_SOC_MSS, VIN_SYS_5V0 (ina3221), VIN (ina238); idle sample not clean (shared GPU) | `raw/power_idle*.csv`, `raw/tegrastats_idle.log` |
 
-Odd: the GPU is shared with other users' sessions; VDD_GPU swung 7–29 W with nothing of ours running.
+Odd: the GPU is shared with other users' sessions; VDD_GPU swung 6.7–30.8 W (10 s sysfs sample; 36.7 W instantaneous in tegrastats) with nothing of ours running.
