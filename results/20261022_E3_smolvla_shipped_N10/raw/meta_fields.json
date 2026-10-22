@@ -1,0 +1,86 @@
+{
+ "experiment": "E3 eager end-to-end latency, N sweep",
+ "task": "T004 step 4",
+ "model": "smolvla",
+ "model_repo": "https://github.com/huggingface/lerobot",
+ "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+ "checkpoint": "lerobot/smolvla_base",
+ "checkpoint_revision": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+ "precision": "shipped: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': True}; param dtypes ['torch.bfloat16', 'torch.float32']",
+ "rung": "shipped eager path",
+ "compile_mode": "none (eager)",
+ "variant": "n/a",
+ "num_denoise_steps": "sweep [10] (default 10)",
+ "action_horizon": 50,
+ "prefix_tokens": 177,
+ "suffix_tokens": 50,
+ "batch": 1,
+ "n_warmup": 20,
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "2d47fb9",
+ "command": "source env/thor_env.sh; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/lerobot/bin/python <repo>/bench/run_e3.py --model smolvla --precision shipped --steps <default N> --out <repo>/results/20261022_E3_smolvla_shipped_N10",
+ "throttled": {
+  "10": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  }
+ },
+ "memory_path_state": {
+  "10": [
+   {
+    "probe_us_per_call": 51.07,
+    "state": "normal",
+    "gpu_C": "41343"
+   },
+   {
+    "probe_us_per_call": 49.78,
+    "state": "normal",
+    "gpu_C": "43281"
+   }
+  ]
+ },
+ "provenance": {
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/smolvla_base",
+  "checkpoint_revision": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+  "shipped_config": {
+   "compile_model": "False",
+   "compile_mode": "max-autotune",
+   "gradient_checkpointing": "n/a: field absent",
+   "num_steps": "10",
+   "dtype": "n/a: field absent",
+   "chunk_size": "50"
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "checkpoint_file": "model.safetensors",
+   "verdict": "real weights"
+  },
+  "batch_info": {
+   "image_keys": [
+    "observation.images.camera1",
+    "observation.images.camera2"
+   ],
+   "tokenizer": null
+  },
+  "action_horizon": 50
+ },
+ "produced_by": {
+  "per_N": "bench/run_e3.py",
+  "run_info": "bench/run_e3.py",
+  "gate_start": "bench/gate.py",
+  "run_e3": "bench/run_e3.py (stdout)"
+ },
+ "also_raw": [
+  "latency_samples.csv"
+ ],
+ "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state."
+}

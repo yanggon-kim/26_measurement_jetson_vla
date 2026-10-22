@@ -1,0 +1,168 @@
+{
+  "date_utc": "2026-10-22T08:45:17Z",
+  "experiment": "E3 eager end-to-end latency, N sweep",
+  "task": "T004 step 4",
+  "model": "smolvla",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/smolvla_base",
+  "checkpoint_revision": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+  "precision": "shipped: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': True}; param dtypes ['torch.bfloat16', 'torch.float32']",
+  "rung": "shipped eager path",
+  "compile_mode": "none (eager)",
+  "variant": "n/a",
+  "num_denoise_steps": "sweep [10] (default 10)",
+  "action_horizon": 50,
+  "prefix_tokens": 177,
+  "suffix_tokens": 50,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "2d47fb9",
+  "command": "source env/thor_env.sh; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/lerobot/bin/python <repo>/bench/run_e3.py --model smolvla --precision shipped --steps <default N> --out <repo>/results/20261022_E3_smolvla_shipped_N10",
+  "throttled": {
+    "10": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    }
+  },
+  "memory_path_state": {
+    "10": [
+      {
+        "probe_us_per_call": 51.07,
+        "state": "normal",
+        "gpu_C": "41343"
+      },
+      {
+        "probe_us_per_call": 49.78,
+        "state": "normal",
+        "gpu_C": "43281"
+      }
+    ]
+  },
+  "provenance": {
+    "model_repo": "https://github.com/huggingface/lerobot",
+    "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+    "checkpoint": "lerobot/smolvla_base",
+    "checkpoint_revision": "d9f33c94a60fb382c90dea2164c96845bd955e28",
+    "shipped_config": {
+      "compile_model": "False",
+      "compile_mode": "max-autotune",
+      "gradient_checkpointing": "n/a: field absent",
+      "num_steps": "10",
+      "dtype": "n/a: field absent",
+      "chunk_size": "50"
+    },
+    "weights_check": {
+      "checked": 400,
+      "matched": 400,
+      "checkpoint_file": "model.safetensors",
+      "verdict": "real weights"
+    },
+    "batch_info": {
+      "image_keys": [
+        "observation.images.camera1",
+        "observation.images.camera2"
+      ],
+      "tokenizer": null
+    },
+    "action_horizon": 50
+  },
+  "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39437",
+    "gpu-thermal": "38750",
+    "cpu-thermal": "39437",
+    "soc012-thermal": "37187",
+    "soc345-thermal": "37406"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_start.json",
+      "sha256": "966c7871630813e4949d3f1ab393db31f6731bd1cec6c2df641a46c51a30813b",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "0cc5cd05d8d42b912418307e062c559535c925c47e80c985ee2803e4547c6155",
+      "bytes": 2903,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_10.json",
+      "sha256": "4c9b80207bf014b6c4a6ddc24850a8326a88aeaa723c925b171d7a2e5f5d25e9",
+      "bytes": 1608,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_e3.stdout.log",
+      "sha256": "fe39cf3f664e155e68de06d177237486698237d92ee3f9bb470f3365061bdd66",
+      "bytes": 922,
+      "kind": "stdout",
+      "produced_by": "bench/run_e3.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_info.json",
+      "sha256": "e883c56711d5b4a9510ba4536342de06dcbafd7c03dad155041039190a67893d",
+      "bytes": 1905,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "659a1c8e6ce266e9c6ca11dcfe1bcee0d4e69b41bbece4f6fe6eba7666dc3577",
+      "bytes": 12509,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "latency_samples.csv",
+      "sha256": "06e250f7d7b7fdbef4f17dccf143e6de79b2bda803b4d24a34e95c19b877f0d4",
+      "bytes": 110751,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    }
+  ]
+}
