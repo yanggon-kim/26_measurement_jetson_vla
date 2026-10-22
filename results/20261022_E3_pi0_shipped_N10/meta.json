@@ -1,0 +1,181 @@
+{
+  "date_utc": "2026-10-22T08:45:14Z",
+  "experiment": "E3 eager end-to-end latency, N sweep",
+  "task": "T004 step 4",
+  "model": "pi0",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "precision": "shipped: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': True}; param dtypes ['torch.bfloat16', 'torch.float32']",
+  "rung": "shipped eager path",
+  "compile_mode": "none (eager)",
+  "variant": "n/a",
+  "num_denoise_steps": "sweep [10] (default 10)",
+  "action_horizon": 50,
+  "prefix_tokens": 816,
+  "suffix_tokens": 51,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "2d47fb9",
+  "command": "source env/thor_env.sh; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/lerobot/bin/python <repo>/bench/run_e3.py --model pi0 --precision shipped --steps <default N> --out <repo>/results/20261022_E3_pi0_shipped_N10",
+  "throttled": {
+    "10": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    }
+  },
+  "memory_path_state": {
+    "10": [
+      {
+        "probe_us_per_call": 50.56,
+        "state": "normal",
+        "gpu_C": "39031"
+      },
+      {
+        "probe_us_per_call": 51.38,
+        "state": "normal",
+        "gpu_C": "46375"
+      }
+    ]
+  },
+  "provenance": {
+    "model_repo": "https://github.com/huggingface/lerobot",
+    "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+    "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+    "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+    "shipped_config": {
+      "compile_model": "True",
+      "compile_mode": "max-autotune",
+      "gradient_checkpointing": "True",
+      "num_inference_steps": "10",
+      "dtype": "bfloat16",
+      "chunk_size": "50"
+    },
+    "weights_check": {
+      "checked": 400,
+      "matched": 400,
+      "checkpoint_file": "model.safetensors",
+      "verdict": "real weights"
+    },
+    "batch_info": {
+      "image_keys": [
+        "observation.images.image",
+        "observation.images.image2"
+      ],
+      "tokenizer": {
+        "dir": "/home/jameskimh/models/paligemma_tokenizer",
+        "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+        "tokenizer_config": {
+          "tokenizer_class": "GemmaTokenizer",
+          "add_bos_token": true,
+          "add_eos_token": false,
+          "bos_token": "<bos>",
+          "eos_token": "<eos>",
+          "pad_token": "<pad>",
+          "unk_token": "<unk>",
+          "model_max_length": 1000000000000000019884624838656
+        }
+      }
+    },
+    "action_horizon": 50
+  },
+  "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "40250",
+    "gpu-thermal": "38750",
+    "cpu-thermal": "39531",
+    "soc012-thermal": "40250",
+    "soc345-thermal": "37406"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_start.json",
+      "sha256": "6b9f2838450ac8e9fa4ca28fd131302d477fbf28329415c326c59fcbe499c3f6",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "c13ef3278b4c63c80640ac70e78c244041a09dd8f293cad49a63959cb026ccf2",
+      "bytes": 3354,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_10.json",
+      "sha256": "a45a2f7990db1d5e4e1e4de00f23254c63daa5361b6127ec765b81630df5c4c4",
+      "bytes": 1607,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_e3.stdout.log",
+      "sha256": "b51a1f0ee1e6d1d4d30770f6f3fd68057734e46cde7ae03d7b9eb281bbc803ca",
+      "bytes": 1176,
+      "kind": "stdout",
+      "produced_by": "bench/run_e3.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_info.json",
+      "sha256": "3e0dcbed90e936c0e7e9a7f9605a3a39800e1cd5c8bff5eaaf97d4c526def94d",
+      "bytes": 2350,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "d4fb513963f781b02cdf53aeafd076e946183cc2f7bc241a9b6c73a5b982265b",
+      "bytes": 11992,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "latency_samples.csv",
+      "sha256": "32be310b2eb71ddb713fe3411420554675ceb63a02d32a6c4d398d58d26f208e",
+      "bytes": 110661,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    }
+  ]
+}
