@@ -1,0 +1,263 @@
+{
+  "date_utc": "2026-10-22T08:21:01Z",
+  "experiment": "E4 stock torch.compile modes (pi0)",
+  "task": "T004 step 5",
+  "model": "pi0",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "precision": "checkpoint dtypes (bf16 + fp32 islands), matmul precision highest, TF32 off",
+  "rung": "n/a: stock modes (not the ladder)",
+  "compile_mode": "default, reduce-overhead, max-autotune, max-autotune-no-cudagraphs x targets expert (denoise_step), whole (sample_actions)",
+  "variant": "n/a",
+  "num_denoise_steps": "2, 6, 10",
+  "action_horizon": 50,
+  "prefix_tokens": 816,
+  "suffix_tokens": 51,
+  "batch": 1,
+  "n_warmup": "20 after compilation per N",
+  "n_timed": "100 per N",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "79777d7 (run_e4.py)",
+  "command": [
+    "source env/thor_env.sh; E4_CACHE_ROOT=scratch/t004/e4cache env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/lerobot/bin/python bench/run_e4.py --all --out results/20261022_E4_pi0_compile_modes",
+    "(driver runs each: python bench/run_e4.py --one <mode> <target> --steps 2,6,10 --warmup 20 --timed 100 with TORCH_LOGS=graph_breaks,recompiles,perf_hints and per-config Inductor/Triton caches)"
+  ],
+  "throttled": "per config and N in raw/<mode>__<target>/result.json (all false)",
+  "notes": "Per-call samples are inside each result.json (samples_ms). Memory-path state classified before/after every N block (all normal).",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "41406",
+    "gpu-thermal": "39875",
+    "cpu-thermal": "41343",
+    "soc012-thermal": "38406",
+    "soc345-thermal": "38843"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/run_e4_driver.stdout.log",
+      "sha256": "1860ba33eb9beafe50fecfb33fad776590cae3c17152f4152f47a6488e18c0db",
+      "bytes": 5638,
+      "kind": "stdout",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/reduce-overhead__expert/inductor_dynamo_log.txt",
+      "sha256": "457beeb74231695c839977f5cf572eebd9dcbab6d40af145eb132d197780ab69",
+      "bytes": 2411,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/reduce-overhead__expert/result.json",
+      "sha256": "ad6d22cef25d4a6561d55b52eb19db33a5772299c2fc6ca103e91c50fcc6a10b",
+      "bytes": 11720,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/reduce-overhead__expert/stdout.log",
+      "sha256": "8be942d2664b5eb210bc55ec29387667f7bb1cd284083190ebd5c83e5e5f5516",
+      "bytes": 6579,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/reduce-overhead__whole/inductor_dynamo_log.txt",
+      "sha256": "79837329fd9a244673c5dd89ced510cc75c6f3f4af739cd2b187e6670f02ecc2",
+      "bytes": 7602,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/reduce-overhead__whole/result.json",
+      "sha256": "873258ba6351e16a50d7e4536b0eb4f83a9fa1e834c94debb5085cc3b38e2237",
+      "bytes": 12636,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/reduce-overhead__whole/stdout.log",
+      "sha256": "9486c0909003c270b8c67da86629c4d9baede1514837ea638470dbf54db865b3",
+      "bytes": 17444,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune__whole/inductor_dynamo_log.txt",
+      "sha256": "79837329fd9a244673c5dd89ced510cc75c6f3f4af739cd2b187e6670f02ecc2",
+      "bytes": 7602,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune__whole/result.json",
+      "sha256": "78933356537bfdc2be869f7496ece6198e4125fdbe5c8f893cb8c6e1b758cbc2",
+      "bytes": 12731,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune__whole/stdout.log",
+      "sha256": "cb5d2973d05bd31ef862777cdc9c04065031130b374d0539df79a4701c34ac50",
+      "bytes": 19946,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune__expert/inductor_dynamo_log.txt",
+      "sha256": "457beeb74231695c839977f5cf572eebd9dcbab6d40af145eb132d197780ab69",
+      "bytes": 2411,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune__expert/result.json",
+      "sha256": "e0265bd9a17068c565b824fce618451286266c5fa2e921ac67a7685cefe53c0a",
+      "bytes": 11805,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune__expert/stdout.log",
+      "sha256": "f732285d6ba33e01cd4ae9400163641608f624218ab0b577c5bb825c93b34e96",
+      "bytes": 8660,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/default__expert/inductor_dynamo_log.txt",
+      "sha256": "457beeb74231695c839977f5cf572eebd9dcbab6d40af145eb132d197780ab69",
+      "bytes": 2411,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/default__expert/result.json",
+      "sha256": "194f7bf63d96bbb0114d7a59ad07056f35b1b1361b4eda7a6b0702b963161e05",
+      "bytes": 11645,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/default__expert/stdout.log",
+      "sha256": "78def43f4d4a800cf2f778ba2fb4804244254eb680286a50055958b56397ca80",
+      "bytes": 6555,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/default__whole/inductor_dynamo_log.txt",
+      "sha256": "79837329fd9a244673c5dd89ced510cc75c6f3f4af739cd2b187e6670f02ecc2",
+      "bytes": 7602,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/default__whole/result.json",
+      "sha256": "1b355703c40fb61b474cf14327c8877cc27e6c42c1746b25bd683d5e7aeee900",
+      "bytes": 12559,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/default__whole/stdout.log",
+      "sha256": "611dc0071eacf4e796a161f685e93cf94ba0966fa7cbc227701919bc9d11763c",
+      "bytes": 17420,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune-no-cudagraphs__expert/inductor_dynamo_log.txt",
+      "sha256": "457beeb74231695c839977f5cf572eebd9dcbab6d40af145eb132d197780ab69",
+      "bytes": 2411,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune-no-cudagraphs__expert/result.json",
+      "sha256": "f90ee0c0beba905ab6c16a2066163b7f1140becb60f528b5baa1c48e74b57854",
+      "bytes": 11789,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune-no-cudagraphs__expert/stdout.log",
+      "sha256": "b97772f91e0a666294e5b58f70d6b4901b7296830459311b7b380a3882923a0d",
+      "bytes": 8713,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune-no-cudagraphs__whole/inductor_dynamo_log.txt",
+      "sha256": "79837329fd9a244673c5dd89ced510cc75c6f3f4af739cd2b187e6670f02ecc2",
+      "bytes": 7602,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py (logging capture)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune-no-cudagraphs__whole/result.json",
+      "sha256": "5015a742c5496512e2741de95184129e24de5b2b004124814ef0c6ced84fa886",
+      "bytes": 12704,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/max-autotune-no-cudagraphs__whole/stdout.log",
+      "sha256": "baf58f24fde73035039cbb44c3d9d21cb6e9baa67a3d50a34990dbb0e5a1431f",
+      "bytes": 19989,
+      "kind": "other",
+      "produced_by": "bench/run_e4.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}

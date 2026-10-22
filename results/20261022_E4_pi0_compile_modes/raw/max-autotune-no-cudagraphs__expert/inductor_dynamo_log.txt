@@ -1,0 +1,35 @@
+torch._dynamo.symbolic_convert.__graph_breaks: Graph break in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+
+copy.deepcopy()
+  Explanation: Dynamo does not support copy.deepcopy()
+  Hint: Avoid calling copy.deepcopy()
+  Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+
+  Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+
+ For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+User code traceback:
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 187, in <module>
+    main()
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 145, in main
+    one(a.one[0], a.one[1], steps, a.warmup, a.timed, a.out)
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 78, in one
+    act = call()
+  File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 67, in call
+    return policy.predict_action_chunk(batch)
+  File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+    actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+  File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+    v_t = denoise_step_partial_call(x_t)
+  File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+    return self.denoise_step(
+  File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+    past_key_values = copy.deepcopy(past_key_values)
+
+torch._inductor.utils: Not enough SMs to use max_autotune_gemm mode
+torch._inductor.utils: Not enough SMs to use max_autotune_gemm mode

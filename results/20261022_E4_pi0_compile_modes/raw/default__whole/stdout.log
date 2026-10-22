@@ -1,0 +1,121 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph break in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL_FUNCTION_EX: a variadic function call, e.g. f(*args):
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] copy.deepcopy()
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] User code traceback:
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 187, in <module>
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     main()
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 145, in main
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     one(a.one[0], a.one[1], steps, a.warmup, a.timed, a.out)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 78, in one
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     act = call()
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e4.py", line 67, in call
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return policy.predict_action_chunk(batch)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/_dynamo/external_utils.py", line 69, in inner
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return fn(*args, **kwargs)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return self.denoise_step(
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V1022 16:53:25.602000 1645392 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] 
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] copy.deepcopy()
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] 
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks] 
+V1022 16:53:31.128000 1645392 torch/_dynamo/symbolic_convert.py:4282] [1/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+I1022 16:53:31.795000 1645392 torch/_inductor/compile_fx.py:671] [2/0] [__perf_hints] Skip comprehensive padding on CPU
+I1022 16:53:31.799000 1645392 torch/_inductor/graph.py:913] [2/0] [__perf_hints] Using FallbackKernel: torch.ops.prims.normal.default
+/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/_inductor/compile_fx.py:321: UserWarning: TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled. Consider setting `torch.set_float32_matmul_precision('high')` for better performance.
+  warnings.warn(
+W1022 16:53:47.401000 1645392 torch/_inductor/utils.py:1679] [3/0] Not enough SMs to use max_autotune_gemm mode
+I1022 16:53:47.443000 1645392 torch/_inductor/graph.py:913] [3/0] [__perf_hints] Using FallbackKernel: torch.ops.aten._scaled_dot_product_efficient_attention.default
+I1022 16:53:54.678000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:54.679000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:55.202000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:55.203000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:55.340000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:55.341000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:56.161000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:56.231000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:56.299000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:58.156000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:58.156000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I1022 16:53:58.156000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I1022 16:53:58.156000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:58.206000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:58.223000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:58.223000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I1022 16:53:58.223000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I1022 16:53:58.223000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:59.430000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:59.430000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I1022 16:53:59.430000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I1022 16:53:59.430000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:59.457000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:53:59.469000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:53:59.469000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I1022 16:53:59.469000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I1022 16:53:59.469000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:54:00.616000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:54:00.616000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I1022 16:54:00.616000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I1022 16:54:00.616000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:54:00.641000 1645392 torch/_inductor/codegen/simd.py:3052] [3/0] [__perf_hints] possibly bad tiling: [{'y': 256, 'x': 1152, 'r0_': 1}, {'x': 294912, 'r0_': 1}]
+I1022 16:54:00.654000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+I1022 16:54:00.654000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Reduction over non-contiguous dims.
+I1022 16:54:00.654000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] Consider setting config.triton.tile_reductions to True.
+I1022 16:54:00.654000 1645392 torch/_inductor/codegen/simd.py:2981] [3/0] [__perf_hints] 
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] copy.deepcopy()
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks] 
+V1022 16:54:21.061000 1645392 torch/_dynamo/symbolic_convert.py:4282] [8/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Graph break (user stack suppressed due to duplicate graph break) in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] copy.deepcopy()
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks] 
+V1022 16:54:21.232000 1645392 torch/_dynamo/symbolic_convert.py:4282] [9/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /home/jameskimh/.cache/huggingface/hub/models--lerobot--pi0_libero_finetuned_v044/snapshots/45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+default whole N=2: 297.9 ms
+default whole N=6: 334.1 ms
+default whole N=10: 368.2 ms
