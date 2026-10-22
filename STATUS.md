@@ -4,7 +4,7 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-T002 done 2026-10-22 (commit 3a5417b). Next: T003 (peaks, counter validation, expert kernel sweep). Owner's priorities (2026-10-22): the task order stays T002 → T015; the
+T002 done 2026-10-22 (commit 3a5417b). T003 (peaks, counter validation, expert kernel sweep) claimed 2026-10-22. Owner's priorities (2026-10-22): the task order stays T002 → T015; the
 latency breakdown for `eager_fp32` and `best_bf16` of all six models (T004, T005) comes first, then the ncu analysis,
 **`best_bf16` before `eager_fp32` inside T006–T008** (the mode order inside a task is not fixed by the plan).
 

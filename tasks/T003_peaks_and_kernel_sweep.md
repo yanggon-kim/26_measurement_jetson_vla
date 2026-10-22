@@ -55,3 +55,5 @@ measured vs spec vs Orin; then validation; then E2 with the answers to plan E2's
 After `results/<date>_E1_peak/` (the ceilings are what T004–T008 wait for), and at the close.
 
 ## Status (appended by the on-device agent)
+
+status: claimed 2026-10-22
