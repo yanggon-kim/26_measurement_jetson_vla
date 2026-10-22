@@ -1,0 +1,390 @@
+{
+ "model": "groot_n17",
+ "rung": "ae_graphs_mpad",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "2462c62",
+  "files_sha256": {
+   "opt_ladder.py": "9e23fd6d939a6868",
+   "rungs.py": "9acdfca64ffffc8b",
+   "e4i_candidates.py": "93cd17e7aa42af64",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-22T19:19:35Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 4313,
+   "oc3": 127717
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "40375",
+   "gpu-thermal": "40375",
+   "cpu-thermal": "38906",
+   "soc012-thermal": "38718",
+   "soc345-thermal": "39031"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "embodiment_tag": "oxe_droid_relative_eef_relative_joint",
+  "obs_shapes": {
+   "video": {
+    "exterior_image_1_left": [
+     1,
+     2,
+     256,
+     256,
+     3
+    ],
+    "wrist_image_left": [
+     1,
+     2,
+     256,
+     256,
+     3
+    ]
+   },
+   "state": {
+    "eef_9d": [
+     1,
+     1,
+     9
+    ],
+    "gripper_position": [
+     1,
+     1,
+     1
+    ],
+    "joint_position": [
+     1,
+     1,
+     7
+    ]
+   }
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)",
+  "backbone": "nvidia/Cosmos-Reason2-2B @ 9ce19a195e423419c349abfc86fd07178b230561"
+ },
+ "tokens": {
+  "prefix_tokens_P": 273,
+  "P_dit_encoder": 273,
+  "suffix_tokens_S": 41
+ },
+ "rung_desc": {
+  "rung": "ae_graphs_mpad",
+  "label": "GR00T E4i candidate: ae@reduce-overhead + linear_mpad",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "linear_mpad(backbone+action_head): 168 Linear modules padded; shapes padded: {'M=1024 K=1024 N=3072 torch.bfloat16': {'pad_to': 1280, 'ms_at_M': 0.077, 'ms_at_pad': 0.0612}, 'M=1024 K=1024 N=1024 torch.bfloat16': {'pad_to': 1040, 'ms_at_M': 0.0387, 'ms_at_pad': 0.0322}, 'M=1024 K=1024 N=4096 torch.bfloat16': {'pad_to': 1280, 'ms_at_M': 0.0823, 'ms_at_pad': 0.0746}, 'M=1024 K=4096 N=1024 torch.bfloat16': {'pad_to': 1040, 'ms_at_M': 0.1006, 'ms_at_pad': 0.0704}, 'M=256 K=4096 N=2048 torch.bfloat16': {'pad_to': 336, 'ms_at_M': 0.056, 'ms_at_pad': 0.0477}, 'M=273 K=2048 N=2048 torch.bfloat16': {'pad_to': 337, 'ms_at_M': 0.0482, 'ms_at_pad': 0.0335}, 'M=273 K=6144 N=2048 torch.bfloat16': {'pad_to': 337, 'ms_at_M': 0.1064, 'ms_at_pad': 0.0622}, 'M=273 K=8192 N=2048 torch.bfloat16': {'pad_to': 481, 'ms_at_M': 0.1915, 'ms_at_pad': 0.1673}}"
+  ],
+  "compiled": [
+   "Gr00tN1d7ActionHead.get_action@reduce-overhead+clone"
+  ],
+  "autotune": "",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.5078796683810651,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 6288032000
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 30.7259521484375,
+     "mean_ms": 30.76980863571167,
+     "p5_ms": 30.612384796142578,
+     "p95_ms": 31.01523208618164,
+     "min_ms": 30.546592712402344,
+     "max_ms": 32.13750457763672,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 25.562576293945312,
+     "mean_ms": 25.727838916778566,
+     "p5_ms": 25.353151321411133,
+     "p95_ms": 26.842304229736328,
+     "min_ms": 25.2923526763916,
+     "max_ms": 27.0347843170166,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.539631962776184,
+     "mean_ms": 3.5673001646995544,
+     "p5_ms": 3.5075840950012207,
+     "p95_ms": 3.608736038208008,
+     "min_ms": 3.46943998336792,
+     "max_ms": 5.361824035644531,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 62.81937599182129,
+     "mean_ms": 63.05743621826172,
+     "p5_ms": 62.56198501586914,
+     "p95_ms": 64.4459228515625,
+     "min_ms": 62.42790222167969,
+     "max_ms": 65.63993835449219,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 63.01643180847168,
+     "mean_ms": 63.67790912628174,
+     "p5_ms": 62.87059020996094,
+     "p95_ms": 68.14918518066406,
+     "min_ms": 62.75263977050781,
+     "max_ms": 68.64991760253906,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 126.93014526367188,
+     "mean_ms": 127.81535362243652,
+     "p5_ms": 126.64201354980469,
+     "p95_ms": 133.64332580566406,
+     "min_ms": 126.43113708496094,
+     "max_ms": 134.24166870117188,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 145.7268160302192,
+     "mean_ms": 146.2798168277368,
+     "p5_ms": 140.4690952040255,
+     "p95_ms": 152.61378698050976,
+     "min_ms": 139.999327249825,
+     "max_ms": 154.891824349761,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 18.696563243865967,
+     "mean_ms": 18.464463205300273,
+     "p5_ms": 13.419465992599726,
+     "p95_ms": 19.909860502928495,
+     "min_ms": 13.181239608675241,
+     "max_ms": 21.436044320464134,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 26.3231729734689,
+     "mean_ms": 26.104260148964823,
+     "p5_ms": 21.09072682633996,
+     "p95_ms": 28.10296354815364,
+     "min_ms": 20.73077917471528,
+     "max_ms": 29.24740944802761,
+     "n": 100
+    }
+   },
+   "first_call_s": 103.85633963625878,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6614403072,
+   "control_frequency_hz": 6.831652352924415,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 49.98,
+    "state": "normal",
+    "gpu_C": "42812"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.82,
+    "state": "normal",
+    "gpu_C": "44937"
+   }
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  680
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 5432,
+   "unique_graphs": 1
+  },
+  "inductor": {
+   "pattern_matcher_count": 3411,
+   "pattern_matcher_nodes": 4003,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 76,
+   "pad_mm_bench": 8,
+   "fxgraph_cache_miss": 1,
+   "async_compile_cache_miss": 74,
+   "extern_calls": 1224,
+   "async_compile_cache_hit": 37,
+   "triton_bundler_save_kernel": 536,
+   "triton_bundler_save_static_autotuner": 1,
+   "benchmarking.InductorBenchmarker.benchmark": 60,
+   "cudagraph_recorded_non_static_inputs": 5
+  },
+  "graph_break": {}
+ },
+ "mpad_table": {
+  "M=1024 K=1024 N=3072 torch.bfloat16": {
+   "pad_to": 1280,
+   "ms_at_M": 0.077,
+   "ms_at_pad": 0.0612
+  },
+  "M=1024 K=1024 N=1024 torch.bfloat16": {
+   "pad_to": 1040,
+   "ms_at_M": 0.0387,
+   "ms_at_pad": 0.0322
+  },
+  "M=1024 K=1024 N=4096 torch.bfloat16": {
+   "pad_to": 1280,
+   "ms_at_M": 0.0823,
+   "ms_at_pad": 0.0746
+  },
+  "M=1024 K=4096 N=1024 torch.bfloat16": {
+   "pad_to": 1040,
+   "ms_at_M": 0.1006,
+   "ms_at_pad": 0.0704
+  },
+  "M=256 K=4096 N=4096 torch.bfloat16": {
+   "pad_to": 256,
+   "ms_at_M": 0.1724,
+   "ms_at_pad": 0.1724
+  },
+  "M=256 K=4096 N=2048 torch.bfloat16": {
+   "pad_to": 336,
+   "ms_at_M": 0.056,
+   "ms_at_pad": 0.0477
+  },
+  "M=273 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 337,
+   "ms_at_M": 0.0482,
+   "ms_at_pad": 0.0335
+  },
+  "M=273 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 273,
+   "ms_at_M": 0.0337,
+   "ms_at_pad": 0.0337
+  },
+  "M=273 K=2048 N=6144 torch.bfloat16": {
+   "pad_to": 273,
+   "ms_at_M": 0.0711,
+   "ms_at_pad": 0.0711
+  },
+  "M=273 K=6144 N=2048 torch.bfloat16": {
+   "pad_to": 337,
+   "ms_at_M": 0.1064,
+   "ms_at_pad": 0.0622
+  },
+  "M=273 K=2048 N=151936 torch.bfloat16": {
+   "pad_to": 273,
+   "ms_at_M": 3.4755,
+   "ms_at_pad": 3.4755
+  },
+  "M=273 K=2048 N=8192 torch.bfloat16": {
+   "pad_to": 273,
+   "ms_at_M": 0.2064,
+   "ms_at_pad": 0.2064
+  },
+  "M=273 K=8192 N=2048 torch.bfloat16": {
+   "pad_to": 481,
+   "ms_at_M": 0.1915,
+   "ms_at_pad": 0.1673
+  },
+  "M=41 K=1536 N=1536 torch.bfloat16": {
+   "pad_to": 41,
+   "ms_at_M": 0.0222,
+   "ms_at_pad": 0.0222
+  },
+  "M=273 K=2048 N=1536 torch.bfloat16": {
+   "pad_to": 273,
+   "ms_at_M": 0.0329,
+   "ms_at_pad": 0.0329
+  },
+  "M=41 K=1536 N=6144 torch.bfloat16": {
+   "pad_to": 41,
+   "ms_at_M": 0.033,
+   "ms_at_pad": 0.033
+  },
+  "M=41 K=6144 N=1536 torch.bfloat16": {
+   "pad_to": 41,
+   "ms_at_M": 0.0387,
+   "ms_at_pad": 0.0387
+  },
+  "M=41 K=1536 N=1024 torch.bfloat16": {
+   "pad_to": 41,
+   "ms_at_M": 0.0212,
+   "ms_at_pad": 0.0212
+  }
+ },
+ "wall_s": 146.293123960495
+}
