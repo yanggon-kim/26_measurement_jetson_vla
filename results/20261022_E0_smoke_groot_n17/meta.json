@@ -1,0 +1,79 @@
+{
+  "date_utc": "2026-10-22T04:30:13Z",
+  "experiment": "E0 smoke model GR00T N1.7 (A16), after H2",
+  "task": "T001 step 8",
+  "model": "groot_n17",
+  "model_repo": "Isaac-GR00T (https://github.com/NVIDIA/Isaac-GR00T)",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B (+ backbone nvidia/Cosmos-Reason2-2B)",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495 (backbone 9ce19a195e423419c349abfc86fd07178b230561 = main on 2026-10-22, not pinned by docs/00_context.md)",
+  "precision": "shipped bf16",
+  "rung": "n/a: smoke test",
+  "compile_mode": "eager; then torch.compile(mode='default') of action_head.model (the DiT)",
+  "variant": "smoke",
+  "num_denoise_steps": 4,
+  "action_horizon": 40,
+  "prefix_tokens": 273,
+  "suffix_tokens": 41,
+  "batch": 1,
+  "n_warmup": 3,
+  "n_timed": 5,
+  "hw_constants_source": "n/a: T003 has not run",
+  "bench_commit": "8657871314b823d4ff0705799079010d1518dce3",
+  "command": [
+    "cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/groot17/bin/python <repo>/bench/smoke_groot.py --version groot_n17 --out <repo>/results/20261022_E0_smoke_groot_n17",
+    "same with bench/groot_tokens.py --version groot_n17"
+  ],
+  "throttled": "not assessed: smoke test; jetson_clocks applied this boot; GPU shared with other users",
+  "notes": "Smoke test, NOT a measurement. Embodiment oxe_droid_relative_eef_relative_joint, 2 cameras x 2 frames, 256x256, np.random seed 1234 (Orin build_observation). Runs after H2 (Hugging Face login + Cosmos-Reason2 licence). The HF token file exists since then: every raw file was scanned against it (clean).",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "38093",
+    "gpu-thermal": "38031",
+    "cpu-thermal": "38093",
+    "soc012-thermal": "36437",
+    "soc345-thermal": "36812"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/smoke_groot_n17.stdout.log",
+      "sha256": "d130abe25cce298c27cb3b3e9a499b1404a6f7b81808ad9229d1c79956682259",
+      "bytes": 3334,
+      "kind": "stdout",
+      "produced_by": "bench/smoke_groot.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/tokens_groot_n17.stdout.log",
+      "sha256": "5fa488f65de46277d804f5b7a305646631c8e382395005b6b980739d1f604068",
+      "bytes": 2582,
+      "kind": "stdout",
+      "produced_by": "bench/groot_tokens.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
