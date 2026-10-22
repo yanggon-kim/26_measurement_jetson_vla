@@ -1,0 +1,204 @@
+{
+ "experiment": "E3 eager end-to-end latency, N sweep",
+ "task": "T004 step 4",
+ "model": "pi0",
+ "model_repo": "https://github.com/huggingface/lerobot",
+ "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "precision": "eager_fp32: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': False, 'bf16_reduced_precision_reduction': True}; param dtypes ['torch.bfloat16', 'torch.float32']",
+ "rung": "eager_fp32",
+ "compile_mode": "none (eager)",
+ "variant": "n/a",
+ "num_denoise_steps": "sweep [1, 2, 4, 6, 8, 10] (default 10)",
+ "action_horizon": 50,
+ "prefix_tokens": 816,
+ "suffix_tokens": 51,
+ "batch": 1,
+ "n_warmup": 20,
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "a32aa34",
+ "command": "source env/thor_env.sh; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 TORCHINDUCTOR_CACHE_DIR=scratch/t004/inductor ~/venvs/lerobot/bin/python bench/run_e3.py --model pi0 --out results/20261022_E3_pi0_eager_Nsweep",
+ "throttled": {
+  "8": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "10": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "6": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "1": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "2": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  },
+  "4": {
+   "throttled": false,
+   "oc_event_delta": {
+    "oc1": 0,
+    "oc2": 0,
+    "oc3": 0
+   },
+   "devfreq_samples_below_locked": 0
+  }
+ },
+ "memory_path_state": {
+  "8": [
+   {
+    "probe_us_per_call": 51.45,
+    "state": "normal",
+    "gpu_C": "45562"
+   },
+   {
+    "probe_us_per_call": 49.73,
+    "state": "normal",
+    "gpu_C": "49375"
+   }
+  ],
+  "10": [
+   {
+    "probe_us_per_call": 53.35,
+    "state": "normal",
+    "gpu_C": "45937"
+   },
+   {
+    "probe_us_per_call": 51.2,
+    "state": "normal",
+    "gpu_C": "49312"
+   }
+  ],
+  "6": [
+   {
+    "probe_us_per_call": 50.2,
+    "state": "normal",
+    "gpu_C": "45156"
+   },
+   {
+    "probe_us_per_call": 50.11,
+    "state": "normal",
+    "gpu_C": "49187"
+   }
+  ],
+  "1": [
+   {
+    "probe_us_per_call": 51.99,
+    "state": "normal",
+    "gpu_C": "38406"
+   },
+   {
+    "probe_us_per_call": 51.78,
+    "state": "normal",
+    "gpu_C": "47750"
+   }
+  ],
+  "2": [
+   {
+    "probe_us_per_call": 50.49,
+    "state": "normal",
+    "gpu_C": "42750"
+   },
+   {
+    "probe_us_per_call": 51.4,
+    "state": "normal",
+    "gpu_C": "49156"
+   }
+  ],
+  "4": [
+   {
+    "probe_us_per_call": 53.33,
+    "state": "normal",
+    "gpu_C": "44468"
+   },
+   {
+    "probe_us_per_call": 49.59,
+    "state": "normal",
+    "gpu_C": "49250"
+   }
+  ]
+ },
+ "provenance": {
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "shipped_config": {
+   "compile_model": "True",
+   "compile_mode": "max-autotune",
+   "gradient_checkpointing": "True",
+   "num_inference_steps": "10",
+   "dtype": "bfloat16",
+   "chunk_size": "50"
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "checkpoint_file": "model.safetensors",
+   "verdict": "real weights"
+  },
+  "batch_info": {
+   "image_keys": [
+    "observation.images.image",
+    "observation.images.image2"
+   ],
+   "tokenizer": {
+    "dir": "/home/jameskimh/models/paligemma_tokenizer",
+    "tokenizer_model_sha256": "8986bb4f423f07f8c7f70d0dbe3526fb2316056c17bae71b1ea975e77a168fc6",
+    "tokenizer_config": {
+     "tokenizer_class": "GemmaTokenizer",
+     "add_bos_token": true,
+     "add_eos_token": false,
+     "bos_token": "<bos>",
+     "eos_token": "<eos>",
+     "pad_token": "<pad>",
+     "unk_token": "<unk>",
+     "model_max_length": 1000000000000000019884624838656
+    }
+   }
+  },
+  "action_horizon": 50
+ },
+ "produced_by": {
+  "per_N": "bench/run_e3.py",
+  "run_info": "bench/run_e3.py",
+  "gate_start": "bench/gate.py",
+  "run_e3": "bench/run_e3.py (stdout)"
+ },
+ "also_raw": [
+  "latency_samples.csv"
+ ],
+ "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state."
+}
