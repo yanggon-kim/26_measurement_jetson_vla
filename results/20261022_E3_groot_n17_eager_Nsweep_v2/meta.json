@@ -1,0 +1,338 @@
+{
+  "date_utc": "2026-10-22T09:22:16Z",
+  "experiment": "E3 eager end-to-end latency, N sweep",
+  "task": "T004 step 4",
+  "model": "groot_n17",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "precision": "eager_fp32: flags after load {'float32_matmul_precision': 'highest', 'cuda_matmul_allow_tf32': False, 'cudnn_allow_tf32': False, 'bf16_reduced_precision_reduction': True}; param dtypes ['torch.bfloat16']",
+  "rung": "eager_fp32",
+  "compile_mode": "none (eager)",
+  "variant": "n/a",
+  "num_denoise_steps": "sweep [1, 2, 4, 6, 8, 10] (default 4)",
+  "action_horizon": 40,
+  "prefix_tokens": 273,
+  "suffix_tokens": 41,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "c34fd33",
+  "command": "source env/thor_env.sh; cd /tmp; env -u HF_TOKEN -u HUGGING_FACE_HUB_TOKEN HF_HUB_OFFLINE=1 ~/venvs/groot17/bin/python <repo>/bench/run_e3.py --model groot_n17  --out <repo>/results/20261022_E3_groot_n17_eager_Nsweep_v2 --hw <repo>/results/20261022_E1_peak/hw_constants.json",
+  "throttled": {
+    "8": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    },
+    "10": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    },
+    "6": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    },
+    "1": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    },
+    "2": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    },
+    "4": {
+      "throttled": false,
+      "oc_event_delta": {
+        "oc1": 0,
+        "oc2": 0,
+        "oc3": 0
+      },
+      "devfreq_samples_below_locked": 0
+    }
+  },
+  "memory_path_state": {
+    "8": [
+      {
+        "probe_us_per_call": 51.45,
+        "state": "normal",
+        "gpu_C": "42562"
+      },
+      {
+        "probe_us_per_call": 49.06,
+        "state": "normal",
+        "gpu_C": "46125"
+      }
+    ],
+    "10": [
+      {
+        "probe_us_per_call": 49.5,
+        "state": "normal",
+        "gpu_C": "43125"
+      },
+      {
+        "probe_us_per_call": 49.09,
+        "state": "normal",
+        "gpu_C": "46781"
+      }
+    ],
+    "6": [
+      {
+        "probe_us_per_call": 49.44,
+        "state": "normal",
+        "gpu_C": "41656"
+      },
+      {
+        "probe_us_per_call": 48.93,
+        "state": "normal",
+        "gpu_C": "45562"
+      }
+    ],
+    "1": [
+      {
+        "probe_us_per_call": 49.21,
+        "state": "normal",
+        "gpu_C": "37625"
+      },
+      {
+        "probe_us_per_call": 49.19,
+        "state": "normal",
+        "gpu_C": "42531"
+      }
+    ],
+    "2": [
+      {
+        "probe_us_per_call": 50.41,
+        "state": "normal",
+        "gpu_C": "39812"
+      },
+      {
+        "probe_us_per_call": 49.32,
+        "state": "normal",
+        "gpu_C": "43593"
+      }
+    ],
+    "4": [
+      {
+        "probe_us_per_call": 49.08,
+        "state": "normal",
+        "gpu_C": "40843"
+      },
+      {
+        "probe_us_per_call": 49.11,
+        "state": "normal",
+        "gpu_C": "44625"
+      }
+    ]
+  },
+  "provenance": {
+    "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+    "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+    "checkpoint": "nvidia/GR00T-N1.7-3B",
+    "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+    "embodiment_tag": "oxe_droid_relative_eef_relative_joint",
+    "obs_shapes": {
+      "video": {
+        "exterior_image_1_left": [
+          1,
+          2,
+          256,
+          256,
+          3
+        ],
+        "wrist_image_left": [
+          1,
+          2,
+          256,
+          256,
+          3
+        ]
+      },
+      "state": {
+        "eef_9d": [
+          1,
+          1,
+          9
+        ],
+        "gripper_position": [
+          1,
+          1,
+          1
+        ],
+        "joint_position": [
+          1,
+          1,
+          7
+        ]
+      }
+    },
+    "weights_check": {
+      "checked": 400,
+      "matched": 400,
+      "files": [
+        "model-00001-of-00002.safetensors",
+        "model-00002-of-00002.safetensors"
+      ],
+      "verdict": "real weights"
+    },
+    "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)",
+    "backbone": "nvidia/Cosmos-Reason2-2B @ 9ce19a195e423419c349abfc86fd07178b230561"
+  },
+  "notes": "Regions: bench/regions.py; e2e = the model call (LeRobot: predict_action_chunk; GR00T: Gr00tPolicy.get_action). Floors (floor.csv) from one accounting pass at the default N: FLOPs by torch FlopCounterMode, bytes = parameters touched per region (embeddings: rows looked up) + the hand-over (accounting.json); ceilings for the dominant parameter dtype of the part. Every N block started in the normal memory-path state.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "38906",
+    "gpu-thermal": "38718",
+    "cpu-thermal": "38906",
+    "soc012-thermal": "37281",
+    "soc345-thermal": "37562"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gate_start.json",
+      "sha256": "5770b179d0765a5af7bff5c37dbf6fd5160ce0df2007a7fdab3d4f874c05f97e",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "22053b3517f4e6d3c67030c869581b1aef2c0011c41f86aed72275a803a8ed53",
+      "bytes": 5106,
+      "kind": "other",
+      "produced_by": "bench/e3_finalise.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_1.json",
+      "sha256": "bb0a6832b66183432f1852c3a49811de65b50259a559a7a7373a0c8e75105961",
+      "bytes": 1533,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_10.json",
+      "sha256": "02be654b8f507e0559ba8a5fb4de18f00bee268bfb7f75bcb4b002adf8ba0a1e",
+      "bytes": 1903,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_2.json",
+      "sha256": "56ed51ad73ff39a9ebcea49cc1b6aa3a24d99b0b15d503c6fccdc0ecb39eec2f",
+      "bytes": 1574,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_4.json",
+      "sha256": "6f74019d5f817407b763f33faada71263eb08964d19d80323de20d6ffd685668",
+      "bytes": 1656,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_6.json",
+      "sha256": "436a41cf16fccf63c1703f03a53f1780ff24cbcb82f098bbb3d88b104cfaae7b",
+      "bytes": 1737,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/per_N_8.json",
+      "sha256": "0cb37e1415208b4362e6260244040273689caa62d843b00a3f1ddbbd242a166c",
+      "bytes": 1820,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_e3.stdout.log",
+      "sha256": "ad5afcd9481ad668af8ff3a333d59e308eb7c27b10b60cec69701dbd46349b48",
+      "bytes": 2464,
+      "kind": "stdout",
+      "produced_by": "bench/run_e3.py (stdout)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/run_info.json",
+      "sha256": "40d84c2d21faf1ada009d4ba780150a623d6e09f17de1b9ff906f74ffe7f590e",
+      "bytes": 4013,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "0e483e321d84d0c2f9f1b8822248ea531d92e8e18e8b5c8e94a2bd553fd239c4",
+      "bytes": 18879,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "latency_samples.csv",
+      "sha256": "33980e20da7b3eb3d45d4e179aa8d63e7b2be7811776a329281c680032337819",
+      "bytes": 540056,
+      "kind": "other",
+      "produced_by": "bench/run_e3.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
