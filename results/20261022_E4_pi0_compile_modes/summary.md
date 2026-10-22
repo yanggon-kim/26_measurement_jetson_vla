@@ -15,7 +15,9 @@ e2e 425.9 ms at N = 10, 12.53 ms per step.
 | whole | `max-autotune` | 164.4 | 3 | 293.19 / 327.54 / 360.71 | 8.439 | 9.07 | yes | 3.33e-03 |
 | whole | `max-autotune-no-cudagraphs` | 152.5 | 3 | 305.93 / 341.22 / 376.6 | 8.833 | 9.17 | no | 3.63e-03 |
 
-- **No recompilations** at any N, in any mode (Dynamo counters; `TORCH_LOGS=recompiles` empty).
+- **No recompilations** at any N, in any mode. Evidence: the `TORCH_LOGS=recompiles` stream (`[__recompiles]`) printed
+  0 lines in every configuration, while the `[__graph_breaks]` stream of the same log printed 33–68. Dynamo's
+  `counters["recompiles"]` is never populated in torch 2.10, so the per-N counter columns are n/a (T004 review).
 - `whole` graph-breaks 3 times on `copy.deepcopy(past_key_values)` inside `denoise_step` (`modeling_pi0.py:919`;
   Dynamo does not support `deepcopy`). So the denoising loop stays in Python, each step's compiled graph is reused,
   and changing N does not recompile. `expert` breaks once on the same line.
@@ -23,5 +25,5 @@ e2e 425.9 ms at N = 10, 12.53 ms per step.
   `max-autotune` therefore autotunes only non-GEMM templates; GEMMs stay with cuBLAS.
 - No CUDA-graph skip was logged. Every block was in the normal memory-path state, with no OC events.
 - Best: whole `max-autotune`, 360.7 ms at N = 10 (−15.3 % vs eager). Expert per step 8.0–9.2 ms vs 12.53 eager.
-  The ≈ 280–305 ms intercept (vision + prefix, uncompiled under `expert`; compiled but graph-broken under `whole`)
+  The 276.5–305.2 ms intercept (vision + prefix, uncompiled under `expert`; compiled but graph-broken under `whole`)
   dominates.
