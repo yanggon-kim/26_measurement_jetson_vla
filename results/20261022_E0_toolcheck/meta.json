@@ -1,0 +1,426 @@
+{
+  "date_utc": "2026-10-22T03:31:26Z",
+  "experiment": "E0 toolcheck",
+  "task": "T001",
+  "model": "n/a: tool check, no model",
+  "model_repo": "n/a: no model",
+  "model_commit": "n/a: no model",
+  "checkpoint": "n/a: no model",
+  "checkpoint_revision": "n/a: no model",
+  "precision": "bf16 (toy linear) and fp32/bf16 (stack check)",
+  "rung": "n/a: no model",
+  "compile_mode": "stack check: default, reduce-overhead, max-autotune, max-autotune-no-cudagraphs; toys: eager",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a: no model",
+  "action_horizon": "n/a: no model",
+  "prefix_tokens": "n/a: no model",
+  "suffix_tokens": "n/a: no model",
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": "stack check: 100 per compile mode; toys: n/a (profiled)",
+  "hw_constants_source": "n/a: T003 has not run",
+  "bench_commit": "1fad8d5c047e6c5b2568c3e858086fe38c36362d",
+  "command": [
+    "source env/thor_env.sh",
+    "python bench/stack_check.py --out results/20261022_E0_toolcheck/stack_verification.json   (first without env/thor_env.sh: raw/stack_verification_route_a_bundled_ptxas_FAILED.json)",
+    "nsys profile -t cuda,nvtx,osrt,cublas,cudnn --capture-range=cudaProfilerApi --capture-range-end=stop -f true -o scratch/20261022_E0_toolcheck/nsys_toy python bench/nsys_toy.py",
+    "nsys stats -r cuda_gpu_trace,cuda_gpu_kern_sum,cuda_gpu_mem_time_sum,cuda_api_sum,nvtx_sum,nvtx_kern_sum,nvtx_gpu_proj_trace -f csv -o results/20261022_E0_toolcheck/nsys/nsys_toy scratch/20261022_E0_toolcheck/nsys_toy.nsys-rep",
+    "env/rootdo.sh ncu --set full --nvtx --nvtx-include toy/ --profile-from-start off -o raw/ncu_toy -f python bench/ncu_toy.py --case linear   (clocks NOT locked; default --clock-control base)",
+    "python bench/metric_discovery.py list ...; env/rootdo.sh ncu --metrics <ncu/metric_list_form_d.txt> --nvtx --nvtx-include toy/ --profile-from-start off -o raw/ncu_toy_metrics -f python bench/ncu_toy.py --case linear; python bench/metric_discovery.py analyze ...",
+    "env/rootdo.sh jetson_clocks; env/rootdo.sh jetson_clocks --fan",
+    "env/rootdo.sh ncu --clock-control {base,none} --section SpeedOfLight --metrics gpc__cycles_elapsed.avg.per_second,sm__cycles_elapsed.avg.per_second ... --case linear",
+    "env/rootdo.sh ncu --clock-control none --metrics gpu__time_duration.sum,sm__cycles_elapsed.avg.per_second ... -c 1000 ... --case tiny",
+    "env/rootdo.sh ncu --clock-control none --graph-profiling {node,graph} --metrics ... --case graph",
+    "cuobjdump --list-elf <venv>/nvidia/cu13/lib/libcublasLt.so.13",
+    "env/rootdo.sh tegrastats --interval 100 --logfile raw/tegrastats_idle.log & python bench/power_sample.py --seconds 10 --hz 10 --out raw/power_idle.csv; env/rootdo.sh tegrastats --stop"
+  ],
+  "throttled": "false for the runs after jetson_clocks (devfreq cur_freq 1575000000 before and after each ncu run); the first ncu_toy and the stack check ran with unlocked clocks (devfreq governor nvhost_podgov) -- none of these is a performance result",
+  "nsys_version": "2025.3.2.367-253236224375v0",
+  "ncu_version": "2025.3.0.0 (build 36273991)",
+  "ncu_set": "full (ncu_toy), explicit list (ncu_toy_metrics), SpeedOfLight (clock test)",
+  "ncu_filter": "--nvtx --nvtx-include toy/ --profile-from-start off",
+  "ncu_metrics": "ncu/metric_list_form_d.txt",
+  "cuobjdump_version": "13.0.39",
+  "ncu_sm_frequency_hz": "ncu_toy (unlocked, base): 898.78 MHz; clock_base (locked): 1573066000; clock_none (locked): 1573468000",
+  "notes": "Smoke checks, not measurements. GPU shared with other users' sessions during this run (VDD_GPU swung 7-29 W with nothing of ours running), so the power sample is not a clean idle. nsys toy capture: 6.6 s wall, report 141,872 B uncompressed, 53,301 B zstd -19.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "38031",
+    "gpu-thermal": "37812",
+    "cpu-thermal": "38031",
+    "soc012-thermal": "36312",
+    "soc345-thermal": "36468"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/cublaslt_sm_strings.txt",
+      "sha256": "72c722757b1adea1ef98851e3f6f4544f125b0e24e99ac7667beaba389b6b575",
+      "bytes": 192,
+      "kind": "other",
+      "produced_by": "cuobjdump --list-elf",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/jetson_clocks_apply.stdout.log",
+      "sha256": "a344868a373287baf4688bf48d94b242869bf260aef98a32442c6d308941d42b",
+      "bytes": 210,
+      "kind": "stdout",
+      "produced_by": "jetson_clocks via env/rootdo.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/jetson_clocks_show_before.txt",
+      "sha256": "ba94e0933289ff516a1e66276286ae06742cf189da6d3350e1596a873d5c11fb",
+      "bytes": 2014,
+      "kind": "other",
+      "produced_by": "jetson_clocks via env/rootdo.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/jetson_clocks_show_locked.txt",
+      "sha256": "7cca8941de0b5baa55d673478220a07e2cd6e9f655d946ab0775dd69300a3ef5",
+      "bytes": 2032,
+      "kind": "other",
+      "produced_by": "jetson_clocks via env/rootdo.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_graph_graph.ncu-rep",
+      "sha256": "c217feec4284b6324e5afa30e5e34d9dfc747c268bd505c4d2497243cdc2b921",
+      "bytes": 52690,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_graph_graph.stdout.log",
+      "sha256": "a8d21728cbacac4c0fffc25154b526fdff1a1933b1bd144f4c1da5c556a422e0",
+      "bytes": 551,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_graph_node.ncu-rep",
+      "sha256": "b0cd24563efe5e539985d17c03399a0e7dc6e82cd60d748f9842ba8fe634f3a3",
+      "bytes": 83659,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_graph_node.stdout.log",
+      "sha256": "e96bb1da04ff420ff32a318b584074f4bd07001a3c50756cdac83faf4a2441c0",
+      "bytes": 631,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_limit_1000_tiny.ncu-rep.zst",
+      "sha256": "d9b422dcd7a568b1f8fd516f857c137839ebf20fdf8bfa1adb8dd45e9ae9aae6",
+      "bytes": 255888,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_toolcheck/raw/ncu_limit_1000_tiny.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_toolcheck/raw/ncu_limit_1000_tiny.ncu-rep.zst"
+      },
+      "original": {
+        "name": "ncu_limit_1000_tiny.ncu-rep",
+        "sha256": "2a5c3b46f77077e741be0a74fe74b362843a0d289096dbf876929a7ce7ee705d",
+        "bytes": 21298156
+      }
+    },
+    {
+      "path": "raw/ncu_limit_1000_tiny.stdout.log",
+      "sha256": "7d344b41264e99ade57f104b5e710189c04a1d318d869cf3da840435a21797fe",
+      "bytes": 96169,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy.ncu-rep.zst",
+      "sha256": "1f133a29c02cba1c3d466461b32bfb268e24346005281a1df23088b4501cf189",
+      "bytes": 66381,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_toolcheck/raw/ncu_toy.ncu-rep -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261022_E0_toolcheck/raw/ncu_toy.ncu-rep.zst"
+      },
+      "original": {
+        "name": "ncu_toy.ncu-rep",
+        "sha256": "606d9e31ccfda1ddc01024759e27a670629841fed0d7008a38232fdb5d8e34ee",
+        "bytes": 1159688
+      }
+    },
+    {
+      "path": "raw/ncu_toy.stdout.log",
+      "sha256": "93e9702ecc8d04db472884e8c4968b6de7057297d8f1987a763a795800b70db8",
+      "bytes": 334,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_base.ncu-rep",
+      "sha256": "af84f4baf197bd74309f93acdacc399da2256d306cab72249dbf516cadd4654d",
+      "bytes": 88306,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_base.stdout.log",
+      "sha256": "91151056e6997fd451a0575122551a3823c4d210fdc2c2891a0076dc94efb55f",
+      "bytes": 345,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_base_details.csv",
+      "sha256": "360867f1e60fe40f7d79ca4f37678ae86d76e036139dc0d3392495c19186ae54",
+      "bytes": 3510,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_base_raw.csv",
+      "sha256": "0d9026c21df814bd4148651bd885f392083c428bd2af7a743b1b485658c7dc39",
+      "bytes": 30159,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_none.ncu-rep",
+      "sha256": "4e7347bf574dcd50181c7b9226fb4ca5f7ea50bfb6dc4182e2cd398aaacf7927",
+      "bytes": 88304,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_none.stdout.log",
+      "sha256": "19a03e14a031b62cc5505b14d008e6342141db754cff35843e121b24b40778bd",
+      "bytes": 467,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_none_details.csv",
+      "sha256": "147bb9b43ab662c894fa0ed504da116d940a4794722e75b48b397cd9f8e8f0d1",
+      "bytes": 3510,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_clock_none_raw.csv",
+      "sha256": "1c3c60e3016eb3135a98f5c1e9a044c2dacaf8a289e685ff20954a4d43e7368e",
+      "bytes": 30162,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_details.csv",
+      "sha256": "92f192cc7119080b39db823c3f74c24bb6e279e6384095191eb6600bb9371129",
+      "bytes": 30319,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_metrics.ncu-rep",
+      "sha256": "1451fdce4ffe0cb78c0526c61c73fe100fc0b5e4e4672f23dc0951cd37fb064d",
+      "bytes": 164986,
+      "kind": "ncu-rep",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_metrics.stdout.log",
+      "sha256": "dd474242cd6b2b71768ed4fe43264bd78fa0a27774dc9b7dce39b5cef2b848a4",
+      "bytes": 342,
+      "kind": "stdout",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_metrics_details.csv",
+      "sha256": "a976f6d7ecc017435481b14081f7e96e9d9e8e0c643c2e78450fcd02804a4214",
+      "bytes": 74197,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_metrics_raw.csv",
+      "sha256": "d174d003b20769a4d707c474bf73ef210b164d09bea45d5709a809af99f89122",
+      "bytes": 75366,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_toy_raw.csv",
+      "sha256": "fb1e2446e0e38d5dd71e8e9bd7f4ecc9d2e939ad99ec0511b28df9b417e96ae9",
+      "bytes": 170350,
+      "kind": "other",
+      "produced_by": "ncu (via env/rootdo.sh) + bench/ncu_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/network_check.txt",
+      "sha256": "558e6833e135d84ff92976df874f236ceab35f35f9ca1cbb26841856c3c1fb86",
+      "bytes": 171,
+      "kind": "other",
+      "produced_by": "curl -sI",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_toy.stdout.log",
+      "sha256": "28a356e9368242e1e780d31eff866c3cbff7c0dc0a890158e99c7c72e8108d12",
+      "bytes": 1001,
+      "kind": "stdout",
+      "produced_by": "nsys + bench/nsys_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nsys_toy_stats.stdout.log",
+      "sha256": "0790e477ca23687b82cd39d15ea3fa752d400a14751003a644aeef4f0eeb5f25",
+      "bytes": 2032,
+      "kind": "stdout",
+      "produced_by": "nsys + bench/nsys_toy.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nvpmodel_p3834_0008.conf",
+      "sha256": "e0a0a56650d9befb550666ecae4b062613177f70d472850378b4d4f02438bf26",
+      "bytes": 14216,
+      "kind": "other",
+      "produced_by": "nvpmodel",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/nvpmodel_q_verbose.txt",
+      "sha256": "dc5b9069f92266fc5ab8de0d957f7f5cd1fe93d1e4c58b06f576921a95895777",
+      "bytes": 7193,
+      "kind": "other",
+      "produced_by": "nvpmodel",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/platform_as_found.txt",
+      "sha256": "f095d306acaeeb32f333e3c01c38694a0c005582cc445816dc82141d9e571868",
+      "bytes": 16765,
+      "kind": "other",
+      "produced_by": "shell commands listed inside the file",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/power_idle.csv",
+      "sha256": "e06589e001834269fc140b88887444e71667690bcad225505410981c686bf7d9",
+      "bytes": 15825,
+      "kind": "power-log",
+      "produced_by": "bench/power_sample.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/power_idle_channels.csv",
+      "sha256": "013678ce1f4d5887e002edad9f2362a68d38d17e130f9c3f3f7a552584e88ac7",
+      "bytes": 415,
+      "kind": "power-log",
+      "produced_by": "bench/power_sample.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/stack_check.stdout.log",
+      "sha256": "e8e4b12d3997d4d57078233595edb959901c7a2ed3964b82f4139b8c80c74e9a",
+      "bytes": 3047,
+      "kind": "stdout",
+      "produced_by": "bench/stack_check.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/stack_check_route_a_bundled_ptxas_FAILED.stdout.log",
+      "sha256": "4ece33a0f362b283228ae6ffff7f3d6133efbb1eeff677883ca1b3682dbd7f11",
+      "bytes": 56880,
+      "kind": "stdout",
+      "produced_by": "bench/stack_check.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/stack_verification_route_a_bundled_ptxas_FAILED.json",
+      "sha256": "9ef37a341621a0306f40e2d5723c1e53b92562b99a7b30538471c4fb761fb8b3",
+      "bytes": 22909,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/tegrastats_idle.log",
+      "sha256": "2b8672d480f24d4a42cd0c1f37c6eeb09dea367a4f78d2f8500993b30dacaacd",
+      "bytes": 61133,
+      "kind": "tegrastats",
+      "produced_by": "tegrastats via env/rootdo.sh",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "scratch/20261022_E0_toolcheck/nsys_toy.nsys-rep",
+      "sha256": "b451029607fad52dd2369229b4318d1775e3c809b337c483cad65a3d22419252",
+      "bytes": 141872,
+      "kind": "nsys-rep",
+      "produced_by": "nsys profile (command above)",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "nsys binaries embed the system-wide process environment on this device (T001 step 6, results/20261022_E0_secrets_test); zstd -19 size 53301 bytes",
+      "regenerate": "the nsys profile command above"
+    },
+    {
+      "path": "scratch/20261022_E0_toolcheck/nsys_toy.sqlite",
+      "sha256": "87abe97ecc71b51904ce2218ab0476e46275b6fd3e3dadd91451275d67f92c31",
+      "bytes": 417792,
+      "kind": "nsys-sqlite",
+      "produced_by": "nsys stats",
+      "secrets_scan": "not committed",
+      "committed": false,
+      "reason": "as above",
+      "regenerate": "nsys export --type sqlite"
+    }
+  ]
+}
