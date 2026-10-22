@@ -13,7 +13,7 @@ closed the task.
 ## Tasks
 | task | what | priority | state | date | commit | headline (with its number) |
 |---|---|---|---|---|---|---|
-| [T001](tasks/T001_setup_and_availability.md) | setup and availability | P0 | todo | | | |
+| [T001](tasks/T001_setup_and_availability.md) | setup and availability | P0 | claimed | 2026-10-22 | | |
 | [T002](tasks/T002_platform_record.md) | platform record (E0) | P0 | todo | | | |
 | [T003](tasks/T003_peaks_and_kernel_sweep.md) | peaks → `hw_constants.json` (E1), expert kernel sweep (E2) | P0 | todo | | | |
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | todo | | | |

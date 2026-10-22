@@ -130,3 +130,5 @@ After step 0 (fixtures), after step 4 (tool check directory), after step 6 (verd
 clean), after step 8, and at the close.
 
 ## Status (appended by the on-device agent)
+
+status: claimed 2026-10-22
