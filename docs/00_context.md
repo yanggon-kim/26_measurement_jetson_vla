@@ -75,7 +75,7 @@ projection to be tested, not a target. **Do not tune anything toward it**; T009 
 |---|---|---|
 | GPU | Blackwell, 2,560 CUDA cores, 96 tensor cores; ≈ 20 SMs (derived at 128 cores per SM); up to ≈ 1.575 GHz | NVIDIA product pages; RidgeRun JetPack 7.0 wiki |
 | compute capability | 11.0 → `sm_110` under CUDA 13 (some CUDA 12.x tools called it `sm_101`) | community reports |
-| memory | 128 GB LPDDR5X, 256-bit, ≈ 273 GB/s spec, EMC ≈ 4,266 MHz; L2 size unconfirmed (third parties say 50 MB) | NVIDIA; `thor_projection.md` |
+| memory | 128 GB LPDDR5X, 256-bit, ≈ 273 GB/s spec, EMC ≈ 4,266 MHz; L2 size unconfirmed (third parties say 50 MB) **[corrected T001, 2026-10-22: L2 = 32 MiB (33,554,432 B), detected by `torch.cuda.get_device_properties(0).L2_cache_size`; EMC 4,266 MHz confirmed; `env/README.md`]** | NVIDIA; `thor_projection.md` |
 | CPU | 14-core Arm Neoverse-V3AE | NVIDIA |
 | software | JetPack 7.x (Jetson Linux r38 / r39), CUDA 13.x, Ubuntu 24.04 → Python 3.12; Jetson aligned with the Arm SBSA standard, so CUDA-enabled PyTorch may come from PyTorch's own `cu130` aarch64 (SBSA) wheels, NVIDIA's NGC PyTorch container or the Jetson AI Lab index | NVIDIA JetPack 7 announcement; community reports |
 | power modes | `MAXN` and `120W` at least; `120W` may be the default | RidgeRun JetPack 7.0 wiki |
