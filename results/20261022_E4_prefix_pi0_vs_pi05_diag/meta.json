@@ -1,0 +1,191 @@
+{
+  "date_utc": "2026-10-22T12:47:15Z",
+  "experiment": "T005 diagnostic: pi0 vs pi0.5 VLM prefix (kernel selection)",
+  "task": "T005",
+  "model": "pi0, pi05",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044 @ 45dcc8fc; lerobot/pi05_libero_base @ a217bfd3",
+  "checkpoint_revision": "see checkpoint",
+  "precision": "rung eager_bf16 (bench/rungs.py): bf16 weights incl. vision and norms, matmul precision high; GEMM sweeps bf16",
+  "rung": "eager_bf16",
+  "compile_mode": "none (eager)",
+  "variant": "diagnostic replay of the prefill call",
+  "num_denoise_steps": 10,
+  "action_horizon": 50,
+  "prefix_tokens": "pi0 816, pi05 968",
+  "suffix_tokens": "n/a: prefix only",
+  "batch": 1,
+  "n_warmup": 10,
+  "n_timed": 50,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "afb62e9 (prefix_diag.py); gemm_m_sweep.py committed with this directory",
+  "command": [
+    "for m in pi0 pi05: ~/venvs/lerobot/bin/python bench/prefix_diag.py --model $m --out results/20261022_E4_prefix_pi0_vs_pi05_diag",
+    "~/venvs/lerobot/bin/python bench/gemm_m_sweep.py --k 2048 --n 16384 --m 512:1024:16 --out .../gemm_m_sweep_gateup.csv",
+    "same with --m 768,816,968 --blas default|cublas|cublaslt; --k 16384 --n 2048 (down); --k 2048 --n 2048 (q/o); CUBLASLT_WORKSPACE_SIZE=1024|32768"
+  ],
+  "throttled": "not evaluated per call (short replays; the gate passed before each process)",
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "The queue of T005 ladders was paused at a rung boundary for this diagnostic and resumed afterwards.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39625",
+    "gpu-thermal": "38406",
+    "cpu-thermal": "39062",
+    "soc012-thermal": "39625",
+    "soc345-thermal": "37000"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/gemm_m_sweep_down.csv",
+      "sha256": "8b050545bbd5ca4fdd9b4615b9501c4a37c4902913c8070f1b71e919c05f7bab",
+      "bytes": 499,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_gateup.csv",
+      "sha256": "952c6086b204dfec408d702874537d1ec3512fa4247a9ed1ad5c9cf69b08a5e3",
+      "bytes": 3033,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_gateup_cublas.csv",
+      "sha256": "cb8608c3858644c225ddad5681f43017aa7aea2387b6b791151a0ac9cf199006",
+      "bytes": 314,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_gateup_cublaslt.csv",
+      "sha256": "724071b39b4e3409fa4cea459e49f15e1851a68962d51ad212aebceb4b26dee0",
+      "bytes": 321,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_gateup_default.csv",
+      "sha256": "5fc77a35015fde083cf2ec3125849fbc3a77030fd857f6da954804e08520ea9e",
+      "bytes": 319,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_gateup_ws1024.csv",
+      "sha256": "626e1bdc2412dfbdb8d7ed634f1dc802684b59bfecf8a516a081ff3ca6804af6",
+      "bytes": 316,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_gateup_ws32768.csv",
+      "sha256": "2020194b63b2d4498b616c8dbf3bc4026ed885553a654181009e4c75fb98e58a",
+      "bytes": 315,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gemm_m_sweep_qo.csv",
+      "sha256": "ba4264b356812b59683097d0b0d3d602f2e86d42cddb7cfdb7aa8c15d78e68b5",
+      "bytes": 225,
+      "kind": "other",
+      "produced_by": "bench/gemm_m_sweep.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/prefix_pi0.json",
+      "sha256": "4f25df00ed6344261e3b121a2c19320eed133b7235231d410450a414850c398e",
+      "bytes": 2307,
+      "kind": "other",
+      "produced_by": "bench/prefix_diag.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/prefix_pi05.json",
+      "sha256": "4eddb00a7c41abcf318616e451a84bb841ddc2d74187619f2d7d0b73c466d593",
+      "bytes": 2405,
+      "kind": "other",
+      "produced_by": "bench/prefix_diag.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/prefix_pi05_kernels.csv",
+      "sha256": "9a80c345230cc48a306203600742c37fe08e1d2cd4e2d355c449d7c699d471f2",
+      "bytes": 12061,
+      "kind": "other",
+      "produced_by": "bench/prefix_diag.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/prefix_pi05_ops.csv",
+      "sha256": "672696aaa6064630ec63da129beb7669104de026a72ebfa08e3b2853d282b45d",
+      "bytes": 16877,
+      "kind": "other",
+      "produced_by": "bench/prefix_diag.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/prefix_pi0_kernels.csv",
+      "sha256": "6f3a33d8bc8ac1d81bed904b4b51e170d644358a2760677400611216719bc684",
+      "bytes": 12131,
+      "kind": "other",
+      "produced_by": "bench/prefix_diag.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/prefix_pi0_ops.csv",
+      "sha256": "3bc33b7903e8b1fc22310ea1b94c7b0d5ba9c9ef915433e8223ce7f7d794dbd9",
+      "bytes": 16949,
+      "kind": "other",
+      "produced_by": "bench/prefix_diag.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "619615057561f3169fd03ee193b9f8606238c7e6b86a5db6fd531c33df3827e4",
+      "bytes": 18036,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    }
+  ]
+}
