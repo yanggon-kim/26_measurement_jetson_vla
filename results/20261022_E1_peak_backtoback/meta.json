@@ -1,0 +1,240 @@
+{
+  "date_utc": "2026-10-22T06:23:19Z",
+  "model": "n/a: microbenchmark",
+  "model_repo": "n/a",
+  "model_commit": "n/a",
+  "checkpoint": "n/a",
+  "checkpoint_revision": "n/a",
+  "rung": "n/a",
+  "variant": "n/a",
+  "num_denoise_steps": "n/a",
+  "action_horizon": "n/a",
+  "prefix_tokens": "n/a",
+  "suffix_tokens": "n/a",
+  "batch": 1,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "5b799a9823d466c67037b947ee7603684a2d98c3",
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "experiment": "E1 back-to-back ceilings",
+  "task": "T003 (review follow-up)",
+  "precision": "fp32, tf32, bf16, fp16, int8, fp8 e4m3",
+  "compile_mode": "eager",
+  "n_warmup": "20 GEMMs + 50 calibration GEMMs per probe",
+  "n_timed": "30 s of 0.5 s slices per probe",
+  "bench_commit_per_step": {
+    "oc_throttle_probe.py --operands distinct": "3e3a1b9"
+  },
+  "command": [
+    "for (dtype, n) in bf16 2048, fp16 2048, tf32 1024, fp32 16384, int8 8192, fp8_e4m3 4096, bf16 4096: sleep 30; python bench/gate.py > raw/gate_before_<dtype>_<n>.json; python bench/oc_throttle_probe.py --operands distinct --dtype <dtype> --n <n> --seconds 30 --out backtoback_<dtype>_<n>.csv"
+  ],
+  "throttled": "per probe: oc3 events in the CSV (bf16, fp16, int8, fp8 throttled; tf32, fp32 not)",
+  "notes": "Probes ran back to back with 30 s rests; the memory-path state was not classified per probe (the probe was written afterwards).",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "38437",
+    "gpu-thermal": "37312",
+    "cpu-thermal": "37750",
+    "soc012-thermal": "38437",
+    "soc345-thermal": "35968"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/backtoback_bf16_2048.stdout.log",
+      "sha256": "1ad0fa3a60cbff17e645418c745058243b382164390a154a0d599d268c3de360",
+      "bytes": 124,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/backtoback_bf16_4096.stdout.log",
+      "sha256": "c620f1b566173c200081abe356529780a7e034c49231c6e16dc9c654b47c051d",
+      "bytes": 118,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/backtoback_fp16_2048.stdout.log",
+      "sha256": "2ad26c75ab7fa5cc8c6bc1b100fb21ba89aceeb5db7d67b4c072dc3c3c5e2a00",
+      "bytes": 121,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/backtoback_fp32_16384.stdout.log",
+      "sha256": "c0345bcfefbad29621099bdc1c02cfbbecb4137403aa7d2d392e0a0032a115b8",
+      "bytes": 111,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/backtoback_fp8_e4m3_4096.stdout.log",
+      "sha256": "8e3205b6e0f67bc119682f8474e6fcad95afbb186654e5183ec36cfe49a37266",
+      "bytes": 123,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/backtoback_int8_8192.stdout.log",
+      "sha256": "4b62665ad39a1b67033e7dccdb19db29e8bd0f183de3ea38eb627d89fbed4a75",
+      "bytes": 124,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/backtoback_tf32_1024.stdout.log",
+      "sha256": "ed24cb80ffd7ca1721604f91b480d7f5f7c56c75167af86049624736ef8ec5e1",
+      "bytes": 118,
+      "kind": "stdout",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_bf16_2048.json",
+      "sha256": "189133ebd9d8eb62a8d07d9c01af731e9ba6aaaf0095a69c28ef782249d612f5",
+      "bytes": 3247,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_bf16_4096.json",
+      "sha256": "d985b6dd012ee5b70b88c019dcfad827481af017e7e37ca007c2ddbc498176de",
+      "bytes": 3249,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_fp16_2048.json",
+      "sha256": "eb574abf9457a0b0459c1434f7f01c3c9fb236a50cefcda32e7a63e8ec558ce8",
+      "bytes": 3247,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_fp32_16384.json",
+      "sha256": "378ce40a5d7c0c91c785d5767cca2c868557e8f697dea776f246f47c91ab0989",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_fp8_e4m3_4096.json",
+      "sha256": "eef906757a08e7c2244ed01ef191d013760b7eec1cb38f10d12c482abb2bd405",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_int8_8192.json",
+      "sha256": "61d2795f286b0c6af2f2e51da430810fae467088ba061fdee4683bd2fa7dc429",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/gate_before_tf32_1024.json",
+      "sha256": "03efec2368d8365064845b3e9c4bbfe8537da42fe9609acd9473ab712bc75aa6",
+      "bytes": 3248,
+      "kind": "other",
+      "produced_by": "bench/gate.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_bf16_2048.csv",
+      "sha256": "f281698de488e375e293d1e3c61563deb65d35d6704de3afc2c2d4495c9a9994",
+      "bytes": 4195,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_fp16_2048.csv",
+      "sha256": "54038345f3e482b0e444b9e04222627f387e90340f858a7b7e1583fb43132b7b",
+      "bytes": 3867,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_tf32_1024.csv",
+      "sha256": "87b76399fb090ffd26c2bd89ddd040e60594e12f3aaa9acb4ef84e2eec38247e",
+      "bytes": 4366,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_fp32_16384.csv",
+      "sha256": "2302e23cfaefe886a94988d7f37eab956cefda7022688b6db31802c4519301fd",
+      "bytes": 1525,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_int8_8192.csv",
+      "sha256": "dd1a0171da86f9f67e974d73e161126cd06bf03cb49da6ff3fac647c57bdab57",
+      "bytes": 4534,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_fp8_e4m3_4096.csv",
+      "sha256": "2762f8aceb036b9c391f412003e191d713352aca898f76c2c05edd4d40b1e7b6",
+      "bytes": 4540,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "backtoback_bf16_4096.csv",
+      "sha256": "a141429f59571d9a68997bb5139def98c626fb20d26498d056c9d4a1563b183a",
+      "bytes": 4301,
+      "kind": "other",
+      "produced_by": "bench/oc_throttle_probe.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
