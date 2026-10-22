@@ -113,6 +113,36 @@ def oc_counts():
     return out
 
 
+_MS_PROBE = {}
+
+
+def memory_state_probe():
+    """Classify the memory-path performance state (T003 finding, results/20261022_E1_state_probe/): a cold weight
+    stream F.linear(x[51, 1024], W_i) over 18 distinct W_i [4096, 1024] (144 MiB), 3 passes, µs per call.
+    'normal' ≈ 50 µs (≈ 166 GB/s of weights), 'fast' ≈ 34 µs (≈ 245 GB/s); the fast state appears after tens of seconds
+    of sustained heavy load (≈ 75 °C) and decays a few seconds after it, with no visible clock change. ≈ 3 ms of GPU."""
+    import torch
+    import torch.nn.functional as F
+    if not _MS_PROBE:
+        g = torch.Generator(device="cuda").manual_seed(0)
+        _MS_PROBE["ws"] = [torch.randn(4096, 1024, device="cuda", dtype=torch.bfloat16, generator=g) for _ in range(18)]
+        _MS_PROBE["x"] = torch.randn(51, 1024, device="cuda", dtype=torch.bfloat16, generator=g)
+    ws, x = _MS_PROBE["ws"], _MS_PROBE["x"]
+    for w in ws:
+        F.linear(x, w)
+    torch.cuda.synchronize()
+    s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    s.record()
+    for _ in range(3):
+        for w in ws:
+            F.linear(x, w)
+    e.record()
+    e.synchronize()
+    us = s.elapsed_time(e) * 1e3 / 54
+    return {"probe_us_per_call": round(us, 2), "state": "fast" if us < 42.0 else "normal",
+            "gpu_C": rd("/sys/class/thermal/thermal_zone1/temp")}
+
+
 def throttle_verdict(before, after, gpu_hz_samples=None, locked=None):
     """throttled = any OC event during the run, or a devfreq sample below the locked clock.
     If the OC counters cannot be read on either side, the verdict is "unknown", never "not throttled"."""
