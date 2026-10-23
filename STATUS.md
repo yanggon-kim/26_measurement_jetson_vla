@@ -4,12 +4,12 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**T005 paused by the owner (2026-10-22 ≈ 17:20 UTC); no job is running.** Resume point, provisional numbers and the
-exact restart commands: `PROGRESS.md`, "T005 resume point". Done: six ladders, two diagnostics (the π0 GEMM M-cliff and
-its `linear_mpad` fix), E4i stage 1 for all six models. Next: the open checks (fp32 islands in π0.5 / SmolVLA, N1.5
-graph-correctness, `all_compile_autotune` re-measure), E4i stage 2, `best_bf16` + confirmation runs, π0 N = 4, Part A,
-the reports, the review. Owner's priorities (2026-10-22): the latency breakdown for `eager_fp32` and `best_bf16` of
-all six models first, then the ncu analysis, `best_bf16` before `eager_fp32` inside T006–T008.
+**T005 paused by the owner (2026-10-23 ≈ 14:40 UTC): another user is running work on the GPU (96 % utilisation, not
+ours). No job of ours is running.** The resume point, current leaders and the exact restart commands are in
+`PROGRESS.md` under "T005 resume point". Done since the last pause: the N1.5 divergence diagnosis, `bf16_islands`,
+per-part autotuning, the stability guard, E4i stage 2 for π0 / π0.5 / SmolVLA / N1.7, and the T006 tooling. Next: the
+N1.6 / N1.5 stage 2 (after the gate), `best_bf16` + confirmation runs, the π0 N = 4 control, Part A, the reports, the
+review, then T006.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -91,3 +91,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-22 T004 done: E3 for six models (v2 GR00T after review), E4 π0 stock modes (best whole max-autotune 360.7 ms, ≤ 15 %); unused GR00T lm_head found; N1.7 process-to-process expert variation (72–86 ms) open. Two independent review passes fixed.
 - 2026-10-22 T005: pi0 prefix slower than pi0.5's traced to a cuBLASLt kernel-choice cliff at M = 816 (gate/up GEMM 3.8x slower); fixed by linear_mpad (bit-identical); note for other agents in reports/NOTE_gemm_shape_cliff_m_padding.md.
 - 2026-10-22 T005: six ladders done; E4i stage 1 done for all six models (N1.5 9/10); attention-backend switches (SDPA / flash-attn) all slower than Inductor's own fusion of eager attention; forced autotuning helps experts, hurts vision/prefix; paused by the owner, resume point in PROGRESS.md.
+- 2026-10-23 T005 resumed: N1.5 divergence diagnosed (vision compile changes its output 4.6 %; no graph bug); bf16_islands (π0.5 466 MB of fp32 adaRMS weights) and expert-only autotuning take π0.5 183.1 -> 163.2 ms and π0 157.8 -> 148.7 ms; a candidate disturbed by another user's GPU job led to the stability guard; paused again by the owner (shared GPU in use).
