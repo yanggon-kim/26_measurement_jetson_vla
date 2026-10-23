@@ -1,0 +1,276 @@
+{
+  "date_utc": "2026-10-23T13:12:39Z",
+  "experiment": "E4i best_bf16 search, stage 2 (pi0): per-part GEMM autotuning, bf16_islands",
+  "task": "T005",
+  "model": "pi0",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+  "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+  "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+  "rung": "per row: bf16_mpad_graphs_ae_at, bf16_mpad_graphs_ae_at_islands, bf16_mpad_graphs_ae_vis_at, bf16_mpad_graphs_ae_vlm_at, bf16_mpad_graphs_autotune_islands",
+  "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+  "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+  "num_denoise_steps": "10 (extra N per rung for the slope: by_N in the row files)",
+  "action_horizon": 50,
+  "prefix_tokens": 816,
+  "suffix_tokens": 51,
+  "batch": 1,
+  "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "798c770 (per-row bench_provenance)",
+  "command": "bash bench/queues/t005_e4i_s2.sh 20261023 (pi0)",
+  "throttled": {
+    "bf16_mpad_graphs_ae_at_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_ae_at_islands_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_ae_vis_at_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_ae_vlm_at_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_autotune_islands_N10": {
+      "10": false
+    }
+  },
+  "memory_path_state": {
+    "bf16_mpad_graphs_ae_at_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_ae_at_islands_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_ae_vis_at_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_ae_vlm_at_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_autotune_islands_N10": {
+      "10": "normal->normal"
+    }
+  },
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "41968",
+    "gpu-thermal": "39843",
+    "cpu-thermal": "41968",
+    "soc012-thermal": "38281",
+    "soc345-thermal": "38593"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "22a89a5e04b6b91cb3a41a8acdd5fc1dc3803039521981c497d19b8c9027afbe",
+      "bytes": 2610,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "69f4421fea5edcbff63d8748afc2da10f6c43f7e47cd96b647f399910a79298e",
+      "bytes": 31889,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_at_N10.csv",
+      "sha256": "05b61f223a588393ce92a5145fed0958690a86663a0953b2758f8ca1e620a065",
+      "bytes": 112194,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_at_islands_N10.csv",
+      "sha256": "d6f94dfa8195cc47d43858af51e963d9aaa0377311cbcbacfe08690173b0279f",
+      "bytes": 112194,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_vis_at_N10.csv",
+      "sha256": "8b1d7cb5889215d6c3e75410b7bf47ce29b729c36ac7489863718ac7da91c363",
+      "bytes": 112105,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_vlm_at_N10.csv",
+      "sha256": "7fbaf39a442d50512293b2b97ff07af9ce36b9721762e99aebdab0f8374ff5ff",
+      "bytes": 112134,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_autotune_islands_N10.csv",
+      "sha256": "ea930e53b00f125fec35b34bcc6afe42ac18165c9a287b23bd053e8fbac3060a",
+      "bytes": 112084,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_at_N10.npz",
+      "sha256": "44198a1ddc2dd31caee826c3300b09a68d689c77a00df3a92d4e9109dff5bcf9",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_at_islands_N10.npz",
+      "sha256": "9563e17b10b6268f75ad1006a7db03ae238d186655b3d4b1af8601a4ac451751",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_vis_at_N10.npz",
+      "sha256": "1e58e249e4b2940f84d87ca8ff35ade582aace732eae5899ed4c40abb1635e22",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_vlm_at_N10.npz",
+      "sha256": "daea0f24adcab46bf5e8028c4d00ac10dc2e73352400ff816a826159e1b41935",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_autotune_islands_N10.npz",
+      "sha256": "01796520f591bbf4169cc83f1b48700bd4b4e45269131e9c6a8cfb5da203ecd0",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_at_N10.json",
+      "sha256": "d7664d97d4715da0600292ae3052a2a60c8a9552b7be4e4ca90d5d4edf9e27bc",
+      "bytes": 13992,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_at_islands_N10.json",
+      "sha256": "5c979c09427be78974014655dcb0240d80d687905650ed7d4d1968e807413141",
+      "bytes": 14123,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_vis_at_N10.json",
+      "sha256": "8a1f2c1771f44bd2dd1bc537eb4f7e380b94a86c2bcc9dc4942bc8c2af950a83",
+      "bytes": 14102,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_vlm_at_N10.json",
+      "sha256": "d351fb806e2fc5dc2672d2aadadae9bf8a9b559bbdb41ff9ef5e87689ac3ba48",
+      "bytes": 14097,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_autotune_islands_N10.json",
+      "sha256": "67bc74ad73d1ceae8031162d7752e0105812281d96fc9cb254b53e3444c2907a",
+      "bytes": 14063,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_at_N10.log",
+      "sha256": "55b2810c7d4b351d18b824b4c9f70f0bc520a03538637a9c54af958a5efcac30",
+      "bytes": 36417,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_at_islands_N10.log",
+      "sha256": "8433322615b2cc214bc0ff2fd25dd00a033c4ba50599ead772b5007bdb224481",
+      "bytes": 34054,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_vis_at_N10.log",
+      "sha256": "f768428155c2a23e5489c5206916f9d28cced6afbbbfdadb0daba8534ad29e83",
+      "bytes": 49580,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_vlm_at_N10.log",
+      "sha256": "6f356f25c54132f897f7143f5e5bef039a9e48adb3dce20987a868d8c45f496a",
+      "bytes": 52115,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_autotune_islands_N10.log",
+      "sha256": "3f1f060285ca469d76cb6ddb8831c31d90ce1a7d932ae1c0a2bce3d34100efec",
+      "bytes": 65471,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    }
+  ]
+}
