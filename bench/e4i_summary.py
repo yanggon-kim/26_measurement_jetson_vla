@@ -9,6 +9,7 @@ Sources per model (raw/rows/*.json written by bench/opt_ladder.py, equivalence.c
 Eligibility for best_bf16 (rules fixed before choosing; every exclusion is listed with its reason in candidates.csv):
   1. measured at the model's default N, with the per-part split (regions on: vision, vlm_prefix, ae_total present);
   2. no graph compiled during the timed loop; not throttled; the timed block started in the normal memory-path state;
+     stable timing (e2e p95 / p5 <= 1.25; bench/opt_ladder.py re-times a disturbed block up to twice);
   3. BF16 weights: fp32 parameters <= 1 % of all parameter bytes (the rest stays fp32 for a stated reason);
   4. actions finite, and relative L2 vs eager_fp32 (10 seeded inferences, equivalence.csv) <= max(1e-2, 1.5 x the
      model's compile-only reference): `ae_graphs` measured in the search directory (GR00T: with fallback_random, so
@@ -85,6 +86,9 @@ def eligibility(r):
         why.append(f"{b['graphs_compiled_during_timed']} graphs compiled during the timed loop")
     if b.get("throttle", {}).get("throttled"):
         why.append("throttled")
+    e2 = b.get("regions", {}).get("e2e_wall")
+    if b.get("timing_stable") is False or (e2 and e2["p5_ms"] and e2["p95_ms"] / e2["p5_ms"] > 1.25):
+        why.append("unstable timing (e2e p95/p5 > 1.25: the shared device was disturbed during the timed loop)")
     if b.get("memory_state_before", {}).get("state") != "normal":
         why.append("did not start in the normal memory-path state")
     pb = r.get("param_dtype_bytes", {})

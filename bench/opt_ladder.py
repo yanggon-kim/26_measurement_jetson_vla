@@ -40,6 +40,9 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 
+STABLE_MAX = 1.25        # e2e p95 / p5 above this: the timed block is treated as disturbed and re-timed
+
+
 def summarize(v):
     v = sorted(v)
     q = lambda p: v[min(len(v) - 1, int(round(p * (len(v) - 1))))]  # noqa: E731
@@ -165,40 +168,53 @@ def child(a):
                     break
             torch.cuda.synchronize()
             warm_stable = len(hist) > 5 and hist[-1] == hist[-6]
-            ms0 = G.memory_state_probe()
-            for _ in range(6):
-                if ms0["state"] == "normal":
-                    break
-                time.sleep(30)
+            # Stability guard (2026-10-23): the device is shared, and a job starting mid-loop cannot be seen by the start
+            # gate (an N1.7 candidate went bimodal: vision p5 29 ms / p95 159 ms). If e2e p95 / p5 > STABLE_MAX, wait for
+            # the gate and re-time (no recompilation), up to 2 more attempts; every attempt is recorded.
+            attempts = []
+            for attempt in range(3):
+                if attempt:
+                    G.wait_for_gate(apply_clocks=True)
                 ms0 = G.memory_state_probe()
-            torch.cuda.reset_peak_memory_stats()
-            ug0, oc0, hz = ugraphs(), G.oc_counts(), []
-            rows = []
-            t_loop = time.perf_counter()
-            for i in range(a.timed):
-                rec.reset()
-                rec.start()
-                walls, _ = one()
-                rec.stop()
-                r = rec.results_ms(ad.derive_ae_total) if desc["regions"] else {}
-                r.update(walls)
-                if "model_get_action" in r:
-                    r["outside_model"] = r["e2e_wall"] - r["model_get_action"]
-                if all(k in r for k in ("vision", "vlm_prefix", "ae_total")):
-                    r["other"] = r["e2e_wall"] - r["vision"] - r["vlm_prefix"] - r["ae_total"]
-                for k, v in r.items():
-                    rows.append({"N": n, "region": k, "iter": i, "ms": v})
-                if desc["regions"]:
-                    for j, v in enumerate(rec.step_times_ms()):
-                        rows.append({"N": n, "region": f"ae_step_individual[{j}]", "iter": i, "ms": v})
-                if i % 10 == 0:
-                    hz.append(int(open(f"{G.DEVFREQ}/cur_freq").read()))
-            loop_s = time.perf_counter() - t_loop
-            oc1, ug1 = G.oc_counts(), ugraphs()
-            by = {}
-            for x in rows:
-                by.setdefault(x["region"], []).append(x["ms"])
-            st = {k: summarize(v) for k, v in by.items()}
+                for _ in range(6):
+                    if ms0["state"] == "normal":
+                        break
+                    time.sleep(30)
+                    ms0 = G.memory_state_probe()
+                torch.cuda.reset_peak_memory_stats()
+                ug0, oc0, hz = ugraphs(), G.oc_counts(), []
+                rows = []
+                t_loop = time.perf_counter()
+                for i in range(a.timed):
+                    rec.reset()
+                    rec.start()
+                    walls, _ = one()
+                    rec.stop()
+                    r = rec.results_ms(ad.derive_ae_total) if desc["regions"] else {}
+                    r.update(walls)
+                    if "model_get_action" in r:
+                        r["outside_model"] = r["e2e_wall"] - r["model_get_action"]
+                    if all(k in r for k in ("vision", "vlm_prefix", "ae_total")):
+                        r["other"] = r["e2e_wall"] - r["vision"] - r["vlm_prefix"] - r["ae_total"]
+                    for k, v in r.items():
+                        rows.append({"N": n, "region": k, "iter": i, "ms": v})
+                    if desc["regions"]:
+                        for j, v in enumerate(rec.step_times_ms()):
+                            rows.append({"N": n, "region": f"ae_step_individual[{j}]", "iter": i, "ms": v})
+                    if i % 10 == 0:
+                        hz.append(int(open(f"{G.DEVFREQ}/cur_freq").read()))
+                loop_s = time.perf_counter() - t_loop
+                oc1, ug1 = G.oc_counts(), ugraphs()
+                by = {}
+                for x in rows:
+                    by.setdefault(x["region"], []).append(x["ms"])
+                st = {k: summarize(v) for k, v in by.items()}
+                e = st["e2e_wall"]
+                ratio = e["p95_ms"] / e["p5_ms"] if e["p5_ms"] else float("inf")
+                attempts.append({"attempt": attempt, "e2e_median_ms": e["median_ms"], "e2e_p95_over_p5": ratio})
+                if ratio <= STABLE_MAX:
+                    break
+                print(f"{key} N={n}: unstable timing (e2e p95/p5 {ratio:.2f}); re-timing", flush=True)
             steps_med = [st[f"ae_step_individual[{j}]"]["median_ms"] for j in range(n) if f"ae_step_individual[{j}]" in st]
             row["by_N"][n] = {
                 "regions": st, "first_call_s": first_s, "warmup_iters": it, "warmup_unique_graphs": hist,
@@ -206,7 +222,8 @@ def child(a):
                 "ae_step_mean_of_medians_ms": (sum(steps_med) / len(steps_med)) if steps_med else "n/a: per-step regions off",
                 "peak_mem_allocated_bytes": torch.cuda.max_memory_allocated(),
                 "control_frequency_hz": a.timed / loop_s, "throttle": G.throttle_verdict(oc0, oc1, hz),
-                "memory_state_before": ms0, "memory_state_after": G.memory_state_probe()}
+                "memory_state_before": ms0, "memory_state_after": G.memory_state_probe(),
+                "timing_attempts": attempts, "timing_stable": attempts[-1]["e2e_p95_over_p5"] <= STABLE_MAX}
             with open(os.path.join(out, "raw", "samples", f"{key}_N{n}.csv"), "w", newline="") as f:
                 w = csv.DictWriter(f, fieldnames=["N", "region", "iter", "ms"])
                 w.writeheader()
