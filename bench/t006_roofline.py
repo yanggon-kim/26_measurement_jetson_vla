@@ -4,7 +4,7 @@ Inputs:
   --nsys   results/<date>_E5_<m>_<mode>_nsys/  (kernels.csv: every kernel, region, nsys duration)
   --ncu    results/<date>_E6_<m>_<mode>/ncu/   (<part>_s<start>_raw.csv per window, T003-validated metrics)
   --analytic results/<date>_E6_dims/raw/<m>_<mode>/  (accounting.json: analytic FLOPs and bytes per region)
-  --region-ms json {part: CUDA-event median ms} from the T005 row of the same configuration
+  --t005-row raw/rows/<rung>_N<N>.json of the same configuration in T005 (CUDA-event region medians)
 Join (protocol §5): ncu rows of one part, in launch order, against the nsys kernels of the same part in inference_0,
 in launch order. The kernel names must agree (checked per row, mismatches counted). Time per kernel comes from nsys,
 never from ncu's gpu__time_duration (kept only as a cross-check column).
@@ -62,13 +62,21 @@ def main():
     ap.add_argument("--ncu", required=True)
     ap.add_argument("--analytic", required=True)
     ap.add_argument("--hw", default="results/20261022_E1_peak/hw_constants.json")
-    ap.add_argument("--region-ms", default="{}")
+    ap.add_argument("--t005-row", default="", help="raw/rows/<rung>_N<N>.json of the same configuration (CUDA-event times)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     hw = json.load(open(a.hw))
     bw = hw["measured_bw_GBps"]["best"]["value"]
     tf = {k: v["value"] for k, v in hw["measured_tflops"].items() if isinstance(v, dict) and "value" in v}
-    region_ms = json.loads(a.region_ms)
+    region_ms = {}
+    if a.t005_row:
+        row = json.load(open(a.t005_row))
+        st = (row.get("by_N") or {}).get(str(row["N"]), {}).get("regions", {})
+        for k in ("vision", "vlm_prefix", "ae_total", "backbone_lm_head", "vlm_backbone"):
+            if k in st:
+                region_ms[k] = st[k]["median_ms"]
+        if "ae_step_individual[0]" in st:
+            region_ms["ae_step[0]"] = st["ae_step_individual[0]"]["median_ms"]
     nk = [r for r in csv.DictReader(open(os.path.join(a.nsys, "kernels.csv"))) if r["inference"] == "inference_0"]
     parts = sorted({os.path.basename(p).rsplit("_s", 1)[0] for p in glob.glob(os.path.join(a.ncu, "*_raw.csv"))})
     krows, prow, cov = [], [], {}

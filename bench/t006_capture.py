@@ -15,6 +15,7 @@
 """
 import argparse
 import csv
+import glob
 import json
 import os
 import re
@@ -37,6 +38,18 @@ METRICS = (["gpu__time_duration.sum", "launch__grid_size", "launch__block_size",
                                                              "fp4_fp6_fp8_dst_fp32")]
            + [f"smsp__sass_thread_inst_executed_op_{p}{o}_pred_on.sum" for p in "fhd" for o in ("add", "mul", "fma")])
 REGIONS = ("vision", "vlm_prefix", "backbone_lm_head", "vlm_backbone", "model_get_action", "ae_total")
+
+
+def compress_big(paths, scratch):
+    """zstd -19 every file above 1 MB (protocol §6); the original is hashed and moved to scratch/ (bench/meta.compress)."""
+    sys.path.insert(0, HERE)
+    import meta as M
+    done = []
+    for p in paths:
+        if os.path.getsize(p) > 1_000_000 and not p.endswith(".zst"):
+            zp, orig, cmd = M.compress(p, scratch)
+            done.append({"file": os.path.basename(zp), "original": orig, "command": cmd})
+    return done
 
 
 def clean_env():
@@ -71,6 +84,8 @@ def nsys(a):
                     "nvtx_kern_sum,nvtx_gpu_proj_trace,osrt_sum", "-f", "csv", "--force-export=true", "-o", pre, rep + ".nsys-rep"],
                    check=True, stdout=subprocess.DEVNULL, env=clean_env())
     kernels_table(pre, os.path.join(out, "kernels.csv"))
+    comp = compress_big(sorted(glob.glob(pre + "_*.csv")), os.path.join(scratch, "csv_originals"))
+    json.dump(comp, open(os.path.join(out, "raw", "compressed.json"), "w"), indent=1)
     json.dump({"command": cmd, "wall_s": time.time() - t0, "nsys_rep": rep + ".nsys-rep (scratch/, not committed: T001)"},
               open(os.path.join(out, "raw", "capture.json"), "w"), indent=1)
 
@@ -128,6 +143,7 @@ def ncu(a):
         with open(csvp, "w") as f:
             subprocess.run(["ncu", "--import", rep + ".ncu-rep", "--csv", "--page", "raw"], stdout=f, check=True)
         n = sum(1 for _ in csv.DictReader(open(csvp))) - 1          # first data row is the units row
+        compress_big([rep + ".ncu-rep"], os.path.join(REPO, "scratch", os.path.basename(out), "ncu_originals"))
         n_tot += max(n, 0)
         k += 1
         print(f"{a.part}: window -s {start} -c {chunk}: {n} kernels", flush=True)
