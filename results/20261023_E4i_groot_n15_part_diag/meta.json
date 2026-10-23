@@ -1,0 +1,260 @@
+{
+  "date_utc": "2026-10-23T12:43:30Z",
+  "experiment": "T005 diagnostic: GR00T N1.5 per-part divergence of compiled candidates",
+  "task": "T005",
+  "model": "groot_n15",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "precision": "per rung (bench/rungs.py); compiled heads with fallback_random",
+  "rung": "eager_fp32, vlm_graphs_autotune, llm_graphs_mpad_autotune, llm_graphs_autotune, vis_compile, llm_graphs, ae_graphs_mpad",
+  "compile_mode": "per rung",
+  "variant": "diagnostic: part outputs recorded, no timing",
+  "num_denoise_steps": 4,
+  "action_horizon": 16,
+  "prefix_tokens": 814,
+  "suffix_tokens": 49,
+  "batch": 1,
+  "n_warmup": 20,
+  "n_timed": "n/a: 3 seeded inferences per rung, outputs recorded (no timing)",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "groot_part_diag.py committed before the run; rungs.py b667a30",
+  "command": [
+    "cd /tmp; for r in <rungs>: ~/venvs/groot15/bin/python <repo>/bench/groot_part_diag.py --model groot_n15 --rung $r --out <repo>/results/20261023_E4i_groot_n15_part_diag/raw",
+    "~/venvs/base/bin/python bench/groot_part_diag.py --compare raw/parts_eager_fp32.npz raw/parts_<rung>.npz"
+  ],
+  "throttled": "n/a: no timing",
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "Per-seed table from results/20261022_E4i_groot_n15_best_search/raw/actions vs results/20261022_E4d_groot_n15_ladder/raw/actions/eager_fp32_N4.npz.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "39156",
+    "gpu-thermal": "38218",
+    "cpu-thermal": "37687",
+    "soc012-thermal": "39156",
+    "soc345-thermal": "36906"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/log_ae_graphs_mpad.txt",
+      "sha256": "4d3c8ffc67a2826b91fb60e578abf50237a07cdebfe262aa2210b6d43acdb8f7",
+      "bytes": 1885,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/log_eager_fp32.txt",
+      "sha256": "b99e644feafbf9a16ca0a9297b7196f7ca1833dcbc3de4a9c757872fb9e667b1",
+      "bytes": 1774,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/log_llm_graphs.txt",
+      "sha256": "be4cf1f20b2711c08eadc73f9ca3081ae85faafd088e26242cb51c675857cbc2",
+      "bytes": 3798,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/log_llm_graphs_autotune.txt",
+      "sha256": "a48ddb669f72c8b7896f913fc46c9c61c83a9ecefe8532d8a035fa8ea234a197",
+      "bytes": 3687,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/log_llm_graphs_mpad_autotune.txt",
+      "sha256": "a9c8c7f491c4d59fc76458160702238abd084ae0ba48efa825833328767fd76d",
+      "bytes": 10722,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/log_vis_compile.txt",
+      "sha256": "98f8722ac95402ed6622e8f8e2a74040a0c04aee1bc13fc226455da6be409861",
+      "bytes": 1885,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/log_vlm_graphs_autotune.txt",
+      "sha256": "fcf624b81c7bb4382217527906a9a2da0c27003f4ffb604e9cd076de08e14b5a",
+      "bytes": 71517,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py stdout",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/parts_ae_graphs_mpad.npz.zst",
+      "sha256": "61b008845c1f58166169bf3a4ef63334c41d5b0a3e95424374f20df72db3b2a7",
+      "bytes": 5431134,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_ae_graphs_mpad.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_ae_graphs_mpad.npz.zst"
+      },
+      "original": {
+        "name": "parts_ae_graphs_mpad.npz",
+        "sha256": "0b83b546c8dc5c35738be8b78f67be6a2c87baeb7f7a9482b11a6660d8ac980e",
+        "bytes": 58895616
+      }
+    },
+    {
+      "path": "raw/parts_eager_fp32.npz.zst",
+      "sha256": "c7c5848f12598895608cfe3946f6e9fcb2006c7d6dfbda50e040327fd58032cd",
+      "bytes": 5430700,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_eager_fp32.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_eager_fp32.npz.zst"
+      },
+      "original": {
+        "name": "parts_eager_fp32.npz",
+        "sha256": "d181a6e49f8da1b9db7338e0642e159a65e24d8a2086779f871d02bdc32f1452",
+        "bytes": 58892876
+      }
+    },
+    {
+      "path": "raw/parts_llm_graphs.npz.zst",
+      "sha256": "c7071e3bcd111f185e21a8af23356fd4042e9b00a3f343c5ca5af73319848876",
+      "bytes": 5432113,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_llm_graphs.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_llm_graphs.npz.zst"
+      },
+      "original": {
+        "name": "parts_llm_graphs.npz",
+        "sha256": "49918ae7c0233c8a7dd8ea6755643b2bc6f2a9772aa123435e8ec489ea663679",
+        "bytes": 58893896
+      }
+    },
+    {
+      "path": "raw/parts_llm_graphs_autotune.npz.zst",
+      "sha256": "6234b7ae8bf46abd9a4ee9c0dd28fb3cadb4fb7033bc2120baa5e4a92e99fe91",
+      "bytes": 5431295,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_llm_graphs_autotune.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_llm_graphs_autotune.npz.zst"
+      },
+      "original": {
+        "name": "parts_llm_graphs_autotune.npz",
+        "sha256": "9dcef815ff24a6ab5c7ad346fb0b04d1be71b035e18cd3202cfc1ffcec59d893",
+        "bytes": 58894424
+      }
+    },
+    {
+      "path": "raw/parts_llm_graphs_mpad_autotune.npz.zst",
+      "sha256": "c65d68d6517c993316ae99de5c1af66f4e08f61e9d7869b2bb40c614589f49d2",
+      "bytes": 5432255,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_llm_graphs_mpad_autotune.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_llm_graphs_mpad_autotune.npz.zst"
+      },
+      "original": {
+        "name": "parts_llm_graphs_mpad_autotune.npz",
+        "sha256": "ba5248f63c270531aaa9004ef1deb9dc936a258c6e17d4363d52d2b26035b929",
+        "bytes": 58896332
+      }
+    },
+    {
+      "path": "raw/parts_vis_compile.npz.zst",
+      "sha256": "aeab4350af7e251b690a309bfd754787efc63946fe606857c1d9adb3f525ec75",
+      "bytes": 5472495,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_vis_compile.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_vis_compile.npz.zst"
+      },
+      "original": {
+        "name": "parts_vis_compile.npz",
+        "sha256": "e8b084ff59a7063a49c71d1651daca94580728828c97daff295a61fdf2324f54",
+        "bytes": 58894068
+      }
+    },
+    {
+      "path": "raw/parts_vlm_graphs_autotune.npz.zst",
+      "sha256": "86a6d9235b11d29988ee0b6304b0d8b3006961bf822bdd82dd3cbca4ff9dbb7f",
+      "bytes": 5459237,
+      "kind": "other",
+      "produced_by": "bench/groot_part_diag.py",
+      "secrets_scan": "clean",
+      "compression": {
+        "tool": "zstd",
+        "level": 19,
+        "command": "zstd -19 -T0 -q -f /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_vlm_graphs_autotune.npz -o /home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261023_E4i_groot_n15_part_diag/raw/parts_vlm_graphs_autotune.npz.zst"
+      },
+      "original": {
+        "name": "parts_vlm_graphs_autotune.npz",
+        "sha256": "f94626622210191eefd9ccd64d3e234d66b88d3ca32fcba8aa215efb6f921914",
+        "bytes": 58894880
+      }
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "9e28e7525aa6d749602dc5720f0696ddf39623c0284273fe6ca1753a5a4928ab",
+      "bytes": 18014,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    }
+  ]
+}
