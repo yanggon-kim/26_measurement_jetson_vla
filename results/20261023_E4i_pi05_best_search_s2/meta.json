@@ -1,0 +1,276 @@
+{
+  "date_utc": "2026-10-23T13:39:03Z",
+  "experiment": "E4i best_bf16 search, stage 2 (pi0.5): per-part GEMM autotuning, bf16_islands",
+  "task": "T005",
+  "model": "pi05",
+  "model_repo": "https://github.com/huggingface/lerobot",
+  "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+  "checkpoint": "lerobot/pi05_libero_base",
+  "checkpoint_revision": "a217bfd3b14673cf2ce597e69997ab21866438dd",
+  "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+  "rung": "per row: bf16_graphs_ae_at_islands, bf16_graphs_islands, bf16_mpad_graphs_ae_at, bf16_mpad_graphs_ae_at_islands, bf16_mpad_graphs_ae_vlm_at_islands",
+  "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+  "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+  "num_denoise_steps": "10 (extra N per rung for the slope: by_N in the row files)",
+  "action_horizon": 50,
+  "prefix_tokens": 968,
+  "suffix_tokens": 50,
+  "batch": 1,
+  "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "798c770 (per-row bench_provenance)",
+  "command": "bash bench/queues/t005_e4i_s2.sh 20261023 (pi05)",
+  "throttled": {
+    "bf16_graphs_ae_at_islands_N10": {
+      "10": false
+    },
+    "bf16_graphs_islands_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_ae_at_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_ae_at_islands_N10": {
+      "10": false
+    },
+    "bf16_mpad_graphs_ae_vlm_at_islands_N10": {
+      "10": false
+    }
+  },
+  "memory_path_state": {
+    "bf16_graphs_ae_at_islands_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_graphs_islands_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_ae_at_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_ae_at_islands_N10": {
+      "10": "normal->normal"
+    },
+    "bf16_mpad_graphs_ae_vlm_at_islands_N10": {
+      "10": "normal->normal"
+    }
+  },
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=disabled hwmon1_pwm1=255\nFAN Dynamic Speed Control=disabled hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "41250",
+    "gpu-thermal": "40312",
+    "cpu-thermal": "41250",
+    "soc012-thermal": "39156",
+    "soc345-thermal": "39156"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "4328807401a5fd768ac523ce077e8b83ca18b81b8b394c8e7ee8c5d57ba1f7e3",
+      "bytes": 2584,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "9ae5b9651957712dbacda7a463dbc9dc55a041f8fff75eca51847bfefc1b11cf",
+      "bytes": 31834,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/samples/bf16_graphs_ae_at_islands_N10.csv",
+      "sha256": "24185d5d76148c6944a4c3b6be475aeae749e0bd4374c6cb6fe65f65a7ac935a",
+      "bytes": 112090,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_graphs_islands_N10.csv",
+      "sha256": "b9d7016292e1558ecf0aa7dc9160df7fba20a9364d1d23e9b9cd1146bb496bbb",
+      "bytes": 111738,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_at_N10.csv",
+      "sha256": "ca5ea3e13522202bb34901b8b68a24a320e7cd0a7e74af2e2b4137514cf84a5e",
+      "bytes": 111720,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_at_islands_N10.csv",
+      "sha256": "d811091fe4d29d8ce2c6933f22857b74d5993c36fffc9525389ab7a913c4c238",
+      "bytes": 112053,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/bf16_mpad_graphs_ae_vlm_at_islands_N10.csv",
+      "sha256": "aaec11f2604739886ec0bfed85d99f5ea56cf9f880dfc3c3779a2d27646155d4",
+      "bytes": 112019,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_graphs_ae_at_islands_N10.npz",
+      "sha256": "4d4ec9447deea0ec0bc78924588c6ee942aca64e1fbb6b7b4daf33c557415da2",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_graphs_islands_N10.npz",
+      "sha256": "ee1514b9fa63faddf4236f0bb8e578476aea1f8c28f3f30269102a719d2ab792",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_at_N10.npz",
+      "sha256": "0d4e59febb2a5430a771e21decb5763dffe3c28437e4e1f988742b7c98981365",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_at_islands_N10.npz",
+      "sha256": "152a3d1c7c65fb3c4c75a833fb80190d8a70950d573ea597278eb4984b01b562",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/bf16_mpad_graphs_ae_vlm_at_islands_N10.npz",
+      "sha256": "559371409766c241c31606e5674faff57bd3861f45a8ccdd6bb1904f108e4ec7",
+      "bytes": 14590,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_graphs_ae_at_islands_N10.json",
+      "sha256": "e4483bf1ee916028fa9a71b04ae01b98646319262877311f534d79d365473df2",
+      "bytes": 13000,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_graphs_islands_N10.json",
+      "sha256": "c825cc09088c351fecd919ed693ede3e8e0d419ca6209ca5d637e07fa2b9c6d0",
+      "bytes": 12604,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_at_N10.json",
+      "sha256": "edd05ecce2b318a0d32f9a9b14516857ef20158aa1cc721fa56b135b0a84db8d",
+      "bytes": 13966,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_at_islands_N10.json",
+      "sha256": "f62e92fe2b313e12d319c89d1f0710efc18fa50cb78b162673298f50f0f8b9c5",
+      "bytes": 14110,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/bf16_mpad_graphs_ae_vlm_at_islands_N10.json",
+      "sha256": "43e9935cf8bacb1d2545d0eb719269009a2474bac17676d947ba0190548f08bd",
+      "bytes": 14207,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_graphs_ae_at_islands_N10.log",
+      "sha256": "7ea2765bcda1d040172348393934f10f54ac2bb273c8f444e3ccd1adf24df34c",
+      "bytes": 29771,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_graphs_islands_N10.log",
+      "sha256": "d095682a36f5e8e4dd5d806216b6acf4ce3cc4689c5e8b4aba32c2c90cc3a70b",
+      "bytes": 7057,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_at_N10.log",
+      "sha256": "3fecf9e95a5ac8c2e9173e10d487189773a8d14aae81d65ad2629b26ebb3e9d5",
+      "bytes": 29765,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_at_islands_N10.log",
+      "sha256": "6a1619326a154a90078edc7f0ede1bb8d5576bff1bf0fae2b3dde27ec031277d",
+      "bytes": 29850,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/bf16_mpad_graphs_ae_vlm_at_islands_N10.log",
+      "sha256": "d75f442c0a3a6d73b1f34cb6cd82c508a88f0792fe23a716fc2d7537ac55e7c2",
+      "bytes": 45809,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    }
+  ]
+}
