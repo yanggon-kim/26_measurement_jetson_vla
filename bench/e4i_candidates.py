@@ -133,6 +133,18 @@ def candidates():
                      ("ae_vis_at", [("ae", AT, False), ("vis", AT, True), ("vlm", G, True)])):
         out.append(RG._r(f"bf16_mpad_graphs_{name}", f"bf16 casts + mpad + graphs everywhere; GEMM autotuning on {name[:-3]} only",
                          "lerobot", "high", tg, ["eager_bf16", "linear_mpad"], autotune="parts"))
+    # T005 resume (2026-10-23): fp32 islands cast to bf16 on top of the leaders and their stage-2 variants
+    by = {r["key"]: r for r in out}
+    for base in ("bf16_mpad_graphs", "bf16_mpad_graphs_nofuse", "bf16_mpad_graphs_autotune", "bf16_mpad_graphs_ae_at",
+                 "bf16_mpad_graphs_ae_vlm_at"):
+        b = by[base]
+        out.append(RG._r(base + "_islands", b["label"] + " + remaining fp32 Linears to bf16", "lerobot", "high",
+                         b["targets"], b["preps"] + ["bf16_islands"], autotune=b["autotune"]))
+    for name, tg, at in (("bf16_graphs_islands", base_g, False),
+                         ("bf16_graphs_ae_at_islands", [("ae", AT, False), ("vis", G, True), ("vlm", G, True)], "parts")):
+        out.append(RG._r(name, "bf16 casts (no mpad) + graphs everywhere + remaining fp32 Linears to bf16"
+                         + ("; GEMM autotuning on the expert only" if at else ""), "lerobot", "high", tg,
+                         ["eager_bf16", "bf16_islands"], autotune=at))
     out.append(RG._r("bf16_mpad_whole_graphs", "bf16 casts + mpad + sample_actions compiled with graphs (e2e only)",
                      "lerobot", "high", [("whole", G, False)], ["eager_bf16", "linear_mpad"], regions=False))
     out.append(RG._r("bf16_mpad_whole_graphs_autotune", "bf16_mpad_whole_graphs + forced GEMM autotuning (e2e only)",

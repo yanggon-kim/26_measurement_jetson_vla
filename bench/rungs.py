@@ -254,9 +254,38 @@ def prep_linear_mpad(adapter, scope="lm_expert", span=256, step=16, reps=20):
     return f"linear_mpad({scope}): {n_wrapped} Linear modules padded; shapes padded: {pads}"
 
 
+def prep_bf16_islands(policy):
+    """Cast the nn.Linear layers still holding fp32 weights after LeRobot's own bf16 path to bf16 (T005 E4i, the
+    "weights and activations BF16" rule). Measured on Thor after bf16_both's casts:
+      pi0      13 MB   action_time_mlp_in / _out, action_in_proj, state_proj, action_out_proj
+      pi0.5   475 MB   the expert's adaptive-RMSNorm `dense` Linears (466 MB, read every denoising step), time MLP, projections
+      SmolVLA  13 MB   action_time_mlp, some lm_expert k_proj / v_proj, state / action projections
+    They are fp32 because their inputs are created fp32 outside the model (noise, time embedding). Each gets a forward
+    wrapper: the input is cast to bf16, and the output is cast back to the input's dtype, so every caller sees the
+    dtype it saw before. Wraps the existing forward, so it composes with linear_mpad (run this after it)."""
+    n, nbytes = 0, 0
+    for name, mod in policy.model.named_modules():
+        if not isinstance(mod, torch.nn.Linear) or mod.weight.dtype != torch.float32:
+            continue
+        nbytes += sum(p.numel() * 4 for p in mod.parameters(recurse=False))
+        for p in mod.parameters(recurse=False):
+            p.data = p.data.to(torch.bfloat16)
+        inner = mod.forward
+
+        def fwd(x, _inner=inner):
+            dt = x.dtype
+            y = _inner(x.to(torch.bfloat16) if dt != torch.bfloat16 else x)
+            return y.to(dt) if dt != torch.bfloat16 else y
+        mod.forward = fwd
+        n += 1
+    if n == 0:
+        raise NotApplicable("no fp32 nn.Linear left to cast")
+    return f"bf16_islands: {n} fp32 Linear modules ({nbytes / 1e6:.1f} MB) -> bf16, input cast to bf16, output cast back"
+
+
 PREPS = {"bf16_base": prep_bf16_base, "bf16_vision": prep_bf16_vision, "bf16_norms": prep_bf16_norms,
          "bf16_both": prep_bf16_both, "eager_bf16": prep_eager_bf16, "static_posids": prep_smolvlm_static_posids,
-         "linear_mpad": prep_linear_mpad}
+         "linear_mpad": prep_linear_mpad, "bf16_islands": prep_bf16_islands}
 ADAPTER_PREPS = {"linear_mpad"}                 # preps that need the adapter (an input to run), not only the policy
 
 
