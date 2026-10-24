@@ -162,6 +162,8 @@ def main():
         rows = rows_for(m)
         if not rows:
             continue
+        conf_rows = [r for r in rows if "_best_confirm" in r["_dir"]]        # checks of the choice, never candidates
+        rows = [r for r in rows if "_best_confirm" not in r["_dir"]]
         refs = [r for r in rows if r["rung"] == "ae_graphs" and r["status"] == "measured" and r["_eq"].get("eager_fp32")
                 and (not m.startswith("groot") or "_E4i_" in r["_dir"])]
         ref_l2 = float(refs[-1]["_eq"]["eager_fp32"]["rel_l2"]) if refs else 0.0
@@ -173,6 +175,12 @@ def main():
         meas = [r for r in rows if r["status"] == "measured"]
         eager = next((r for r in rows if r["rung"] == "eager_fp32" and r["status"] == "measured"), None)
         best = min(elig, key=lambda r: part(r, "e2e_wall")) if elig else None
+        confs = [r for r in conf_rows if best is not None and r["rung"] == best["rung"] and r["status"] == "measured"]
+        conf = confs[-1] if confs else None
+        if conf is not None:
+            conf["_bound"] = bound
+            conf["_why"] = eligibility(conf)
+        report_best = conf if conf is not None and not conf["_why"] else best
         fastest_any = min(meas, key=lambda r: part(r, "e2e_wall")) if meas else None
         own = [r for r in elig if own_path(r)]
         best_own = min(own, key=lambda r: part(r, "e2e_wall")) if own else None
@@ -198,8 +206,13 @@ def main():
                                     "why_not": "; ".join(fastest_any["_why"])},
                 "fastest_on_lerobot_own_path": ({"rung": best_own["rung"], "e2e_ms": part(best_own, "e2e_wall")}
                                                 if best_own else "n/a"),
-                "max_ae_share": {"rung": max_share["rung"], "ae_share": share(max_share)}}
-        for mode, r in (("eager_fp32", eager), ("best_bf16", best)):
+                "max_ae_share": {"rung": max_share["rung"], "ae_share": share(max_share)},
+                "confirmation": ({"dir": conf["_dir"], "e2e_ms": part(conf, "e2e_wall"),
+                                  "confirm_over_search": part(conf, "e2e_wall") / part(best, "e2e_wall"),
+                                  "eligible": not conf["_why"], "why_not": "; ".join(conf["_why"]),
+                                  "reported_numbers_from": "confirmation" if report_best is conf else "search"}
+                                 if conf is not None else "not yet run")}
+        for mode, r in (("eager_fp32", eager), ("best_bf16", report_best)):
             if r is None:
                 continue
             pb = {"model": m, "N": r["N"], "mode": mode, "rung": r["rung"], "dir": r["_dir"]}
@@ -214,7 +227,7 @@ def main():
             if part(r, "model_get_action") is not None:
                 pb["ae_share_of_model_call"] = round(part(r, "ae_total") / part(r, "model_get_action"), 4)
             pb_rows.append(pb)
-        sections.append((m, rows, eager, best, fastest_any, best_own, max_share))
+        sections.append((m, rows + conf_rows, eager, report_best, fastest_any, best_own, max_share))
     json.dump(best_json, open(os.path.join(a.out, "best_bf16.json"), "w"), indent=1, default=str)
     for name, rows in (("phase_balance.csv", pb_rows), ("candidates.csv", cand_rows)):
         keys = []
