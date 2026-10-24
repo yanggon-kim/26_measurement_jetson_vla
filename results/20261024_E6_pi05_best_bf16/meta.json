@@ -1,0 +1,226 @@
+{
+  "date_utc": "2026-10-24T07:34:50Z",
+  "task": "T006",
+  "model": "pi05",
+  "rung": "best_bf16 = bf16_graphs_ae_at_islands",
+  "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+  "compile_mode": "PI05Pytorch.denoise_step@max-autotune; PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone; PaliGemmaWithExpertModel.forward@reduce-overhead+clone",
+  "variant": "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only); bf16_islands: 41 fp32 Linear modules (474.7 MB) -> bf16, input cast to bf16, output cast back",
+  "num_denoise_steps": 10,
+  "action_horizon": 50,
+  "prefix_tokens": 968,
+  "suffix_tokens": 50,
+  "batch": 1,
+  "n_warmup": "20 (until no new graph)",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "8c246e8",
+  "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row",
+  "cuobjdump_version": "n/a",
+  "inductor_cache": {
+    "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_pi05_best_confirm/bf16_graphs_ae_at_islands/inductor",
+    "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_pi05_best_confirm/bf16_graphs_ae_at_islands/triton"
+  },
+  "model_repo": "see the T005 row's provenance",
+  "model_commit": "see the T005 row's provenance",
+  "checkpoint": "see the T005 row's provenance",
+  "checkpoint_revision": "see the T005 row's provenance",
+  "experiment": "E6 roofline per part and per kernel (T006 steps 4-6)",
+  "n_timed": "1 inference per ncu run",
+  "command": [
+    "bench/t006_analytic.py --model pi05 --mode best_bf16",
+    "bench/t006_capture.py ncu --part <vision,vlm_prefix,ae_step[0]>",
+    "bench/t006_roofline.py --t005-row results/20261024_E4i_pi05_best_confirm/raw/rows/bf16_graphs_ae_at_islands_N10.json"
+  ],
+  "nsys_version": "see the E5 directory",
+  "ncu_version": "2025.3.0.0",
+  "ncu_set": "n/a: form D, explicit metric list",
+  "ncu_filter": "--nvtx --nvtx-include <part>/ --profile-from-start off, one inference",
+  "ncu_metrics": "raw/ncu_metrics.txt (T003-validated counters)",
+  "ncu_sm_frequency_hz": "locked by jetson_clocks; --clock-control none",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1=72\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "48531",
+    "gpu-thermal": "48218",
+    "cpu-thermal": "48531",
+    "soc012-thermal": "47000",
+    "soc345-thermal": "47031"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/analytic.log",
+      "sha256": "76d9e4df07b9ade44b7e6d7d46c0ca8831115ac6b422ce9895a80a8bae313af3",
+      "bytes": 1170,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "ae7374c7b689f9e868ff00d688cfa46d022831f066aeb4fc106754cc14a6a574",
+      "bytes": 2655,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_step0_s0.log",
+      "sha256": "0efa5d3c1d0d9cd07d6435f3ec993264dda73b420d17fa4ac31c1f6209b07484",
+      "bytes": 39395,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_step_0_windows.json",
+      "sha256": "c7debdbbff90f2893342103c38d7e5723a63d56b7971e11724481e850edc436a",
+      "bytes": 1522,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_metrics.txt",
+      "sha256": "6529eebaa195c7727651f4d2235198f4eebc464c16bf71b0d090c4866e75ec1c",
+      "bytes": 1245,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vision_s0.log",
+      "sha256": "3bcc3eba3141bfadcb146524f5c88d0212410f5d71c73fde101a40d5f600482f",
+      "bytes": 85393,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vision_windows.json",
+      "sha256": "69829bbed4eef8934130803f513309d3d8fc945c72777c5fd6d52db8a88f118f",
+      "bytes": 1515,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s0.log",
+      "sha256": "6eb3bd9550766b214327628349d9462fd8ff2fc245916753df8d49cd12c8aa0f",
+      "bytes": 31150,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_windows.json",
+      "sha256": "59e36b4e55dd05fb870841856b2991768f4e3c27dabeeb5d36e9c827a7294da5",
+      "bytes": 1523,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "bf55997e00c74eb252c30bd70e45cd659f0f52b2eb29bd575d5e4a6bd1b8db48",
+      "bytes": 37083,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/target_info_ae_step0_s0.json",
+      "sha256": "c96314444fa397aa45f9593704a14c74239b577abd36a3a7c94de9afd27b0088",
+      "bytes": 1848,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vision_s0.json",
+      "sha256": "349e2dcb96c856ab8e2c4669466e9f4472483327a8fe12a14bbd749e75b65407",
+      "bytes": 1847,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s0.json",
+      "sha256": "81d57065804cebcea0c2ea26fe78eb58c66f856ec785eeb11d2d1eaccf4483eb",
+      "bytes": 1848,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_step0_s0_raw.csv",
+      "sha256": "9cc55ab454187c41848c2016d3b584f4c1afb808670c4cbca25b8ce0cdd33763",
+      "bytes": 1083958,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_step0_s0.ncu-rep.zst",
+      "sha256": "065d7c197d489b404c76d86ea1286d814695550c5f5224ff47dc7835dfc414d4",
+      "bytes": 654344,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s0.ncu-rep.zst",
+      "sha256": "182c5aa2f65053fa36e90330a5cbd3672f843c7896a248a5550f909ba26108e6",
+      "bytes": 233044,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s0_raw.csv",
+      "sha256": "8379567fab20f1906cd234862a39bb0686d376e30a91d9bf98ab6c514b4bf094",
+      "bytes": 829581,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s0_raw.csv",
+      "sha256": "22c8963fe7582639921d44db04fcf817472bc4fbeee9cba53c25411ec188de11",
+      "bytes": 2351208,
+      "kind": "other",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s0.ncu-rep.zst",
+      "sha256": "7ef8bdd2a5134e3fc7f5a202086a83333b67227635b91d77a8ce0cece4fc1c69",
+      "bytes": 1061956,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv --page raw",
+      "secrets_scan": "clean"
+    }
+  ]
+}
