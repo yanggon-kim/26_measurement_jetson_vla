@@ -1,12 +1,16 @@
 """T007 steps 2-3: C1 tables from the ncu --set full captures of one model x mode (bench/t007_c1.py), joined to the
 nsys capture of the same configuration (bench/t006_capture.py, kernels.csv) on launch order + kernel base name.
 
-Per kernel (ncu/kernels.csv): nsys duration (time), SM throughput %, memory throughput % (gpu__compute_memory_throughput:
-the max of the memory units' throughputs, not DRAM alone), achieved occupancy %, tensor-pipe active %, the 17 stall
-reasons (warps per issue-active cycle), DRAM GB/s from the validated bytes ÷ nsys duration, and a verdict:
-  ncu's speed-of-light rule: compute-bound if SM % >= 80 and >= memory %, memory-bound if memory % >= 80;
+Per kernel (ncu/kernels.csv): nsys duration (time), SM throughput %, on-chip memory throughput % (onchip_mem_pct =
+gpu__compute_memory_throughput: the max of the memory units' throughputs; this chip exposes no dram__ counters (T001), so
+it does NOT include DRAM), achieved occupancy %, tensor-pipe active %, the 17 stall reasons (warps per issue-active
+cycle), DRAM GB/s from the validated bytes ÷ nsys duration and its % of the measured peak (hw_constants.json), and a
+verdict, ncu's speed-of-light rule with memory = max(on-chip %, DRAM % of measured peak): compute-bound if SM % >= 80
+and >= memory, memory-bound if memory >= 80;
   else latency-bound, named by the largest stall; launch-bound if the kernel is shorter than the median gap between
   launches of its part in the nsys trace.
+DRAM bytes are from ncu replays, which flush the caches before each kernel (--cache-control all, ncu's default): they are
+cold-L2 bytes, an upper bound on what the kernel moves inside the back-to-back sequence.
 Per part (ncu/region_utilisation.csv and c1_bounds.csv rows): every metric weighted by nsys kernel time; the share of
 the part's kernel time in each verdict class; coverage = joined nsys time ÷ the part's nsys kernel time; idle fraction =
 1 − kernel time ÷ the CUDA-event region time of the T005 row.
@@ -28,6 +32,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from t006_roofline import norm, num  # noqa: E402
 from t007_c1 import STALLS  # noqa: E402
+
+PEAK_BW_GBPS = float(json.load(open(os.path.join(os.path.dirname(HERE), "results", "20261022_E1_peak", "hw_constants.json")))["measured_bw_GBps"]["best"]["value"])
 
 
 def read_raw(path):
@@ -79,17 +85,19 @@ def main():
             mem = num(d.get("gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"))
             stalls = {s.split("stalled_")[1].replace("_per_issue_active", ""): num(d.get(s + ".ratio", d.get(s))) for s in STALLS}
             top = max(stalls, key=stalls.get) if stalls else ""
+            byt = (num(d.get("lts__d_sectors_fill_sysmem.sum")) + num(d.get("lts__t_sectors_aperture_sysmem_op_write.sum"))) * 32
+            dram_pct = (byt / dur) / PEAK_BW_GBPS * 100 if dur else 0.0
+            memx = max(mem, dram_pct)           # this chip has no dram__ counters: ncu's memory % omits DRAM (T001)
             if dur and dur < gap_med:
                 verdict = "launch-bound"
-            elif sm >= 80 and sm >= mem:
+            elif sm >= 80 and sm >= memx:
                 verdict = "compute-bound"
-            elif mem >= 80:
+            elif memx >= 80:
                 verdict = "memory-bound"
             else:
                 verdict = f"latency-bound ({top})"
-            byt = (num(d.get("lts__d_sectors_fill_sysmem.sum")) + num(d.get("lts__t_sectors_aperture_sysmem_op_write.sum"))) * 32
             krows.append({"model": a.model, "mode": a.mode, "part": part, "idx": i, "kernel": name[:200], "joined": ok,
-                          "nsys_ns": dur, "sm_pct": sm, "mem_pct": mem,
+                          "nsys_ns": dur, "sm_pct": sm, "onchip_mem_pct": mem, "dram_pct_peak_bw": round(dram_pct, 2),
                           "occupancy_pct": num(d.get("sm__warps_active.avg.pct_of_peak_sustained_active")),
                           "tensor_pipe_pct": num(d.get("sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active")),
                           "dram_GBps": round(byt / dur, 3) if dur else "", "top_stall": top,
@@ -109,9 +117,9 @@ def main():
         bounds.append({"model": a.model, "mode": a.mode, "part": part, "n_kernels": len(ns), "n_ncu": len(ncu), "name_mismatches": mism,
                        "coverage": round(joined / tot, 4) if tot else 0, "kernel_ms": round(tot / 1e6, 4),
                        "idle_frac": round(1 - (tot / 1e6) / ev, 4) if ev else "", "sm_pct": round(wavg("sm_pct"), 2),
-                       "mem_pct": round(wavg("mem_pct"), 2), "occupancy_pct": round(wavg("occupancy_pct"), 2),
+                       "onchip_mem_pct": round(wavg("onchip_mem_pct"), 2), "occupancy_pct": round(wavg("occupancy_pct"), 2),
                        "tensor_pipe_pct": round(wavg("tensor_pipe_pct"), 2), "dram_GBps": round(dram, 2),
-                       "pct_peak_bw": round(dram / 258.23 * 100, 2), "top_stall": top,
+                       "pct_peak_bw": round(dram / PEAK_BW_GBPS * 100, 2), "top_stall": top,
                        "top_stall_share": round(st_tot[top] / sum(st_tot.values()), 4) if sum(st_tot.values()) else "",
                        "verdict": max(cls, key=cls.get) if cls else "",
                        **{f"time_share_{c}": round(v / w, 4) for c, v in cls.items()}})
@@ -124,7 +132,7 @@ def main():
             w_ = csv.DictWriter(f, fieldnames=keys)
             w_.writeheader()
             w_.writerows(rows)
-    print(json.dumps([{k: b[k] for k in ("part", "coverage", "name_mismatches", "verdict", "top_stall", "sm_pct", "mem_pct")} for b in bounds], indent=1))
+    print(json.dumps([{k: b[k] for k in ("part", "coverage", "name_mismatches", "verdict", "top_stall", "sm_pct", "onchip_mem_pct", "pct_peak_bw")} for b in bounds], indent=1))
 
 
 if __name__ == "__main__":
