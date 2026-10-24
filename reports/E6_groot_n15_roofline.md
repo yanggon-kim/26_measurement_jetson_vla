@@ -6,7 +6,7 @@
 
 | part | time ms (CUDA event) | FLOPs (ncu) | DRAM bytes (ncu) | intensity FLOP/B | TFLOP/s | GB/s | % peak compute | % peak BW | side of the ridge | analytic bytes | measured ÷ analytic bytes | floor ms | gap × floor | coverage |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `ae_total` | 36.84 | 1.183e+12 | 7.511e+09 | 157.5 | 32.11 | 203.9 | 24.7 % | 79.0 % | memory (ridge 503) | 1.530e+09 | 4.91 | 7.690 | 4.79 | 100.0 % |
+| `ae_total` | 36.84 | 1.183e+12 | 7.511e+09 | 157.5 | 32.11 | 203.9 | 24.7 % | 79.0 % | memory (ridge 503) | 4.902e+09 | 1.53 | 18.983 | 1.94 | 100.0 % |
 | `backbone_lm_head` | 5.32 | 6.368e+11 | 9.253e+08 | 688.3 | 119.68 | 173.9 | 92.2 % | 67.3 % | compute (ridge 503) | 0.000e+00 | — | 4.662 | 1.14 | 100.0 % |
 | `vision` | 18.55 | 7.287e+11 | 4.286e+09 | 170.0 | 39.29 | 231.1 | 30.3 % | 89.5 % | memory (ridge 503) | 8.574e+08 | 5.00 | 5.121 | 3.62 | 100.0 % |
 | `vlm_prefix` | 26.52 | 1.248e+12 | 6.506e+09 | 191.8 | 47.04 | 245.3 | 36.2 % | 95.0 % | memory (ridge 503) | 1.208e+09 | 5.39 | 8.572 | 3.09 | 100.0 % |

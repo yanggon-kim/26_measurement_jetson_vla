@@ -13,15 +13,15 @@
 | SmolVLA | best_bf16 | `ae_step[0]` | 2.77 | 43.9 | 4.3 % | 48.8 % | memory | 3.52 | 100.0 % |
 | SmolVLA | best_bf16 | `vision` | 15.21 | 219.8 | 22.5 % | 51.5 % | memory | 4.58 | 100.0 % |
 | SmolVLA | best_bf16 | `vlm_prefix` | 4.29 | 95.3 | 13.7 % | 72.4 % | memory | 3.52 | 100.0 % |
-| GR00T N1.7 | best_bf16 | `ae_total` | 51.14 | 80.8 | 12.8 % | 79.4 % | memory | 5.06 | 100.0 % |
+| GR00T N1.7 | best_bf16 | `ae_total` | 51.14 | 80.8 | 12.8 % | 79.4 % | memory | 1.43 | 100.0 % |
 | GR00T N1.7 | best_bf16 | `backbone_lm_head` | 3.32 | 254.0 | 41.7 % | 82.5 % | memory | 2.53 | 100.0 % |
 | GR00T N1.7 | best_bf16 | `vision` | 29.47 | 134.5 | 19.9 % | 74.4 % | memory | 5.47 | 100.0 % |
 | GR00T N1.7 | best_bf16 | `vlm_prefix` | 26.07 | 126.7 | 14.9 % | 59.0 % | memory | 4.18 | 100.0 % |
-| GR00T N1.6 | best_bf16 | `ae_total` | 50.15 | 70.5 | 10.9 % | 78.1 % | memory | 5.87 | 100.0 % |
+| GR00T N1.6 | best_bf16 | `ae_total` | 50.15 | 70.5 | 10.9 % | 78.1 % | memory | 1.47 | 100.0 % |
 | GR00T N1.6 | best_bf16 | `backbone_lm_head` | 4.14 | 252.5 | 33.3 % | 66.3 % | memory | 3.05 | 100.0 % |
 | GR00T N1.6 | best_bf16 | `vision` | 17.25 | 286.2 | 41.7 % | 73.2 % | memory | 2.65 | 100.0 % |
 | GR00T N1.6 | best_bf16 | `vlm_prefix` | 15.02 | 204.9 | 25.8 % | 63.2 % | memory | 2.41 | 100.0 % |
-| GR00T N1.5 | best_bf16 | `ae_total` | 36.84 | 157.5 | 24.7 % | 79.0 % | memory | 4.79 | 100.0 % |
+| GR00T N1.5 | best_bf16 | `ae_total` | 36.84 | 157.5 | 24.7 % | 79.0 % | memory | 1.94 | 100.0 % |
 | GR00T N1.5 | best_bf16 | `backbone_lm_head` | 5.32 | 688.3 | 92.2 % | 67.3 % | compute | 1.14 | 100.0 % |
 | GR00T N1.5 | best_bf16 | `vision` | 18.55 | 170.0 | 30.3 % | 89.5 % | memory | 3.62 | 100.0 % |
 | GR00T N1.5 | best_bf16 | `vlm_prefix` | 26.52 | 191.8 | 36.2 % | 95.0 % | memory | 3.09 | 100.0 % |
