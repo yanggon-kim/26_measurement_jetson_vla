@@ -1,0 +1,319 @@
+{
+ "model": "groot_n17",
+ "rung": "vis_fa_at_ae_at",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "4765f24",
+  "files_sha256": {
+   "opt_ladder.py": "840ab90eb794bd29",
+   "rungs.py": "c45efa62f9eede96",
+   "e4i_candidates.py": "ce6af16258f443c4",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-24T11:17:20Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 66,
+   "oc3": 726
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "45093",
+   "gpu-thermal": "45093",
+   "cpu-thermal": "43875",
+   "soc012-thermal": "43687",
+   "soc345-thermal": "43937"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "embodiment_tag": "oxe_droid_relative_eef_relative_joint",
+  "obs_shapes": {
+   "video": {
+    "exterior_image_1_left": [
+     1,
+     2,
+     256,
+     256,
+     3
+    ],
+    "wrist_image_left": [
+     1,
+     2,
+     256,
+     256,
+     3
+    ]
+   },
+   "state": {
+    "eef_9d": [
+     1,
+     1,
+     9
+    ],
+    "gripper_position": [
+     1,
+     1,
+     1
+    ],
+    "joint_position": [
+     1,
+     1,
+     7
+    ]
+   }
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)",
+  "backbone": "nvidia/Cosmos-Reason2-2B @ 9ce19a195e423419c349abfc86fd07178b230561"
+ },
+ "tokens": {
+  "prefix_tokens_P": 273,
+  "P_dit_encoder": 273,
+  "suffix_tokens_S": 41
+ },
+ "rung_desc": {
+  "rung": "vis_fa_at_ae_at",
+  "label": "GR00T E4i candidate: ae@max-autotune, vis@max-autotune-no-cudagraphs + vis_fa_static + GEMM autotuning on the max-autotune parts only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "vision flash-attn varlen: max_seqlen = total vision tokens (static upper bound) instead of a CUDA tensor"
+  ],
+  "compiled": [
+   "Gr00tN1d7ActionHead.get_action@max-autotune+clone",
+   "Qwen3VLModel.get_image_features@max-autotune-no-cudagraphs"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.5136842639985844,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 6288032000
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 20.14918327331543,
+     "mean_ms": 20.003494091033936,
+     "p5_ms": 19.38800048828125,
+     "p95_ms": 20.33363151550293,
+     "min_ms": 19.334400177001953,
+     "max_ms": 20.559328079223633,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 26.267040252685547,
+     "mean_ms": 26.05966411590576,
+     "p5_ms": 24.96790313720703,
+     "p95_ms": 26.761280059814453,
+     "min_ms": 24.912704467773438,
+     "max_ms": 28.23187255859375,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.2599520683288574,
+     "mean_ms": 3.2676089668273924,
+     "p5_ms": 3.2165119647979736,
+     "p95_ms": 3.2953920364379883,
+     "min_ms": 3.1878719329833984,
+     "max_ms": 4.214848041534424,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 53.05499267578125,
+     "mean_ms": 52.609558486938475,
+     "p5_ms": 50.71686553955078,
+     "p95_ms": 53.73955154418945,
+     "min_ms": 50.64227294921875,
+     "max_ms": 54.94940948486328,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 48.05324935913086,
+     "mean_ms": 48.126394004821776,
+     "p5_ms": 47.71311950683594,
+     "p95_ms": 48.49164962768555,
+     "min_ms": 47.60976028442383,
+     "max_ms": 49.35456085205078,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 102.21031951904297,
+     "mean_ms": 101.85301788330078,
+     "p5_ms": 99.57839965820312,
+     "p95_ms": 103.27648162841797,
+     "min_ms": 99.49890899658203,
+     "max_ms": 104.297119140625,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 120.82163850209326,
+     "mean_ms": 120.23519900991232,
+     "p5_ms": 117.26694200115162,
+     "p95_ms": 123.1379939999897,
+     "min_ms": 112.9304839996621,
+     "max_ms": 124.7079050008324,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 18.90027746859414,
+     "mean_ms": 18.382181126611542,
+     "p5_ms": 14.305790878104744,
+     "p95_ms": 20.281072283687536,
+     "min_ms": 13.294711294583976,
+     "max_ms": 20.795005345105892,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 26.55651949979074,
+     "mean_ms": 26.045646798150848,
+     "p5_ms": 22.095150822598953,
+     "p95_ms": 27.986018827796215,
+     "min_ms": 20.708083334378898,
+     "max_ms": 28.44547035670257,
+     "n": 100
+    }
+   },
+   "first_call_s": 245.32022328300081,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6615504896,
+   "control_frequency_hz": 8.309261974731848,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 48.68,
+    "state": "normal",
+    "gpu_C": "49187"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 48.09,
+    "state": "normal",
+    "gpu_C": "51718"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 120.82163850209326,
+     "e2e_p95_over_p5": 1.0500657039285668
+    }
+   ],
+   "timing_stable": true
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  680
+ ],
+ "inductor_counters": {
+  "graph_break": {
+   "Data dependent operator\n  Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.\n  Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`\n\n  Developer debug context: aten._local_scalar_dense.default\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html": 3,
+   "Unsupported Tensor.item() call with capture_scalar_outputs=False\n  Explanation: Dynamo does not support tracing `Tensor.item()` with config.capture_scalar_outputs=False.\n  Hint: Set `torch._dynamo.config.capture_scalar_outputs = True` or `export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1` to include these operations in the captured graph.\n\n  Developer debug context: call_method TensorVariable() item () {}\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0124.html": 3,
+   "Dynamic shape operator\n  Explanation: Operator `aten.repeat_interleave.Tensor`'s output shape depends on input Tensor data.\n  Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`\n\n  Developer debug context: aten.repeat_interleave.Tensor\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html": 1
+  },
+  "stats": {
+   "calls_captured": 6822,
+   "unique_graphs": 10
+  },
+  "inductor": {
+   "pattern_matcher_count": 3795,
+   "pattern_matcher_nodes": 4411,
+   "fxgraph_cache_miss": 9,
+   "select_algorithm_precompile": 22,
+   "select_algorithm_num_precompiles": 396,
+   "select_algorithm_autotune": 22,
+   "benchmarking.InductorBenchmarker.benchmark": 495,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 934,
+   "flop_count": 3221225472,
+   "coordesc_tuning_bench": 308,
+   "async_compile_cache_miss": 1014,
+   "extern_calls": 550,
+   "async_compile_cache_hit": 527,
+   "triton_bundler_save_kernel": 9272,
+   "triton_bundler_save_static_autotuner": 8,
+   "generated_module_cache_miss": 384,
+   "generated_module_cache_hit": 16225,
+   "pad_mm_bench": 8,
+   "cudagraph_recorded_non_static_inputs": 5
+  }
+ },
+ "mpad_table": "n/a: linear_mpad not applied",
+ "wall_s": 280.8812072277069
+}
