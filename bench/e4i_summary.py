@@ -313,7 +313,8 @@ def write_report(path, sections, pb_rows, orin_rungs, orin_best):
         if not best:
             L.append(f"- {NAMES[m]}: no eligible best_bf16 row yet.")
             continue
-        parts = {"vision": part(best, "vision"), "prefix": part(best, "vlm_prefix"), "expert": part(best, "ae_total")}
+        parts = {"vision": part(best, "vision"), "prefix": part(best, "vlm_prefix"), "expert": part(best, "ae_total"),
+                 "other (CPU processing, unused lm_head, glue)": part(best, "other")}
         big = max(parts, key=parts.get)
         den = part(best, "model_get_action") if m.startswith("groot") else part(best, "e2e_wall")
         L.append(f"- {NAMES[m]}: best_bf16 `{best['rung']}` {part(best, 'e2e_wall'):.1f} ms; expert "
@@ -323,6 +324,24 @@ def write_report(path, sections, pb_rows, orin_rungs, orin_best):
                  + ("" if not fastest_any["_why"] else f" (not eligible: {'; '.join(fastest_any['_why'])})")
                  + (f"; fastest without an attention-backend switch: `{best_own['rung']}` {part(best_own, 'e2e_wall'):.1f} ms"
                     if best_own and best_own is not best else "") + ".")
+    L += ["", "## 3b. Per-step time by slope (rows measured at three or more N)", "",
+          "Slope b and intercept a of the expert time `ae_total = a + b·N` (e2e for whole-policy compiles, whose per-part "
+          "split is off), over the N values the row was timed at. The instrumented mean step (where the per-step regions "
+          "exist) is shown beside it.", "",
+          "| model | rung | dir | N values | ms per step (slope) | intercept ms | instrumented mean step ms |", "|---|---|---|---|---|---|---|"]
+    for m, rows, *_ in sections:
+        for r in rows:
+            bn = r.get("by_N") or {}
+            if r["status"] != "measured" or len(bn) < 3:
+                continue
+            key = "ae_total" if all("ae_total" in v.get("regions", {}) for v in bn.values()) else "e2e_wall"
+            pts = sorted((int(k), v["regions"][key]["median_ms"]) for k, v in bn.items())
+            k_ = len(pts)
+            mx, my = sum(p[0] for p in pts) / k_, sum(p[1] for p in pts) / k_
+            b_ = sum((p[0] - mx) * (p[1] - my) for p in pts) / sum((p[0] - mx) ** 2 for p in pts)
+            inst = block(r).get("ae_step_mean_of_medians_ms")
+            L.append(f"| {NAMES[m]} | `{r['rung']}` | `{os.path.basename(r['_dir'])}` | {[p[0] for p in pts]} | {b_:.2f} ({key}) | "
+                     f"{my - b_ * mx:.2f} | {f'{inst:.2f}' if isinstance(inst, (int, float)) else '—'} |")
     L += ["", "## 4. Every rung and candidate (default N)", ""]
     for m, rows, *_ in sections:
         L += [f"### {NAMES[m]}", "", "| rung | dir | status | e2e | vision | prefix | expert | other | eligible for best_bf16 |",
