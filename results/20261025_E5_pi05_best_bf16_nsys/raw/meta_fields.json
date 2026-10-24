@@ -1,0 +1,58 @@
+{
+ "task": "T006",
+ "model": "pi05",
+ "rung": "best_bf16 = bf16_mpad_graphs_ae_at_islands_kvs",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "PI05Pytorch.denoise_step@max-autotune; PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone; PaliGemmaWithExpertModel.forward@reduce-overhead+clone",
+ "variant": "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only); linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 36 Linear modules padded; shapes padded: {'M=968 K=2048 N=2048 torch.bfloat16': {'pad_to': 1144, 'ms_at_M': nan, 'ms_at_pad': nan}}; bf16_islands: 41 fp32 Linear modules (474.7 MB) -> bf16, input cast to bf16, output cast back; lerobot.policies.pi05.modeling_pi05.copy.deepcopy(past_key_values) -> shallow cache copy (prefix K/V tensors shared, never written)",
+ "num_denoise_steps": 10,
+ "action_horizon": 50,
+ "prefix_tokens": 968,
+ "suffix_tokens": 50,
+ "batch": 1,
+ "n_warmup": "20 (until no new graph)",
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "1b89c90",
+ "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row",
+ "cuobjdump_version": "n/a",
+ "inductor_cache": {
+  "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261025_E4i_pi05_best_confirm/bf16_mpad_graphs_ae_at_islands_kvs/inductor",
+  "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261025_E4i_pi05_best_confirm/bf16_mpad_graphs_ae_at_islands_kvs/triton"
+ },
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "experiment": "E5 nsys capture (T006 step 3)",
+ "n_timed": "2 inferences in the capture window",
+ "command": "bench/t006_capture.py nsys --model pi05 --mode best_bf16 --out results/20261025_E5_pi05_best_bf16_nsys",
+ "nsys_version": "NVIDIA Nsight Systems version 2025.3.2.367-253236224375v0",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "produced_by": {
+  "nsys": "nsys stats",
+  "kernels": "bench/t006_capture.py",
+  "target_info": "bench/profile_target.py"
+ },
+ "also_raw": [
+  "nsys/pi05_best_bf16_nvtx_kern_sum.csv",
+  "nsys/pi05_best_bf16_cuda_api_sum.csv",
+  "nsys/pi05_best_bf16_cuda_gpu_kern_sum.csv",
+  "nsys/pi05_best_bf16_nvtx_gpu_proj_trace.csv",
+  "nsys/pi05_best_bf16_cuda_gpu_trace.csv.zst",
+  "nsys/pi05_best_bf16_cuda_gpu_mem_time_sum.csv",
+  "nsys/pi05_best_bf16_osrt_sum.csv",
+  "nsys/pi05_best_bf16_nvtx_sum.csv",
+  "kernels.csv"
+ ],
+ "uncommitted_raw": [
+  {
+   "path": "scratch/20261025_E5_pi05_best_bf16_nsys/pi05_best_bf16.nsys-rep",
+   "committed": false,
+   "reason": "nsys binaries embed the system environment (results/20261022_E0_secrets_test)"
+  }
+ ]
+}
