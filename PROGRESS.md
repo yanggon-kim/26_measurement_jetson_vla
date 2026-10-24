@@ -95,18 +95,18 @@ and FLOP counters validated (T003): `results/20261022_E1_peak/validation.csv` ·
 
 | model | mode | latency: vision / prefix / expert (T005) | roofline: parts + every kernel (T006) | bottleneck: ncu per part (T007) + SASS of dominant kernels (T008) |
 |---|---|---|---|---|
-| π0 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| π0 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| π0.5 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| π0.5 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| SmolVLA | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| SmolVLA | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.6 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.6 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.5 | `eager_fp32` | [ ] | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.5 | `best_bf16` | [ ] | [ ] | [ ] ncu · [ ] SASS |
+| π0 | `eager_fp32` | [x] `20261022_E4c_pi0_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
+| π0 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at`: `20261024_E4i_pi0_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| π0.5 | `eager_fp32` | [x] `20261022_E4c_pi05_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
+| π0.5 | `best_bf16` | [x] `bf16_graphs_ae_at_islands`: `20261024_E4i_pi05_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| SmolVLA | `eager_fp32` | [x] `20261022_E4c_smolvla_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
+| SmolVLA | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands`: `20261024_E4i_smolvla_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.7 | `eager_fp32` | [x] `20261022_E4d_groot_n17_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.7 | `best_bf16` | [x] `ae_graphs_autotune`: `20261024_E4i_groot_n17_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.6 | `eager_fp32` | [x] `20261022_E4d_groot_n16_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.6 | `best_bf16` | [x] `all_compile_ae_vis_at`: `20261024_E4i_groot_n16_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.5 | `eager_fp32` | [x] `20261022_E4d_groot_n15_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.5 | `best_bf16` | [x] `llm_graphs_autotune`: `20261024_E4i_groot_n15_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
 
 **Remaining Orin jobs:** [ ] E7 power per rail and part (T010) · [ ] E8 / E8s LIBERO (T011) · [ ] E11
 `model_inputs.csv` × 6 (T012) · [ ] E12 / E12b co-run (T013) · [ ] E13 / E14 / E14b (T014) · [ ] `SYNTHESIS_thor.md`
