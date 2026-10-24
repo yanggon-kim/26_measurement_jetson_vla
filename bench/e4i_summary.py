@@ -11,6 +11,8 @@ Eligibility for best_bf16 (rules fixed before choosing; every exclusion is liste
   2. no graph compiled during the timed loop; not throttled; the timed block started in the normal memory-path state;
      stable timing (e2e p95 / p5 <= 1.25; bench/opt_ladder.py re-times a disturbed block up to twice);
   3. BF16 weights: fp32 parameters <= 1 % of all parameter bytes (the rest stays fp32 for a stated reason);
+  5. (added 2026-10-24, stricter) the chosen candidate must also pass 1-4 in its confirmation run; otherwise the next
+     eligible candidate is taken and confirmed;
   4. actions finite, and relative L2 vs eager_fp32 (10 seeded inferences, equivalence.csv) <= max(1e-2, 1.5 x the
      model's compile-only reference): `ae_graphs` measured in the search directory (GR00T: with fallback_random, so
      seeded noise matches eager; the ladder's compiled GR00T rows drew different noise) or in the ladder (LeRobot).
@@ -190,12 +192,21 @@ def main():
         elig = [r for r in rows if not r["_why"]]
         meas = [r for r in rows if r["status"] == "measured"]
         eager = next((r for r in rows if r["rung"] == "eager_fp32" and r["status"] == "measured"), None)
+        # Rule 5 (2026-10-24): the choice must also pass rules 1-4 in its confirmation run. Autotuned kernel choices are
+        # timing-based and differ between processes; a candidate at the edge of the bound can pass once and fail once
+        # (N1.6 vlm_graphs_ae_at: search 2.20e-2, confirmation 2.43e-2, bound 2.21e-2). A candidate whose confirmation
+        # fails is skipped and the next eligible one is taken (and must itself be confirmed).
+        for r in conf_rows:
+            r["_bound"] = bound
+            r["_why"] = eligibility(r)
+        failed_confirm = {r["rung"] for r in conf_rows if r["status"] == "measured" and r["_why"]}
+        for r in elig:
+            if r["rung"] in failed_confirm:
+                r["_why"] = [f"its confirmation run failed: {'; '.join(w for c in conf_rows if c['rung'] == r['rung'] for w in c['_why'])[:160]}"]
+        elig = [r for r in elig if not r["_why"]]
         best = min(elig, key=lambda r: part(r, "e2e_wall")) if elig else None
         confs = [r for r in conf_rows if best is not None and r["rung"] == best["rung"] and r["status"] == "measured"]
         conf = confs[-1] if confs else None
-        if conf is not None:
-            conf["_bound"] = bound
-            conf["_why"] = eligibility(conf)
         report_best = conf if conf is not None and not conf["_why"] else best
         fastest_any = min(meas, key=lambda r: part(r, "e2e_wall")) if meas else None
         own = [r for r in elig if own_path(r)]
