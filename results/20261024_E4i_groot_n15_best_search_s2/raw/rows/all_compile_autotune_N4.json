@@ -1,0 +1,314 @@
+{
+ "model": "groot_n15",
+ "rung": "all_compile_autotune",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "35da568",
+  "files_sha256": {
+   "opt_ladder.py": "840ab90eb794bd29",
+   "rungs.py": "b06f7bcb48699850",
+   "e4i_candidates.py": "ecbedd9b81a902db",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-24T02:56:07Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 67,
+   "oc3": 293
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "39343",
+   "gpu-thermal": "39343",
+   "cpu-thermal": "38187",
+   "soc012-thermal": "37781",
+   "soc345-thermal": "37937"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49
+ },
+ "rung_desc": {
+  "rung": "all_compile_autotune",
+  "label": "vlm_compile + forced GEMM autotuning (Inductor's SM gate overridden; labelled)",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [],
+  "compiled": [
+   "FlowmatchingActionHead.get_action@reduce-overhead+clone",
+   "Eagle2_5_VLForConditionalGeneration.extract_feature@max-autotune-no-cudagraphs",
+   "Qwen3Model.forward@max-autotune-no-cudagraphs"
+  ],
+  "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.7535097119980492,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 5448327040
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 12.13811206817627,
+     "mean_ms": 12.144286098480224,
+     "p5_ms": 12.014304161071777,
+     "p95_ms": 12.232895851135254,
+     "min_ms": 11.967552185058594,
+     "max_ms": 12.82748794555664,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 21.788463592529297,
+     "mean_ms": 21.865200004577638,
+     "p5_ms": 21.657983779907227,
+     "p95_ms": 22.409088134765625,
+     "min_ms": 21.595935821533203,
+     "max_ms": 23.621599197387695,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 19.632527351379395,
+     "mean_ms": 19.655453033447266,
+     "p5_ms": 19.42643165588379,
+     "p95_ms": 19.829055786132812,
+     "min_ms": 19.368576049804688,
+     "max_ms": 21.34454345703125,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 53.99774360656738,
+     "mean_ms": 54.09962223052978,
+     "p5_ms": 53.718849182128906,
+     "p95_ms": 54.8436164855957,
+     "min_ms": 53.52822494506836,
+     "max_ms": 57.194175720214844,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 36.03238296508789,
+     "mean_ms": 36.06670753479004,
+     "p5_ms": 35.939903259277344,
+     "p95_ms": 36.322784423828125,
+     "min_ms": 35.88694381713867,
+     "max_ms": 36.86671829223633,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 91.57452774047852,
+     "mean_ms": 91.6970874786377,
+     "p5_ms": 91.2347183227539,
+     "p95_ms": 92.3634262084961,
+     "min_ms": 91.09603118896484,
+     "max_ms": 96.0689926147461,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 107.84684149984969,
+     "mean_ms": 107.77734433911974,
+     "p5_ms": 101.45943899988197,
+     "p95_ms": 109.86457800026983,
+     "min_ms": 99.86418900371064,
+     "max_ms": 124.05847699847072,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 16.19171776663279,
+     "mean_ms": 16.08025686048204,
+     "p5_ms": 9.194828709354624,
+     "p95_ms": 17.676634731236845,
+     "min_ms": 8.538684808067046,
+     "max_ms": 27.98948438372463,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 37.8448422048823,
+     "mean_ms": 37.701150701271835,
+     "p5_ms": 30.505038937320933,
+     "p95_ms": 39.68431117921136,
+     "min_ms": 29.876541100791655,
+     "max_ms": 50.89546926226467,
+     "n": 100
+    }
+   },
+   "first_call_s": 198.04014991299482,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 5934576640,
+   "control_frequency_hz": 9.270321038075714,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 49.83,
+    "state": "normal",
+    "gpu_C": "47312"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 50.01,
+    "state": "normal",
+    "gpu_C": "50562"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 107.84684149984969,
+     "e2e_p95_over_p5": 1.0828423563469303
+    }
+   ],
+   "timing_stable": true
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  112
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 3577,
+   "unique_graphs": 12
+  },
+  "inductor": {
+   "pattern_matcher_count": 2476,
+   "pattern_matcher_nodes": 2941,
+   "fxgraph_cache_miss": 11,
+   "async_compile_cache_miss": 1022,
+   "generated_module_cache_miss": 520,
+   "generated_module_cache_hit": 11821,
+   "select_algorithm_precompile": 30,
+   "select_algorithm_num_precompiles": 531,
+   "select_algorithm_autotune": 30,
+   "benchmarking.InductorBenchmarker.benchmark": 373,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 963,
+   "extern_calls": 446,
+   "async_compile_cache_hit": 289,
+   "triton_bundler_save_kernel": 9248,
+   "triton_bundler_save_static_autotuner": 8,
+   "coordesc_tuning_bench": 125,
+   "pad_mm_bench": 12,
+   "triton_bundler_load_static_autotuner": 1,
+   "fxgraph_cache_hit": 1,
+   "cudagraph_recorded_non_static_inputs": 3
+  },
+  "graph_break": {
+   "Data-dependent branching\n  Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.\n  Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.\n  Hint: Use `torch.cond` to express dynamic control flow.\n\n  Developer debug context: attempted to jump with TensorVariable()\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html": 4
+  }
+ },
+ "mpad_table": "n/a: linear_mpad not applied",
+ "wall_s": 237.22985458374023
+}

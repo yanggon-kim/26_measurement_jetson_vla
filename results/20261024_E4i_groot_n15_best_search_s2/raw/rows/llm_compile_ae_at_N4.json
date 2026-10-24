@@ -1,0 +1,313 @@
+{
+ "model": "groot_n15",
+ "rung": "llm_compile_ae_at",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "13ba875",
+  "files_sha256": {
+   "opt_ladder.py": "840ab90eb794bd29",
+   "rungs.py": "b06f7bcb48699850",
+   "e4i_candidates.py": "ecbedd9b81a902db",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-24T03:17:04Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 67,
+   "oc3": 293
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "44906",
+   "gpu-thermal": "44906",
+   "cpu-thermal": "43687",
+   "soc012-thermal": "43406",
+   "soc345-thermal": "43593"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49
+ },
+ "rung_desc": {
+  "rung": "llm_compile_ae_at",
+  "label": "GR00T E4i candidate: ae@max-autotune, llm@default + GEMM autotuning on the max-autotune parts only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [],
+  "compiled": [
+   "FlowmatchingActionHead.get_action@max-autotune+clone",
+   "Qwen3Model.forward@default"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.6878857830015477,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 5448327040
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 19.064512252807617,
+     "mean_ms": 19.09542205810547,
+     "p5_ms": 18.970304489135742,
+     "p95_ms": 19.241727828979492,
+     "min_ms": 18.8907527923584,
+     "max_ms": 20.183551788330078,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 23.63539218902588,
+     "mean_ms": 23.709226226806642,
+     "p5_ms": 23.32592010498047,
+     "p95_ms": 24.227008819580078,
+     "min_ms": 23.163616180419922,
+     "max_ms": 26.38707160949707,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 19.769408226013184,
+     "mean_ms": 19.79619197845459,
+     "p5_ms": 19.582048416137695,
+     "p95_ms": 19.9968318939209,
+     "min_ms": 19.517311096191406,
+     "max_ms": 21.395456314086914,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 62.90427207946777,
+     "mean_ms": 63.026831436157224,
+     "p5_ms": 62.503360748291016,
+     "p95_ms": 63.95030212402344,
+     "min_ms": 62.4090576171875,
+     "max_ms": 67.84556579589844,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 35.48740768432617,
+     "mean_ms": 35.5183500289917,
+     "p5_ms": 35.395294189453125,
+     "p95_ms": 35.73779296875,
+     "min_ms": 35.350303649902344,
+     "max_ms": 36.40300750732422,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 99.96971130371094,
+     "mean_ms": 100.13372779846192,
+     "p5_ms": 99.5098876953125,
+     "p95_ms": 100.92963409423828,
+     "min_ms": 99.28144073486328,
+     "max_ms": 108.88790130615234,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 116.78032450436149,
+     "mean_ms": 116.59290740004508,
+     "p5_ms": 112.91903299570549,
+     "p95_ms": 118.65645299258176,
+     "min_ms": 108.11806000128854,
+     "max_ms": 129.3060809985036,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 16.806197018071543,
+     "mean_ms": 16.459179601583163,
+     "p5_ms": 13.471317236428149,
+     "p95_ms": 17.770079740323126,
+     "min_ms": 8.83661926642526,
+     "max_ms": 20.41817969235126,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 38.60937824699795,
+     "mean_ms": 38.26990908614127,
+     "p5_ms": 35.146682684426196,
+     "p95_ms": 39.91267539653927,
+     "min_ms": 30.24592865363229,
+     "max_ms": 46.41235464962665,
+     "n": 100
+    }
+   },
+   "first_call_s": 164.35542399800033,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 5934576640,
+   "control_frequency_hz": 8.569382292303409,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 49.74,
+    "state": "normal",
+    "gpu_C": "49531"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 49.75,
+    "state": "normal",
+    "gpu_C": "52812"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 116.78032450436149,
+     "e2e_p95_over_p5": 1.0508100348069265
+    }
+   ],
+   "timing_stable": true
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  112
+ ],
+ "inductor_counters": {
+  "graph_break": {
+   "Data-dependent branching\n  Explanation: Detected data-dependent branching (e.g. `if my_tensor.sum() > 0:`). Dynamo does not support tracing dynamic control flow.\n  Hint: This graph break is fundamental - it is unlikely that Dynamo will ever be able to trace through your code. Consider finding a workaround.\n  Hint: Use `torch.cond` to express dynamic control flow.\n\n  Developer debug context: attempted to jump with TensorVariable()\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0170.html": 4
+  },
+  "stats": {
+   "calls_captured": 2883,
+   "unique_graphs": 11
+  },
+  "inductor": {
+   "pattern_matcher_count": 1705,
+   "pattern_matcher_nodes": 1981,
+   "fxgraph_cache_miss": 10,
+   "async_compile_cache_miss": 608,
+   "triton_bundler_save_kernel": 5992,
+   "triton_bundler_save_static_autotuner": 7,
+   "benchmarking.InductorBenchmarker.benchmark": 397,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 707,
+   "extern_calls": 232,
+   "async_compile_cache_hit": 260,
+   "pad_mm_bench": 12,
+   "triton_bundler_load_static_autotuner": 1,
+   "fxgraph_cache_hit": 1,
+   "generated_module_cache_miss": 267,
+   "generated_module_cache_hit": 7565,
+   "select_algorithm_precompile": 15,
+   "select_algorithm_num_precompiles": 267,
+   "select_algorithm_autotune": 15,
+   "coordesc_tuning_bench": 212,
+   "cudagraph_recorded_non_static_inputs": 3
+  }
+ },
+ "mpad_table": "n/a: linear_mpad not applied",
+ "wall_s": 203.6556098461151
+}
