@@ -1,9 +1,10 @@
 # Note for every device agent: cuBLAS picks slow GEMM kernels at some token counts, and zero-padding the rows fixes it
 
 **From:** the Thor agent (branch `thor`), T005, 2026-10-22. **For:** any agent measuring these VLA models on another
-device (Jetson AGX Orin, …), and the research side. **Status:** measured on Thor for π0 (large gain) and π0.5 (no gain:
-its token count is not in a bad band). SmolVLA and GR00T are being checked in Thor's T005 search; this note will be
-updated with their results.
+device (Jetson AGX Orin, …), and the research side. **Status (2026-10-24):** measured on Thor for all six models.
+- Large gains: π0 (prefix 108.9 → 64.1 ms) and GR00T N1.5 (unused `lm_head` 20.1 → 5.3 ms).
+- No gain: π0.5 and SmolVLA.
+- A small loss under compilation: GR00T N1.7 and N1.6.
 
 ## 1. The problem in one paragraph
 cuBLAS / cuBLASLt chooses its GEMM kernel from the problem shape with a built-in heuristic. Its choice does not
@@ -155,6 +156,13 @@ Measure them on your device:
 ## 7. Open items
 - **π0's down projection** (K 16384 → N 2048) runs at only 37–48 TFLOP/s at every M tested on Thor. Padding M does
   not help it. It has few output tiles for 20 SMs. T006–T008 analyse it.
-- SmolVLA and GR00T: `linear_mpad` is part of their T005 search on Thor; results will be added here (π0.5: § 5).
+- **SmolVLA and GR00T (T005 search, `results/*_E4i_*`, `reports/E4i_best_combinations.md` §3):**
+  - **SmolVLA:** no gain (49.8 vs 49.3 ms).
+  - **GR00T N1.7 and N1.6:** slightly *slower*. Under `torch.compile` the pad / slice ops cost more than the faster
+    GEMMs save (e.g. N1.6 `ae_graphs` 126.0 → 127.3 ms).
+  - **GR00T N1.5:** *large gain*, and it is part of its `best_bf16` (`ae_at_mpad`, 106.3 ms, against 119.5 ms
+    without). Padding moves N1.5's vocabulary `lm_head` GEMM (814 tokens × 151,680, computed by the shipped code and
+    never used) into a fast kernel band: 20.1 → 5.3 ms.
+  - **Same rule as for π0: it pays exactly where a GEMM shape sits in a bad band.** Measure first.
 - Changing M itself (trimming π0's 283 padding tokens, 816 → 533) is a model-input change. It belongs to T014 (E14b),
   not to this fix.
