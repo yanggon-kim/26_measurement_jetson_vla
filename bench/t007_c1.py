@@ -19,6 +19,8 @@ python bench/t007_c1.py --model pi0 --mode best_bf16 --part vlm_prefix --out res
 """
 import argparse
 import csv
+import glob
+import io
 import json
 import os
 import subprocess
@@ -42,8 +44,15 @@ EXTRA = STALLS + TENSOR_PIPE + ["lts__d_sectors_fill_sysmem.sum", "lts__t_sector
 
 
 def gate(details_csv, n_kernels):
-    rows = list(csv.DictReader(open(details_csv)))
+    """Every requested stall metric present (ncu reports them as <name>.ratio / .pct / .max_rate) and every kernel of the
+    raw page present in the details page."""
+    if details_csv.endswith(".zst"):
+        txt = subprocess.run(["zstd", "-dc", details_csv], capture_output=True, text=True, check=True).stdout
+        rows = list(csv.DictReader(io.StringIO(txt)))
+    else:
+        rows = list(csv.DictReader(open(details_csv)))
     names = {r.get("Metric Name", "") for r in rows}
+    names |= {n.rsplit(".", 1)[0] for n in names}
     stalls = [s for s in STALLS if s in names]
     kernels = {r.get("ID") for r in rows}
     ok = len(stalls) == len(STALLS) and len(kernels) >= max(1, n_kernels)
@@ -70,6 +79,24 @@ def main():
     while True:
         tag = f"{tag0}_s{start}"
         rep = os.path.join(out, "ncu", tag)
+        done = [p for p in (rep + "_details.csv.zst", rep + "_details.csv") if os.path.exists(p)]
+        if done and os.path.exists(os.path.join(out, "raw", f"ncu_{tag}.log")) and \
+                any(os.path.exists(rep + x) for x in ("_raw.csv", "_raw.csv.zst")):
+            # window finished in an earlier run: re-gate it from its saved details page and move on
+            n = json.load(open(os.path.join(out, "raw", f"c1_gate_{tag}.json")))["kernels_in_raw"]
+            g = gate(done[0], n)
+            g["window"] = tag
+            gates.append(g)
+            json.dump(g, open(os.path.join(out, "raw", f"c1_gate_{tag}.json"), "w"), indent=1)
+            total += max(n, 0)
+            k += 1
+            print(f"{a.part} window -s {start}: done earlier, {n} kernels; gate {g['ok']}", flush=True)
+            if n < a.chunk or k >= a.max_windows:
+                break
+            start += a.chunk
+            continue
+        for p in glob.glob(rep + ".ncu-rep") + glob.glob(rep + "_*.csv"):
+            os.remove(p)                                  # partial output of an interrupted window
         cmd = [os.path.join(REPO, "env", "rootdo.sh"), "ncu", "--clock-control", "none", "--target-processes", "application-only", "--set", "full",
                "--metrics", ",".join(EXTRA), "--nvtx", "--nvtx-include", f"{alias}/", "--profile-from-start", "off",
                "-s", str(start), "-c", str(a.chunk), "-f", "-o", rep] + \

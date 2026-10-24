@@ -47,8 +47,8 @@ def one(D, m, mode, a):
     parts, info, e5 = parts_for(m, mode, a.e5_date)
     for part in parts:
         tag = part.replace("[", "").replace("]", "")
-        if glob.glob(os.path.join(out, "ncu", f"{tag}_s*_details.csv*")):
-            continue
+        if os.path.exists(os.path.join(out, "raw", f"c1_{tag}_windows.json")):
+            continue                                      # part complete (t007_c1.py resumes a partial part itself)
         G.wait_for_gate(apply_clocks=True)
         rc = T6R.sh([py, os.path.join(HERE, "t007_c1.py"), "--model", m, "--mode", mode, "--part", part, "--out", out], cwd=cwd)
         if rc:

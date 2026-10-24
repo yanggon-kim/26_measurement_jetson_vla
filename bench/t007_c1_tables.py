@@ -77,7 +77,7 @@ def main():
             joined += dur
             sm = num(d.get("sm__throughput.avg.pct_of_peak_sustained_elapsed"))
             mem = num(d.get("gpu__compute_memory_throughput.avg.pct_of_peak_sustained_elapsed"))
-            stalls = {s.split("stalled_")[1].replace("_per_issue_active", ""): num(d.get(s)) for s in STALLS}
+            stalls = {s.split("stalled_")[1].replace("_per_issue_active", ""): num(d.get(s + ".ratio", d.get(s))) for s in STALLS}
             top = max(stalls, key=stalls.get) if stalls else ""
             if dur and dur < gap_med:
                 verdict = "launch-bound"
