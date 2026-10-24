@@ -17,7 +17,7 @@ closed the task.
 | [T003](tasks/T003_peaks_and_kernel_sweep.md) | peaks → `hw_constants.json` (E1), expert kernel sweep (E2) | P0 | done | 2026-10-22 | 09bb687 | BW 258.2 GB/s, bf16 129.8 TFLOP/s (ridge 503 FLOP/B); counters validated to 0.1 %; π0 expert projections 3.29 ms/step = 1.37× floor; hidden fast memory-path state (×1.26) found |
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | done | 2026-10-22 | ce769e5 | eager AE share of e2e: π0 29.7 %, π0.5 28.2 %, SmolVLA 80.6 %, GR00T N1.7/1.6/1.5 47.8/54.2/37.1 %; GR00T DiT steps 2.1–2.6× their memory floor; shipped GR00T computes unused lm_head logits (3.5–19.9 ms); stock compile ≤ 15 % (π0) |
 | [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | claimed (deliverable 1 done; Part A, π0 N=4 control pending) | 2026-10-25 | 03a983b | best_bf16 confirmed for all six: π0 129.5, π0.5 142.4, SmolVLA 48.9, N1.7 120.4, N1.6 102.9, N1.5 106.3 ms (2026-10-25: π0/π0.5 kv_shallow by the owner's decision, N1.7 vision compiled); expert largest part in 4 of 6 (π0: prefix 55.0 > expert 51.5; π0.5 level) |
-| [T006](tasks/T006_roofline.md) | roofline per part and per kernel (E5 captures, E6, C3) — deliverable 2 | P0 | claimed (best_bf16 done for all six; eager_fp32 pending) | 2026-10-24 | fcccc1f | best_bf16: every part of every model on the memory side of the ridge except N1.5's lm_head (92 % of bf16 peak); expert steps 49–80 % of peak BW; coverage 100 %, 0 join mismatches |
+| [T006](tasks/T006_roofline.md) | roofline per part and per kernel (E5 captures, E6, C3) — deliverable 2 | P0 | claimed (best_bf16 done for all six; eager_fp32 pending) | 2026-10-25 | dbef2e1 | best_bf16: every part of every model on the memory side of the ridge except N1.5's lm_head (92 % of bf16 peak); expert steps 49–80 % of peak BW; coverage 100 %, 0 join mismatches |
 | [T007](tasks/T007_timelines_and_phase_bounds.md) | timelines and phase bounds (E5, E4g C1/C2) — deliverable 3a | P1 | todo | | | |
 | [T008](tasks/T008_kernel_bottlenecks.md) | per-kernel bottlenecks (E5b, E4h, E5c) — deliverable 3b | P1 | todo | | | |
 | [T009](tasks/T009_core_synthesis.md) | core synthesis, Thor vs Orin | P1 | todo | | | |
@@ -68,13 +68,13 @@ and FLOP counters validated (T003): `results/20261022_E1_peak/validation.csv` ·
 | model | mode | latency: vision / prefix / expert (T005) | roofline: parts + every kernel (T006) | bottleneck: ncu per part (T007) + SASS of dominant kernels (T008) |
 |---|---|---|---|---|
 | π0 | `eager_fp32` | [x] `20261022_E4c_pi0_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| π0 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_kvs`: `20261025_E4i_pi0_best_confirm` (+ `20261025_E4i_summary`) | [ ] re-capture at the new `best_bf16` running (`20261024_E6_*` was the stock-code configuration) | [ ] ncu · [ ] SASS |
+| π0 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_kvs`: `20261025_E4i_pi0_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_pi0_best_bf16` | [ ] ncu · [ ] SASS |
 | π0.5 | `eager_fp32` | [x] `20261022_E4c_pi05_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| π0.5 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands_kvs`: `20261025_E4i_pi05_best_confirm` (+ `20261025_E4i_summary`) | [ ] re-capture at the new `best_bf16` running (`20261024_E6_*` was the stock-code configuration) | [ ] ncu · [ ] SASS |
+| π0.5 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands_kvs`: `20261025_E4i_pi05_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_pi05_best_bf16` | [ ] ncu · [ ] SASS |
 | SmolVLA | `eager_fp32` | [x] `20261022_E4c_smolvla_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
 | SmolVLA | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands`: `20261024_E4i_smolvla_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261024_E6_smolvla_best_bf16_v2` | [x] ncu `20261024_E4g_c1_smolvla_best_bf16` · [ ] SASS |
 | GR00T N1.7 | `eager_fp32` | [x] `20261022_E4d_groot_n17_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `best_bf16` | [x] `vis_fa_at_ae_at`: `20261025_E4i_groot_n17_best_confirm` (+ `20261025_E4i_summary`) | [ ] re-capture at the new `best_bf16` running (`20261024_E6_*` was the stock-code configuration) | [ ] ncu · [ ] SASS |
+| GR00T N1.7 | `best_bf16` | [x] `vis_fa_at_ae_at`: `20261025_E4i_groot_n17_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_groot_n17_best_bf16` | [ ] ncu · [ ] SASS |
 | GR00T N1.6 | `eager_fp32` | [x] `20261022_E4d_groot_n16_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.6 | `best_bf16` | [x] `all_compile_ae_vis_at`: `20261024_E4i_groot_n16_best_confirm` (+ `20261024_E4i_summary`) | [x] `20261024_E6_groot_n16_best_bf16` | [ ] ncu · [ ] SASS |
 | GR00T N1.5 | `eager_fp32` | [x] `20261022_E4d_groot_n15_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
