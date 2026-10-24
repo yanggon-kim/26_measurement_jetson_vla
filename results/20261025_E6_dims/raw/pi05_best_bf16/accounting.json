@@ -1,0 +1,167 @@
+{
+ "flops": {
+  "vision": 660529741824,
+  "vlm_prefix": 4028101806080,
+  "ae_step[0]": 38891762176,
+  "ae_step[1]": 38891762176,
+  "ae_step[2]": 38891762176,
+  "ae_step[3]": 38891762176,
+  "ae_step[4]": 38891762176,
+  "ae_step[5]": 38891762176,
+  "ae_step[6]": 38891762176,
+  "ae_step[7]": 38891762176,
+  "ae_step[8]": 38891762176,
+  "ae_step[9]": 38891762176
+ },
+ "flop_ops": {
+  "vision": {
+   "aten.convolution": 1040449536,
+   "aten.addmm": 635028111360,
+   "aten._scaled_dot_product_flash_attention": 24461180928
+  },
+  "vlm_prefix": {
+   "aten.bmm": 138170058752,
+   "aten.mm": 3889931747328
+  },
+  "ae_step[0]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[1]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[2]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[3]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[4]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[5]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[6]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[7]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[8]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  },
+  "ae_step[9]": {
+   "aten.addmm": 243531776,
+   "aten.bmm": 7505523200,
+   "aten.mm": 31142707200
+  }
+ },
+ "flash_attn_flop_formulas_registered": true,
+ "kv_bytes": {
+  "vlm_prefix_kv_cache": 17842176
+ },
+ "calls": {
+  "vision": 3,
+  "vlm_prefix": 1,
+  "ae_step[0]": 1,
+  "ae_step[1]": 1,
+  "ae_step[2]": 1,
+  "ae_step[3]": 1,
+  "ae_step[4]": 1,
+  "ae_step[5]": 1,
+  "ae_step[6]": 1,
+  "ae_step[7]": 1,
+  "ae_step[8]": 1,
+  "ae_step[9]": 1
+ },
+ "param_bytes": {
+  "vision": 830787040,
+  "vlm_prefix": 3963768832,
+  "ae_step[0]": 860196928,
+  "ae_step[1]": 860196928,
+  "ae_step[2]": 860196928,
+  "ae_step[3]": 860196928,
+  "ae_step[4]": 860196928,
+  "ae_step[5]": 860196928,
+  "ae_step[6]": 860196928,
+  "ae_step[7]": 860196928,
+  "ae_step[8]": 860196928,
+  "ae_step[9]": 860196928
+ },
+ "param_bytes_by_dtype": {
+  "vision": {
+   "torch.bfloat16": 830787040
+  },
+  "vlm_prefix": {
+   "torch.bfloat16": 3963768832
+  },
+  "ae_step[0]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[1]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[2]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[3]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[4]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[5]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[6]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[7]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[8]": {
+   "torch.bfloat16": 860196928
+  },
+  "ae_step[9]": {
+   "torch.bfloat16": 860196928
+  }
+ },
+ "N": 10,
+ "model": "pi05",
+ "mode": "best_bf16",
+ "rung": "bf16_mpad_graphs_ae_at_islands_kvs",
+ "preps": [
+  "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only)",
+  "linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 36 Linear modules padded; shapes padded: {'M=968 K=2048 N=2048 torch.bfloat16': {'pad_to': 1144, 'ms_at_M': nan, 'ms_at_pad': nan}}",
+  "bf16_islands: 41 fp32 Linear modules (474.7 MB) -> bf16, input cast to bf16, output cast back",
+  "lerobot.policies.pi05.modeling_pi05.copy.deepcopy(past_key_values) -> shallow cache copy (prefix K/V tensors shared, never written)"
+ ],
+ "tokens": {
+  "prefix_tokens_P": 968,
+  "prefix_tokens_valid": 574,
+  "suffix_tokens_S": 50,
+  "suffix_tokens_valid": 50,
+  "n_images": 3,
+  "language_tokens": 200,
+  "language_tokens_valid": 62,
+  "chunk_size": 50
+ }
+}
