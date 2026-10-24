@@ -8,31 +8,31 @@ Definitions (as `reference/orin/bench/parse_nsys.py`): **wall** = the GPU-projec
 
 | model | region | wall ms (nsys) | kernel union ms | event ms (T005) | idle (nsys) | idle vs event | kernels | graph nodes | gap median µs | CPU-starved gap ms | intra-graph gap ms | queued gap ms | starved share of gaps |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| π0 | `vision` | 21.08 | 20.45 | 21.06 | 3.0 % | 2.9 % | 837 | 834 | 0.1 | 0.536 | 0.064 | 0.008 | 88.1 % |
-| π0 | `vlm_prefix` | 59.57 | 58.56 | 63.08 | 1.7 % | 7.2 % | 328 | 328 | 0.1 | 0.000 | 0.021 | 0.000 | 0.0 % |
-| π0 | `ae_step` | 7.28 | 4.50 | 6.19 | 38.1 % | 27.2 % | 325 | 324 | 0.0 | 2.677 | 0.016 | 0.000 | 99.4 % |
-| π0 | `inference` | 162.86 | 124.19 | 149.35 | 23.7 % | 16.8 % | 4,473 | 4,402 | 0.0 | 37.957 | 0.242 | 0.162 | 98.9 % |
-| | *π0 launching thread:* `vision` CPU range 1.74 ms, CUDA API 0.62 ms in 11 calls (1 graph launches), on-CPU 100 %; `vlm_prefix` CPU range 2.43 ms, CUDA API 0.98 ms in 48 calls (1 graph launches), on-CPU 100 %; `ae_step` CPU range 3.52 ms, CUDA API 0.78 ms in 52 calls (2 graph launches), on-CPU 100 %; `inference` CPU range 163.60 ms, CUDA API 125.80 ms in 758 calls (24 graph launches), on-CPU 31 % | | | | | | | | | | | | |
-| | *source: `results/20261024_E5_pi0_best_bf16_timeline`* | | | | | | | | | | | | |
-| π0.5 | `vision` | 21.32 | 20.72 | 21.07 | 2.8 % | 1.6 % | 837 | 834 | 0.1 | 0.509 | 0.059 | 0.006 | 88.6 % |
-| π0.5 | `vlm_prefix` | 62.00 | 61.06 | 65.94 | 1.5 % | 7.4 % | 292 | 292 | 0.1 | 0.000 | 0.015 | 0.000 | 0.0 % |
-| π0.5 | `ae_step` | 8.22 | 5.56 | 7.39 | 32.3 % | 24.7 % | 375 | 374 | 0.0 | 2.583 | 0.014 | 0.000 | 99.5 % |
-| π0.5 | `inference` | 174.21 | 137.59 | 164.39 | 21.0 % | 16.3 % | 4,931 | 4,866 | 0.0 | 33.896 | 0.215 | 0.143 | 99.0 % |
-| | *π0.5 launching thread:* `vision` CPU range 1.25 ms, CUDA API 0.48 ms in 11 calls (1 graph launches), on-CPU 100 %; `vlm_prefix` CPU range 1.92 ms, CUDA API 0.84 ms in 48 calls (1 graph launches), on-CPU 100 %; `ae_step` CPU range 3.28 ms, CUDA API 0.78 ms in 51 calls (2 graph launches), on-CPU 100 %; `inference` CPU range 175.43 ms, CUDA API 141.47 ms in 735 calls (24 graph launches), on-CPU 26 % | | | | | | | | | | | | |
-| | *source: `results/20261024_E5_pi05_best_bf16_timeline`* | | | | | | | | | | | | |
+| π0 | `vision` | 20.47 | 19.85 | 20.56 | 3.0 % | 3.4 % | 837 | 834 | 0.1 | 0.536 | 0.057 | 0.007 | 89.3 % |
+| π0 | `vlm_prefix` | 55.83 | 54.90 | 54.97 | 1.7 % | 0.1 % | 328 | 328 | 0.1 | 0.000 | 0.021 | 0.000 | 0.0 % |
+| π0 | `ae_step` | 5.40 | 4.70 | 5.07 | 13.0 % | 7.4 % | 361 | 360 | 0.0 | 0.616 | 0.015 | 0.000 | 97.6 % |
+| π0 | `inference` | 138.88 | 121.89 | 129.51 | 12.2 % | 5.9 % | 4,833 | 4,762 | 0.0 | 16.326 | 0.227 | 0.146 | 97.8 % |
+| | *π0 launching thread:* `vision` CPU range 1.16 ms, CUDA API 0.45 ms in 11 calls (1 graph launches), on-CPU 100 %; `vlm_prefix` CPU range 2.13 ms, CUDA API 0.84 ms in 48 calls (1 graph launches), on-CPU 100 %; `ae_step` CPU range 1.28 ms, CUDA API 0.50 ms in 16 calls (2 graph launches), on-CPU 100 %; `inference` CPU range 139.71 ms, CUDA API 123.50 ms in 398 calls (24 graph launches), on-CPU 18 % | | | | | | | | | | | | |
+| | *source: `results/20261025_E5_pi0_best_bf16_timeline`* | | | | | | | | | | | | |
+| π0.5 | `vision` | 21.10 | 20.48 | 20.33 | 2.9 % | -0.7 % | 837 | 834 | 0.1 | 0.527 | 0.063 | 0.008 | 88.1 % |
+| π0.5 | `vlm_prefix` | 61.25 | 60.31 | 59.98 | 1.5 % | -0.5 % | 328 | 328 | 0.0 | 0.000 | 0.016 | 0.000 | 0.0 % |
+| π0.5 | `ae_step` | 6.36 | 5.47 | 5.89 | 13.9 % | 7.0 % | 339 | 338 | 0.0 | 0.814 | 0.013 | 0.000 | 98.4 % |
+| π0.5 | `inference` | 154.77 | 135.70 | 142.44 | 12.3 % | 4.7 % | 4,607 | 4,542 | 0.0 | 16.337 | 0.209 | 0.153 | 97.8 % |
+| | *π0.5 launching thread:* `vision` CPU range 1.58 ms, CUDA API 0.58 ms in 11 calls (1 graph launches), on-CPU 100 %; `vlm_prefix` CPU range 2.16 ms, CUDA API 0.86 ms in 48 calls (1 graph launches), on-CPU 100 %; `ae_step` CPU range 1.49 ms, CUDA API 0.53 ms in 15 calls (2 graph launches), on-CPU 100 %; `inference` CPU range 155.97 ms, CUDA API 136.27 ms in 375 calls (24 graph launches), on-CPU 19 % | | | | | | | | | | | | |
+| | *source: `results/20261025_E5_pi05_best_bf16_timeline`* | | | | | | | | | | | | |
 | SmolVLA | `vision` | 15.22 | 14.72 | 15.21 | 3.3 % | 3.3 % | 294 | 292 | 0.0 | 0.449 | 0.048 | 0.000 | 90.0 % |
 | SmolVLA | `vlm_prefix` | 4.39 | 3.71 | 4.29 | 15.5 % | 13.4 % | 360 | 360 | 0.0 | 0.000 | 0.020 | 0.000 | 0.0 % |
 | SmolVLA | `ae_step` | 2.79 | 2.19 | 2.54 | 21.4 % | 13.7 % | 283 | 283 | 0.0 | 0.000 | 0.014 | 0.000 | 0.0 % |
 | SmolVLA | `inference` | 57.17 | 40.53 | 48.90 | 29.1 % | 17.1 % | 3,537 | 3,482 | 0.0 | 13.489 | 0.209 | 0.067 | 98.0 % |
 | | *SmolVLA launching thread:* `vision` CPU range 0.86 ms, CUDA API 0.28 ms in 11 calls (1 graph launches), on-CPU 100 %; `vlm_prefix` CPU range 1.87 ms, CUDA API 0.73 ms in 44 calls (1 graph launches), on-CPU 100 %; `ae_step` CPU range 0.95 ms, CUDA API 0.53 ms in 43 calls (1 graph launches), on-CPU 100 %; `inference` CPU range 57.93 ms, CUDA API 46.17 ms in 647 calls (13 graph launches), on-CPU 34 % | | | | | | | | | | | | |
 | | *source: `results/20261024_E5_smolvla_best_bf16_timeline`* | | | | | | | | | | | | |
-| GR00T N1.7 | `vision` | 33.42 | 19.76 | 29.47 | 40.8 % | 32.9 % | 798 | 0 | 2.5 | 12.528 | 0.000 | 1.121 | 91.8 % |
-| GR00T N1.7 | `vlm_prefix` | 30.77 | 16.49 | 26.07 | 46.4 % | 36.8 % | 1,224 | 0 | 3.1 | 12.884 | 0.000 | 1.392 | 90.2 % |
-| GR00T N1.7 | `backbone_lm_head` | 3.27 | 3.27 | 3.32 | 0.0 % | 1.4 % | 1 | 0 | — | 0.000 | 0.000 | 0.000 | — |
-| GR00T N1.7 | `ae_total` | 53.41 | 51.63 | 51.14 | 3.3 % | -1.0 % | 1,440 | 1,438 | 0.0 | 1.641 | 0.083 | 0.000 | 95.2 % |
-| GR00T N1.7 | `inference` | 126.42 | 91.43 | 133.87 | 27.7 % | 31.7 % | 3,518 | 1,438 | 1.8 | 30.147 | 0.083 | 2.546 | 92.0 % |
-| | *GR00T N1.7 launching thread:* `vision` CPU range 33.71 ms, CUDA API 11.90 ms in 1936 calls (0 graph launches), on-CPU 88 %; `vlm_prefix` CPU range 31.19 ms, CUDA API 9.20 ms in 2711 calls (0 graph launches), on-CPU 97 %; `backbone_lm_head` CPU range 0.10 ms, CUDA API 0.02 ms in 9 calls (0 graph launches), on-CPU 100 %; `ae_total` CPU range 4.77 ms, CUDA API 1.68 ms in 21 calls (1 graph launches), on-CPU 100 %; `inference` CPU range 149.39 ms, CUDA API 75.97 ms in 4876 calls (1 graph launches), on-CPU 59 % | | | | | | | | | | | | |
-| | *source: `results/20261024_E5_groot_n17_best_bf16_timeline`* | | | | | | | | | | | | |
+| GR00T N1.7 | `vision` | 20.30 | 12.71 | 19.22 | 37.4 % | 33.9 % | 340 | 0 | 2.6 | 7.230 | 0.000 | 0.355 | 95.3 % |
+| GR00T N1.7 | `vlm_prefix` | 29.61 | 16.15 | 25.07 | 45.5 % | 35.6 % | 1,224 | 0 | 3.0 | 11.945 | 0.000 | 1.512 | 88.8 % |
+| GR00T N1.7 | `backbone_lm_head` | 3.25 | 3.25 | 3.26 | 0.0 % | 0.2 % | 1 | 0 | — | 0.000 | 0.000 | 0.000 | — |
+| GR00T N1.7 | `ae_total` | 52.40 | 51.21 | 50.73 | 2.3 % | -1.0 % | 1,332 | 1,330 | 0.0 | 1.072 | 0.070 | 0.003 | 93.6 % |
+| GR00T N1.7 | `inference` | 111.13 | 83.58 | 120.39 | 24.8 % | 30.6 % | 2,952 | 1,330 | 1.8 | 23.475 | 0.070 | 1.931 | 92.1 % |
+| | *GR00T N1.7 launching thread:* `vision` CPU range 20.91 ms, CUDA API 10.02 ms in 795 calls (0 graph launches), on-CPU 67 %; `vlm_prefix` CPU range 29.96 ms, CUDA API 9.12 ms in 2711 calls (0 graph launches), on-CPU 96 %; `backbone_lm_head` CPU range 0.11 ms, CUDA API 0.02 ms in 9 calls (0 graph launches), on-CPU 100 %; `ae_total` CPU range 4.27 ms, CUDA API 1.65 ms in 21 calls (1 graph launches), on-CPU 100 %; `inference` CPU range 133.71 ms, CUDA API 73.52 ms in 3735 calls (1 graph launches), on-CPU 51 % | | | | | | | | | | | | |
+| | *source: `results/20261025_E5_groot_n17_best_bf16_timeline`* | | | | | | | | | | | | |
 | GR00T N1.6 | `vision` | 18.84 | 14.43 | 17.25 | 23.4 % | 16.3 % | 386 | 0 | 2.4 | 4.146 | 0.000 | 0.263 | 93.9 % |
 | GR00T N1.6 | `vlm_prefix` | 15.88 | 10.38 | 15.02 | 34.6 % | 30.9 % | 248 | 0 | 2.3 | 5.308 | 0.000 | 0.190 | 96.5 % |
 | GR00T N1.6 | `backbone_lm_head` | 3.59 | 3.59 | 4.14 | 0.0 % | 13.3 % | 1 | 0 | — | 0.000 | 0.000 | 0.000 | — |
@@ -52,23 +52,23 @@ Kernel classes by kernel time (best_bf16; rules in `bench/t007_timeline.py`):
 
 | model | region | GEMM | attention | norm | elementwise | copy | other |
 |---|---|---|---|---|---|---|---|
-| π0 | `vision` | 86.9 % | 7.4 % | 0.2 % | 5.5 % | 0.0 % | 0.0 % |
-| π0 | `vlm_prefix` | 80.9 % | 2.0 % | 3.5 % | 12.4 % | 1.2 % | 0.0 % |
-| π0 | `ae_step` | 79.6 % | 9.3 % | 1.7 % | 6.9 % | 2.3 % | 0.1 % |
-| π0 | `inference` | 81.3 % | 5.5 % | 2.3 % | 9.4 % | 1.4 % | 0.1 % |
-| π0.5 | `vision` | 87.4 % | 7.3 % | 0.2 % | 5.1 % | 0.0 % | 0.0 % |
-| π0.5 | `vlm_prefix` | 79.9 % | 2.6 % | 3.0 % | 13.8 % | 0.6 % | 0.0 % |
-| π0.5 | `ae_step` | 82.5 % | 6.5 % | 0.0 % | 9.0 % | 1.9 % | 0.1 % |
-| π0.5 | `inference` | 82.0 % | 4.9 % | 1.4 % | 10.6 % | 1.0 % | 0.1 % |
+| π0 | `vision` | 86.6 % | 7.6 % | 0.2 % | 5.6 % | 0.0 % | 0.0 % |
+| π0 | `vlm_prefix` | 79.9 % | 2.1 % | 3.7 % | 12.9 % | 1.3 % | 0.0 % |
+| π0 | `ae_step` | 78.0 % | 9.7 % | 0.4 % | 9.5 % | 2.3 % | 0.1 % |
+| π0 | `inference` | 80.1 % | 5.9 % | 1.9 % | 10.5 % | 1.5 % | 0.1 % |
+| π0.5 | `vision` | 87.3 % | 7.4 % | 0.2 % | 5.1 % | 0.0 % | 0.0 % |
+| π0.5 | `vlm_prefix` | 78.8 % | 2.6 % | 3.8 % | 13.6 % | 1.2 % | 0.0 % |
+| π0.5 | `ae_step` | 83.2 % | 7.1 % | 0.0 % | 7.7 % | 1.9 % | 0.1 % |
+| π0.5 | `inference` | 81.7 % | 5.2 % | 1.7 % | 10.0 % | 1.3 % | 0.1 % |
 | SmolVLA | `vision` | 42.2 % | 51.1 % | 0.6 % | 6.0 % | 0.0 % | 0.1 % |
 | SmolVLA | `vlm_prefix` | 57.3 % | 4.2 % | 5.2 % | 14.4 % | 4.4 % | 14.4 % |
 | SmolVLA | `ae_step` | 75.0 % | 8.0 % | 2.4 % | 9.5 % | 4.5 % | 0.6 % |
 | SmolVLA | `inference` | 61.0 % | 23.3 % | 2.0 % | 8.9 % | 2.9 % | 2.0 % |
-| GR00T N1.7 | `vision` | 43.5 % | 5.0 % | 6.7 % | 35.0 % | 8.8 % | 1.0 % |
-| GR00T N1.7 | `vlm_prefix` | 52.9 % | 3.2 % | 0.0 % | 31.3 % | 8.0 % | 4.6 % |
+| GR00T N1.7 | `vision` | 75.7 % | 10.1 % | 0.5 % | 10.0 % | 0.2 % | 3.7 % |
+| GR00T N1.7 | `vlm_prefix` | 52.3 % | 3.3 % | 0.0 % | 31.8 % | 8.1 % | 4.5 % |
 | GR00T N1.7 | `backbone_lm_head` | 100.0 % | 0.0 % | 0.0 % | 0.0 % | 0.0 % | 0.0 % |
-| GR00T N1.7 | `ae_total` | 93.3 % | 5.4 % | 0.0 % | 1.3 % | 0.0 % | 0.0 % |
-| GR00T N1.7 | `inference` | 75.2 % | 4.7 % | 1.5 % | 14.1 % | 3.4 % | 1.2 % |
+| GR00T N1.7 | `ae_total` | 94.1 % | 5.4 % | 0.0 % | 0.5 % | 0.0 % | 0.0 % |
+| GR00T N1.7 | `inference` | 83.1 % | 5.5 % | 0.1 % | 8.1 % | 1.6 % | 1.6 % |
 | GR00T N1.6 | `vision` | 61.3 % | 15.0 % | 7.7 % | 12.9 % | 0.4 % | 2.7 % |
 | GR00T N1.6 | `vlm_prefix` | 85.9 % | 5.0 % | 4.1 % | 4.7 % | 0.0 % | 0.3 % |
 | GR00T N1.6 | `backbone_lm_head` | 100.0 % | 0.0 % | 0.0 % | 0.0 % | 0.0 % | 0.0 % |
