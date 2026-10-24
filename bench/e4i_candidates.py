@@ -130,6 +130,38 @@ def prep_vis_fa_static(adapter):
     return "vision flash-attn varlen: max_seqlen = total vision tokens (static upper bound) instead of a CUDA tensor"
 
 
+def prep_kv_shallow(adapter):
+    """π0 / π0.5: replace the per-step copy.deepcopy(past_key_values) in denoise_step by a shallow copy (a new cache and
+    new layer objects pointing at the same prefix K/V tensors).
+
+    LeRobot copies the whole prefix KV cache at every denoising step so the expert's appended K/V never reach the shared
+    prefix cache. transformers' DynamicLayer.update rebinds self.keys = torch.cat([...]) and never writes the prefix
+    tensors in place, so the shallow copy gives the same arithmetic; the deepcopy cost a graph break, a ~15 MB device copy
+    and ~2.7 ms of host time per step (results/20261025_E4_cpu_overhead_diag: bitwise-equal actions, π0 expert
+    64.7 -> 50.1 ms). A code-level variant (protocol §16), put into best_bf16 by the owner's decision of 2026-10-25."""
+    import copy as _copy
+    import importlib
+    import rungs as RG
+    if adapter.name not in ("pi0", "pi05"):
+        raise RG.NotApplicable("kv_shallow applies to π0 / π0.5 (denoise_step deep-copies the prefix KV cache)")
+    mod = importlib.import_module(f"lerobot.policies.{adapter.name}.modeling_{adapter.name}")
+
+    class _ShallowCopy:
+        @staticmethod
+        def deepcopy(x, memo=None):
+            if hasattr(x, "layers"):
+                n = _copy.copy(x)
+                n.layers = [_copy.copy(layer) for layer in x.layers]
+                return n
+            return _copy.deepcopy(x, memo)
+
+        def __getattr__(self, k):
+            return getattr(_copy, k)
+
+    mod.copy = _ShallowCopy()
+    return f"{mod.__name__}.copy.deepcopy(past_key_values) -> shallow cache copy (prefix K/V tensors shared, never written)"
+
+
 def candidates():
     """Candidate rungs (registered in rungs.EXTRA by rungs.py). Built on the ladder's best LeRobot configuration
     (bf16 casts + graphs on the expert, vision and prefix) and its prefix-compile-without-graphs sibling."""
@@ -175,6 +207,12 @@ def candidates():
         out.append(RG._r(name, "bf16 casts (no mpad) + graphs everywhere + remaining fp32 Linears to bf16"
                          + ("; GEMM autotuning on the expert only" if at else ""), "lerobot", "high", tg,
                          ["eager_bf16", "bf16_islands"], autotune=at))
+    # 2026-10-25, the owner's decision: kv_shallow (no per-step deepcopy of the prefix KV cache) on π0 / π0.5's leaders
+    by = {r["key"]: r for r in out}
+    for base in ("bf16_mpad_graphs_ae_at", "bf16_mpad_graphs_ae_at_islands", "bf16_graphs_ae_at_islands"):
+        b = by[base]
+        out.append(RG._r(base + "_kvs", b["label"] + " + kv_shallow (no per-step deepcopy of the prefix KV cache)", "lerobot",
+                         "high", b["targets"], b["preps"] + ["kv_shallow"], autotune=b["autotune"], only=["pi0", "pi05"]))
     out.append(RG._r("bf16_mpad_whole_graphs", "bf16 casts + mpad + sample_actions compiled with graphs (e2e only)",
                      "lerobot", "high", [("whole", G, False)], ["eager_bf16", "linear_mpad"], regions=False))
     out.append(RG._r("bf16_mpad_whole_graphs_autotune", "bf16_mpad_whole_graphs + forced GEMM autotuning (e2e only)",

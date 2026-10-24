@@ -420,6 +420,9 @@ def apply_rung(adapter, key):
         elif p == "no_attn_fusion":
             import e4i_candidates as EC
             desc["preps"].append(EC.prep_no_attn_fusion(adapter))
+        elif p == "kv_shallow":
+            import e4i_candidates as EC
+            desc["preps"].append(EC.prep_kv_shallow(adapter))
         elif p == "vis_fa_static":
             import e4i_candidates as EC
             desc["preps"].append(EC.prep_vis_fa_static(adapter))
