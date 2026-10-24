@@ -4,12 +4,13 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**T005 paused by the owner (2026-10-23 ≈ 14:40 UTC): another user is running work on the GPU (96 % utilisation, not
-ours). No job of ours is running.** The resume point, current leaders and the exact restart commands are in
-`PROGRESS.md` under "T005 resume point". Done since the last pause: the N1.5 divergence diagnosis, `bf16_islands`,
-per-part autotuning, the stability guard, E4i stage 2 for π0 / π0.5 / SmolVLA / N1.7, and the T006 tooling. Next: the
-N1.6 / N1.5 stage 2 (after the gate), `best_bf16` + confirmation runs, the π0 N = 4 control, Part A, the reports, the
-review, then T006.
+**Resumed 2026-10-24 by the owner (GPU idle, gate passed).** Running: E4i stage 2 for GR00T N1.6 / N1.5 (fresh 20261024
+directories; N1.6's interrupted rows are in `scratch/t005/suspect/`, unused) and the re-run of N1.7's disturbed
+candidate. **The owner's order (2026-10-24):** first the strong optimised version and its latency breakdown
+(`best_bf16` chosen, confirmed, E4d generated); next the ncu work for those optimised configurations (T006 roofline
+counters, T007 C1 bottleneck counters, `best_bf16` for all six models); then the rest step by step (T005's π0 N = 4
+control, Part A, review and close; the `eager_fp32` ncu work; T008 → T015). This puts parts of T006 / T007 before
+T005's close. It is the owner's explicit priority, and T006 / T007 need only `best_bf16.json` from T005.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -92,3 +93,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-22 T005: pi0 prefix slower than pi0.5's traced to a cuBLASLt kernel-choice cliff at M = 816 (gate/up GEMM 3.8x slower); fixed by linear_mpad (bit-identical); note for other agents in reports/NOTE_gemm_shape_cliff_m_padding.md.
 - 2026-10-22 T005: six ladders done; E4i stage 1 done for all six models (N1.5 9/10); attention-backend switches (SDPA / flash-attn) all slower than Inductor's own fusion of eager attention; forced autotuning helps experts, hurts vision/prefix; paused by the owner, resume point in PROGRESS.md.
 - 2026-10-23 T005 resumed: N1.5 divergence diagnosed (vision compile changes its output 4.6 %; no graph bug); bf16_islands (π0.5 466 MB of fp32 adaRMS weights) and expert-only autotuning take π0.5 183.1 -> 163.2 ms and π0 157.8 -> 148.7 ms; a candidate disturbed by another user's GPU job led to the stability guard; paused again by the owner (shared GPU in use).
+- 2026-10-24 Resumed by the owner; order: best_bf16 + breakdown, then ncu for best_bf16 (T006/T007), then the rest.
