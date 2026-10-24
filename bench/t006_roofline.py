@@ -158,12 +158,19 @@ def main():
         F = acc["flops"].get(part, 0)
         by = acc["param_bytes_by_dtype"].get(part, {})
         B = acc["param_bytes"].get(part, 0) + (sum(acc["kv_bytes"].values()) if part.startswith(("ae_step", "ae_total")) else 0)
+        steps = sorted(k for k in acc["param_bytes"] if k.startswith("ae_step["))
+        if part == "ae_total" and steps:
+            # Fix 2026-10-25: param_bytes["ae_total"] counts each parameter once, but the expert's weights (1.1-2.2 GB) do
+            # not fit in L2 and are streamed from DRAM at EVERY denoising step. The floor reads them once per step; the
+            # parameters outside the steps (state / action encoders) once; the hand-over (VLM features) once per step.
+            once = acc["param_bytes"]["ae_total"] - acc["param_bytes"][steps[0]]
+            B = sum(acc["param_bytes"][s] for s in steps) + once + len(steps) * sum(acc["kv_bytes"].values())
         dom = max(by, key=by.get) if by else "torch.bfloat16"
         key = {"torch.bfloat16": "bf16", "torch.float16": "fp16", "torch.float32": "fp32"}.get(dom, "bf16")
         peak = tf[key]
         fm, fc = B / (bw * 1e9) * 1e3, F / (peak * 1e12) * 1e3
         ms = region_ms.get(part)
-        prow.append({"model": a.model, "mode": a.mode, "part": part, "source": "analytic (parameters touched + hand-over; "
+        prow.append({"model": a.model, "mode": a.mode, "part": part, "source": "analytic (parameters touched per step + hand-over; "
                      "FlopCounterMode)", "flops": F, "dram_bytes": B, "intensity": round(F / B, 3) if B else "",
                      "time_ms": ms or "", "achieved_TFLOPps": round(F / ms / 1e9, 4) if ms else "",
                      "achieved_GBps": round(B / ms / 1e6, 3) if ms else "", "dominant_dtype": key, "ceiling_TFLOPps": peak,
