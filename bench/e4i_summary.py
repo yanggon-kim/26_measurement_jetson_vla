@@ -40,7 +40,7 @@ REL_L2_MAX, FP32_MAX = 1e-2, 0.01
 
 def dirs_for(m):
     pats = ([f"results/*_E4c_{m}_opt_ladder"] if not m.startswith("groot") else [f"results/*_E4d_{m}_ladder"]) + \
-        [f"results/*_E4i_{m}_best_search*", f"results/*_E4i_{m}_rerun*", f"results/*_E4i_{m}_best_confirm"]
+        [f"results/*_E4i_{m}_best_search*", f"results/*_E4i_{m}_rerun*", f"results/*_E4i_{m}_best_confirm*"]
     return [d for p in pats for d in sorted(glob.glob(os.path.join(REPO, p)))]
 
 

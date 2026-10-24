@@ -1,0 +1,406 @@
+{
+ "model": "groot_n15",
+ "rung": "ae_at_mpad",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "25494bc",
+  "files_sha256": {
+   "opt_ladder.py": "840ab90eb794bd29",
+   "rungs.py": "b06f7bcb48699850",
+   "e4i_candidates.py": "ecbedd9b81a902db",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-24T07:49:57Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 38,
+   "oc3": 347
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "45906",
+   "gpu-thermal": "45906",
+   "cpu-thermal": "44781",
+   "soc012-thermal": "44500",
+   "soc345-thermal": "44718"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49
+ },
+ "rung_desc": {
+  "rung": "ae_at_mpad",
+  "label": "GR00T E4i candidate: ae@max-autotune + linear_mpad + GEMM autotuning on the max-autotune parts only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "linear_mpad(backbone+action_head): 57 Linear modules padded; shapes padded: {'M=814 K=2048 N=6144 torch.bfloat16': {'pad_to': 974, 'ms_at_M': 0.2099, 'ms_at_pad': 0.1975}, 'M=814 K=2048 N=151680 torch.bfloat16': {'pad_to': 974, 'ms_at_M': 16.8761, 'ms_at_pad': 5.5219}, 'M=814 K=2048 N=2048 torch.float32': {'pad_to': 910, 'ms_at_M': 0.1358, 'ms_at_pad': 0.1224}, 'M=814 K=8192 N=2048 torch.bfloat16': {'pad_to': 974, 'ms_at_M': 0.3449, 'ms_at_pad': 0.3005}, 'M=49 K=6144 N=1536 torch.bfloat16': {'pad_to': 145, 'ms_at_M': 0.0408, 'ms_at_pad': 0.0381}}"
+  ],
+  "compiled": [
+   "FlowmatchingActionHead.get_action@max-autotune+clone"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.7206588580011157,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 5448327040
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 18.562031745910645,
+     "mean_ms": 18.571075592041016,
+     "p5_ms": 18.43494415283203,
+     "p95_ms": 18.693119049072266,
+     "min_ms": 18.383424758911133,
+     "max_ms": 18.886335372924805,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 26.570448875427246,
+     "mean_ms": 26.56405599594116,
+     "p5_ms": 26.481983184814453,
+     "p95_ms": 26.643999099731445,
+     "min_ms": 26.453344345092773,
+     "max_ms": 26.670623779296875,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 5.321727991104126,
+     "mean_ms": 5.353770885467529,
+     "p5_ms": 5.317887783050537,
+     "p95_ms": 5.354559898376465,
+     "min_ms": 5.317440032958984,
+     "max_ms": 7.5735039710998535,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 50.87985610961914,
+     "mean_ms": 50.90621265411377,
+     "p5_ms": 50.74892807006836,
+     "p95_ms": 51.03007888793945,
+     "min_ms": 50.68627166748047,
+     "max_ms": 53.186241149902344,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 36.75155067443848,
+     "mean_ms": 36.75962230682373,
+     "p5_ms": 36.67852783203125,
+     "p95_ms": 36.84534454345703,
+     "min_ms": 36.62815856933594,
+     "max_ms": 37.29993438720703,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 89.09433364868164,
+     "mean_ms": 89.08854454040528,
+     "p5_ms": 88.79564666748047,
+     "p95_ms": 89.28511810302734,
+     "min_ms": 88.6957778930664,
+     "max_ms": 91.6559066772461,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 105.43520949977392,
+     "mean_ms": 103.02359067994985,
+     "p5_ms": 97.73938400030602,
+     "p95_ms": 106.24798599928909,
+     "min_ms": 97.49915599968517,
+     "max_ms": 108.6836829999811,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 16.29005259805126,
+     "mean_ms": 13.935046139544575,
+     "p5_ms": 8.890003737760708,
+     "p95_ms": 17.210419879775145,
+     "min_ms": 8.803378106618766,
+     "max_ms": 18.509689808735857,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 23.557210365514038,
+     "mean_ms": 21.12883678514394,
+     "p5_ms": 15.855750071743387,
+     "p95_ms": 24.472916828017333,
+     "min_ms": 15.76798725273693,
+     "max_ms": 26.18387754954165,
+     "n": 100
+    }
+   },
+   "first_call_s": 156.5190277820002,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 5986800640,
+   "control_frequency_hz": 9.697734271511461,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 47.75,
+    "state": "normal",
+    "gpu_C": "54562"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 47.97,
+    "state": "normal",
+    "gpu_C": "58468"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 105.43520949977392,
+     "e2e_p95_over_p5": 1.0870539761019613
+    }
+   ],
+   "timing_stable": true
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  112
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 3098,
+   "unique_graphs": 1
+  },
+  "inductor": {
+   "pattern_matcher_count": 1692,
+   "pattern_matcher_nodes": 1964,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 695,
+   "pad_mm_bench": 9,
+   "fxgraph_cache_miss": 1,
+   "generated_module_cache_miss": 265,
+   "async_compile_cache_miss": 596,
+   "generated_module_cache_hit": 7551,
+   "select_algorithm_precompile": 15,
+   "select_algorithm_num_precompiles": 268,
+   "select_algorithm_autotune": 15,
+   "benchmarking.InductorBenchmarker.benchmark": 390,
+   "coordesc_tuning_bench": 221,
+   "async_compile_cache_hit": 256,
+   "extern_calls": 222,
+   "triton_bundler_save_kernel": 5768,
+   "triton_bundler_save_static_autotuner": 1,
+   "cudagraph_recorded_non_static_inputs": 3
+  },
+  "graph_break": {}
+ },
+ "mpad_table": {
+  "M=768 K=1152 N=1152 torch.float32": {
+   "pad_to": 768,
+   "ms_at_M": 0.0557,
+   "ms_at_pad": 0.0557
+  },
+  "M=768 K=1152 N=1152 torch.bfloat16": {
+   "pad_to": 768,
+   "ms_at_M": 0.0336,
+   "ms_at_pad": 0.0336
+  },
+  "M=768 K=1152 N=4304 torch.float32": {
+   "pad_to": 768,
+   "ms_at_M": 0.1636,
+   "ms_at_pad": 0.1636
+  },
+  "M=768 K=4304 N=1152 torch.bfloat16": {
+   "pad_to": 768,
+   "ms_at_M": 0.0763,
+   "ms_at_pad": 0.0763
+  },
+  "M=768 K=1152 N=2048 torch.float32": {
+   "pad_to": 768,
+   "ms_at_M": 0.068,
+   "ms_at_pad": 0.068
+  },
+  "M=814 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.0707,
+   "ms_at_pad": 0.0707
+  },
+  "M=814 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.0451,
+   "ms_at_pad": 0.0451
+  },
+  "M=814 K=2048 N=6144 torch.bfloat16": {
+   "pad_to": 974,
+   "ms_at_M": 0.2099,
+   "ms_at_pad": 0.1975
+  },
+  "M=814 K=6144 N=2048 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.1897,
+   "ms_at_pad": 0.1897
+  },
+  "M=814 K=2048 N=151680 torch.bfloat16": {
+   "pad_to": 974,
+   "ms_at_M": 16.8761,
+   "ms_at_pad": 5.5219
+  },
+  "M=814 K=2048 N=2048 torch.float32": {
+   "pad_to": 910,
+   "ms_at_M": 0.1358,
+   "ms_at_pad": 0.1224
+  },
+  "M=814 K=2048 N=8192 torch.float32": {
+   "pad_to": 814,
+   "ms_at_M": 0.5214,
+   "ms_at_pad": 0.5214
+  },
+  "M=814 K=8192 N=2048 torch.bfloat16": {
+   "pad_to": 974,
+   "ms_at_M": 0.3449,
+   "ms_at_pad": 0.3005
+  },
+  "M=49 K=1536 N=1536 torch.float32": {
+   "pad_to": 49,
+   "ms_at_M": 0.0364,
+   "ms_at_pad": 0.0364
+  },
+  "M=814 K=2048 N=1536 torch.float32": {
+   "pad_to": 814,
+   "ms_at_M": 0.0962,
+   "ms_at_pad": 0.0962
+  },
+  "M=49 K=1536 N=1536 torch.bfloat16": {
+   "pad_to": 49,
+   "ms_at_M": 0.0227,
+   "ms_at_pad": 0.0227
+  },
+  "M=49 K=1536 N=6144 torch.float32": {
+   "pad_to": 49,
+   "ms_at_M": 0.1997,
+   "ms_at_pad": 0.1997
+  },
+  "M=49 K=6144 N=1536 torch.bfloat16": {
+   "pad_to": 145,
+   "ms_at_M": 0.0408,
+   "ms_at_pad": 0.0381
+  },
+  "M=49 K=1536 N=1024 torch.float32": {
+   "pad_to": 49,
+   "ms_at_M": 0.0264,
+   "ms_at_pad": 0.0264
+  }
+ },
+ "wall_s": 199.43816494941711
+}

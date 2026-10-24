@@ -42,7 +42,7 @@ def t005_row(m, mode):
     import opt_ladder as OL
     rung, src = OL.resolve_best(m)
     best = json.load(open(src))["models"][m]
-    c = sorted(glob.glob(os.path.join(REPO, "results", f"*_E4i_{m}_best_confirm", "raw", "rows", f"{rung}_N{n}.json")))
+    c = sorted(glob.glob(os.path.join(REPO, "results", f"*_E4i_{m}_best_confirm*", "raw", "rows", f"{rung}_N{n}.json")))
     return c[-1] if c else os.path.join(REPO, best["timed_in"], "raw", "rows", f"{rung}_N{n}.json")
 
 

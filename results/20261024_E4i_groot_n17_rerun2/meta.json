@@ -1,0 +1,162 @@
+{
+  "date_utc": "2026-10-24T07:58:13Z",
+  "experiment": "E4i re-measure (groot_n17): ae_at, ae_at_mpad (stage-2 rows were disturbed)",
+  "task": "T005",
+  "model": "groot_n17",
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+  "rung": "per row: ae_at, ae_at_mpad",
+  "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+  "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+  "num_denoise_steps": "4 (extra N per rung for the slope: by_N in the row files)",
+  "action_horizon": 40,
+  "prefix_tokens": 273,
+  "suffix_tokens": 41,
+  "batch": 1,
+  "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+  "n_timed": 100,
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "8c246e8 (per-row bench_provenance)",
+  "command": "bash bench/queues/t005_regroot.sh 20261024",
+  "throttled": {
+    "ae_at_N4": {
+      "4": false
+    },
+    "ae_at_mpad_N4": {
+      "4": false
+    }
+  },
+  "memory_path_state": {
+    "ae_at_N4": {
+      "4": "normal->normal"
+    },
+    "ae_at_mpad_N4": {
+      "4": "normal->normal"
+    }
+  },
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "cuobjdump_version": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv.",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1=72\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "47906",
+    "gpu-thermal": "46343",
+    "cpu-thermal": "47250",
+    "soc012-thermal": "47906",
+    "soc345-thermal": "45125"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "fc05173850b1a3df5651e2ba7799dfc94836608062513e454bf7b0417e654f41",
+      "bytes": 1991,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "187432022d3b5cc34f7c0868ca6a433522769eee690263541ed2f1d6c03ed1d5",
+      "bytes": 13081,
+      "kind": "other",
+      "produced_by": "bench/secrets_scan.py",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/samples/ae_at_N4.csv",
+      "sha256": "fa732b11452d10212c4da0bc140f7584ff1aab181a6690d5691070b2e4e2d040",
+      "bytes": 32326,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/samples/ae_at_mpad_N4.csv",
+      "sha256": "d8fc8d9e550c5ae54e7034954831857a1250b87249a4ef9e87ea54aac1ee93b6",
+      "bytes": 32307,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/ae_at_N4.npz",
+      "sha256": "c9fc0420ef0f69a16ea7acd7b5a2caae7ab12fd5d9778909fcaa2c78bbabc42a",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/actions/ae_at_mpad_N4.npz",
+      "sha256": "ede919c2056693a6c40b462bc4d02b8b7124fb3f9e61d061a1d2985e25e5a50b",
+      "bytes": 27790,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/ae_at_N4.json",
+      "sha256": "7558ad18e930570bb65506c6ea869c43f2e72bf6a04eaf3d8dcf98cc3424f779",
+      "bytes": 7279,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/rows/ae_at_mpad_N4.json",
+      "sha256": "8e3b19d23deee534c18238510db86a222e5dd7ac587182e6fed45a9c26359ae5",
+      "bytes": 10197,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/ae_at_N4.log",
+      "sha256": "1a1d48d6f7c35f98d0d9da0603cfe4210fb7384038d6b76a52de32032aa7d7d6",
+      "bytes": 35094,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/logs/ae_at_mpad_N4.log",
+      "sha256": "b7faa7046ee3a0716aa03753f18285c7255010d36704e094d54fcb3181a0415d",
+      "bytes": 35336,
+      "kind": "other",
+      "produced_by": "bench/opt_ladder.py (child)",
+      "secrets_scan": "clean"
+    }
+  ]
+}

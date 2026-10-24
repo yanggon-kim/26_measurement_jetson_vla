@@ -1,0 +1,405 @@
+{
+ "model": "groot_n15",
+ "rung": "ae_graphs_mpad_autotune",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "25494bc",
+  "files_sha256": {
+   "opt_ladder.py": "840ab90eb794bd29",
+   "rungs.py": "b06f7bcb48699850",
+   "e4i_candidates.py": "ecbedd9b81a902db",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-24T07:44:45Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 1,
+   "oc3": 1
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "44968",
+   "gpu-thermal": "44968",
+   "cpu-thermal": "43875",
+   "soc012-thermal": "43593",
+   "soc345-thermal": "43906"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "4af2b622892f7dcb5aae5a3fb70bcb02dc217b96",
+  "checkpoint": "nvidia/GR00T-N1.5-3B",
+  "checkpoint_revision": "869830fc749c35f34771aa5209f923ac57e4564e",
+  "embodiment_tag": "oxe_droid",
+  "obs_shapes": {
+   "video.exterior_image_1": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.exterior_image_2": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "video.wrist_image": [
+    1,
+    256,
+    256,
+    3
+   ],
+   "state.eef_position": [
+    1,
+    3
+   ],
+   "state.eef_rotation": [
+    1,
+    3
+   ],
+   "state.gripper_position": [
+    1,
+    1
+   ]
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00003.safetensors",
+    "model-00002-of-00003.safetensors",
+    "model-00003-of-00003.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)"
+ },
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49
+ },
+ "rung_desc": {
+  "rung": "ae_graphs_mpad_autotune",
+  "label": "GR00T E4i candidate: ae@reduce-overhead + linear_mpad + forced GEMM autotuning",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "linear_mpad(backbone+action_head): 33 Linear modules padded; shapes padded: {'M=814 K=2048 N=151680 torch.bfloat16': {'pad_to': 1006, 'ms_at_M': 17.4455, 'ms_at_pad': 5.695}, 'M=814 K=2048 N=2048 torch.float32': {'pad_to': 926, 'ms_at_M': 0.1358, 'ms_at_pad': 0.1219}, 'M=814 K=8192 N=2048 torch.bfloat16': {'pad_to': 1022, 'ms_at_M': 0.3235, 'ms_at_pad': 0.2857}, 'M=49 K=6144 N=1536 torch.bfloat16': {'pad_to': 145, 'ms_at_M': 0.0407, 'ms_at_pad': 0.0383}}"
+  ],
+  "compiled": [
+   "FlowmatchingActionHead.get_action@reduce-overhead+clone"
+  ],
+  "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.7100761260007857,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 5448327040
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 18.44318389892578,
+     "mean_ms": 18.455638999938966,
+     "p5_ms": 18.33078384399414,
+     "p95_ms": 18.593408584594727,
+     "min_ms": 18.275808334350586,
+     "max_ms": 18.64803123474121,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 30.133840560913086,
+     "mean_ms": 30.130226955413818,
+     "p5_ms": 29.99718475341797,
+     "p95_ms": 30.254432678222656,
+     "min_ms": 29.919231414794922,
+     "max_ms": 31.009504318237305,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 5.228576183319092,
+     "mean_ms": 5.263284206390381,
+     "p5_ms": 5.224544048309326,
+     "p95_ms": 5.265376091003418,
+     "min_ms": 5.224127769470215,
+     "max_ms": 7.506879806518555,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 54.2369441986084,
+     "mean_ms": 54.26729885101318,
+     "p5_ms": 54.0299186706543,
+     "p95_ms": 54.46944046020508,
+     "min_ms": 53.9640007019043,
+     "max_ms": 56.390079498291016,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 39.84340858459473,
+     "mean_ms": 39.85235805511475,
+     "p5_ms": 39.75459289550781,
+     "p95_ms": 39.95008087158203,
+     "min_ms": 39.71257781982422,
+     "max_ms": 40.48185729980469,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 95.56185531616211,
+     "mean_ms": 95.57687202453613,
+     "p5_ms": 95.23190307617188,
+     "p95_ms": 95.81404876708984,
+     "min_ms": 95.069091796875,
+     "max_ms": 98.18524932861328,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 111.93149049995554,
+     "mean_ms": 111.1420065499442,
+     "p5_ms": 104.41694800101686,
+     "p95_ms": 113.08344200006104,
+     "min_ms": 103.76479899969127,
+     "max_ms": 116.2565739996353,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 16.331449917983264,
+     "mean_ms": 15.565134525408066,
+     "p5_ms": 8.924630801309831,
+     "p95_ms": 17.101914894708898,
+     "min_ms": 8.610624195003766,
+     "max_ms": 20.476193750611856,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 23.500289615170914,
+     "mean_ms": 22.70378253947667,
+     "p5_ms": 15.826162020792253,
+     "p95_ms": 24.395517692391877,
+     "min_ms": 15.438396335506695,
+     "max_ms": 27.751359308473184,
+     "n": 100
+    }
+   },
+   "first_call_s": 111.36870980800086,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 5997417472,
+   "control_frequency_hz": 8.98987303083342,
+   "throttle": {
+    "throttled": true,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 2
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 50.26,
+    "state": "normal",
+    "gpu_C": "54406"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 48.18,
+    "state": "normal",
+    "gpu_C": "58125"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 111.93149049995554,
+     "e2e_p95_over_p5": 1.0829989208165687
+    }
+   ],
+   "timing_stable": true
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  112
+ ],
+ "inductor_counters": {
+  "stats": {
+   "calls_captured": 3098,
+   "unique_graphs": 1
+  },
+  "inductor": {
+   "pattern_matcher_count": 1682,
+   "pattern_matcher_nodes": 1954,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 566,
+   "pad_mm_bench": 9,
+   "fxgraph_cache_miss": 1,
+   "generated_module_cache_miss": 352,
+   "async_compile_cache_miss": 584,
+   "generated_module_cache_hit": 8792,
+   "select_algorithm_precompile": 20,
+   "select_algorithm_num_precompiles": 358,
+   "select_algorithm_autotune": 20,
+   "benchmarking.InductorBenchmarker.benchmark": 166,
+   "async_compile_cache_hit": 134,
+   "extern_calls": 158,
+   "triton_bundler_save_kernel": 5288,
+   "triton_bundler_save_static_autotuner": 1,
+   "cudagraph_recorded_non_static_inputs": 3
+  },
+  "graph_break": {}
+ },
+ "mpad_table": {
+  "M=768 K=1152 N=1152 torch.float32": {
+   "pad_to": 768,
+   "ms_at_M": 0.055,
+   "ms_at_pad": 0.055
+  },
+  "M=768 K=1152 N=1152 torch.bfloat16": {
+   "pad_to": 768,
+   "ms_at_M": 0.0323,
+   "ms_at_pad": 0.0323
+  },
+  "M=768 K=1152 N=4304 torch.float32": {
+   "pad_to": 768,
+   "ms_at_M": 0.1698,
+   "ms_at_pad": 0.1698
+  },
+  "M=768 K=4304 N=1152 torch.bfloat16": {
+   "pad_to": 768,
+   "ms_at_M": 0.0729,
+   "ms_at_pad": 0.0729
+  },
+  "M=768 K=1152 N=2048 torch.float32": {
+   "pad_to": 768,
+   "ms_at_M": 0.0648,
+   "ms_at_pad": 0.0648
+  },
+  "M=814 K=2048 N=2048 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.0687,
+   "ms_at_pad": 0.0687
+  },
+  "M=814 K=2048 N=1024 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.0445,
+   "ms_at_pad": 0.0445
+  },
+  "M=814 K=2048 N=6144 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.2099,
+   "ms_at_pad": 0.2099
+  },
+  "M=814 K=6144 N=2048 torch.bfloat16": {
+   "pad_to": 814,
+   "ms_at_M": 0.1918,
+   "ms_at_pad": 0.1918
+  },
+  "M=814 K=2048 N=151680 torch.bfloat16": {
+   "pad_to": 1006,
+   "ms_at_M": 17.4455,
+   "ms_at_pad": 5.695
+  },
+  "M=814 K=2048 N=2048 torch.float32": {
+   "pad_to": 926,
+   "ms_at_M": 0.1358,
+   "ms_at_pad": 0.1219
+  },
+  "M=814 K=2048 N=8192 torch.float32": {
+   "pad_to": 814,
+   "ms_at_M": 0.5207,
+   "ms_at_pad": 0.5207
+  },
+  "M=814 K=8192 N=2048 torch.bfloat16": {
+   "pad_to": 1022,
+   "ms_at_M": 0.3235,
+   "ms_at_pad": 0.2857
+  },
+  "M=49 K=1536 N=1536 torch.float32": {
+   "pad_to": 49,
+   "ms_at_M": 0.0357,
+   "ms_at_pad": 0.0357
+  },
+  "M=814 K=2048 N=1536 torch.float32": {
+   "pad_to": 814,
+   "ms_at_M": 0.0961,
+   "ms_at_pad": 0.0961
+  },
+  "M=49 K=1536 N=1536 torch.bfloat16": {
+   "pad_to": 49,
+   "ms_at_M": 0.0216,
+   "ms_at_pad": 0.0216
+  },
+  "M=49 K=1536 N=6144 torch.float32": {
+   "pad_to": 49,
+   "ms_at_M": 0.2198,
+   "ms_at_pad": 0.2198
+  },
+  "M=49 K=6144 N=1536 torch.bfloat16": {
+   "pad_to": 145,
+   "ms_at_M": 0.0407,
+   "ms_at_pad": 0.0383
+  },
+  "M=49 K=1536 N=1024 torch.float32": {
+   "pad_to": 49,
+   "ms_at_M": 0.0272,
+   "ms_at_pad": 0.0272
+  }
+ },
+ "wall_s": 155.31405305862427
+}
