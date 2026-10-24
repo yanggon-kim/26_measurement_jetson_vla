@@ -159,6 +159,30 @@ def one(D, m, mode, a):
     commit(e6, f"T006: {os.path.basename(e6)} (roofline per part and per kernel)")
 
 
+def finalise_dims(D):
+    """meta.json + commit for results/<D>_E6_dims (the C3 dims and analytic accounting of every model x mode done so
+    far). Re-run after each mode: raw_files is recomputed from what is there."""
+    d = os.path.join(REPO, "results", f"{D}_E6_dims")
+    done = sorted(os.path.basename(p) for p in glob.glob(os.path.join(d, "raw", "*_*")) if os.path.isdir(p))
+    fields = {"task": "T006", "experiment": "C3 operand dims + analytic FLOPs / bytes per part (T006 steps 1-2)",
+              "model": ", ".join(done), "rung": "per subdirectory <model>_<mode>; best_bf16 resolved through *_E4i_summary/best_bf16.json",
+              "precision": "the mode's (bench/rungs.py preparations, nothing compiled)", "compile_mode": "none: FlopCounterMode needs eager dispatch",
+              "variant": "the mode's preps (bf16 casts, bf16_islands, linear_mpad padded rows counted)",
+              "num_denoise_steps": "model default (10 LeRobot, 4 GR00T)", "action_horizon": "model default",
+              "prefix_tokens": "measured on a real inference (dims.csv M)", "suffix_tokens": "measured on a real inference (dims.csv M)",
+              "batch": 1, "n_warmup": "n/a: no timing", "n_timed": "1 accounting inference", "throttled": "n/a: no timing",
+              "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+              "bench_commit": subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip(),
+              "command": [f"bench/t006_analytic.py --model <m> --mode <mode> --out results/{D}_E6_dims/raw/<m>_<mode>"],
+              "nsys_version": "n/a", "ncu_version": "n/a", "ncu_set": "n/a", "ncu_filter": "n/a", "ncu_metrics": "n/a",
+              "ncu_sm_frequency_hz": "n/a", "cuobjdump_version": "n/a",
+              "model_repo": "see the T005 rows", "model_commit": "see the T005 rows", "checkpoint": "see the T005 rows",
+              "checkpoint_revision": "see the T005 rows", "produced_by": {"dims.csv": "bench/t006_analytic.py",
+                                                                         "accounting.json": "bench/t006_analytic.py (run_e3.accounting_pass)"}}
+    finalise(d, fields)
+    commit(d, f"T006: {os.path.basename(d)} (C3 dims + analytic accounting: {', '.join(done)})")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", required=True)
@@ -166,7 +190,11 @@ def main():
     ap.add_argument("--modes", default="best_bf16,eager_fp32")
     ap.add_argument("--skip-done", action="store_true")
     ap.add_argument("--suffix", default="", help="appended to the result directory names (e.g. _v2)")
+    ap.add_argument("--finalise-dims", action="store_true", help="only write meta.json for <D>_E6_dims and commit it")
     a = ap.parse_args()
+    if a.finalise_dims:
+        finalise_dims(a.date)
+        return
     for mode in a.modes.split(","):
         for m in a.models.split(","):
             print(f"##### {m} {mode}", flush=True)
