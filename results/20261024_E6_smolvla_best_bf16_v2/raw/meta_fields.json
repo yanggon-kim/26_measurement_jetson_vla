@@ -1,0 +1,51 @@
+{
+ "task": "T006",
+ "model": "smolvla",
+ "rung": "best_bf16 = bf16_mpad_graphs_ae_at_islands",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "VLAFlowMatching.denoise_step@max-autotune; SmolVLMWithExpertModel.embed_image@reduce-overhead+clone; SmolVLMWithExpertModel.forward@reduce-overhead+clone",
+ "variant": "SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids; no cast needed (SmolVLAPolicy has no fp32 vision island: LeRobot loads its vision tower in bf16 already); this rung equals eager_tf32 for this model; linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 80 Linear modules padded; shapes padded: {'M=177 K=960 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=177 K=960 N=2560 torch.bfloat16': {'pad_to': 193, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=177 K=2560 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': nan, 'ms_at_pad': nan}}; bf16_islands: 21 fp32 Linear modules (13.1 MB) -> bf16, input cast to bf16, output cast back",
+ "num_denoise_steps": 10,
+ "action_horizon": 50,
+ "prefix_tokens": 177,
+ "suffix_tokens": 50,
+ "batch": 1,
+ "n_warmup": "20 (until no new graph)",
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "d77d11e",
+ "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row",
+ "cuobjdump_version": "n/a",
+ "inductor_cache": {
+  "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_smolvla_best_confirm/bf16_mpad_graphs_ae_at_islands/inductor",
+  "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_smolvla_best_confirm/bf16_mpad_graphs_ae_at_islands/triton"
+ },
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "experiment": "E6 roofline per part and per kernel (T006 steps 4-6)",
+ "n_timed": "1 inference per ncu run",
+ "command": [
+  "bench/t006_analytic.py --model smolvla --mode best_bf16",
+  "bench/t006_capture.py ncu --part <vision,vlm_prefix,ae_step[0]>",
+  "bench/t006_roofline.py --t005-row results/20261024_E4i_smolvla_best_confirm/raw/rows/bf16_mpad_graphs_ae_at_islands_N10.json"
+ ],
+ "nsys_version": "see the E5 directory",
+ "ncu_version": "2025.3.0.0",
+ "ncu_set": "n/a: form D, explicit metric list",
+ "ncu_filter": "--nvtx --nvtx-include <part>/ --profile-from-start off, one inference",
+ "ncu_metrics": "raw/ncu_metrics.txt (T003-validated counters)",
+ "ncu_sm_frequency_hz": "locked by jetson_clocks; --clock-control none",
+ "produced_by": {
+  "ncu": "ncu --import --csv --page raw",
+  "roofline": "bench/t006_roofline.py"
+ },
+ "also_raw": [
+  "ncu/ae_step0_s0_raw.csv",
+  "ncu/ae_step0_s0.ncu-rep.zst",
+  "ncu/vlm_prefix_s0.ncu-rep.zst",
+  "ncu/vlm_prefix_s0_raw.csv",
+  "ncu/vision_s0_raw.csv",
+  "ncu/vision_s0.ncu-rep.zst"
+ ]
+}
