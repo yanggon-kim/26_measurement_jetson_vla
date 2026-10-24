@@ -320,7 +320,7 @@ def write_report(path, sections, pb_rows, orin_rungs, orin_best):
                  f"{'the model call' if m.startswith('groot') else 'e2e'}; largest part: **{big}**"
                  f" ({parts[big]:.1f} ms). Fastest of any rung: `{fastest_any['rung']}` {part(fastest_any, 'e2e_wall'):.1f} ms"
                  + ("" if not fastest_any["_why"] else f" (not eligible: {'; '.join(fastest_any['_why'])})")
-                 + (f"; fastest on LeRobot's own code path: `{best_own['rung']}` {part(best_own, 'e2e_wall'):.1f} ms"
+                 + (f"; fastest without an attention-backend switch: `{best_own['rung']}` {part(best_own, 'e2e_wall'):.1f} ms"
                     if best_own and best_own is not best else "") + ".")
     L += ["", "## 4. Every rung and candidate (default N)", ""]
     for m, rows, *_ in sections:

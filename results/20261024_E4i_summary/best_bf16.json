@@ -1,0 +1,394 @@
+{
+ "rules": {
+  "eligibility": "(rules fixed before choosing; every exclusion is listed with its reason in candidates.csv):\n  1. measured at the model's default N, with the per-part split (regions on: vision, vlm_prefix, ae_total present);\n  2. no graph compiled during the timed loop; not throttled; the timed block started in the normal memory-path state;\n     stable timing (e2e p95 / p5 <= 1.25; bench/opt_ladder.py re-times a disturbed block up to twice);\n  3. BF16 weights: fp32 parameters <= 1 % of all parameter bytes (the rest stays fp32 for a stated reason);\n  5. (added 2026-10-24, stricter) the chosen candidate must also pass 1-4 in its confirmation run; otherwise the next\n     eligible candidate is taken and confirmed;\n  4. actions finite, and relative L2 vs eager_fp32 (10 seeded inferences, equivalence.csv) <= max(1e-2, 1.5 x the\n     model's compile-only reference): `ae_graphs` measured in the search directory (GR00T: with fallback_random, so\n     seeded noise matches eager; the ladder's compiled GR00T rows drew different noise) or in the ladder (LeRobot).\n     Fixed before the search results were read; plain compilation alone sets each model's numerical spread.\nbest_bf16 = the eligible row with the lowest e2e median. Reported beside it: the fastest row overall (any rung, including\ne2e-only whole-policy compiles), the fastest eligible row on LeRobot's own code path (no attention-backend switch), and\nthe eligible row with the largest action-expert share."
+ },
+ "models": {
+  "pi0": {
+   "rung": "bf16_mpad_graphs_ae_at",
+   "N": 10,
+   "timed_in": "results/20261023_E4i_pi0_best_search_s2",
+   "label": "bf16 casts + mpad + graphs everywhere; GEMM autotuning on ae only",
+   "compiled": [
+    "PI0Pytorch.denoise_step@max-autotune",
+    "PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone",
+    "PaliGemmaWithExpertModel.forward@reduce-overhead+clone"
+   ],
+   "preps": [
+    "vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 74 layer-norm modules -> bf16 (own parameters only)",
+    "linear_mpad(lm_expert): 72 Linear modules padded; shapes padded: {'M=816 K=2048 N=256 torch.bfloat16': {'pad_to': 880, 'ms_at_M': 0.0242, 'ms_at_pad': 0.0214}, 'M=816 K=2048 N=16384 torch.bfloat16': {'pad_to': 1024, 'ms_at_M': 1.7286, 'ms_at_pad': 0.5762}}"
+   ],
+   "precision_flags": {
+    "float32_matmul_precision": "high",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true
+   },
+   "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "regions": true,
+   "mpad_table": {
+    "M=816 K=2048 N=2048 torch.bfloat16": {
+     "pad_to": 816,
+     "ms_at_M": 0.07,
+     "ms_at_pad": 0.07
+    },
+    "M=816 K=2048 N=256 torch.bfloat16": {
+     "pad_to": 880,
+     "ms_at_M": 0.0242,
+     "ms_at_pad": 0.0214
+    },
+    "M=816 K=2048 N=16384 torch.bfloat16": {
+     "pad_to": 1024,
+     "ms_at_M": 1.7286,
+     "ms_at_pad": 0.5762
+    },
+    "M=816 K=16384 N=2048 torch.bfloat16": {
+     "pad_to": 816,
+     "ms_at_M": 1.2148,
+     "ms_at_pad": 1.2148
+    },
+    "M=51 K=1024 N=2048 torch.bfloat16": {
+     "pad_to": 51,
+     "ms_at_M": 0.0212,
+     "ms_at_pad": 0.0212
+    },
+    "M=51 K=1024 N=256 torch.bfloat16": {
+     "pad_to": 51,
+     "ms_at_M": 0.0201,
+     "ms_at_pad": 0.0201
+    },
+    "M=51 K=2048 N=1024 torch.bfloat16": {
+     "pad_to": 51,
+     "ms_at_M": 0.0204,
+     "ms_at_pad": 0.0204
+    },
+    "M=51 K=1024 N=4096 torch.bfloat16": {
+     "pad_to": 51,
+     "ms_at_M": 0.0237,
+     "ms_at_pad": 0.0237
+    },
+    "M=51 K=4096 N=1024 torch.bfloat16": {
+     "pad_to": 51,
+     "ms_at_M": 0.0241,
+     "ms_at_pad": 0.0241
+    }
+   },
+   "e2e_ms": 148.72166250097507,
+   "equivalence_bound_rel_l2": 0.01,
+   "compile_reference": "results/20261022_E4c_pi0_opt_ladder:ae_graphs",
+   "reproduce": "bench/opt_ladder.py --model pi0 --rung best_bf16 --out <dir>",
+   "fastest_overall": {
+    "rung": "bf16_mpad_graphs_ae_at",
+    "e2e_ms": 148.72166250097507,
+    "dir": "results/20261023_E4i_pi0_best_search_s2",
+    "eligible": true,
+    "why_not": ""
+   },
+   "fastest_on_lerobot_own_path": {
+    "rung": "bf16_mpad_graphs_ae_at",
+    "e2e_ms": 148.72166250097507
+   },
+   "max_ae_share": {
+    "rung": "eager_bf16_mpad",
+    "ae_share": 0.5244848309732336
+   },
+   "confirmation": {
+    "dir": "results/20261024_E4i_pi0_best_confirm",
+    "e2e_ms": 149.3478275006055,
+    "confirm_over_search": 1.0042103146851677,
+    "eligible": true,
+    "why_not": "",
+    "reported_numbers_from": "confirmation"
+   }
+  },
+  "pi05": {
+   "rung": "bf16_graphs_ae_at_islands",
+   "N": 10,
+   "timed_in": "results/20261023_E4i_pi05_best_search_s2",
+   "label": "bf16 casts (no mpad) + graphs everywhere + remaining fp32 Linears to bf16; GEMM autotuning on the expert only",
+   "compiled": [
+    "PI05Pytorch.denoise_step@max-autotune",
+    "PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone",
+    "PaliGemmaWithExpertModel.forward@reduce-overhead+clone"
+   ],
+   "preps": [
+    "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only)",
+    "bf16_islands: 41 fp32 Linear modules (474.7 MB) -> bf16, input cast to bf16, output cast back"
+   ],
+   "precision_flags": {
+    "float32_matmul_precision": "high",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true
+   },
+   "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "regions": true,
+   "mpad_table": "n/a: linear_mpad not applied",
+   "e2e_ms": 163.20444799930556,
+   "equivalence_bound_rel_l2": 0.01,
+   "compile_reference": "results/20261022_E4c_pi05_opt_ladder:ae_graphs",
+   "reproduce": "bench/opt_ladder.py --model pi05 --rung best_bf16 --out <dir>",
+   "fastest_overall": {
+    "rung": "bf16_graphs_ae_at_islands",
+    "e2e_ms": 163.20444799930556,
+    "dir": "results/20261023_E4i_pi05_best_search_s2",
+    "eligible": true,
+    "why_not": ""
+   },
+   "fastest_on_lerobot_own_path": {
+    "rung": "bf16_graphs_ae_at_islands",
+    "e2e_ms": 163.20444799930556
+   },
+   "max_ae_share": {
+    "rung": "bf16_graphs_islands",
+    "ae_share": 0.49238004667669344
+   },
+   "confirmation": {
+    "dir": "results/20261024_E4i_pi05_best_confirm",
+    "e2e_ms": 164.39231649565045,
+    "confirm_over_search": 1.0072784076102506,
+    "eligible": true,
+    "why_not": "",
+    "reported_numbers_from": "confirmation"
+   }
+  },
+  "smolvla": {
+   "rung": "bf16_mpad_graphs_ae_at_islands",
+   "N": 10,
+   "timed_in": "results/20261023_E4i_smolvla_best_search_s2",
+   "label": "bf16 casts + mpad + graphs everywhere; GEMM autotuning on ae only + remaining fp32 Linears to bf16",
+   "compiled": [
+    "VLAFlowMatching.denoise_step@max-autotune",
+    "SmolVLMWithExpertModel.embed_image@reduce-overhead+clone",
+    "SmolVLMWithExpertModel.forward@reduce-overhead+clone"
+   ],
+   "preps": [
+    "SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids",
+    "no cast needed (SmolVLAPolicy has no fp32 vision island: LeRobot loads its vision tower in bf16 already); this rung equals eager_tf32 for this model",
+    "linear_mpad(lm_expert): 80 Linear modules padded; shapes padded: {'M=177 K=960 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': 0.0217, 'ms_at_pad': 0.0205}, 'M=177 K=960 N=2560 torch.bfloat16': {'pad_to': 193, 'ms_at_M': 0.0254, 'ms_at_pad': 0.024}, 'M=177 K=2560 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': 0.0312, 'ms_at_pad': 0.0294}}",
+    "bf16_islands: 21 fp32 Linear modules (13.1 MB) -> bf16, input cast to bf16, output cast back"
+   ],
+   "precision_flags": {
+    "float32_matmul_precision": "high",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true
+   },
+   "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "regions": true,
+   "mpad_table": {
+    "M=177 K=960 N=960 torch.bfloat16": {
+     "pad_to": 241,
+     "ms_at_M": 0.0217,
+     "ms_at_pad": 0.0205
+    },
+    "M=177 K=960 N=320 torch.bfloat16": {
+     "pad_to": 177,
+     "ms_at_M": 0.0196,
+     "ms_at_pad": 0.0196
+    },
+    "M=177 K=960 N=2560 torch.bfloat16": {
+     "pad_to": 193,
+     "ms_at_M": 0.0254,
+     "ms_at_pad": 0.024
+    },
+    "M=177 K=2560 N=960 torch.bfloat16": {
+     "pad_to": 241,
+     "ms_at_M": 0.0312,
+     "ms_at_pad": 0.0294
+    },
+    "M=50 K=720 N=960 torch.bfloat16": {
+     "pad_to": 50,
+     "ms_at_M": 0.0195,
+     "ms_at_pad": 0.0195
+    },
+    "M=50 K=720 N=320 torch.bfloat16": {
+     "pad_to": 50,
+     "ms_at_M": 0.0201,
+     "ms_at_pad": 0.0201
+    },
+    "M=50 K=960 N=720 torch.bfloat16": {
+     "pad_to": 50,
+     "ms_at_M": 0.0196,
+     "ms_at_pad": 0.0196
+    },
+    "M=50 K=720 N=2048 torch.bfloat16": {
+     "pad_to": 50,
+     "ms_at_M": 0.0196,
+     "ms_at_pad": 0.0196
+    },
+    "M=50 K=2048 N=720 torch.bfloat16": {
+     "pad_to": 50,
+     "ms_at_M": 0.02,
+     "ms_at_pad": 0.02
+    },
+    "M=177 K=320 N=320 torch.float32": {
+     "pad_to": 177,
+     "ms_at_M": 0.0194,
+     "ms_at_pad": 0.0194
+    }
+   },
+   "e2e_ms": 49.76905649891705,
+   "equivalence_bound_rel_l2": 0.0172695,
+   "compile_reference": "results/20261022_E4c_smolvla_opt_ladder:ae_graphs",
+   "reproduce": "bench/opt_ladder.py --model smolvla --rung best_bf16 --out <dir>",
+   "fastest_overall": {
+    "rung": "bf16_mpad_whole_graphs_autotune",
+    "e2e_ms": 46.54497280716896,
+    "dir": "results/20261022_E4i_smolvla_best_search",
+    "eligible": false,
+    "why_not": "no per-part split (whole-policy compile, e2e only); not BF16: 1.4 % of parameter bytes fp32"
+   },
+   "fastest_on_lerobot_own_path": {
+    "rung": "bf16_mpad_graphs_ae_at_islands",
+    "e2e_ms": 49.76905649891705
+   },
+   "max_ae_share": {
+    "rung": "bf16_mpad_graphs_nofuse_islands",
+    "ae_share": 0.5575739224916126
+   },
+   "confirmation": {
+    "dir": "results/20261024_E4i_smolvla_best_confirm",
+    "e2e_ms": 48.899360503128264,
+    "confirm_over_search": 0.9825253670258404,
+    "eligible": true,
+    "why_not": "",
+    "reported_numbers_from": "confirmation"
+   }
+  },
+  "groot_n17": {
+   "rung": "ae_graphs_autotune",
+   "N": 4,
+   "timed_in": "results/20261022_E4i_groot_n17_best_search",
+   "label": "GR00T E4i candidate: ae@reduce-overhead + forced GEMM autotuning",
+   "compiled": [
+    "Gr00tN1d7ActionHead.get_action@reduce-overhead+clone"
+   ],
+   "preps": [],
+   "precision_flags": {
+    "float32_matmul_precision": "high",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true
+   },
+   "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+   "regions": true,
+   "mpad_table": "n/a: linear_mpad not applied",
+   "e2e_ms": 134.5201728399843,
+   "equivalence_bound_rel_l2": 0.01,
+   "compile_reference": "results/20261022_E4i_groot_n17_best_search:ae_graphs",
+   "reproduce": "bench/opt_ladder.py --model groot_n17 --rung best_bf16 --out <dir>",
+   "fastest_overall": {
+    "rung": "ae_graphs_autotune",
+    "e2e_ms": 134.5201728399843,
+    "dir": "results/20261022_E4i_groot_n17_best_search",
+    "eligible": true,
+    "why_not": ""
+   },
+   "fastest_on_lerobot_own_path": {
+    "rung": "ae_graphs_autotune",
+    "e2e_ms": 134.5201728399843
+   },
+   "max_ae_share": {
+    "rung": "eager_fp32",
+    "ae_share": 0.5618764090232744
+   },
+   "confirmation": {
+    "dir": "results/20261024_E4i_groot_n17_best_confirm",
+    "e2e_ms": 133.3889649977209,
+    "confirm_over_search": 0.9915907940171249,
+    "eligible": true,
+    "why_not": "",
+    "reported_numbers_from": "confirmation"
+   }
+  },
+  "groot_n16": {
+   "rung": "all_compile_ae_vis_at",
+   "N": 4,
+   "timed_in": "results/20261024_E4i_groot_n16_best_search_s2",
+   "label": "GR00T E4i candidate: ae@max-autotune, vis@max-autotune-no-cudagraphs, llm@default + GEMM autotuning on the max-autotune parts only",
+   "compiled": [
+    "Gr00tN1d6ActionHead.get_action@max-autotune+clone",
+    "Eagle3_VLForConditionalGeneration.extract_feature@max-autotune-no-cudagraphs",
+    "Qwen3Model.forward@default"
+   ],
+   "preps": [],
+   "precision_flags": {
+    "float32_matmul_precision": "high",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true
+   },
+   "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "regions": true,
+   "mpad_table": "n/a: linear_mpad not applied",
+   "e2e_ms": 103.4314339995035,
+   "equivalence_bound_rel_l2": 0.0221175,
+   "compile_reference": "results/20261022_E4i_groot_n16_best_search:ae_graphs",
+   "reproduce": "bench/opt_ladder.py --model groot_n16 --rung best_bf16 --out <dir>",
+   "fastest_overall": {
+    "rung": "vlm_graphs_ae_at",
+    "e2e_ms": 98.35429449594812,
+    "dir": "results/20261024_E4i_groot_n16_best_search_s2",
+    "eligible": false,
+    "why_not": "its confirmation run failed: actions differ from eager_fp32 by rel L2 2.43e-02 > bound 2.21e-02"
+   },
+   "fastest_on_lerobot_own_path": {
+    "rung": "all_compile_ae_vis_at",
+    "e2e_ms": 103.4314339995035
+   },
+   "max_ae_share": {
+    "rung": "eager_tf32",
+    "ae_share": 0.6084190288897248
+   },
+   "confirmation": {
+    "dir": "results/20261024_E4i_groot_n16_best_confirm",
+    "e2e_ms": 102.90635050023411,
+    "confirm_over_search": 0.9949233663407209,
+    "eligible": true,
+    "why_not": "",
+    "reported_numbers_from": "confirmation"
+   }
+  },
+  "groot_n15": {
+   "rung": "llm_graphs_autotune",
+   "N": 4,
+   "timed_in": "results/20261022_E4i_groot_n15_best_search",
+   "label": "GR00T E4i candidate: ae@reduce-overhead, llm@reduce-overhead + forced GEMM autotuning",
+   "compiled": [
+    "FlowmatchingActionHead.get_action@reduce-overhead+clone",
+    "Qwen3Model.forward@reduce-overhead+clone"
+   ],
+   "preps": [],
+   "precision_flags": {
+    "float32_matmul_precision": "high",
+    "cuda_matmul_allow_tf32": true,
+    "cudnn_allow_tf32": true
+   },
+   "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+   "regions": true,
+   "mpad_table": "n/a: linear_mpad not applied",
+   "e2e_ms": 116.55963980592787,
+   "equivalence_bound_rel_l2": 0.025782,
+   "compile_reference": "results/20261022_E4i_groot_n15_best_search:ae_graphs",
+   "reproduce": "bench/opt_ladder.py --model groot_n15 --rung best_bf16 --out <dir>",
+   "fastest_overall": {
+    "rung": "vlm_graphs_mpad_autotune",
+    "e2e_ms": 92.41181050310843,
+    "dir": "results/20261024_E4i_groot_n15_best_search_s2",
+    "eligible": false,
+    "why_not": "actions differ from eager_fp32 by rel L2 1.41e-01 > bound 2.58e-02"
+   },
+   "fastest_on_lerobot_own_path": {
+    "rung": "llm_graphs_autotune",
+    "e2e_ms": 116.55963980592787
+   },
+   "max_ae_share": {
+    "rung": "eager_fp32",
+    "ae_share": 0.42445547307864334
+   },
+   "confirmation": {
+    "dir": "results/20261024_E4i_groot_n15_best_confirm",
+    "e2e_ms": 119.54005799998413,
+    "confirm_over_search": 1.0255698988004653,
+    "eligible": true,
+    "why_not": "",
+    "reported_numbers_from": "confirmation"
+   }
+  }
+ }
+}
