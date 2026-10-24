@@ -1,0 +1,43 @@
+{
+ "task": "T007",
+ "experiment": "E5 timeline analysis (T007 step 1) of T006's nsys capture",
+ "model": "pi0",
+ "rung": "best_bf16 = bf16_mpad_graphs_ae_at",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "PI0Pytorch.denoise_step@max-autotune; PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone; PaliGemmaWithExpertModel.forward@reduce-overhead+clone",
+ "variant": "vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 74 layer-norm modules -> bf16 (own parameters only); linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 72 Linear modules padded; shapes padded: {'M=816 K=2048 N=256 torch.bfloat16': {'pad_to': 880, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=816 K=2048 N=16384 torch.bfloat16': {'pad_to': 1024, 'ms_at_M': nan, 'ms_at_pad': nan}}",
+ "num_denoise_steps": 10,
+ "action_horizon": 50,
+ "prefix_tokens": 816,
+ "suffix_tokens": 51,
+ "batch": 1,
+ "n_warmup": "see the E5 capture",
+ "n_timed": "2 inferences (the E5 capture window)",
+ "hw_constants_source": "n/a: no ceiling used",
+ "throttled": "see the E5 capture",
+ "bench_commit": "5331365",
+ "command": "bench/t007_timeline.py --e5 results/20261024_E5_pi0_best_bf16_nsys --t005-row results/20261024_E4i_pi0_best_confirm/raw/rows/bf16_mpad_graphs_ae_at_N10.json --out results/20261024_E5_pi0_best_bf16_timeline",
+ "nsys_version": "see the E5 capture",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "cuobjdump_version": "n/a",
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "e5_capture": "results/20261024_E5_pi0_best_bf16_nsys",
+ "t005_row": "results/20261024_E4i_pi0_best_confirm/raw/rows/bf16_mpad_graphs_ae_at_N10.json",
+ "produced_by": {
+  "*.csv": "bench/t007_timeline.py"
+ },
+ "uncommitted_raw": [
+  {
+   "path": "scratch/20261024_E5_pi0_best_bf16_nsys/pi0_best_bf16.sqlite",
+   "committed": false,
+   "reason": "nsys exports embed the system environment (results/20261022_E0_secrets_test)"
+  }
+ ]
+}
