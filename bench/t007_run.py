@@ -5,7 +5,7 @@ Each capture runs exactly the timed configuration: best_bf16 resolves through re
 and the profiling process reuses the Inductor / Triton caches of the run that timed it (bench/t006_run.timed_cache).
 The parts are those T006's nsys capture exposed (raw/target_info.json of results/<D>_E5_<m>_<mode>_nsys*).
 
-python bench/t007_run.py --date 20261024 --e5-date 20261024 [--models ...] [--modes best_bf16]
+python bench/t007_run.py --date 20261024 --e5-date 20261024 [--models ...] [--modes best_bf16] [--what c1|timeline]
 """
 import argparse
 import glob
@@ -80,6 +80,42 @@ def one(D, m, mode, a):
     T6R.commit(out, f"T007: {os.path.basename(out)} (C1 ncu --set full + stalls per part; gates ok: {fields['c1_gates_all_ok']})")
 
 
+def timeline(D, m, mode, a):
+    """T007 step 1 (CPU only, no gate): bench/t007_timeline.py on T006's nsys capture -> results/<D>_E5_<m>_<mode>_timeline."""
+    _, info, e5 = parts_for(m, mode, a.e5_date)
+    out = os.path.join(REPO, "results", f"{D}_E5_{m}_{mode}_timeline")
+    if a.skip_done and os.path.exists(os.path.join(out, "meta.json")):
+        print(f"=== timeline {m} {mode}: done, skipped")
+        return
+    os.makedirs(os.path.join(out, "raw"), exist_ok=True)
+    row = T6R.t005_row(m, mode)
+    rc = T6R.sh([os.path.expanduser("~/venvs/base/bin/python"), os.path.join(HERE, "t007_timeline.py"), "--e5", e5,
+                 "--t005-row", row, "--out", out], log=os.path.join(out, "raw", "timeline.log"))
+    if rc:
+        raise SystemExit(f"timeline failed for {m} {mode}; see {out}/raw/timeline.log")
+    desc = info["rung_desc"]
+    src = json.load(open(os.path.join(out, "sources.json")))
+    fields = {"task": "T007", "experiment": "E5 timeline analysis (T007 step 1) of T006's nsys capture", "model": m,
+              "rung": f"{mode} = {info['rung']}", "precision": json.dumps(desc["precision_flags"]),
+              "compile_mode": "; ".join(desc["compiled"]) or "none (eager)", "variant": "; ".join(desc["preps"]) or "none",
+              "num_denoise_steps": info["n_default"], "action_horizon": {"groot_n17": 40, "groot_n16": 16, "groot_n15": 16}.get(m, 50),
+              "prefix_tokens": info["tokens"].get("prefix_tokens_P", "see T004"), "suffix_tokens": info["tokens"].get("suffix_tokens_S", "see T004"),
+              "batch": 1, "n_warmup": "see the E5 capture", "n_timed": "2 inferences (the E5 capture window)",
+              "hw_constants_source": "n/a: no ceiling used", "throttled": "see the E5 capture",
+              "bench_commit": subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip(),
+              "command": f"bench/t007_timeline.py --e5 {os.path.relpath(e5, REPO)} --t005-row {os.path.relpath(row, REPO)} --out {os.path.relpath(out, REPO)}",
+              "nsys_version": "see the E5 capture", "ncu_version": "n/a", "ncu_set": "n/a", "ncu_filter": "n/a", "ncu_metrics": "n/a",
+              "ncu_sm_frequency_hz": "n/a", "cuobjdump_version": "n/a",
+              "model_repo": "see the T005 row's provenance", "model_commit": "see the T005 row's provenance",
+              "checkpoint": "see the T005 row's provenance", "checkpoint_revision": "see the T005 row's provenance",
+              "e5_capture": os.path.relpath(e5, REPO), "t005_row": os.path.relpath(row, REPO),
+              "produced_by": {"*.csv": "bench/t007_timeline.py"},
+              "uncommitted_raw": [{"path": src["sqlite"], "committed": False,
+                                   "reason": "nsys exports embed the system environment (results/20261022_E0_secrets_test)"}]}
+    T6R.finalise(out, fields)
+    T6R.commit(out, f"T007: {os.path.basename(out)} (E5 timeline: idle, gaps, kernel classes, launching thread)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", required=True)
@@ -87,11 +123,12 @@ def main():
     ap.add_argument("--models", default="pi0,pi05,smolvla,groot_n17,groot_n16,groot_n15")
     ap.add_argument("--modes", default="best_bf16")
     ap.add_argument("--skip-done", action="store_true")
+    ap.add_argument("--what", default="c1", choices=["c1", "timeline"])
     a = ap.parse_args()
     for mode in a.modes.split(","):
         for m in a.models.split(","):
-            print(f"##### C1 {m} {mode}", flush=True)
-            one(a.date, m, mode, a)
+            print(f"##### {a.what} {m} {mode}", flush=True)
+            (one if a.what == "c1" else timeline)(a.date, m, mode, a)
 
 
 if __name__ == "__main__":
