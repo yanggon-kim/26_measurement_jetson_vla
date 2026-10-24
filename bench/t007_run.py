@@ -53,6 +53,8 @@ def one(D, m, mode, a):
         rc = T6R.sh([py, os.path.join(HERE, "t007_c1.py"), "--model", m, "--mode", mode, "--part", part, "--out", out], cwd=cwd)
         if rc:
             print(f"!!! C1 failed for {m} {mode} {part}; see {out}/raw/ncu_*.log", flush=True)
+    T6R.sh([os.path.expanduser("~/venvs/base/bin/python"), os.path.join(HERE, "t007_c1_tables.py"), "--model", m, "--mode", mode,
+            "--c1", out, "--nsys", e5, "--t005-row", T6R.t005_row(m, mode)], log=os.path.join(out, "raw", "c1_tables.log"))
     gates = [json.load(open(p)) for p in glob.glob(os.path.join(out, "raw", "c1_gate_*.json"))]
     desc = info["rung_desc"]
     fields = {"task": "T007", "experiment": "E4g C1: ncu --set full + stall breakdown per part", "model": m,
