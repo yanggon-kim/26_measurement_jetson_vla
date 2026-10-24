@@ -1,0 +1,97 @@
+{
+  "date_utc": "2026-10-24T10:39:00Z",
+  "task": "T007",
+  "experiment": "E5 timeline analysis (T007 step 1) of T006's nsys capture",
+  "model": "pi05",
+  "rung": "best_bf16 = bf16_graphs_ae_at_islands",
+  "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+  "compile_mode": "PI05Pytorch.denoise_step@max-autotune; PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone; PaliGemmaWithExpertModel.forward@reduce-overhead+clone",
+  "variant": "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only); bf16_islands: 41 fp32 Linear modules (474.7 MB) -> bf16, input cast to bf16, output cast back",
+  "num_denoise_steps": 10,
+  "action_horizon": 50,
+  "prefix_tokens": 968,
+  "suffix_tokens": 50,
+  "batch": 1,
+  "n_warmup": "see the E5 capture",
+  "n_timed": "2 inferences (the E5 capture window)",
+  "hw_constants_source": "n/a: no ceiling used",
+  "throttled": "see the E5 capture",
+  "bench_commit": "66e2a37",
+  "command": "bench/t007_timeline.py --e5 results/20261024_E5_pi05_best_bf16_nsys --t005-row results/20261024_E4i_pi05_best_confirm/raw/rows/bf16_graphs_ae_at_islands_N10.json --out results/20261024_E5_pi05_best_bf16_timeline",
+  "nsys_version": "see the E5 capture",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "cuobjdump_version": "n/a",
+  "model_repo": "see the T005 row's provenance",
+  "model_commit": "see the T005 row's provenance",
+  "checkpoint": "see the T005 row's provenance",
+  "checkpoint_revision": "see the T005 row's provenance",
+  "e5_capture": "results/20261024_E5_pi05_best_bf16_nsys",
+  "t005_row": "results/20261024_E4i_pi05_best_confirm/raw/rows/bf16_graphs_ae_at_islands_N10.json",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1=72\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "47031",
+    "gpu-thermal": "45812",
+    "cpu-thermal": "47031",
+    "soc012-thermal": "44218",
+    "soc345-thermal": "44781"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "a40451487134be35f24c4e2e48ac57ad417e2cfc5396ecd434c6409c0fd70c5b",
+      "bytes": 2160,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "4c19241a4254f5bef3d1d264dbbac820f581f28971c3db6975742c5b9e705910",
+      "bytes": 13100,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/timeline.log",
+      "sha256": "f4dafefa88a1bc8d6347321db468bfaa3a27544498c35c72767e008e27dee163",
+      "bytes": 1624,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "scratch/20261024_E5_pi05_best_bf16_nsys/pi05_best_bf16.sqlite",
+      "committed": false,
+      "reason": "nsys exports embed the system environment (results/20261022_E0_secrets_test)"
+    }
+  ]
+}
