@@ -51,7 +51,12 @@ def ns(d, key):
 
 
 def norm(n):
-    return re.sub(r"\s+", "", n or "")[:60]
+    """The kernel's base function name. nsys and ncu demangle differently (nsys: `(int)128`, `(bool)0`,
+    `at::native::<unnamed>::`, `cudnn::cnn::`; ncu: `128`, `0`, `at::<unnamed>::`, `cudnn::`), so the full strings of
+    the same kernel differ; the identifier just before the template / argument list does not."""
+    n = re.sub(r"^void\s+", "", (n or "").strip()).replace("<unnamed>", "").replace("(anonymous namespace)", "")
+    head = re.split(r"[<(]", n, 1)[0]
+    return head.split("::")[-1].strip()
 
 
 def main():
