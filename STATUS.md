@@ -4,10 +4,10 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**Paused by the owner (2026-10-24 ≈ 04:11 UTC); nothing of ours is running.** `best_bf16` is chosen for all six models
-and confirmed for four (each within 2 %). The resume point and the exact restart commands are in `PROGRESS.md` under
-"T005 resume point". **The owner's order:** the optimised version and its breakdown first, then ncu for those
-optimised configurations (T006 / T007 `best_bf16`), then the rest step by step.
+**Running: T007 C1 (`best_bf16`).** Deliverable 1 is done: `best_bf16` chosen and confirmed for all six models
+(`results/20261024_E4i_summary`, `reports/E4i_best_combinations.md`). T006 `best_bf16` (roofline per part and per
+kernel) is done for all six with 100 % coverage (`reports/E6_roofline_all.md`). Next: T007 C1 for all six `best_bf16`,
+then the rest of T005, then `eager_fp32` for T006/T007, then T008 onwards. Resume point: `PROGRESS.md`.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -92,3 +92,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-23 T005 resumed: N1.5 divergence diagnosed (vision compile changes its output 4.6 %; no graph bug); bf16_islands (π0.5 466 MB of fp32 adaRMS weights) and expert-only autotuning take π0.5 183.1 -> 163.2 ms and π0 157.8 -> 148.7 ms; a candidate disturbed by another user's GPU job led to the stability guard; paused again by the owner (shared GPU in use).
 - 2026-10-24 Resumed by the owner; order: best_bf16 + breakdown, then ncu for best_bf16 (T006/T007), then the rest.
 - 2026-10-24 E4i stage 2 done for all six; best_bf16 chosen; confirmations within 2 % for π0, π0.5, SmolVLA, N1.7; paused by the owner before the N1.6 / N1.5 confirmations.
+- 2026-10-24 T006 best_bf16 done for all six (E5 nsys + E6 roofline, 100 % coverage, 0 join mismatches); E6 reports generated; T007 C1 smoke test started (SmolVLA).
