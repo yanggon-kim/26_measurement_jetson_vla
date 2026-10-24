@@ -4,7 +4,53 @@ Jetson AGX Thor, MAXN, GPU 1575 MHz locked, `jetson_clocks`, gate passed before 
 **Revised 2026-10-24 after the independent review.** That review re-settled GR00T N1.7 and N1.5 (§2) and corrected
 several claims in §3. The corrections are listed in the T005 status block.
 
-## 1. The answer: `best_bf16`
+## 0. Update 2026-10-25: three `best_bf16` changed
+
+Source: `results/20261025_E4i_summary/` (supersedes `results/20261024_E4i_summary/` for π0, π0.5 and N1.7; that directory stays committed
+and holds the stock-code `best_bf16`). Every row is the confirmation run, n = 100, median (p5–p95) in ms.
+
+| model (N) | `best_bf16` | e2e | vision | prefix | **expert** | other | AE % | was (2026-10-24) |
+|---|---|---|---|---|---|---|---|---|
+| π0 (10) | `bf16_mpad_graphs_ae_at_kvs` | **129.5** (129.2–129.9) | 20.6 | 55.0 | **51.5** | 2.5 | 39.7 | `bf16_mpad_graphs_ae_at` 149.3 |
+| π0.5 (10) | `bf16_mpad_graphs_ae_at_islands_kvs` | **142.4** (142.2–142.9) | 20.3 | 60.0 | **59.6** | 2.5 | 41.8 | `bf16_graphs_ae_at_islands` 164.4 |
+| SmolVLA (10) | `bf16_mpad_graphs_ae_at_islands` | **48.9** (48.8–49.4) | 15.2 | 4.3 | **26.0** | 3.4 | 53.2 | unchanged |
+| GR00T N1.7 (4) | `vis_fa_at_ae_at` | **120.4** (115.4–121.9) | 19.2 | 25.1 | **50.7** | 25.4 | 49.5 ¹ | `ae_at` 133.9 |
+| GR00T N1.6 (4) | `all_compile_ae_vis_at` | **102.9** (98.5–105.8) | 17.3 | 15.0 | **50.1** | 20.4 | 56.8 ¹ | unchanged |
+| GR00T N1.5 (4) | `ae_at_mpad` | **106.3** (98.5–107.8) | 18.5 | 26.5 | **36.8** | 24.3 | 41.3 ¹ | unchanged |
+
+¹ GR00T: share of the model call, as in §1.
+
+**What changed, and the same-session evidence** (each new candidate was timed beside the old `best_bf16` in one session;
+the controls are the fair comparison, because the confirmations ran on different days):
+
+| model | change | control: old best, same session — e2e / vision / prefix / expert | candidate, same session — e2e / vision / prefix / expert | source |
+|---|---|---|---|---|
+| π0 | `kv_shallow`: no per-step deep copy of the prefix KV cache (owner's decision) | `bf16_mpad_graphs_ae_at`: 138.0 / 20.3 / 55.0 / 60.2 | `bf16_mpad_graphs_ae_at_kvs`: 128.4 / 20.4 / 55.3 / 50.2 | `results/20261025_E4i_pi0_best_search_s4` |
+| π0.5 | `kv_shallow` (owner's decision) + `linear_mpad` | `bf16_graphs_ae_at_islands`: 157.4 / 20.6 / 59.0 / 75.2 | `bf16_mpad_graphs_ae_at_islands_kvs`: 144.1 / 20.8 / 60.4 / 60.3 | `results/20261025_E4i_pi05_best_search_s4` |
+| GR00T N1.7 | vision tower compiled (`vis_fa_static` + max-autotune-no-cudagraphs) | `ae_at`: 131.9 / 29.1 / 25.0 / 51.2 | `vis_fa_at_ae_at`: 120.8 / 20.1 / 26.3 / 48.1 | `results/20261024_E4i_groot_n17_best_search_s3` |
+
+- **π0 / π0.5 `kv_shallow`.** LeRobot's `denoise_step` deep-copies the whole prefix KV cache at every denoising step
+  (`modeling_pi0.py:919`, `modeling_pi05.py:890`): a graph break, a ~15 MB device copy and ≈ 2.7 ms of host time per
+  step during which the GPU waits (`results/20261024_E5_pi0_best_bf16_timeline`: 99 % of the expert step's idle gaps
+  CPU-starved). transformers' cache update rebinds (`torch.cat`) and never writes the prefix tensors, so a shallow copy
+  is exact: bitwise-equal actions in `results/20261025_E4_cpu_overhead_diag/`. It is a code-level variant, which
+  protocol §16 leaves to the research side; **the owner put it into `best_bf16` on 2026-10-25** (STATUS.md).
+- **N1.7 vision.** Qwen3-VL's vision attention passes flash-attn varlen a 0-dim CUDA tensor as `max_seqlen`; dynamo
+  could not trace it, so every vision-compiling candidate failed in the ladder and stage 1. `vis_fa_static`
+  (`bench/e4i_candidates.py`) passes the total token count, a static upper bound that flash-attn accepts; the vision
+  tower then compiles. Of the five stage-3 candidates, `vis_fa_graphs_ae_at` was fastest (114.0 ms) but its actions
+  differ from `eager_fp32` by relative L2 1.02 × 10⁻², above N1.7's bound of 1.0 × 10⁻² (rule 3; not tuned), as did
+  `vis_fa_compile_ae_at` (1.06 × 10⁻²); `vis_fa_at_ae_at` passes (6.8 × 10⁻³ search, 6.0 × 10⁻³ confirmation).
+- **The expert is no longer the largest part of π0's frame**: with the host stall removed, π0's prefix (55.0 ms) is
+  larger than its expert (51.5 ms); π0.5's two are level (60.0 / 59.6 ms). N1.7's expert share of the model call rises
+  to 49.5 %.
+- **Day-to-day shift, not explained:** π0's prefix measured 63.1 ms in the 2026-10-24 confirmation and 55.0 ms on
+  2026-10-25, in the stage-4 control (old configuration) as well, so the shift is not caused by `kv_shallow`. The
+  memory-state probe read "normal" before both. Comparisons above are therefore made within one session.
+
+Sections 1–6 below are the 2026-10-24 report (stock code, before stages 3 and 4), kept as reviewed.
+
+## 1. The answer: `best_bf16` (2026-10-24, stock code)
 
 Each configuration is reported from its **confirmation run**: an independent repeat in a fresh process with
 `bench/opt_ladder.py --rung best_bf16`, which replays the recorded configuration. Medians in ms (% of e2e), n = 100.

@@ -4,10 +4,10 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**Running: T007 C1 (`best_bf16`).** Deliverable 1 is done: `best_bf16` chosen and confirmed for all six models
-(`results/20261024_E4i_summary`, `reports/E4i_best_combinations.md`). T006 `best_bf16` (roofline per part and per
-kernel) is done for all six with 100 % coverage (`reports/E6_roofline_all.md`). Next: T007 C1 for all six `best_bf16`,
-then the rest of T005, then `eager_fp32` for T006/T007, then T008 onwards. Resume point: `PROGRESS.md`.
+**Running: T006 re-capture + T007 for `best_bf16`.** `best_bf16` changed on 2026-10-25 for three models and is
+confirmed for all six (`results/20261025_E4i_summary`, `reports/E4i_best_combinations.md` §0): π0 129.5 and π0.5
+142.4 ms with `kv_shallow` (the owner's decision), N1.7 120.4 ms with its vision tower compiled. T006 is being
+re-captured for those three; SmolVLA's C1 is done. Resume point: `PROGRESS.md`.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
