@@ -1,0 +1,58 @@
+{
+ "task": "T006",
+ "model": "groot_n17",
+ "rung": "best_bf16 = vis_fa_at_ae_at",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "Gr00tN1d7ActionHead.get_action@max-autotune+clone; Qwen3VLModel.get_image_features@max-autotune-no-cudagraphs",
+ "variant": "vision flash-attn varlen: max_seqlen = total vision tokens (static upper bound) instead of a CUDA tensor",
+ "num_denoise_steps": 4,
+ "action_horizon": 40,
+ "prefix_tokens": 273,
+ "suffix_tokens": 41,
+ "batch": 1,
+ "n_warmup": "20 (until no new graph)",
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "cfae5ce",
+ "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row",
+ "cuobjdump_version": "n/a",
+ "inductor_cache": {
+  "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261025_E4i_groot_n17_best_confirm/vis_fa_at_ae_at/inductor",
+  "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261025_E4i_groot_n17_best_confirm/vis_fa_at_ae_at/triton"
+ },
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "experiment": "E5 nsys capture (T006 step 3)",
+ "n_timed": "2 inferences in the capture window",
+ "command": "bench/t006_capture.py nsys --model groot_n17 --mode best_bf16 --out results/20261025_E5_groot_n17_best_bf16_nsys",
+ "nsys_version": "NVIDIA Nsight Systems version 2025.3.2.367-253236224375v0",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "produced_by": {
+  "nsys": "nsys stats",
+  "kernels": "bench/t006_capture.py",
+  "target_info": "bench/profile_target.py"
+ },
+ "also_raw": [
+  "nsys/groot_n17_best_bf16_nvtx_sum.csv",
+  "nsys/groot_n17_best_bf16_cuda_gpu_mem_time_sum.csv",
+  "nsys/groot_n17_best_bf16_nvtx_gpu_proj_trace.csv",
+  "nsys/groot_n17_best_bf16_nvtx_kern_sum.csv",
+  "nsys/groot_n17_best_bf16_cuda_gpu_trace.csv.zst",
+  "nsys/groot_n17_best_bf16_osrt_sum.csv",
+  "nsys/groot_n17_best_bf16_cuda_api_sum.csv",
+  "nsys/groot_n17_best_bf16_cuda_gpu_kern_sum.csv",
+  "kernels.csv"
+ ],
+ "uncommitted_raw": [
+  {
+   "path": "scratch/20261025_E5_groot_n17_best_bf16_nsys/groot_n17_best_bf16.nsys-rep",
+   "committed": false,
+   "reason": "nsys binaries embed the system environment (results/20261022_E0_secrets_test)"
+  }
+ ]
+}

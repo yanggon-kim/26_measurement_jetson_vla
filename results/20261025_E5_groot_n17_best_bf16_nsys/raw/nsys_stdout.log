@@ -1,0 +1,31 @@
+/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/albumentations/__init__.py:13: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.18). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+`torch_dtype` is deprecated! Use `dtype` instead!
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:255: FutureWarning: Accessing config attribute `compute_dtype` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'compute_dtype' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.compute_dtype'.
+  embedding_dim=self.inner_dim, compute_dtype=self.compute_dtype
+/home/jameskimh/src/Isaac-GR00T/gr00t/model/modules/dit.py:286: FutureWarning: Accessing config attribute `output_dim` directly via 'AlternateVLDiT' object attribute is deprecated. Please access 'output_dim' over 'AlternateVLDiT's config object instead, e.g. 'unet.config.output_dim'.
+  self.proj_out_2 = nn.Linear(self.inner_dim, self.output_dim)
+Total number of DiT parameters:  1091722240
+Total number of SelfAttentionTransformer parameters:  201433088
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  1.66it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.67it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  2.44it/s]
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] Graph break from `Tensor.item()`, consider setting:
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0]     torch._dynamo.config.capture_scalar_outputs = True
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] or:
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0]     env TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] to include these operations in the captured graph.
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] 
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] Graph break: from user code at:
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 719, in torch_dynamo_resume_in_forward_at_716
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0]     rotary_pos_emb = self.rot_pos_emb(grid_thw)
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0]   File "/home/jameskimh/venvs/groot17/lib/python3.12/site-packages/transformers/models/qwen3_vl/modeling_qwen3_vl.py", line 606, in rot_pos_emb
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0]     max_hw = int(grid_thw[:, 1:].max().item())
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] 
+W1025 05:28:13.007000 832124 torch/_dynamo/variables/tensor.py:1079] [3/0] 
+Capture range started in the application.
+Capture range ended in the application.
+Generating '/tmp/nsys-report-b23b.qdstrm'
+[1/1] [0%                          ] groot_n17_best_bf16.nsys-repProcessing events...
+[1/1] [0%                          ] groot_n17_best_bf16.nsys-rep[1/1] [=15%                        ] groot_n17_best_bf16.nsys-rep[1/1] [===22%                      ] groot_n17_best_bf16.nsys-rep[1/1] [====25%                     ] groot_n17_best_bf16.nsys-rep[1/1] [====27%                     ] groot_n17_best_bf16.nsys-rep[1/1] [====28%                     ] groot_n17_best_bf16.nsys-rep[1/1] [======34%                   ] groot_n17_best_bf16.nsys-rep[1/1] [================71%         ] groot_n17_best_bf16.nsys-rep[1/1] [===================81%      ] groot_n17_best_bf16.nsys-rep[1/1] [========================100%] groot_n17_best_bf16.nsys-rep[1/1] [========================100%] groot_n17_best_bf16.nsys-rep
+{"rung": "vis_fa_at_ae_at", "warmup_iters": 20, "graphs_compiled_in_profiled_window": 0, "region_calls": {"model_get_action": 2, "vlm_backbone": 2, "vision": 2, "vlm_prefix": 2, "backbone_lm_head": 2, "ae_total": 2}}
+Generated:
+	/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/20261025_E5_groot_n17_best_bf16_nsys/groot_n17_best_bf16.nsys-rep
