@@ -1,0 +1,44 @@
+{
+ "model": "groot_n16",
+ "rung_requested": "best_bf16",
+ "rung": "all_compile_ae_vis_at",
+ "best_bf16_source": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261025_E4i_summary/best_bf16.json",
+ "mpad_table_replayed": false,
+ "rung_desc": {
+  "rung": "all_compile_ae_vis_at",
+  "label": "GR00T E4i candidate: ae@max-autotune, vis@max-autotune-no-cudagraphs, llm@default + GEMM autotuning on the max-autotune parts only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [],
+  "compiled": [
+   "Gr00tN1d6ActionHead.get_action@max-autotune+clone",
+   "Eagle3_VLForConditionalGeneration.extract_feature@max-autotune-no-cudagraphs",
+   "Qwen3Model.forward@default"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.6464496639964636,
+  "ae_compiled": true
+ },
+ "warmup_iters": 20,
+ "graphs_compiled_in_profiled_window": 0,
+ "region_calls": {
+  "model_get_action": 1,
+  "vlm_backbone": 1,
+  "vision": 1,
+  "vlm_prefix": 1,
+  "backbone_lm_head": 1,
+  "ae_total": 1
+ },
+ "n_default": 4,
+ "tokens": {
+  "prefix_tokens_P": 284,
+  "P_dit_encoder": 284,
+  "suffix_tokens_S": 51
+ }
+}
