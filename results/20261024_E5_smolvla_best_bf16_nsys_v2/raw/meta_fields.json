@@ -1,0 +1,58 @@
+{
+ "task": "T006",
+ "model": "smolvla",
+ "rung": "best_bf16 = bf16_mpad_graphs_ae_at_islands",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "VLAFlowMatching.denoise_step@max-autotune; SmolVLMWithExpertModel.embed_image@reduce-overhead+clone; SmolVLMWithExpertModel.forward@reduce-overhead+clone",
+ "variant": "SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids; no cast needed (SmolVLAPolicy has no fp32 vision island: LeRobot loads its vision tower in bf16 already); this rung equals eager_tf32 for this model; linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 80 Linear modules padded; shapes padded: {'M=177 K=960 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=177 K=960 N=2560 torch.bfloat16': {'pad_to': 193, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=177 K=2560 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': nan, 'ms_at_pad': nan}}; bf16_islands: 21 fp32 Linear modules (13.1 MB) -> bf16, input cast to bf16, output cast back",
+ "num_denoise_steps": 10,
+ "action_horizon": 50,
+ "prefix_tokens": 177,
+ "suffix_tokens": 50,
+ "batch": 1,
+ "n_warmup": "20 (until no new graph)",
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "d77d11e",
+ "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row",
+ "cuobjdump_version": "n/a",
+ "inductor_cache": {
+  "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_smolvla_best_confirm/bf16_mpad_graphs_ae_at_islands/inductor",
+  "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_smolvla_best_confirm/bf16_mpad_graphs_ae_at_islands/triton"
+ },
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "experiment": "E5 nsys capture (T006 step 3)",
+ "n_timed": "2 inferences in the capture window",
+ "command": "bench/t006_capture.py nsys --model smolvla --mode best_bf16 --out results/20261024_E5_smolvla_best_bf16_nsys_v2",
+ "nsys_version": "NVIDIA Nsight Systems version 2025.3.2.367-253236224375v0",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "produced_by": {
+  "nsys": "nsys stats",
+  "kernels": "bench/t006_capture.py",
+  "target_info": "bench/profile_target.py"
+ },
+ "also_raw": [
+  "nsys/smolvla_best_bf16_cuda_api_sum.csv",
+  "nsys/smolvla_best_bf16_cuda_gpu_trace.csv.zst",
+  "nsys/smolvla_best_bf16_nvtx_gpu_proj_trace.csv",
+  "nsys/smolvla_best_bf16_cuda_gpu_mem_time_sum.csv",
+  "nsys/smolvla_best_bf16_osrt_sum.csv",
+  "nsys/smolvla_best_bf16_cuda_gpu_kern_sum.csv",
+  "nsys/smolvla_best_bf16_nvtx_sum.csv",
+  "nsys/smolvla_best_bf16_nvtx_kern_sum.csv",
+  "kernels.csv"
+ ],
+ "uncommitted_raw": [
+  {
+   "path": "scratch/20261024_E5_smolvla_best_bf16_nsys_v2/smolvla_best_bf16.nsys-rep",
+   "committed": false,
+   "reason": "nsys binaries embed the system environment (results/20261022_E0_secrets_test)"
+  }
+ ]
+}
