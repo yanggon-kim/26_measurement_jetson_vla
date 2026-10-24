@@ -111,6 +111,22 @@ def eligibility(r):
     return why
 
 
+def per_seed_median(r, m):
+    """Informational (not a selection rule): the median over the 10 seeded inferences of the per-seed relative L2 vs the
+    ladder's eager_fp32. Shows how much one knife-edge seed drives the aggregate (GR00T N1.5: seed 5002)."""
+    import numpy as np
+    n = r["N"]
+    a = os.path.join(REPO, r["_dir"], "raw", "actions", f"{r['rung']}_N{n}.npz")
+    refs = glob.glob(os.path.join(REPO, "results", f"*_{'E4d_' + m + '_ladder' if m.startswith('groot') else 'E4c_' + m + '_opt_ladder'}",
+                                  "raw", "actions", f"eager_fp32_N{n}.npz"))
+    if not os.path.exists(a) or not refs:
+        return ""
+    x, y = np.load(a)["actions"].astype(float), np.load(refs[-1])["actions"].astype(float)
+    if x.shape != y.shape:
+        return ""
+    return round(float(np.median([np.linalg.norm(x[i] - y[i]) / np.linalg.norm(y[i]) for i in range(len(x))])), 5)
+
+
 def own_path(r):
     return not any("attn:" in p or "thor_" in p for p in ((r.get("rung_desc") or {}).get("preps") or [])) and \
         "_attn_" not in r["rung"]
@@ -191,6 +207,7 @@ def main():
                               "e2e_ms": part(r, "e2e_wall") or "", "eligible": not r["_why"],
                               "why_not": "; ".join(r["_why"]),
                               "rel_l2_vs_eager_fp32": r["_eq"].get("eager_fp32", {}).get("rel_l2", ""),
+                              "median_per_seed_rel_l2 (informational)": per_seed_median(r, m) if r["status"] == "measured" else "",
                               "own_lerobot_path": own_path(r)})
         if best:
             d = best.get("rung_desc") or {}
