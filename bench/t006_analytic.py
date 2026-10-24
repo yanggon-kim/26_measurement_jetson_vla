@@ -54,6 +54,9 @@ def main():
             preps.append(EC.prep_attn(ad, pre, exp))
         elif p in ("no_attn_fusion", "capture_scalar"):
             preps.append(f"{p}: compile-time only, not applied (nothing is compiled here)")
+        elif p in ("kv_shallow", "vis_fa_static"):
+            import e4i_candidates as EC
+            preps.append({"kv_shallow": EC.prep_kv_shallow, "vis_fa_static": EC.prep_vis_fa_static}[p](ad))
         else:
             preps.append(RG.PREPS[p](ad) if p in RG.ADAPTER_PREPS else RG.PREPS[p](ad.policy))
     ad.set_n(ad.n_default)
