@@ -18,6 +18,16 @@ install anything.
 *(none open. H2 — Hugging Face login + Cosmos-Reason2 licence — resolved 2026-10-22, see the log in `STATUS.md`.)*
 
 ## Questions for the research side
+- 2026-10-25 — **The owner put an exact code-level variant into `best_bf16` for π0 / π0.5 (`kv_shallow`).** LeRobot's
+  `denoise_step` deep-copies the whole prefix KV cache at every denoising step (`modeling_pi0.py:919`,
+  `modeling_pi05.py:890`): a graph break, a ~15 MB device copy and ~2.7 ms of host time per step during which the GPU
+  waits (T007 timeline: π0 / π0.5 expert steps 25–27 % idle, 99 % of it CPU-starved). transformers' cache update
+  rebinds (`torch.cat`) and never writes the prefix tensors, so a shallow copy is exact: bitwise-equal actions, π0 expert
+  64.7 → 50.1 ms, e2e 143.8 → 128.7 ms in one process (`results/20261025_E4_cpu_overhead_diag/`). Protocol §16 leaves
+  such variants to the research side; the owner decided on 2026-10-25 to include it. It enters through the normal
+  path (E4i stage 4 search, equivalence, `e4i_summary.py`, confirmation). The pre-change `best_bf16` rows stay
+  committed (`results/20261024_E4i_summary/`) for comparison. Please say if the PIM study needs the stock-code numbers
+  as its baseline instead.
 - 2026-10-22 — **For every device agent: cuBLAS picks slow GEMM kernels at some token counts; zero-padding the rows
   fixes it, bit-identically** (`reports/NOTE_gemm_shape_cliff_m_padding.md`). π0's prefix gate/up GEMM at M = 816 runs
   at 31 instead of ≈ 110 TFLOP/s on Thor; padding to M = 1024 cut π0's optimised frame 211.7 → 170.9 ms with
@@ -93,3 +103,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-24 Resumed by the owner; order: best_bf16 + breakdown, then ncu for best_bf16 (T006/T007), then the rest.
 - 2026-10-24 E4i stage 2 done for all six; best_bf16 chosen; confirmations within 2 % for π0, π0.5, SmolVLA, N1.7; paused by the owner before the N1.6 / N1.5 confirmations.
 - 2026-10-24 T006 best_bf16 done for all six (E5 nsys + E6 roofline, 100 % coverage, 0 join mismatches); E6 reports generated; T007 C1 smoke test started (SmolVLA).
+- 2026-10-25 T007 timeline found host stalls in π0/π0.5 expert steps (per-step KV deepcopy) and N1.7's eager vision/prefix; N1.7 vision made compilable (vis_fa_static): stage 3 best vis_fa_at_ae_at 120.8 vs 131.9 ms (confirmation queued); owner put kv_shallow into best_bf16 for π0/π0.5 (stage 4 queued). T006 GR00T expert floor bug fixed (weights per step): gap 1.43/1.47/1.94x.
