@@ -16,7 +16,7 @@ closed the task.
 | [T002](tasks/T002_platform_record.md) | platform record (E0) | P0 | done | 2026-10-22 | 3a5417b | MAXN, locked 1575 MHz under load, idle module power 33.27 W; VDD_GPU current-limited at ≈ 100 W: sustained bf16 GEMM −5.6 % (invisible to devfreq) |
 | [T003](tasks/T003_peaks_and_kernel_sweep.md) | peaks → `hw_constants.json` (E1), expert kernel sweep (E2) | P0 | done | 2026-10-22 | 09bb687 | BW 258.2 GB/s, bf16 129.8 TFLOP/s (ridge 503 FLOP/B); counters validated to 0.1 %; π0 expert projections 3.29 ms/step = 1.37× floor; hidden fast memory-path state (×1.26) found |
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | done | 2026-10-22 | ce769e5 | eager AE share of e2e: π0 29.7 %, π0.5 28.2 %, SmolVLA 80.6 %, GR00T N1.7/1.6/1.5 47.8/54.2/37.1 %; GR00T DiT steps 2.1–2.6× their memory floor; shipped GR00T computes unused lm_head logits (3.5–19.9 ms); stock compile ≤ 15 % (π0) |
-| [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | claimed (paused by the owner: GPU in use by another user) | 2026-10-23 | 4723c7e | stage 2 done for 4 of 6; leaders π0 148.7, π0.5 163.2, SmolVLA 49.8, N1.7 134.5, N1.6 106.4, N1.5 116.6 ms (resume point below) |
+| [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | claimed (paused by the owner) | 2026-10-24 | 472851f | best_bf16 chosen for all six; confirmed 4/6 (π0 149.4, π0.5 164.4, SmolVLA 48.9, N1.7 133.4 ms); N1.6 98.4 / N1.5 116.6 ms pending confirm (resume point below) |
 | [T006](tasks/T006_roofline.md) | roofline per part and per kernel (E5 captures, E6, C3) — deliverable 2 | P0 | todo | | | |
 | [T007](tasks/T007_timelines_and_phase_bounds.md) | timelines and phase bounds (E5, E4g C1/C2) — deliverable 3a | P1 | todo | | | |
 | [T008](tasks/T008_kernel_bottlenecks.md) | per-kernel bottlenecks (E5b, E4h, E5c) — deliverable 3b | P1 | todo | | | |
@@ -28,65 +28,63 @@ closed the task.
 | [T014](tasks/T014_prefix_bandwidth_and_savings.md) | prefix bandwidth and savings (E13, E14, E14b) | P2 | todo | | | |
 | [T015](tasks/T015_full_synthesis.md) | full synthesis and repository check | P2 | todo | | | |
 
-### T005 resume point (paused by the owner 2026-10-23 ≈ 14:40 UTC: another user is running work on the GPU; restart only when the owner says so)
+### T005 resume point (paused by the owner 2026-10-24 ≈ 04:11 UTC; restart only when the owner says so)
+**The owner's order (2026-10-24):**
+1. the strong optimised version and its latency breakdown;
+2. the ncu work for those optimised configurations (T006, T007 `best_bf16`);
+3. the rest, step by step.
+
 **Done and pushed:**
 - six ladders;
-- the π0 GEMM M-cliff diagnosis and `linear_mpad`;
-- E4i stage 1 for all six models;
-- the N1.5 per-part divergence diagnosis: `results/20261023_E4i_groot_n15_part_diag/` (no graph bug; compiling N1.5's
-  vision changes its output 4.6 %, and one seed flips to another action mode);
-- `bf16_islands`: the remaining fp32 Linears to bf16;
-- per-part GEMM autotuning;
-- the stability guard (`bench/opt_ladder.py` re-times a disturbed timed block);
-- E4i stage 2 for π0, π0.5, SmolVLA and N1.7: `results/20261023_E4i_<m>_best_search_s2/`;
-- the T006 tooling (`bench/profile_target.py`, `t006_capture.py`, `t006_analytic.py`, `t006_roofline.py`,
-  `t006_run.py`), not yet run on the GPU.
+- E4i stages 1 and 2 for all six models; the N1.7 re-run;
+- the N1.5 divergence diagnosis;
+- `bf16_islands`, per-part autotuning, the stability guard;
+- **`best_bf16` chosen** (`bench/e4i_summary.py`; the selection is in the uncommitted local
+  `results/20261024_E4i_summary/`; it is regenerated at the restart);
+- **confirmation runs** for π0, π0.5, SmolVLA and N1.7: `results/20261024_E4i_<m>_best_confirm/`, each within 2 % of
+  its search result;
+- the T006 tooling and `bench/t007_c1.py`, not yet run on the GPU.
 
-**Current leaders.** Medians in ms (% of e2e), all fully bf16 except where noted:
+**`best_bf16` per model** (ms; confirm run where done):
 
-| model | configuration | e2e | vision | prefix | expert | where |
+| model | rung | e2e | vision | prefix | expert | confirm ÷ search |
 |---|---|---|---|---|---|---|
-| π0 | `bf16_mpad_graphs_ae_at` | 148.7 | 21.2 | 60.9 | 64.0 | `E4i_pi0_best_search_s2` |
-| π0.5 | `bf16_graphs_ae_at_islands` | 163.2 | 20.8 | 65.0 | 74.6 | `E4i_pi05_best_search_s2` |
-| SmolVLA | `bf16_mpad_graphs_ae_at_islands` | 49.8 | 15.3 | 4.3 | 27.0 | `E4i_smolvla_best_search_s2` |
-| GR00T N1.7 | `ae_graphs_autotune` | 134.5 | 29.9 | 25.8 | 51.7 | `E4i_groot_n17_best_search` |
-| GR00T N1.6 | `llm_compile_autotune` (stage 1) | 106.4 | 21.2 | 16.4 | 49.5 | `E4i_groot_n16_best_search` |
-| GR00T N1.5 | `llm_graphs_autotune` (stage 1) | 116.6 | 19.0 | 24.1 | 35.5 | `E4i_groot_n15_best_search` |
+| π0 | `bf16_mpad_graphs_ae_at` | 149.4 | 21.1 | 63.1 | 62.6 | 1.004 |
+| π0.5 | `bf16_graphs_ae_at_islands` | 164.4 | 21.1 | 65.9 | 74.7 | 1.007 |
+| SmolVLA | `bf16_mpad_graphs_ae_at_islands` | 48.9 | 15.2 | 4.3 | 26.0 | 0.982 |
+| GR00T N1.7 | `ae_graphs_autotune` | 133.4 | 29.0 | 25.3 | 53.2 | 0.992 |
+| GR00T N1.6 | `vlm_graphs_ae_at` | 98.4 (search) | 17.2 | 13.9 | 47.3 | pending |
+| GR00T N1.5 | `llm_graphs_autotune` | 116.6 (search) | 19.0 | 24.1 | 35.5 | pending |
 
 **Next steps, in order:**
-1. **Gate first.** The GPU must be idle; check `nvidia-smi` and other users' processes.
-2. **Resume stage 2 for N1.6 and N1.5:**
-   `bash bench/queues/t005_e4i_s2.sh 20261023 groot_n16 groot_n15 > scratch/t005/queue_e4i_s2b.log 2>&1`.
-   - N1.6's interrupted stage 2 (3 of 7 rows, possibly disturbed by the other user) was moved to
-     `scratch/t005/suspect/`. Do not use it; re-run from scratch.
-   - Also re-run the disturbed N1.7 candidate: `opt_ladder.py --model groot_n17 --out
-     results/<date>_E4i_groot_n17_rerun --rungs llm_compile_ae_at` (from `/tmp`).
-   - Finalise and commit each directory: `bench/t005_finalise.py --run <dir> --ref-dir <its ladder>`.
-3. **Choose `best_bf16`:**
-   - `~/venvs/base/bin/python bench/e4i_summary.py --out results/<date>_E4i_summary --report reports/E4d_phase_balance.md`;
-   - confirmation runs: `bench/opt_ladder.py --model <m> --rung best_bf16 --out results/<date>_E4i_<m>_best_confirm
-     --slope-steps 2,6 --slope-rungs all` (GR00T from `/tmp`);
-   - re-run `e4i_summary.py`.
-4. **π0 N = 4 control:** `bench/opt_ladder.py --model pi0 --n 4 --out results/<date>_E4c_pi0_opt_ladder_N4 --rungs <LR
-   list in bench/queues/t005_ladders.sh> --slope-steps 2,6 --slope-rungs whole_graphs`.
-5. **Part A:** `bash bench/queues/t005_part_a.sh <date>`.
-6. **Write up and close T005:**
-   - write `reports/E4i_best_combinations.md`;
-   - check the generated `reports/E4d_phase_balance.md`;
-   - update `reports/NOTE_gemm_shape_cliff_m_padding.md` (SmolVLA / GR00T `linear_mpad` results);
-   - independent review; close; tick deliverable 1.
-7. **T006:** `~/venvs/base/bin/python bench/t006_run.py --date <date> --skip-done`. It runs `best_bf16` for all six
-   models first, then `eager_fp32`. Smoke-test one model first: the ncu `--nvtx-include` filter and `-s` / `-c` with
-   the NVTX filter are untested on models.
-8. **T007–T015:** the approved plan, `~/.claude/plans/sunny-dazzling-cocoa.md` (Phases C, D).
+1. **Gate.** Check `nvidia-smi` and other users first.
+2. **Confirm N1.6 and N1.5:** `bash bench/queues/t005_confirm.sh 20261024 groot_n16 groot_n15 >
+   scratch/t005/queue_confirm2.log 2>&1`.
+   - Finalise each: `bench/t005_finalise.py --run results/20261024_E4i_<m>_best_confirm --ref-dir <ladder>`.
+   - N1.6's interrupted directory is in `scratch/t005/interrupted/`; unused.
+3. **Final summary:** `~/venvs/base/bin/python bench/e4i_summary.py --out results/20261024_E4i_summary --report
+   reports/E4d_phase_balance.md`, then finalise its `meta.json`, commit, and tick deliverable-1 latency cells.
+4. **Reports:**
+   - `reports/E4i_best_combinations.md`, by hand, citing rows:
+     - attention backends lost to Inductor's own fusion;
+     - per-part autotuning;
+     - `linear_mpad`;
+     - `bf16_islands`;
+     - N1.5's knife-edge seed; per-seed medians are in `candidates.csv`;
+   - update `NOTE_gemm_shape_cliff_m_padding.md`.
+5. **ncu for `best_bf16` (owner's priority 2):**
+   - Smoke-test `bench/t006_run.py --date <date> --models smolvla --modes best_bf16`. Check the ncu `--nvtx-include`
+     filter, the kernel counts vs nsys, the join, and the sizes.
+   - Then all six models. Then T007 C1 (`bench/t007_c1.py`) per part for `best_bf16`.
+6. **Rest of T005:** the π0 N = 4 control, Part A, the independent review, the close.
+7. **Then:** the `eager_fp32` ncu work (T006 / T007), then T008 → T015 (`~/.claude/plans/sunny-dazzling-cocoa.md`).
 
 **Operating notes:**
-- Pause a queue by waiting on the parent's children (`while pgrep -P <parent>`), never with a self-matching
-  `pgrep -f`.
+- Pause a queue by waiting on the parent's children (`while pgrep -P <parent>`).
 - Rows carry `bench_provenance` and `timing_attempts`.
 - GR00T runs from `/tmp`; compiled GR00T heads use `fallback_random`.
 - Equivalence bound: max(1e-2, 1.5 × the model's compile-only `ae_graphs` relative L2).
-- The device is shared. The start gate cannot see a job that begins mid-run; the stability guard catches it.
+- The device is shared; the stability guard re-times disturbed blocks.
 
 ## Deliverables checklist
 `eager_fp32` = baseline; `best_bf16` = the fastest BF16 configuration T005 finds (its rung name goes in the cell when

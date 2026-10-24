@@ -4,13 +4,10 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**Resumed 2026-10-24 by the owner (GPU idle, gate passed).** Running: E4i stage 2 for GR00T N1.6 / N1.5 (fresh 20261024
-directories; N1.6's interrupted rows are in `scratch/t005/suspect/`, unused) and the re-run of N1.7's disturbed
-candidate. **The owner's order (2026-10-24):** first the strong optimised version and its latency breakdown
-(`best_bf16` chosen, confirmed, E4d generated); next the ncu work for those optimised configurations (T006 roofline
-counters, T007 C1 bottleneck counters, `best_bf16` for all six models); then the rest step by step (T005's π0 N = 4
-control, Part A, review and close; the `eager_fp32` ncu work; T008 → T015). This puts parts of T006 / T007 before
-T005's close. It is the owner's explicit priority, and T006 / T007 need only `best_bf16.json` from T005.
+**Paused by the owner (2026-10-24 ≈ 04:11 UTC); nothing of ours is running.** `best_bf16` is chosen for all six models
+and confirmed for four (each within 2 %). The resume point and the exact restart commands are in `PROGRESS.md` under
+"T005 resume point". **The owner's order:** the optimised version and its breakdown first, then ncu for those
+optimised configurations (T006 / T007 `best_bf16`), then the rest step by step.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -94,3 +91,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-22 T005: six ladders done; E4i stage 1 done for all six models (N1.5 9/10); attention-backend switches (SDPA / flash-attn) all slower than Inductor's own fusion of eager attention; forced autotuning helps experts, hurts vision/prefix; paused by the owner, resume point in PROGRESS.md.
 - 2026-10-23 T005 resumed: N1.5 divergence diagnosed (vision compile changes its output 4.6 %; no graph bug); bf16_islands (π0.5 466 MB of fp32 adaRMS weights) and expert-only autotuning take π0.5 183.1 -> 163.2 ms and π0 157.8 -> 148.7 ms; a candidate disturbed by another user's GPU job led to the stability guard; paused again by the owner (shared GPU in use).
 - 2026-10-24 Resumed by the owner; order: best_bf16 + breakdown, then ncu for best_bf16 (T006/T007), then the rest.
+- 2026-10-24 E4i stage 2 done for all six; best_bf16 chosen; confirmations within 2 % for π0, π0.5, SmolVLA, N1.7; paused by the owner before the N1.6 / N1.5 confirmations.
