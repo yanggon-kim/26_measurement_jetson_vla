@@ -16,7 +16,7 @@ closed the task.
 | [T002](tasks/T002_platform_record.md) | platform record (E0) | P0 | done | 2026-10-22 | 3a5417b | MAXN, locked 1575 MHz under load, idle module power 33.27 W; VDD_GPU current-limited at ≈ 100 W: sustained bf16 GEMM −5.6 % (invisible to devfreq) |
 | [T003](tasks/T003_peaks_and_kernel_sweep.md) | peaks → `hw_constants.json` (E1), expert kernel sweep (E2) | P0 | done | 2026-10-22 | 09bb687 | BW 258.2 GB/s, bf16 129.8 TFLOP/s (ridge 503 FLOP/B); counters validated to 0.1 %; π0 expert projections 3.29 ms/step = 1.37× floor; hidden fast memory-path state (×1.26) found |
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | done | 2026-10-22 | ce769e5 | eager AE share of e2e: π0 29.7 %, π0.5 28.2 %, SmolVLA 80.6 %, GR00T N1.7/1.6/1.5 47.8/54.2/37.1 %; GR00T DiT steps 2.1–2.6× their memory floor; shipped GR00T computes unused lm_head logits (3.5–19.9 ms); stock compile ≤ 15 % (π0) |
-| [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | claimed (paused by the owner) | 2026-10-24 | 472851f | best_bf16 chosen for all six; confirmed 4/6 (π0 149.4, π0.5 164.4, SmolVLA 48.9, N1.7 133.4 ms); N1.6 98.4 / N1.5 116.6 ms pending confirm (resume point below) |
+| [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | claimed (deliverable 1 done; Part A, π0 N=4 control pending) | 2026-10-24 | 595a899 | best_bf16 confirmed for all six: π0 149.3, π0.5 164.4, SmolVLA 48.9, N1.7 133.9, N1.6 102.9, N1.5 106.3 ms; expert largest part in 5 of 6 (π0: prefix/expert tie) |
 | [T006](tasks/T006_roofline.md) | roofline per part and per kernel (E5 captures, E6, C3) — deliverable 2 | P0 | todo | | | |
 | [T007](tasks/T007_timelines_and_phase_bounds.md) | timelines and phase bounds (E5, E4g C1/C2) — deliverable 3a | P1 | todo | | | |
 | [T008](tasks/T008_kernel_bottlenecks.md) | per-kernel bottlenecks (E5b, E4h, E5c) — deliverable 3b | P1 | todo | | | |
@@ -102,11 +102,11 @@ and FLOP counters validated (T003): `results/20261022_E1_peak/validation.csv` ·
 | SmolVLA | `eager_fp32` | [x] `20261022_E4c_smolvla_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
 | SmolVLA | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands`: `20261024_E4i_smolvla_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.7 | `eager_fp32` | [x] `20261022_E4d_groot_n17_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `best_bf16` | [x] `ae_graphs_autotune`: `20261024_E4i_groot_n17_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.7 | `best_bf16` | [x] `ae_at`: `20261024_E4i_groot_n17_best_confirm2` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.6 | `eager_fp32` | [x] `20261022_E4d_groot_n16_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.6 | `best_bf16` | [x] `all_compile_ae_vis_at`: `20261024_E4i_groot_n16_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
 | GR00T N1.5 | `eager_fp32` | [x] `20261022_E4d_groot_n15_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.5 | `best_bf16` | [x] `llm_graphs_autotune`: `20261024_E4i_groot_n15_best_confirm` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
+| GR00T N1.5 | `best_bf16` | [x] `ae_at_mpad`: `20261024_E4i_groot_n15_best_confirm2` (+ `20261024_E4i_summary`) | [ ] | [ ] ncu · [ ] SASS |
 
 **Remaining Orin jobs:** [ ] E7 power per rail and part (T010) · [ ] E8 / E8s LIBERO (T011) · [ ] E11
 `model_inputs.csv` × 6 (T012) · [ ] E12 / E12b co-run (T013) · [ ] E13 / E14 / E14b (T014) · [ ] `SYNTHESIS_thor.md`
