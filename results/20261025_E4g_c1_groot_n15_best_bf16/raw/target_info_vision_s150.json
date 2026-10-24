@@ -1,0 +1,44 @@
+{
+ "model": "groot_n15",
+ "rung_requested": "best_bf16",
+ "rung": "ae_at_mpad",
+ "best_bf16_source": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261025_E4i_summary/best_bf16.json",
+ "mpad_table_replayed": true,
+ "rung_desc": {
+  "rung": "ae_at_mpad",
+  "label": "GR00T E4i candidate: ae@max-autotune + linear_mpad + GEMM autotuning on the max-autotune parts only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "linear_mpad(backbone+action_head, replayed from the recorded best_bf16 table): 57 Linear modules padded; shapes padded: {'M=814 K=2048 N=6144 torch.bfloat16': {'pad_to': 974, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=814 K=2048 N=151680 torch.bfloat16': {'pad_to': 974, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=814 K=2048 N=2048 torch.float32': {'pad_to': 910, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=814 K=8192 N=2048 torch.bfloat16': {'pad_to': 974, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=49 K=6144 N=1536 torch.bfloat16': {'pad_to': 145, 'ms_at_M': nan, 'ms_at_pad': nan}}"
+  ],
+  "compiled": [
+   "FlowmatchingActionHead.get_action@max-autotune+clone"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.7141816209987155,
+  "ae_compiled": true
+ },
+ "warmup_iters": 20,
+ "graphs_compiled_in_profiled_window": 0,
+ "region_calls": {
+  "model_get_action": 1,
+  "vlm_backbone": 1,
+  "vision": 1,
+  "vlm_prefix": 1,
+  "backbone_lm_head": 1,
+  "ae_total": 1
+ },
+ "n_default": 4,
+ "tokens": {
+  "prefix_tokens_P": 814,
+  "P_dit_encoder": 814,
+  "suffix_tokens_S": 49
+ }
+}
