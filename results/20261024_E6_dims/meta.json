@@ -1,0 +1,180 @@
+{
+  "date_utc": "2026-10-24T10:33:29Z",
+  "task": "T006",
+  "experiment": "C3 operand dims + analytic FLOPs / bytes per part (T006 steps 1-2)",
+  "model": "groot_n15_best_bf16, groot_n16_best_bf16, groot_n17_best_bf16, pi05_best_bf16, pi0_best_bf16, smolvla_best_bf16",
+  "rung": "per subdirectory <model>_<mode>; best_bf16 resolved through *_E4i_summary/best_bf16.json",
+  "precision": "the mode's (bench/rungs.py preparations, nothing compiled)",
+  "compile_mode": "none: FlopCounterMode needs eager dispatch",
+  "variant": "the mode's preps (bf16 casts, bf16_islands, linear_mpad padded rows counted)",
+  "num_denoise_steps": "model default (10 LeRobot, 4 GR00T)",
+  "action_horizon": "model default",
+  "prefix_tokens": "measured on a real inference (dims.csv M)",
+  "suffix_tokens": "measured on a real inference (dims.csv M)",
+  "batch": 1,
+  "n_warmup": "n/a: no timing",
+  "n_timed": "1 accounting inference",
+  "throttled": "n/a: no timing",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "3b8640a",
+  "command": [
+    "bench/t006_analytic.py --model <m> --mode <mode> --out results/20261024_E6_dims/raw/<m>_<mode>"
+  ],
+  "nsys_version": "n/a",
+  "ncu_version": "n/a",
+  "ncu_set": "n/a",
+  "ncu_filter": "n/a",
+  "ncu_metrics": "n/a",
+  "ncu_sm_frequency_hz": "n/a",
+  "cuobjdump_version": "n/a",
+  "model_repo": "see the T005 rows",
+  "model_commit": "see the T005 rows",
+  "checkpoint": "see the T005 rows",
+  "checkpoint_revision": "see the T005 rows",
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1=71\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "44718",
+    "gpu-thermal": "44718",
+    "cpu-thermal": "44718",
+    "soc012-thermal": "44187",
+    "soc345-thermal": "43593"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "359d7e950abbbfa6bc281716e1b107ffe1cfb6808f60c7474f5dcb6f742fcd28",
+      "bytes": 1572,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "40a70d12a5d90a925d77693db3b63ffc5fbb1ef507df85a70a15df101dff1d03",
+      "bytes": 20900,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/pi0_best_bf16/accounting.json",
+      "sha256": "962e25d88fd90ccbad54c688c98394a32860ff933aec9ed9c4abd8d4686f914e",
+      "bytes": 4048,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py (run_e3.accounting_pass)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/pi0_best_bf16/dims.csv",
+      "sha256": "79fd44518f4b790558bef8acfbd705c4b7ee189879cb4a6a96411334340a616b",
+      "bytes": 83851,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/pi05_best_bf16/accounting.json",
+      "sha256": "95d1891c2a830f507804961c83fa6112dc1e77e1fa0647025970ddbf6afd116b",
+      "bytes": 3659,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py (run_e3.accounting_pass)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/pi05_best_bf16/dims.csv",
+      "sha256": "c4d1c063c869a6d9ae6a4414033815189885b0756c0b718efe69ef969af0c4ad",
+      "bytes": 92463,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n17_best_bf16/accounting.json",
+      "sha256": "3f7176c8bab4be0d61ec5cb4309f049cb7d551ede37508c586215e237b059c6f",
+      "bytes": 4860,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py (run_e3.accounting_pass)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n17_best_bf16/dims.csv",
+      "sha256": "6cf5c3db569f1a95becb2d56ab5876acb3a4bdfa11203bbb4d1f2c55997a3d0e",
+      "bytes": 184677,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n16_best_bf16/accounting.json",
+      "sha256": "1911d7b08c9fddd6f38bee7941bed6e8cd26919966a407d3df635d1da22cca0b",
+      "bytes": 4860,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py (run_e3.accounting_pass)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n16_best_bf16/dims.csv",
+      "sha256": "ba4334b5ce516967ee651f86adaa0e257da633e9afbc1167afa9fc8b2b4c4ea0",
+      "bytes": 212856,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smolvla_best_bf16/accounting.json",
+      "sha256": "5e09550771400de0c07dd7af1287b44a846f75c40504f72401220dc89ec444db",
+      "bytes": 3968,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py (run_e3.accounting_pass)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/smolvla_best_bf16/dims.csv",
+      "sha256": "5ec682e1fce9026462889cd6c4cb255c069172620ad0ce472fa81e1eb40deff8",
+      "bytes": 56607,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n15_best_bf16/accounting.json",
+      "sha256": "e05d03302ddf4bc364f01c6ce4fd0e56e996e2e9e11739e26faddb53559ebe36",
+      "bytes": 4825,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py (run_e3.accounting_pass)",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/groot_n15_best_bf16/dims.csv",
+      "sha256": "cbdfe54c323280f429e9c62ab7d3db6a3de5add2e3b19cdfaaba09b5438f1c3e",
+      "bytes": 127728,
+      "kind": "other",
+      "produced_by": "bench/t006_analytic.py",
+      "secrets_scan": "clean"
+    }
+  ]
+}
