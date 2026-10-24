@@ -100,6 +100,36 @@ def prep_no_attn_fusion(adapter):
     return "Inductor's SDPA pattern rewrite (fuse_attention._sfdp_init) disabled"
 
 
+def prep_vis_fa_static(adapter):
+    """GR00T N1.7 (Qwen3-VL vision): pass flash-attn varlen a STATIC max_seqlen so the vision tower can be compiled.
+
+    Qwen3VLVisionAttention computes max_seqlen = (cu_seqlens[1:] - cu_seqlens[:-1]).max(), a 0-dim CUDA tensor; flash-attn's
+    custom op takes an int, so dynamo fails on it (T005 ladder: vis_compile / vlm_* "Dynamo failed to run FX node with
+    fake tensors: flash_attn._flash_attn_varlen_forward"). For the vision attention modules only, this wrapper replaces
+    max_length_q / max_length_k with the total token count (query.shape[2], a static shape). flash-attn uses max_seqlen
+    only as an upper bound (grid size; blocks past a sequence's end exit), so the arithmetic is unchanged; the
+    equivalence check verifies it. The LLM's attention calls pass through untouched."""
+    import rungs as RG
+    if adapter.name != "groot_n17":
+        raise RG.NotApplicable("vis_fa_static applies to GR00T N1.7 (Qwen3-VL vision) only")
+    from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
+    from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLVisionAttention
+    orig = ALL_ATTENTION_FUNCTIONS["flash_attention_2"]
+    if getattr(orig, "_thor_vis_static", False):
+        return "vision flash-attn varlen: static max_seqlen (already installed)"
+
+    def fa2(module, query, key, value, attention_mask, **kw):
+        if isinstance(module, Qwen3VLVisionAttention) and "max_length_q" in kw:
+            n = query.shape[2]                            # (1, heads, total_tokens, head_dim): every image's tokens
+            kw["max_length_q"] = n
+            kw["max_length_k"] = n
+        return orig(module, query, key, value, attention_mask, **kw)
+
+    fa2._thor_vis_static = True
+    ALL_ATTENTION_FUNCTIONS["flash_attention_2"] = fa2
+    return "vision flash-attn varlen: max_seqlen = total vision tokens (static upper bound) instead of a CUDA tensor"
+
+
 def candidates():
     """Candidate rungs (registered in rungs.EXTRA by rungs.py). Built on the ladder's best LeRobot configuration
     (bf16 casts + graphs on the expert, vision and prefix) and its prefix-compile-without-graphs sibling."""
@@ -191,6 +221,13 @@ def groot_candidates():
         ("llm_compile_ae_at", [ae_at, llm_d], [], "parts", None),
         ("all_compile_autotune_scalar", [ae, vis_ng, llm_ng], ["capture_scalar"], True, ["groot_n17"]),
         ("vlm_graphs_autotune_scalar", [ae, vis_ng, llm_g], ["capture_scalar"], True, ["groot_n17"]),
+        # stage 3 (T007 timeline: N1.7's eager vision and prefix leave the GPU idle 33-39 % of the time, CPU-starved):
+        # the vision tower made compilable by vis_fa_static, on top of ae_at
+        ("vis_fa_compile_ae_at", [ae_at, vis_d], ["vis_fa_static"], "parts", ["groot_n17"]),
+        ("vis_fa_at_ae_at", [ae_at, vis_at], ["vis_fa_static"], "parts", ["groot_n17"]),
+        ("vis_fa_graphs_ae_at", [ae_at, ("vis", G, True)], ["vis_fa_static"], "parts", ["groot_n17"]),
+        ("all_fa_compile_ae_at", [ae_at, vis_d, llm_d], ["vis_fa_static"], "parts", ["groot_n17"]),
+        ("vis_fa_compile_llm_graphs_ae_at", [ae_at, vis_d, llm_g], ["vis_fa_static"], "parts", ["groot_n17"]),
     ]
     return [RG._r(k, f"GR00T E4i candidate: {', '.join(f'{p}@{m}' for p, m, _ in t)}"
                      + (f" + {'+'.join(pr)}" if pr else "")
