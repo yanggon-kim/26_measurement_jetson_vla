@@ -1,0 +1,43 @@
+{
+ "task": "T007",
+ "experiment": "E5 timeline analysis (T007 step 1) of T006's nsys capture",
+ "model": "smolvla",
+ "rung": "best_bf16 = bf16_mpad_graphs_ae_at_islands",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "VLAFlowMatching.denoise_step@max-autotune; SmolVLMWithExpertModel.embed_image@reduce-overhead+clone; SmolVLMWithExpertModel.forward@reduce-overhead+clone",
+ "variant": "SmolVLMVisionEmbeddings.forward: boolean-mask index_put replaced by the identical static position ids; no cast needed (SmolVLAPolicy has no fp32 vision island: LeRobot loads its vision tower in bf16 already); this rung equals eager_tf32 for this model; linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 80 Linear modules padded; shapes padded: {'M=177 K=960 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=177 K=960 N=2560 torch.bfloat16': {'pad_to': 193, 'ms_at_M': nan, 'ms_at_pad': nan}, 'M=177 K=2560 N=960 torch.bfloat16': {'pad_to': 241, 'ms_at_M': nan, 'ms_at_pad': nan}}; bf16_islands: 21 fp32 Linear modules (13.1 MB) -> bf16, input cast to bf16, output cast back",
+ "num_denoise_steps": 10,
+ "action_horizon": 50,
+ "prefix_tokens": 177,
+ "suffix_tokens": 50,
+ "batch": 1,
+ "n_warmup": "see the E5 capture",
+ "n_timed": "2 inferences (the E5 capture window)",
+ "hw_constants_source": "n/a: no ceiling used",
+ "throttled": "see the E5 capture",
+ "bench_commit": "b8e17ac",
+ "command": "bench/t007_timeline.py --e5 results/20261024_E5_smolvla_best_bf16_nsys_v2 --t005-row results/20261024_E4i_smolvla_best_confirm/raw/rows/bf16_mpad_graphs_ae_at_islands_N10.json --out results/20261024_E5_smolvla_best_bf16_timeline",
+ "nsys_version": "see the E5 capture",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "cuobjdump_version": "n/a",
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "e5_capture": "results/20261024_E5_smolvla_best_bf16_nsys_v2",
+ "t005_row": "results/20261024_E4i_smolvla_best_confirm/raw/rows/bf16_mpad_graphs_ae_at_islands_N10.json",
+ "produced_by": {
+  "*.csv": "bench/t007_timeline.py"
+ },
+ "uncommitted_raw": [
+  {
+   "path": "scratch/20261024_E5_smolvla_best_bf16_nsys_v2/smolvla_best_bf16.sqlite",
+   "committed": false,
+   "reason": "nsys exports embed the system environment (results/20261022_E0_secrets_test)"
+  }
+ ]
+}
