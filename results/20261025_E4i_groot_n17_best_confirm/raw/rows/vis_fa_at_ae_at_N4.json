@@ -1,0 +1,601 @@
+{
+ "model": "groot_n17",
+ "rung": "vis_fa_at_ae_at",
+ "N": 4,
+ "status": "measured",
+ "error": "",
+ "not_applicable_reason": "",
+ "bench_provenance": {
+  "git_head": "cb6fe9a",
+  "files_sha256": {
+   "opt_ladder.py": "840ab90eb794bd29",
+   "rungs.py": "b42972ac0b4868df",
+   "e4i_candidates.py": "bbb26568b6f9b95c",
+   "regions.py": "dbe0285ff6f9ffff",
+   "run_e3.py": "28ca1e3b009fbc83"
+  }
+ },
+ "gate_start": {
+  "time_utc": "2026-10-24T15:40:07Z",
+  "checks": {
+   "1_power_mode": true,
+   "2_sm_count": true,
+   "3_jetson_clocks": true,
+   "4_gpu_freq_within_2pct": true,
+   "5_no_other_gpu_job": true,
+   "6_oc_counters_readable": true
+  },
+  "gpu_hz": 1575000000,
+  "gpu_util_pct_samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "soctherm_oc_event_cnt": {
+   "oc1": 0,
+   "oc2": 66,
+   "oc3": 726
+  },
+  "thermal_zones_mC": {
+   "tj-thermal": "43968",
+   "gpu-thermal": "43968",
+   "cpu-thermal": "42843",
+   "soc012-thermal": "42500",
+   "soc345-thermal": "42781"
+  }
+ },
+ "provenance": {
+  "model_repo": "https://github.com/NVIDIA/Isaac-GR00T",
+  "model_commit": "376ba890cff8c9de64d71d982772a9c36185fdd7",
+  "checkpoint": "nvidia/GR00T-N1.7-3B",
+  "checkpoint_revision": "2fc962b973bccdd5d8ce4f67cc63b264d6886495",
+  "embodiment_tag": "oxe_droid_relative_eef_relative_joint",
+  "obs_shapes": {
+   "video": {
+    "exterior_image_1_left": [
+     1,
+     2,
+     256,
+     256,
+     3
+    ],
+    "wrist_image_left": [
+     1,
+     2,
+     256,
+     256,
+     3
+    ]
+   },
+   "state": {
+    "eef_9d": [
+     1,
+     1,
+     9
+    ],
+    "gripper_position": [
+     1,
+     1,
+     1
+    ],
+    "joint_position": [
+     1,
+     1,
+     7
+    ]
+   }
+  },
+  "weights_check": {
+   "checked": 400,
+   "matched": 400,
+   "files": [
+    "model-00001-of-00002.safetensors",
+    "model-00002-of-00002.safetensors"
+   ],
+   "verdict": "real weights"
+  },
+  "input_note": "seeded random pixels / state at the checkpoint's own keys and shapes (np.random.seed(1234), 256x256), as on the Orin (groot_phases.build_observation)",
+  "backbone": "nvidia/Cosmos-Reason2-2B @ 9ce19a195e423419c349abfc86fd07178b230561"
+ },
+ "tokens": {
+  "prefix_tokens_P": 273,
+  "P_dit_encoder": 273,
+  "suffix_tokens_S": 41
+ },
+ "rung_desc": {
+  "rung": "vis_fa_at_ae_at",
+  "label": "GR00T E4i candidate: ae@max-autotune, vis@max-autotune-no-cudagraphs + vis_fa_static + GEMM autotuning on the max-autotune parts only",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "vision flash-attn varlen: max_seqlen = total vision tokens (static upper bound) instead of a CUDA tensor"
+  ],
+  "compiled": [
+   "Gr00tN1d7ActionHead.get_action@max-autotune+clone",
+   "Qwen3VLModel.get_image_features@max-autotune-no-cudagraphs"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
+  "compile_wrap_s": 0.514796738003497,
+  "ae_compiled": true
+ },
+ "param_dtype_bytes": {
+  "torch.bfloat16": 6288032000
+ },
+ "by_N": {
+  "4": {
+   "regions": {
+    "vision": {
+     "median_ms": 19.220848083496094,
+     "mean_ms": 19.231121253967284,
+     "p5_ms": 19.111263275146484,
+     "p95_ms": 19.386240005493164,
+     "min_ms": 19.074464797973633,
+     "max_ms": 19.535871505737305,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 25.065695762634277,
+     "mean_ms": 25.115846767425538,
+     "p5_ms": 24.8504638671875,
+     "p95_ms": 25.31715202331543,
+     "min_ms": 24.754751205444336,
+     "max_ms": 27.93120002746582,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.26147198677063,
+     "mean_ms": 3.2711161518096925,
+     "p5_ms": 3.229952096939087,
+     "p95_ms": 3.3032960891723633,
+     "min_ms": 3.2237439155578613,
+     "max_ms": 4.246687889099121,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 50.61609649658203,
+     "mean_ms": 50.7073917388916,
+     "p5_ms": 50.34729766845703,
+     "p95_ms": 51.16636657714844,
+     "min_ms": 50.228416442871094,
+     "max_ms": 53.46355056762695,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 50.72820854187012,
+     "mean_ms": 50.790459632873535,
+     "p5_ms": 50.62028884887695,
+     "p95_ms": 51.106719970703125,
+     "min_ms": 50.534305572509766,
+     "max_ms": 52.785247802734375,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 102.44142532348633,
+     "mean_ms": 102.61022094726563,
+     "p5_ms": 102.17424011230469,
+     "p95_ms": 103.27843475341797,
+     "min_ms": 101.99718475341797,
+     "max_ms": 107.35318756103516,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 120.3892809971876,
+     "mean_ms": 118.71659448988794,
+     "p5_ms": 115.4107690017554,
+     "p95_ms": 121.91574300231878,
+     "min_ms": 115.17094600276323,
+     "max_ms": 123.46716199681396,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 17.959469070716295,
+     "mean_ms": 16.106373542622315,
+     "p5_ms": 13.088564411911648,
+     "p95_ms": 19.177174412237946,
+     "min_ms": 12.918826416134834,
+     "max_ms": 21.264281137438957,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 25.366559278743807,
+     "mean_ms": 23.57916683562158,
+     "p5_ms": 20.53221324138576,
+     "p95_ms": 26.88068248744821,
+     "min_ms": 20.345712020993233,
+     "max_ms": 28.71577344700927,
+     "n": 100
+    }
+   },
+   "first_call_s": 240.98503842100035,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6615504896,
+   "control_frequency_hz": 8.416096488391371,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 46.85,
+    "state": "normal",
+    "gpu_C": "49281"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 46.98,
+    "state": "normal",
+    "gpu_C": "52000"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 120.3892809971876,
+     "e2e_p95_over_p5": 1.0563636656858637
+    }
+   ],
+   "timing_stable": true
+  },
+  "2": {
+   "regions": {
+    "vision": {
+     "median_ms": 19.81599998474121,
+     "mean_ms": 19.826057624816894,
+     "p5_ms": 19.635263442993164,
+     "p95_ms": 20.081600189208984,
+     "min_ms": 19.517087936401367,
+     "max_ms": 20.372447967529297,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 25.89033603668213,
+     "mean_ms": 25.80741189956665,
+     "p5_ms": 25.38163185119629,
+     "p95_ms": 26.221376419067383,
+     "min_ms": 25.272319793701172,
+     "max_ms": 26.691776275634766,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.2764159440994263,
+     "mean_ms": 3.2770204877853395,
+     "p5_ms": 3.236448049545288,
+     "p95_ms": 3.321727991104126,
+     "min_ms": 3.217344045639038,
+     "max_ms": 3.3342719078063965,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 52.16985511779785,
+     "mean_ms": 52.120318756103515,
+     "p5_ms": 51.50409698486328,
+     "p95_ms": 52.86383819580078,
+     "min_ms": 51.33049774169922,
+     "max_ms": 53.36137771606445,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 27.328384399414062,
+     "mean_ms": 27.313827285766603,
+     "p5_ms": 27.119455337524414,
+     "p95_ms": 27.46575927734375,
+     "min_ms": 27.019168853759766,
+     "max_ms": 27.548704147338867,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 80.65742492675781,
+     "mean_ms": 80.54962211608887,
+     "p5_ms": 79.81839752197266,
+     "p95_ms": 81.35702514648438,
+     "min_ms": 79.61830139160156,
+     "max_ms": 81.96415710449219,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 100.04221600320307,
+     "mean_ms": 98.62254626990762,
+     "p5_ms": 93.75753800122766,
+     "p95_ms": 101.04081199824577,
+     "min_ms": 93.60086199740181,
+     "max_ms": 104.07724400283769,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 19.32522026015795,
+     "mean_ms": 18.07292415381875,
+     "p5_ms": 13.698353992542252,
+     "p95_ms": 20.074267391115427,
+     "min_ms": 13.525147886073682,
+     "max_ms": 22.914463241118938,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 26.900724563136464,
+     "mean_ms": 25.67524945975747,
+     "p5_ms": 21.359247941931244,
+     "p95_ms": 27.67845631018281,
+     "min_ms": 21.049405545985792,
+     "max_ms": 30.500059325713664,
+     "n": 100
+    }
+   },
+   "first_call_s": 84.16134425500059,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11,
+    11
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6615504896,
+   "control_frequency_hz": 10.128348419367693,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 46.97,
+    "state": "normal",
+    "gpu_C": "48781"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 47.01,
+    "state": "normal",
+    "gpu_C": "50937"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 100.04221600320307,
+     "e2e_p95_over_p5": 1.0776820099192743
+    }
+   ],
+   "timing_stable": true
+  },
+  "6": {
+   "regions": {
+    "vision": {
+     "median_ms": 19.487343788146973,
+     "mean_ms": 19.495583095550536,
+     "p5_ms": 19.37558364868164,
+     "p95_ms": 19.608320236206055,
+     "min_ms": 19.3187198638916,
+     "max_ms": 20.233152389526367,
+     "n": 100
+    },
+    "vlm_prefix": {
+     "median_ms": 25.248319625854492,
+     "mean_ms": 25.27251401901245,
+     "p5_ms": 25.065120697021484,
+     "p95_ms": 25.54140853881836,
+     "min_ms": 25.025344848632812,
+     "max_ms": 26.41859245300293,
+     "n": 100
+    },
+    "backbone_lm_head": {
+     "median_ms": 3.258944034576416,
+     "mean_ms": 3.2609568071365356,
+     "p5_ms": 3.226655960083008,
+     "p95_ms": 3.30348801612854,
+     "min_ms": 3.2204480171203613,
+     "max_ms": 3.318687915802002,
+     "n": 100
+    },
+    "vlm_backbone": {
+     "median_ms": 51.08662414550781,
+     "mean_ms": 51.12099750518799,
+     "p5_ms": 50.836769104003906,
+     "p95_ms": 51.44908905029297,
+     "min_ms": 50.73766326904297,
+     "max_ms": 53.18239974975586,
+     "n": 100
+    },
+    "ae_total": {
+     "median_ms": 75.107421875,
+     "mean_ms": 75.09764640808106,
+     "p5_ms": 74.92902374267578,
+     "p95_ms": 75.24044799804688,
+     "min_ms": 74.88313293457031,
+     "max_ms": 75.41974639892578,
+     "n": 100
+    },
+    "model_get_action": {
+     "median_ms": 127.29945755004883,
+     "mean_ms": 127.32986930847169,
+     "p5_ms": 127.03052520751953,
+     "p95_ms": 127.70150756835938,
+     "min_ms": 127.0074234008789,
+     "max_ms": 129.70704650878906,
+     "n": 100
+    },
+    "e2e_wall": {
+     "median_ms": 146.11501550098183,
+     "mean_ms": 144.95475704003184,
+     "p5_ms": 140.8973090001382,
+     "p95_ms": 147.38132099591894,
+     "min_ms": 140.69794600072782,
+     "max_ms": 149.0369599996484,
+     "n": 100
+    },
+    "outside_model": {
+     "median_ms": 18.810268145840382,
+     "mean_ms": 17.624887731560158,
+     "p5_ms": 13.631809107784647,
+     "p95_ms": 19.79814242181601,
+     "min_ms": 13.430206949356943,
+     "max_ms": 21.697825783339795,
+     "n": 100
+    },
+    "other": {
+     "median_ms": 26.261529912997503,
+     "mean_ms": 25.089013517387794,
+     "p5_ms": 21.08109321410302,
+     "p95_ms": 27.291586864565033,
+     "min_ms": 20.917822534684092,
+     "max_ms": 29.156642311660107,
+     "n": 100
+    }
+   },
+   "first_call_s": 222.9565525029975,
+   "warmup_iters": 20,
+   "warmup_unique_graphs": [
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12
+   ],
+   "warmup_stable": true,
+   "graphs_compiled_during_timed": 0,
+   "ae_step_mean_of_medians_ms": "n/a: per-step regions off",
+   "peak_mem_allocated_bytes": 6615504896,
+   "control_frequency_hz": 6.893875510256834,
+   "throttle": {
+    "throttled": false,
+    "oc_event_delta": {
+     "oc1": 0,
+     "oc2": 0,
+     "oc3": 0
+    },
+    "devfreq_samples_below_locked": 0
+   },
+   "memory_state_before": {
+    "probe_us_per_call": 46.64,
+    "state": "normal",
+    "gpu_C": "49468"
+   },
+   "memory_state_after": {
+    "probe_us_per_call": 47.21,
+    "state": "normal",
+    "gpu_C": "52781"
+   },
+   "timing_attempts": [
+    {
+     "attempt": 0,
+     "e2e_median_ms": 146.11501550098183,
+     "e2e_p95_over_p5": 1.0460194168490073
+    }
+   ],
+   "timing_stable": true
+  }
+ },
+ "actions_finite": true,
+ "actions_shape": [
+  10,
+  680
+ ],
+ "inductor_counters": {
+  "graph_break": {
+   "Data dependent operator\n  Explanation: Operator `aten._local_scalar_dense.default` has a non-Tensor output whose value is dependent on the data of Tensor inputs.\n  Hint: Enable tracing of data-dependent output operators with `torch._dynamo.config.capture_scalar_outputs = True`\n\n  Developer debug context: aten._local_scalar_dense.default\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0033.html": 3,
+   "Unsupported Tensor.item() call with capture_scalar_outputs=False\n  Explanation: Dynamo does not support tracing `Tensor.item()` with config.capture_scalar_outputs=False.\n  Hint: Set `torch._dynamo.config.capture_scalar_outputs = True` or `export TORCHDYNAMO_CAPTURE_SCALAR_OUTPUTS=1` to include these operations in the captured graph.\n\n  Developer debug context: call_method TensorVariable() item () {}\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0124.html": 3,
+   "Dynamic shape operator\n  Explanation: Operator `aten.repeat_interleave.Tensor`'s output shape depends on input Tensor data.\n  Hint: Enable tracing of dynamic shape operators with `torch._dynamo.config.capture_dynamic_output_shape_ops = True`\n\n  Developer debug context: aten.repeat_interleave.Tensor\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0036.html": 1
+  },
+  "stats": {
+   "calls_captured": 17526,
+   "unique_graphs": 12
+  },
+  "inductor": {
+   "pattern_matcher_count": 10533,
+   "pattern_matcher_nodes": 12333,
+   "fxgraph_cache_miss": 11,
+   "select_algorithm_precompile": 22,
+   "select_algorithm_num_precompiles": 396,
+   "select_algorithm_autotune": 22,
+   "benchmarking.InductorBenchmarker.benchmark": 899,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 1338,
+   "flop_count": 3221225472,
+   "coordesc_tuning_bench": 678,
+   "async_compile_cache_miss": 1177,
+   "extern_calls": 995,
+   "async_compile_cache_hit": 564,
+   "triton_bundler_save_kernel": 10112,
+   "triton_bundler_save_static_autotuner": 10,
+   "generated_module_cache_miss": 383,
+   "generated_module_cache_hit": 45986,
+   "pad_mm_bench": 8,
+   "cudagraph_recorded_non_static_inputs": 15
+  }
+ },
+ "mpad_table": "n/a: linear_mpad not applied",
+ "wall_s": 611.2107751369476
+}
