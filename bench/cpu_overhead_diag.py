@@ -100,37 +100,84 @@ def main():
             acts.append(OL.flatten_actions(act))
         return np.stack(acts)
 
+    def warm():
+        h, n = [ug()], 0
+        while n < 10 or len(h) <= 5 or h[-1] != h[-6]:
+            mark()
+            ad.iteration()
+            h.append(ug())
+            n += 1
+            if n >= 60:
+                break
+        return n
+
+    def profile(tag):
+        pr = cProfile.Profile()
+        mark()
+        pr.enable()
+        ad.iteration()
+        pr.disable()
+        s = io.StringIO()
+        pstats.Stats(pr, stream=s).sort_stats("cumulative").print_stats(60)
+        open(os.path.join(a.out, "raw", f"cprofile_{a.model}_{tag}.txt"), "w").write(s.getvalue())
+
+    def compare(arm, act, ref):
+        d = act - ref
+        arm["rel_l2_vs_baseline"] = float(np.linalg.norm(d) / max(np.linalg.norm(ref), 1e-30))
+        arm["max_abs_diff_vs_baseline"] = float(np.abs(d).max())
+        arm["bitwise_equal_to_baseline"] = bool((act == ref).all())
+        arm["actions_finite"] = bool(np.isfinite(act).all())
+
     res = {"model": a.model, "rung": rung, "best_bf16_source": src, "warmup_iters": it, "rung_desc": desc,
-           "inductor_cache": os.environ.get("TORCHINDUCTOR_CACHE_DIR", "default (not the timed run's)")}
+           "inductor_cache": os.environ.get("TORCHINDUCTOR_CACHE_DIR", "default (not the timed run's)"),
+           "note": "diagnostic arms in ONE process, in this order; none of them is the baseline (protocol §16)"}
     res["baseline"] = timed("baseline")
-    pr = cProfile.Profile()
-    mark()
-    pr.enable()
-    ad.iteration()
-    pr.disable()
-    s = io.StringIO()
-    pstats.Stats(pr, stream=s).sort_stats("cumulative").print_stats(60)
-    open(os.path.join(a.out, "raw", f"cprofile_{a.model}_baseline.txt"), "w").write(s.getvalue())
+    profile("baseline")
     base_act = seeded()
+    arms = ["baseline"]
     torch.compiler.set_stance("default", skip_guard_eval_unsafe=True)
     res["skip_guards"] = timed("skip_guard_eval_unsafe")
-    pr = cProfile.Profile()
-    mark()
-    pr.enable()
-    ad.iteration()
-    pr.disable()
-    s = io.StringIO()
-    pstats.Stats(pr, stream=s).sort_stats("cumulative").print_stats(60)
-    open(os.path.join(a.out, "raw", f"cprofile_{a.model}_skip_guards.txt"), "w").write(s.getvalue())
-    sk_act = seeded()
-    d = sk_act - base_act
-    res["skip_guards"]["rel_l2_vs_baseline"] = float(np.linalg.norm(d) / max(np.linalg.norm(base_act), 1e-30))
-    res["skip_guards"]["max_abs_diff_vs_baseline"] = float(np.abs(d).max())
-    res["skip_guards"]["actions_finite"] = bool(np.isfinite(sk_act).all())
+    profile("skip_guards")
+    compare(res["skip_guards"], seeded(), base_act)
+    torch.compiler.set_stance("default", skip_guard_eval_unsafe=False)
+    arms.append("skip_guards")
+    if a.model in ("pi0", "pi05"):
+        # kv_shallow: the per-step copy.deepcopy(past_key_values) of denoise_step replaced by a shallow copy (new cache and
+        # layer objects that point at the same prefix K/V tensors). Exact if the expert never writes the prefix tensors in
+        # place: DynamicLayer.update rebinds self.keys = torch.cat(...), so the bitwise comparison below decides.
+        import copy as _copy
+        import importlib
+        mod = importlib.import_module(f"lerobot.policies.{a.model}.modeling_{a.model}")
+
+        class _ShallowCopy:
+            @staticmethod
+            def deepcopy(x, memo=None):
+                if hasattr(x, "layers"):
+                    n = _copy.copy(x)
+                    n.layers = [_copy.copy(layer) for layer in x.layers]
+                    return n
+                return _copy.deepcopy(x, memo)
+
+            def __getattr__(self, k):
+                return getattr(_copy, k)
+
+        mod.copy = _ShallowCopy()
+        res["kv_shallow_warmup_iters"] = warm()
+        res["kv_shallow"] = timed("kv_shallow")
+        profile("kv_shallow")
+        compare(res["kv_shallow"], seeded(), base_act)
+        torch.compiler.set_stance("default", skip_guard_eval_unsafe=True)
+        res["kv_shallow_skip_guards"] = timed("kv_shallow + skip_guard_eval_unsafe")
+        compare(res["kv_shallow_skip_guards"], seeded(), base_act)
+        torch.compiler.set_stance("default", skip_guard_eval_unsafe=False)
+        arms += ["kv_shallow", "kv_shallow_skip_guards"]
+    res["baseline_repeat"] = timed("baseline repeat (bracket): kv_shallow still installed" if a.model in ("pi0", "pi05")
+                                   else "baseline repeat (bracket)")
     json.dump(res, open(os.path.join(a.out, f"{a.model}_{a.rung}.json"), "w"), indent=1, default=str)
-    print(json.dumps({k: (res[k]["e2e_wall_median_ms"], res[k]["regions_median_ms"], res[k]["graphs_compiled"])
-                      for k in ("baseline", "skip_guards")}, default=str))
-    print("skip_guards vs baseline actions: rel L2", res["skip_guards"]["rel_l2_vs_baseline"])
+    for k in arms:
+        g = res[k]["regions_median_ms"]
+        print(k, round(res[k]["e2e_wall_median_ms"], 2), {kk: round(g[kk], 2) for kk in ("vision", "vlm_prefix", "ae_total") if kk in g},
+              "graphs", res[k]["graphs_compiled"], "rel_l2", res[k].get("rel_l2_vs_baseline"), "bitwise", res[k].get("bitwise_equal_to_baseline"))
 
 
 if __name__ == "__main__":
