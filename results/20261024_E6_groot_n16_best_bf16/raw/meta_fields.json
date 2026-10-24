@@ -1,0 +1,53 @@
+{
+ "task": "T006",
+ "model": "groot_n16",
+ "rung": "best_bf16 = all_compile_ae_vis_at",
+ "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+ "compile_mode": "Gr00tN1d6ActionHead.get_action@max-autotune+clone; Eagle3_VLForConditionalGeneration.extract_feature@max-autotune-no-cudagraphs; Qwen3Model.forward@default",
+ "variant": "none",
+ "num_denoise_steps": 4,
+ "action_horizon": 16,
+ "prefix_tokens": 284,
+ "suffix_tokens": 51,
+ "batch": 1,
+ "n_warmup": "20 (until no new graph)",
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "825a519",
+ "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row",
+ "cuobjdump_version": "n/a",
+ "inductor_cache": {
+  "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_groot_n16_best_confirm/all_compile_ae_vis_at/inductor",
+  "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261024_E4i_groot_n16_best_confirm/all_compile_ae_vis_at/triton"
+ },
+ "model_repo": "see the T005 row's provenance",
+ "model_commit": "see the T005 row's provenance",
+ "checkpoint": "see the T005 row's provenance",
+ "checkpoint_revision": "see the T005 row's provenance",
+ "experiment": "E6 roofline per part and per kernel (T006 steps 4-6)",
+ "n_timed": "1 inference per ncu run",
+ "command": [
+  "bench/t006_analytic.py --model groot_n16 --mode best_bf16",
+  "bench/t006_capture.py ncu --part <vision,vlm_prefix,ae_total,backbone_lm_head>",
+  "bench/t006_roofline.py --t005-row results/20261024_E4i_groot_n16_best_confirm/raw/rows/all_compile_ae_vis_at_N4.json"
+ ],
+ "nsys_version": "see the E5 directory",
+ "ncu_version": "2025.3.0.0",
+ "ncu_set": "n/a: form D, explicit metric list",
+ "ncu_filter": "--nvtx --nvtx-include <part>/ --profile-from-start off, one inference",
+ "ncu_metrics": "raw/ncu_metrics.txt (T003-validated counters)",
+ "ncu_sm_frequency_hz": "locked by jetson_clocks; --clock-control none",
+ "produced_by": {
+  "ncu": "ncu --import --csv --page raw",
+  "roofline": "bench/t006_roofline.py"
+ },
+ "also_raw": [
+  "ncu/vlm_prefix_s0.ncu-rep.zst",
+  "ncu/backbone_lm_head_s0.ncu-rep",
+  "ncu/ae_total_s0.ncu-rep.zst",
+  "ncu/ae_total_s0_raw.csv",
+  "ncu/vlm_prefix_s0_raw.csv",
+  "ncu/vision_s0_raw.csv",
+  "ncu/vision_s0.ncu-rep.zst",
+  "ncu/backbone_lm_head_s0_raw.csv"
+ ]
+}
