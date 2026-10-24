@@ -13,11 +13,11 @@
 | SmolVLA | 10 | eager_fp32 | `eager_fp32` | 170.061 | 15.048 | 14.294 | 137.33 | 3.468 | 80.8 | — |
 | SmolVLA | 10 | best_bf16 | `bf16_mpad_graphs_ae_at_islands` | 48.899 | 15.212 | 4.286 | 26.004 | 3.389 | 53.2 | — |
 | GR00T N1.7 | 4 | eager_fp32 | `eager_fp32` | 160.991 | 28.919 | 25.668 | 79.754 | 26.506 | 49.5 | 56.2 |
-| GR00T N1.7 | 4 | best_bf16 | `ae_graphs_autotune` | 133.389 | 29.011 | 25.282 | 53.228 | 25.879 | 39.9 | 46.2 |
+| GR00T N1.7 | 4 | best_bf16 | `ae_at` | 133.869 | 29.474 | 26.074 | 51.144 | 27.214 | 38.2 | 44.7 |
 | GR00T N1.6 | 4 | eager_fp32 | `eager_fp32` | 135.364 | 21.082 | 20.598 | 73.463 | 20.03 | 54.3 | 60.8 |
-| GR00T N1.6 | 4 | best_bf16 | `all_compile_ae_vis_at` | 102.906 | 17.252 | 15.018 | 50.15 | 20.444 | 48.7 | 56.9 |
+| GR00T N1.6 | 4 | best_bf16 | `all_compile_ae_vis_at` | 102.906 | 17.252 | 15.018 | 50.15 | 20.444 | 48.7 | 56.8 |
 | GR00T N1.5 | 4 | eager_fp32 | `eager_fp32` | 141.874 | 18.87 | 31.04 | 52.949 | 38.844 | 37.3 | 42.4 |
-| GR00T N1.5 | 4 | best_bf16 | `llm_graphs_autotune` | 119.54 | 19.238 | 24.511 | 37.273 | 38.516 | 31.2 | 35.9 |
+| GR00T N1.5 | 4 | best_bf16 | `ae_at_mpad` | 106.254 | 18.547 | 26.525 | 36.839 | 24.318 | 34.7 | 41.3 |
 
 ## 2. Thor ÷ Orin per part (Orin values parsed from `reference/orin/reports/E4d_phase_balance.md` and `E4i_best_combinations.md`; GR00T e2e on Thor = the model call, the Orin's definition)
 
@@ -30,11 +30,11 @@
 | SmolVLA | eager_fp32 | `eager_fp32` | 4.28× | 2.21× | 4.60× | 4.52× |
 | SmolVLA | best_bf16 | `vlm_graphs` | 1.89× | 2.05× | 1.85× | 1.73× |
 | GR00T N1.7 | eager_fp32 | `eager_fp32` | 2.62× | 2.44× | 2.75× | 2.65× |
-| GR00T N1.7 | best_bf16 | `vlm_compile` | 2.09× | 2.44× | 2.75× | 1.49× |
+| GR00T N1.7 | best_bf16 | `vlm_compile` | 2.10× | 2.40× | 2.68× | 1.56× |
 | GR00T N1.6 | eager_fp32 | `eager_fp32` | 2.71× | 2.94× | 2.46× | 2.74× |
 | GR00T N1.6 | best_bf16 | `all_compile_autotune` | 1.98× | 2.83× | 2.68× | 1.45× |
 | GR00T N1.5 | eager_fp32 | `eager_fp32` | 2.05× | 2.66× | 1.96× | 1.86× |
-| GR00T N1.5 | best_bf16 | `all_compile_autotune` | 1.63× | 1.67× | 1.54× | 1.62× |
+| GR00T N1.5 | best_bf16 | `all_compile_autotune` | 1.89× | 1.74× | 2.19× | 1.64× |
 
 GR00T prefix in this table = Thor's `vlm_backbone − vision` (the Orin's definition, which includes the unused `lm_head`).
 
@@ -43,9 +43,57 @@ GR00T prefix in this table = Thor's `vlm_backbone − vision` (the Orin's defini
 - π0: best_bf16 `bf16_mpad_graphs_ae_at` 149.3 ms; expert 62.6 ms = 41.9 % of e2e; largest part: **prefix** (63.1 ms). Fastest of any rung: `bf16_mpad_graphs_ae_at` 148.7 ms; fastest without an attention-backend switch: `bf16_mpad_graphs_ae_at` 148.7 ms.
 - π0.5: best_bf16 `bf16_graphs_ae_at_islands` 164.4 ms; expert 74.7 ms = 45.4 % of e2e; largest part: **expert** (74.7 ms). Fastest of any rung: `bf16_graphs_ae_at_islands` 163.2 ms; fastest without an attention-backend switch: `bf16_graphs_ae_at_islands` 163.2 ms.
 - SmolVLA: best_bf16 `bf16_mpad_graphs_ae_at_islands` 48.9 ms; expert 26.0 ms = 53.2 % of e2e; largest part: **expert** (26.0 ms). Fastest of any rung: `bf16_mpad_whole_graphs_autotune` 46.5 ms (not eligible: no per-part split (whole-policy compile, e2e only); not BF16: 1.4 % of parameter bytes fp32); fastest without an attention-backend switch: `bf16_mpad_graphs_ae_at_islands` 49.8 ms.
-- GR00T N1.7: best_bf16 `ae_graphs_autotune` 133.4 ms; expert 53.2 ms = 46.2 % of the model call; largest part: **expert** (53.2 ms). Fastest of any rung: `ae_graphs_autotune` 134.5 ms; fastest without an attention-backend switch: `ae_graphs_autotune` 134.5 ms.
+- GR00T N1.7: best_bf16 `ae_at` 133.9 ms; expert 51.1 ms = 44.7 % of the model call; largest part: **expert** (51.1 ms). Fastest of any rung: `ae_at` 127.5 ms; fastest without an attention-backend switch: `ae_at` 127.5 ms.
 - GR00T N1.6: best_bf16 `all_compile_ae_vis_at` 102.9 ms; expert 50.1 ms = 56.8 % of the model call; largest part: **expert** (50.1 ms). Fastest of any rung: `vlm_graphs_ae_at` 98.4 ms (not eligible: its confirmation run failed: actions differ from eager_fp32 by rel L2 2.43e-02 > bound 2.21e-02); fastest without an attention-backend switch: `all_compile_ae_vis_at` 103.4 ms.
-- GR00T N1.5: best_bf16 `llm_graphs_autotune` 119.5 ms; expert 37.3 ms = 35.9 % of the model call; largest part: **expert** (37.3 ms). Fastest of any rung: `vlm_graphs_mpad_autotune` 92.4 ms (not eligible: actions differ from eager_fp32 by rel L2 1.41e-01 > bound 2.58e-02); fastest without an attention-backend switch: `llm_graphs_autotune` 116.6 ms.
+- GR00T N1.5: best_bf16 `ae_at_mpad` 106.3 ms; expert 36.8 ms = 41.3 % of the model call; largest part: **expert** (36.8 ms). Fastest of any rung: `vlm_graphs_mpad_autotune` 92.4 ms (not eligible: actions differ from eager_fp32 by rel L2 1.41e-01 > bound 2.58e-02); fastest without an attention-backend switch: `ae_at_mpad` 105.4 ms.
+
+## 3b. Per-step time by slope (rows measured at three or more N)
+
+Slope b and intercept a of the expert time `ae_total = a + b·N` (e2e for whole-policy compiles, whose per-part split is off), over the N values the row was timed at. The instrumented mean step (where the per-step regions exist) is shown beside it.
+
+| model | rung | dir | N values | ms per step (slope) | intercept ms | instrumented mean step ms |
+|---|---|---|---|---|---|---|
+| π0 | `whole_graphs` | `20261022_E4c_pi0_opt_ladder` | [2, 6, 10] | 7.92 (e2e_wall) | 153.78 | — |
+| π0 | `bf16_mpad_graphs_ae_at` | `20261024_E4i_pi0_best_confirm` | [2, 6, 10] | 6.23 (ae_total) | 0.26 | 6.19 |
+| π0.5 | `whole_graphs` | `20261022_E4c_pi05_opt_ladder` | [2, 6, 10] | 13.41 (e2e_wall) | 201.31 | — |
+| π0.5 | `bf16_graphs_ae_at_islands` | `20261024_E4i_pi05_best_confirm` | [2, 6, 10] | 7.43 (ae_total) | 0.46 | 7.39 |
+| SmolVLA | `whole_graphs` | `20261022_E4c_smolvla_opt_ladder` | [2, 6, 10] | 2.62 (e2e_wall) | 20.32 | — |
+| SmolVLA | `bf16_mpad_graphs_ae_at_islands` | `20261024_E4i_smolvla_best_confirm` | [2, 6, 10] | 2.57 (ae_total) | 0.27 | 2.54 |
+| GR00T N1.7 | `ae_compile` | `20261022_E4d_groot_n17_ladder` | [2, 4, 6] | 15.54 (ae_total) | 2.38 | — |
+| GR00T N1.7 | `ae_graphs` | `20261022_E4d_groot_n17_ladder` | [2, 4, 6] | 15.01 (ae_total) | 2.88 | — |
+| GR00T N1.7 | `eager_fp32` | `20261022_E4d_groot_n17_ladder` | [2, 4, 6] | 18.74 (ae_total) | 3.26 | 19.06 |
+| GR00T N1.7 | `eager_tf32` | `20261022_E4d_groot_n17_ladder` | [2, 4, 6] | 18.08 (ae_total) | 1.43 | 17.49 |
+| GR00T N1.7 | `llm_compile` | `20261022_E4d_groot_n17_ladder` | [2, 4, 6] | 15.02 (ae_total) | 3.29 | — |
+| GR00T N1.7 | `llm_graphs` | `20261022_E4d_groot_n17_ladder` | [2, 4, 6] | 15.27 (ae_total) | 2.55 | — |
+| GR00T N1.7 | `ae_graphs_autotune` | `20261024_E4i_groot_n17_best_confirm` | [2, 4, 6] | 12.21 (ae_total) | 4.46 | — |
+| GR00T N1.7 | `ae_at` | `20261024_E4i_groot_n17_best_confirm2` | [2, 4, 6] | 11.87 (ae_total) | 3.62 | — |
+| GR00T N1.6 | `ae_compile` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 16.37 (ae_total) | 0.35 | — |
+| GR00T N1.6 | `ae_graphs` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 16.12 (ae_total) | 0.26 | — |
+| GR00T N1.6 | `all_compile_autotune` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 12.06 (ae_total) | 0.24 | — |
+| GR00T N1.6 | `eager_fp32` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 18.34 (ae_total) | 0.07 | 18.32 |
+| GR00T N1.6 | `eager_tf32` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 18.37 (ae_total) | 0.25 | 18.44 |
+| GR00T N1.6 | `llm_compile` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 15.92 (ae_total) | 0.47 | — |
+| GR00T N1.6 | `llm_graphs` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 15.88 (ae_total) | 0.17 | — |
+| GR00T N1.6 | `vis_compile` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 15.90 (ae_total) | 0.31 | — |
+| GR00T N1.6 | `vlm_compile` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 15.81 (ae_total) | 0.31 | — |
+| GR00T N1.6 | `vlm_graphs` | `20261022_E4d_groot_n16_ladder` | [2, 4, 6] | 16.01 (ae_total) | 0.15 | — |
+| GR00T N1.6 | `all_compile_ae_at` | `20261024_E4i_groot_n16_best_confirm` | [2, 4, 6] | 11.57 (ae_total) | 0.43 | — |
+| GR00T N1.6 | `all_compile_ae_vis_at` | `20261024_E4i_groot_n16_best_confirm` | [2, 4, 6] | 12.54 (ae_total) | 0.06 | — |
+| GR00T N1.6 | `vlm_graphs_ae_at` | `20261024_E4i_groot_n16_best_confirm` | [2, 4, 6] | 11.77 (ae_total) | -0.05 | — |
+| GR00T N1.5 | `ae_compile` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.30 (ae_total) | 7.57 | — |
+| GR00T N1.5 | `ae_graphs` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.37 (ae_total) | 7.47 | — |
+| GR00T N1.5 | `all_compile_autotune` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 7.12 (ae_total) | 6.91 | — |
+| GR00T N1.5 | `eager_fp32` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 11.29 (ae_total) | 7.75 | 11.28 |
+| GR00T N1.5 | `eager_tf32` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 11.27 (ae_total) | 7.68 | 11.20 |
+| GR00T N1.5 | `llm_compile` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.35 (ae_total) | 7.48 | — |
+| GR00T N1.5 | `llm_graphs` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.46 (ae_total) | 7.47 | — |
+| GR00T N1.5 | `vis_compile` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.40 (ae_total) | 7.59 | — |
+| GR00T N1.5 | `vis_graphs` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.43 (ae_total) | 7.55 | — |
+| GR00T N1.5 | `vlm_compile` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.26 (ae_total) | 8.04 | — |
+| GR00T N1.5 | `vlm_graphs` | `20261022_E4d_groot_n15_ladder` | [2, 4, 6] | 9.38 (ae_total) | 7.56 | — |
+| GR00T N1.5 | `llm_graphs_autotune` | `20261024_E4i_groot_n15_best_confirm` | [2, 4, 6] | 7.46 (ae_total) | 7.40 | — |
+| GR00T N1.5 | `ae_at_mpad` | `20261024_E4i_groot_n15_best_confirm2` | [2, 4, 6] | 7.42 (ae_total) | 7.11 | — |
+| GR00T N1.5 | `llm_graphs_ae_at_mpad` | `20261024_E4i_groot_n15_best_confirm2` | [2, 4, 6] | 7.33 (ae_total) | 6.94 | — |
 
 ## 4. Every rung and candidate (default N)
 
@@ -175,9 +223,13 @@ GR00T prefix in this table = Thor's `vlm_backbone − vision` (the Orin's defini
 
 | rung | dir | status | e2e | vision | prefix | expert | other | eligible for best_bf16 |
 |---|---|---|---|---|---|---|---|---|
+| `ae_at` | `20261024_E4i_groot_n17_rerun2` | measured | 127.5 | 28.8 | 25.2 | 47.4 | 26.1 | yes |
 | `ae_graphs_autotune` | `20261024_E4i_groot_n17_best_confirm` | measured | 133.4 | 29.0 | 25.3 | 53.2 | 25.9 | yes |
+| `ae_at` | `20261024_E4i_groot_n17_best_confirm2` | measured | 133.9 | 29.5 | 26.1 | 51.1 | 27.2 | yes |
 | `ae_graphs_autotune` | `20261022_E4i_groot_n17_best_search` | measured | 134.5 | 29.9 | 25.8 | 51.7 | 27.0 | yes |
+| `ae_at_mpad` | `20261024_E4i_groot_n17_rerun2` | measured | 134.9 | 30.6 | 25.7 | 53.6 | 25.2 | yes |
 | `ae_graphs_mpad_autotune` | `20261022_E4i_groot_n17_best_search` | measured | 135.0 | 31.0 | 25.9 | 51.3 | 26.8 | yes |
+| `llm_compile_ae_at` | `20261024_E4i_groot_n17_rerun` | measured | 136.5 | 29.0 | 28.5 | 52.0 | 27.1 | yes |
 | `llm_graphs_autotune` | `20261022_E4i_groot_n17_best_search` | measured | 138.6 | 29.1 | 31.7 | 51.6 | 26.2 | yes |
 | `llm_compile_autotune` | `20261022_E4i_groot_n17_best_search` | measured | 139.0 | 29.1 | 31.5 | 52.2 | 26.4 | yes |
 | `llm_graphs_mpad_autotune` | `20261022_E4i_groot_n17_best_search` | measured | 140.1 | 31.7 | 34.2 | 47.8 | 26.2 | yes |
@@ -246,15 +298,21 @@ GR00T prefix in this table = Thor's `vlm_backbone − vision` (the Orin's defini
 | `vlm_graphs_mpad_autotune` | `20261024_E4i_groot_n15_best_search_s2` | measured | 92.4 | 12.5 | 18.5 | 37.6 | 23.8 | no: actions differ from eager_fp32 by rel L2 1.41e-01 > bound 2.58e-02 |
 | `all_compile_ae_at_mpad` | `20261024_E4i_groot_n15_best_search_s2` | measured | 97.6 | 12.3 | 23.4 | 37.9 | 23.9 | no: actions differ from eager_fp32 by rel L2 1.37e-01 > bound 2.58e-02 |
 | `vlm_graphs_mpad_autotune` | `20261022_E4i_groot_n15_best_search` | measured | 99.2 | 13.4 | 24.1 | 37.9 | 23.8 | no: throttled; actions differ from eager_fp32 by rel L2 3.08e-02 > bound 2.58e-02 |
+| `llm_graphs_ae_at_mpad` | `20261024_E4i_groot_n15_best_confirm2` | measured | 100.3 | 18.4 | 22.3 | 36.3 | 23.4 | no: actions differ from eager_fp32 by rel L2 1.37e-01 > bound 2.58e-02 |
 | `llm_graphs_mpad_autotune` | `20261022_E4i_groot_n15_best_search` | measured | 100.8 | 18.8 | 18.8 | 40.1 | 23.0 | no: throttled; actions differ from eager_fp32 by rel L2 1.38e-01 > bound 2.58e-02 |
 | `llm_graphs_mpad_autotune` | `20261024_E4i_groot_n15_best_search_s2` | measured | 101.5 | 19.0 | 17.7 | 40.9 | 23.9 | no: throttled; actions differ from eager_fp32 by rel L2 1.38e-01 > bound 2.58e-02 |
+| `llm_graphs_ae_at_mpad` | `20261024_E4i_groot_n15_rerun` | measured | 102.8 | 18.4 | 22.4 | 37.3 | 24.7 | no: its confirmation run failed: actions differ from eager_fp32 by rel L2 1.37e-01 > bound 2.58e-02 |
+| `ae_at_mpad` | `20261024_E4i_groot_n15_rerun` | measured | 105.4 | 18.6 | 26.6 | 36.8 | 23.6 | yes |
+| `ae_at_mpad` | `20261024_E4i_groot_n15_best_confirm2` | measured | 106.3 | 18.5 | 26.5 | 36.8 | 24.3 | yes |
 | `all_compile_autotune` | `20261024_E4i_groot_n15_best_search_s2` | measured | 107.8 | 12.1 | 21.8 | 36.0 | 37.8 | no: actions differ from eager_fp32 by rel L2 1.39e-01 > bound 2.58e-02 |
 | `vlm_graphs_autotune` | `20261022_E4i_groot_n15_best_search` | measured | 108.0 | 12.5 | 22.0 | 35.5 | 38.1 | no: actions differ from eager_fp32 by rel L2 1.38e-01 > bound 2.58e-02 |
 | `all_compile_autotune` | `20261022_E4d_groot_n15_ladder` | measured | 108.4 | 13.3 | 21.2 | 35.4 | 38.5 | no: actions differ from eager_fp32 by rel L2 8.18e-01 > bound 2.58e-02 |
 | `all_compile_ae_at` | `20261024_E4i_groot_n15_best_search_s2` | measured | 109.3 | 12.2 | 23.0 | 36.0 | 38.1 | no: actions differ from eager_fp32 by rel L2 3.59e-02 > bound 2.58e-02 |
 | `ae_graphs_mpad_autotune` | `20261022_E4i_groot_n15_best_search` | measured | 111.3 | 19.1 | 31.3 | 37.6 | 23.3 | no: throttled |
 | `vlm_graphs_ae_at` | `20261024_E4i_groot_n15_best_search_s2` | measured | 111.4 | 12.4 | 23.9 | 36.2 | 39.0 | no: actions differ from eager_fp32 by rel L2 3.26e-02 > bound 2.58e-02 |
+| `ae_graphs_mpad_autotune` | `20261024_E4i_groot_n15_rerun` | measured | 111.9 | 18.4 | 30.1 | 39.8 | 23.5 | no: throttled |
 | `all_compile_ae_vis_at` | `20261024_E4i_groot_n15_best_search_s2` | measured | 112.1 | 12.8 | 23.7 | 37.1 | 38.5 | no: actions differ from eager_fp32 by rel L2 1.39e-01 > bound 2.58e-02 |
+| `ae_graphs_mpad` | `20261024_E4i_groot_n15_rerun` | measured | 115.6 | 18.8 | 30.4 | 42.9 | 23.5 | yes |
 | `llm_graphs_autotune` | `20261022_E4i_groot_n15_best_search` | measured | 116.6 | 19.0 | 24.1 | 35.5 | 37.9 | yes |
 | `llm_compile_ae_at` | `20261024_E4i_groot_n15_best_search_s2` | measured | 116.8 | 19.1 | 23.6 | 35.5 | 38.6 | no: actions differ from eager_fp32 by rel L2 1.37e-01 > bound 2.58e-02 |
 | `llm_compile_autotune` | `20261022_E4i_groot_n15_best_search` | measured | 117.2 | 19.1 | 24.4 | 35.2 | 38.5 | yes |

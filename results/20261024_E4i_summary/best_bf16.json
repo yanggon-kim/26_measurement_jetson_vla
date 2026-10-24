@@ -23,6 +23,7 @@
     "cudnn_allow_tf32": true
    },
    "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "fallback_random": "off",
    "regions": true,
    "mpad_table": {
     "M=816 K=2048 N=2048 torch.bfloat16": {
@@ -119,6 +120,7 @@
     "cudnn_allow_tf32": true
    },
    "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "fallback_random": "off",
    "regions": true,
    "mpad_table": "n/a: linear_mpad not applied",
    "e2e_ms": 163.20444799930556,
@@ -171,6 +173,7 @@
     "cudnn_allow_tf32": true
    },
    "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "fallback_random": "off",
    "regions": true,
    "mpad_table": {
     "M=177 K=960 N=960 torch.bfloat16": {
@@ -253,12 +256,12 @@
    }
   },
   "groot_n17": {
-   "rung": "ae_graphs_autotune",
+   "rung": "ae_at",
    "N": 4,
-   "timed_in": "results/20261022_E4i_groot_n17_best_search",
-   "label": "GR00T E4i candidate: ae@reduce-overhead + forced GEMM autotuning",
+   "timed_in": "results/20261024_E4i_groot_n17_rerun2",
+   "label": "GR00T E4i candidate: ae@max-autotune + GEMM autotuning on the max-autotune parts only",
    "compiled": [
-    "Gr00tN1d7ActionHead.get_action@reduce-overhead+clone"
+    "Gr00tN1d7ActionHead.get_action@max-autotune+clone"
    ],
    "preps": [],
    "precision_flags": {
@@ -266,32 +269,33 @@
     "cuda_matmul_allow_tf32": true,
     "cudnn_allow_tf32": true
    },
-   "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+   "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
    "regions": true,
    "mpad_table": "n/a: linear_mpad not applied",
-   "e2e_ms": 134.5201728399843,
+   "e2e_ms": 127.45440950038756,
    "equivalence_bound_rel_l2": 0.01,
    "compile_reference": "results/20261022_E4i_groot_n17_best_search:ae_graphs",
    "reproduce": "bench/opt_ladder.py --model groot_n17 --rung best_bf16 --out <dir>",
    "fastest_overall": {
-    "rung": "ae_graphs_autotune",
-    "e2e_ms": 134.5201728399843,
-    "dir": "results/20261022_E4i_groot_n17_best_search",
+    "rung": "ae_at",
+    "e2e_ms": 127.45440950038756,
+    "dir": "results/20261024_E4i_groot_n17_rerun2",
     "eligible": true,
     "why_not": ""
    },
    "fastest_on_lerobot_own_path": {
-    "rung": "ae_graphs_autotune",
-    "e2e_ms": 134.5201728399843
+    "rung": "ae_at",
+    "e2e_ms": 127.45440950038756
    },
    "max_ae_share": {
     "rung": "eager_fp32",
     "ae_share": 0.5618764090232744
    },
    "confirmation": {
-    "dir": "results/20261024_E4i_groot_n17_best_confirm",
-    "e2e_ms": 133.3889649977209,
-    "confirm_over_search": 0.9915907940171249,
+    "dir": "results/20261024_E4i_groot_n17_best_confirm2",
+    "e2e_ms": 133.8686895005594,
+    "confirm_over_search": 1.0503260736550064,
     "eligible": true,
     "why_not": "",
     "reported_numbers_from": "confirmation"
@@ -314,6 +318,7 @@
     "cudnn_allow_tf32": true
    },
    "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
    "regions": true,
    "mpad_table": "n/a: linear_mpad not applied",
    "e2e_ms": 103.4314339995035,
@@ -345,24 +350,122 @@
    }
   },
   "groot_n15": {
-   "rung": "llm_graphs_autotune",
+   "rung": "ae_at_mpad",
    "N": 4,
-   "timed_in": "results/20261022_E4i_groot_n15_best_search",
-   "label": "GR00T E4i candidate: ae@reduce-overhead, llm@reduce-overhead + forced GEMM autotuning",
+   "timed_in": "results/20261024_E4i_groot_n15_rerun",
+   "label": "GR00T E4i candidate: ae@max-autotune + linear_mpad + GEMM autotuning on the max-autotune parts only",
    "compiled": [
-    "FlowmatchingActionHead.get_action@reduce-overhead+clone",
-    "Qwen3Model.forward@reduce-overhead+clone"
+    "FlowmatchingActionHead.get_action@max-autotune+clone"
    ],
-   "preps": [],
+   "preps": [
+    "linear_mpad(backbone+action_head): 57 Linear modules padded; shapes padded: {'M=814 K=2048 N=6144 torch.bfloat16': {'pad_to': 974, 'ms_at_M': 0.2099, 'ms_at_pad': 0.1975}, 'M=814 K=2048 N=151680 torch.bfloat16': {'pad_to': 974, 'ms_at_M': 16.8761, 'ms_at_pad': 5.5219}, 'M=814 K=2048 N=2048 torch.float32': {'pad_to': 910, 'ms_at_M': 0.1358, 'ms_at_pad': 0.1224}, 'M=814 K=8192 N=2048 torch.bfloat16': {'pad_to': 974, 'ms_at_M': 0.3449, 'ms_at_pad': 0.3005}, 'M=49 K=6144 N=1536 torch.bfloat16': {'pad_to': 145, 'ms_at_M': 0.0408, 'ms_at_pad': 0.0381}}"
+   ],
    "precision_flags": {
     "float32_matmul_precision": "high",
     "cuda_matmul_allow_tf32": true,
     "cudnn_allow_tf32": true
    },
-   "autotune": "is_big_gpu forced True; max_autotune, max_autotune_gemm on; backends ATEN,TRITON",
+   "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+   "fallback_random": "torch._inductor.config.fallback_random = True: the compiled action head draws its seeded noise from aten's RNG, as eager does (equivalence check)",
    "regions": true,
-   "mpad_table": "n/a: linear_mpad not applied",
-   "e2e_ms": 116.55963980592787,
+   "mpad_table": {
+    "M=768 K=1152 N=1152 torch.float32": {
+     "pad_to": 768,
+     "ms_at_M": 0.0557,
+     "ms_at_pad": 0.0557
+    },
+    "M=768 K=1152 N=1152 torch.bfloat16": {
+     "pad_to": 768,
+     "ms_at_M": 0.0336,
+     "ms_at_pad": 0.0336
+    },
+    "M=768 K=1152 N=4304 torch.float32": {
+     "pad_to": 768,
+     "ms_at_M": 0.1636,
+     "ms_at_pad": 0.1636
+    },
+    "M=768 K=4304 N=1152 torch.bfloat16": {
+     "pad_to": 768,
+     "ms_at_M": 0.0763,
+     "ms_at_pad": 0.0763
+    },
+    "M=768 K=1152 N=2048 torch.float32": {
+     "pad_to": 768,
+     "ms_at_M": 0.068,
+     "ms_at_pad": 0.068
+    },
+    "M=814 K=2048 N=2048 torch.bfloat16": {
+     "pad_to": 814,
+     "ms_at_M": 0.0707,
+     "ms_at_pad": 0.0707
+    },
+    "M=814 K=2048 N=1024 torch.bfloat16": {
+     "pad_to": 814,
+     "ms_at_M": 0.0451,
+     "ms_at_pad": 0.0451
+    },
+    "M=814 K=2048 N=6144 torch.bfloat16": {
+     "pad_to": 974,
+     "ms_at_M": 0.2099,
+     "ms_at_pad": 0.1975
+    },
+    "M=814 K=6144 N=2048 torch.bfloat16": {
+     "pad_to": 814,
+     "ms_at_M": 0.1897,
+     "ms_at_pad": 0.1897
+    },
+    "M=814 K=2048 N=151680 torch.bfloat16": {
+     "pad_to": 974,
+     "ms_at_M": 16.8761,
+     "ms_at_pad": 5.5219
+    },
+    "M=814 K=2048 N=2048 torch.float32": {
+     "pad_to": 910,
+     "ms_at_M": 0.1358,
+     "ms_at_pad": 0.1224
+    },
+    "M=814 K=2048 N=8192 torch.float32": {
+     "pad_to": 814,
+     "ms_at_M": 0.5214,
+     "ms_at_pad": 0.5214
+    },
+    "M=814 K=8192 N=2048 torch.bfloat16": {
+     "pad_to": 974,
+     "ms_at_M": 0.3449,
+     "ms_at_pad": 0.3005
+    },
+    "M=49 K=1536 N=1536 torch.float32": {
+     "pad_to": 49,
+     "ms_at_M": 0.0364,
+     "ms_at_pad": 0.0364
+    },
+    "M=814 K=2048 N=1536 torch.float32": {
+     "pad_to": 814,
+     "ms_at_M": 0.0962,
+     "ms_at_pad": 0.0962
+    },
+    "M=49 K=1536 N=1536 torch.bfloat16": {
+     "pad_to": 49,
+     "ms_at_M": 0.0227,
+     "ms_at_pad": 0.0227
+    },
+    "M=49 K=1536 N=6144 torch.float32": {
+     "pad_to": 49,
+     "ms_at_M": 0.1997,
+     "ms_at_pad": 0.1997
+    },
+    "M=49 K=6144 N=1536 torch.bfloat16": {
+     "pad_to": 145,
+     "ms_at_M": 0.0408,
+     "ms_at_pad": 0.0381
+    },
+    "M=49 K=1536 N=1024 torch.float32": {
+     "pad_to": 49,
+     "ms_at_M": 0.0264,
+     "ms_at_pad": 0.0264
+    }
+   },
+   "e2e_ms": 105.43520949977392,
    "equivalence_bound_rel_l2": 0.025782,
    "compile_reference": "results/20261022_E4i_groot_n15_best_search:ae_graphs",
    "reproduce": "bench/opt_ladder.py --model groot_n15 --rung best_bf16 --out <dir>",
@@ -374,17 +477,17 @@
     "why_not": "actions differ from eager_fp32 by rel L2 1.41e-01 > bound 2.58e-02"
    },
    "fastest_on_lerobot_own_path": {
-    "rung": "llm_graphs_autotune",
-    "e2e_ms": 116.55963980592787
+    "rung": "ae_at_mpad",
+    "e2e_ms": 105.43520949977392
    },
    "max_ae_share": {
-    "rung": "eager_fp32",
-    "ae_share": 0.42445547307864334
+    "rung": "ae_graphs_mpad",
+    "ae_share": 0.4324266679846352
    },
    "confirmation": {
-    "dir": "results/20261024_E4i_groot_n15_best_confirm",
-    "e2e_ms": 119.54005799998413,
-    "confirm_over_search": 1.0255698988004653,
+    "dir": "results/20261024_E4i_groot_n15_best_confirm2",
+    "e2e_ms": 106.2544534997869,
+    "confirm_over_search": 1.0077701178183247,
     "eligible": true,
     "why_not": "",
     "reported_numbers_from": "confirmation"
