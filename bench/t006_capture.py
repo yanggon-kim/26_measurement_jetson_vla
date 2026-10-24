@@ -130,7 +130,7 @@ def ncu(a):
     while True:
         tag = f"{a.part.replace('[', '').replace(']', '')}_s{start}"
         rep = os.path.join(out, "ncu", tag)
-        cmd = [os.path.join(REPO, "env", "rootdo.sh"), "ncu", "--clock-control", "none", "--metrics", ",".join(METRICS),
+        cmd = [os.path.join(REPO, "env", "rootdo.sh"), "ncu", "--clock-control", "none", "--target-processes", "application-only", "--metrics", ",".join(METRICS),
                "--nvtx", "--nvtx-include", f"{alias}/", "--profile-from-start", "off", "-s", str(start), "-c", str(chunk),
                "-f", "-o", rep] + target_cmd(a, 1, os.path.join(out, "raw", f"target_info_{tag}.json"))
         with open(os.path.join(out, "raw", f"ncu_{tag}.log"), "w") as lf:

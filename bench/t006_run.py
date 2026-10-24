@@ -61,16 +61,35 @@ def finalise(run, fields):
 def commit(path, msg):
     subprocess.run(["git", "add", path], cwd=REPO, check=True)
     subprocess.run(["git", "commit", "-q", "-m", msg + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"], cwd=REPO)
-    subprocess.run(["git", "pull", "--rebase", "-q"], cwd=REPO)
+    subprocess.run(["git", "pull", "--rebase", "--autostash", "-q"], cwd=REPO)
     subprocess.run(["git", "push", "-q"], cwd=REPO)
+
+
+def timed_cache(m, mode):
+    """The Inductor / Triton caches of the run that TIMED this configuration (best_bf16: its confirmation run).
+    Autotuning picks kernels by timing them in each process, so a fresh process can compile different kernels (the
+    first SmolVLA capture did: 257 of 284 expert kernels differed). Reusing the timed run's caches loads exactly the
+    kernels that were timed. eager_fp32 compiles nothing."""
+    if mode != "best_bf16":
+        return {}
+    row = t005_row(m, mode)
+    run_dir = os.path.dirname(os.path.dirname(os.path.dirname(row)))
+    rung = os.path.basename(row).rsplit("_N", 1)[0]
+    base = os.path.join(REPO, "scratch", "t005", "cache", os.path.basename(run_dir), rung)
+    if not os.path.isdir(base):
+        raise SystemExit(f"no Inductor cache for the timed run of {m} {mode} at {base}")
+    return {"TORCHINDUCTOR_CACHE_DIR": os.path.join(base, "inductor"), "TRITON_CACHE_DIR": os.path.join(base, "triton")}
 
 
 def one(D, m, mode, a):
     import gate as G
     py = os.path.expanduser(f"~/venvs/{VENV[m]}/bin/python")
     cwd = "/tmp" if m.startswith("groot") else REPO
-    e5 = os.path.join(REPO, "results", f"{D}_E5_{m}_{mode}_nsys")
-    e6 = os.path.join(REPO, "results", f"{D}_E6_{m}_{mode}")
+    for k in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR"):
+        os.environ.pop(k, None)                       # never carry one configuration's cache into the next
+    os.environ.update(timed_cache(m, mode))           # inherited by every capture subprocess (rootdo forwards both)
+    e5 = os.path.join(REPO, "results", f"{D}_E5_{m}_{mode}_nsys{a.suffix}")
+    e6 = os.path.join(REPO, "results", f"{D}_E6_{m}_{mode}{a.suffix}")
     an = os.path.join(REPO, "results", f"{D}_E6_dims", "raw", f"{m}_{mode}")
     if a.skip_done and os.path.exists(os.path.join(e6, "meta.json")):
         print(f"=== {m} {mode}: done, skipped")
@@ -104,6 +123,11 @@ def one(D, m, mode, a):
     row = t005_row(m, mode)
     sh([os.path.expanduser("~/venvs/libero/bin/python"), os.path.join(HERE, "t006_roofline.py"), "--model", m, "--mode", mode,
         "--nsys", e5, "--ncu", os.path.join(e6, "ncu"), "--analytic", an, "--t005-row", row, "--out", e6])
+    cov = json.load(open(os.path.join(e6, "coverage.json")))
+    bad = {p: c for p, c in cov.items() if c["name_mismatches"] or c["ncu_kernels"] != c["nsys_kernels"]}
+    if bad:
+        json.dump(bad, open(os.path.join(e6, "raw", "JOIN_FAILED.json"), "w"), indent=1)
+        print(f"!!! {m} {mode}: ncu and nsys kernel lists differ: {bad}", flush=True)
     common = {"task": "T006", "model": m, "rung": f"{mode} = {info['rung']}", "precision": json.dumps(desc["precision_flags"]),
               "compile_mode": "; ".join(desc["compiled"]) or "none (eager)", "variant": "; ".join(desc["preps"]) or "none",
               "num_denoise_steps": info["n_default"], "action_horizon": {"groot_n17": 40, "groot_n16": 16, "groot_n15": 16}.get(m, 50),
@@ -112,6 +136,7 @@ def one(D, m, mode, a):
               "n_warmup": f"{info['warmup_iters']} (until no new graph)", "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
               "bench_commit": subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip(),
               "throttled": "n/a: profiled run (overhead); times from nsys and the T005 row", "cuobjdump_version": "n/a",
+              "inductor_cache": timed_cache(m, mode) or "n/a: nothing compiled",
               "model_repo": "see the T005 row's provenance", "model_commit": "see the T005 row's provenance",
               "checkpoint": "see the T005 row's provenance", "checkpoint_revision": "see the T005 row's provenance"}
     finalise(e5, dict(common, experiment="E5 nsys capture (T006 step 3)", n_timed="2 inferences in the capture window",
@@ -140,6 +165,7 @@ def main():
     ap.add_argument("--models", default="pi0,pi05,smolvla,groot_n17,groot_n16,groot_n15")
     ap.add_argument("--modes", default="best_bf16,eager_fp32")
     ap.add_argument("--skip-done", action="store_true")
+    ap.add_argument("--suffix", default="", help="appended to the result directory names (e.g. _v2)")
     a = ap.parse_args()
     for mode in a.modes.split(","):
         for m in a.models.split(","):

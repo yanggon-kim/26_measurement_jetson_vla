@@ -70,7 +70,7 @@ def main():
     while True:
         tag = f"{tag0}_s{start}"
         rep = os.path.join(out, "ncu", tag)
-        cmd = [os.path.join(REPO, "env", "rootdo.sh"), "ncu", "--clock-control", "none", "--set", "full",
+        cmd = [os.path.join(REPO, "env", "rootdo.sh"), "ncu", "--clock-control", "none", "--target-processes", "application-only", "--set", "full",
                "--metrics", ",".join(EXTRA), "--nvtx", "--nvtx-include", f"{alias}/", "--profile-from-start", "off",
                "-s", str(start), "-c", str(a.chunk), "-f", "-o", rep] + \
             T6.target_cmd(a, 1, os.path.join(out, "raw", f"target_info_{tag}.json"))
