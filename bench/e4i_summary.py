@@ -40,7 +40,7 @@ REL_L2_MAX, FP32_MAX = 1e-2, 0.01
 
 def dirs_for(m):
     pats = ([f"results/*_E4c_{m}_opt_ladder"] if not m.startswith("groot") else [f"results/*_E4d_{m}_ladder"]) + \
-        [f"results/*_E4i_{m}_best_search*", f"results/*_E4i_{m}_best_confirm"]
+        [f"results/*_E4i_{m}_best_search*", f"results/*_E4i_{m}_rerun*", f"results/*_E4i_{m}_best_confirm"]
     return [d for p in pats for d in sorted(glob.glob(os.path.join(REPO, p)))]
 
 
@@ -226,6 +226,7 @@ def main():
                 "rung": best["rung"], "N": best["N"], "timed_in": best["_dir"],
                 "label": d.get("label"), "compiled": d.get("compiled"), "preps": d.get("preps"),
                 "precision_flags": d.get("precision_flags"), "autotune": d.get("autotune") or "off",
+                "fallback_random": d.get("fallback_random", "off"),
                 "regions": d.get("regions"), "mpad_table": best.get("mpad_table", "n/a"),
                 "e2e_ms": part(best, "e2e_wall"), "equivalence_bound_rel_l2": bound,
                 "compile_reference": refs[-1]["_dir"] + ":ae_graphs" if refs else "none", "reproduce": f"bench/opt_ladder.py --model {m} --rung best_bf16 --out <dir>",
@@ -251,9 +252,9 @@ def main():
                     pb[f"{col}_p5_ms"] = round(part(r, k, "p5_ms"), 3)
                     pb[f"{col}_p95_ms"] = round(part(r, k, "p95_ms"), 3)
             pb["n"] = part(r, "e2e_wall", "n")
-            pb["ae_share_of_e2e"] = round(part(r, "ae_total") / part(r, "e2e_wall"), 4)
+            pb["ae_share_of_e2e"] = part(r, "ae_total") / part(r, "e2e_wall")          # unrounded: formatted once
             if part(r, "model_get_action") is not None:
-                pb["ae_share_of_model_call"] = round(part(r, "ae_total") / part(r, "model_get_action"), 4)
+                pb["ae_share_of_model_call"] = part(r, "ae_total") / part(r, "model_get_action")
             pb_rows.append(pb)
         sections.append((m, rows + conf_rows, eager, report_best, fastest_any, best_own, max_share))
     json.dump(best_json, open(os.path.join(a.out, "best_bf16.json"), "w"), indent=1, default=str)
