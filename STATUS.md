@@ -4,10 +4,10 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**Running: T006 re-capture + T007 for `best_bf16`.** `best_bf16` changed on 2026-10-25 for three models and is
-confirmed for all six (`results/20261025_E4i_summary`, `reports/E4i_best_combinations.md` §0): π0 129.5 and π0.5
-142.4 ms with `kv_shallow` (the owner's decision), N1.7 120.4 ms with its vision tower compiled. T006 is being
-re-captured for those three; SmolVLA's C1 is done. Resume point: `PROGRESS.md`.
+**The owner's first two priorities are done.** `best_bf16` with its latency breakdown is confirmed for all six
+(`results/20261025_E4i_summary`); its ncu work is complete: T006 roofline (100 % coverage) and T007 C1 with stalls
+(`reports/E4g_c1_c2_bottlenecks.md`). Next: the rest of T005 (Part A, π0 N = 4), then `eager_fp32` for T006 / T007,
+then T008 onwards. Resume point: `PROGRESS.md`.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -104,3 +104,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-24 E4i stage 2 done for all six; best_bf16 chosen; confirmations within 2 % for π0, π0.5, SmolVLA, N1.7; paused by the owner before the N1.6 / N1.5 confirmations.
 - 2026-10-24 T006 best_bf16 done for all six (E5 nsys + E6 roofline, 100 % coverage, 0 join mismatches); E6 reports generated; T007 C1 smoke test started (SmolVLA).
 - 2026-10-25 T007 timeline found host stalls in π0/π0.5 expert steps (per-step KV deepcopy) and N1.7's eager vision/prefix; N1.7 vision made compilable (vis_fa_static): stage 3 best vis_fa_at_ae_at 120.8 vs 131.9 ms (confirmation queued); owner put kv_shallow into best_bf16 for π0/π0.5 (stage 4 queued). T006 GR00T expert floor bug fixed (weights per step): gap 1.43/1.47/1.94x.
+- 2026-10-26 T006 re-captured for π0/π0.5/N1.7 at the new best_bf16; T007 C1 done for all six best_bf16 (100 % coverage, all gates ok); no part compute-bound, top stall long_scoreboard everywhere.

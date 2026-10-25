@@ -18,7 +18,7 @@ closed the task.
 | [T004](tasks/T004_baseline_latency.md) | baseline latency, all models (E3, E4 stock modes, floors) | P0 | done | 2026-10-22 | ce769e5 | eager AE share of e2e: π0 29.7 %, π0.5 28.2 %, SmolVLA 80.6 %, GR00T N1.7/1.6/1.5 47.8/54.2/37.1 %; GR00T DiT steps 2.1–2.6× their memory floor; shipped GR00T computes unused lm_head logits (3.5–19.9 ms); stock compile ≤ 15 % (π0) |
 | [T005](tasks/T005_ladder_and_best_bf16.md) | ladder and best BF16 (E4 A/B, E4i, E4d) — deliverable 1 | P0 | claimed (deliverable 1 done; Part A, π0 N=4 control pending) | 2026-10-25 | 03a983b | best_bf16 confirmed for all six: π0 129.5, π0.5 142.4, SmolVLA 48.9, N1.7 120.4, N1.6 102.9, N1.5 106.3 ms (2026-10-25: π0/π0.5 kv_shallow by the owner's decision, N1.7 vision compiled); expert largest part in 4 of 6 (π0: prefix 55.0 > expert 51.5; π0.5 level) |
 | [T006](tasks/T006_roofline.md) | roofline per part and per kernel (E5 captures, E6, C3) — deliverable 2 | P0 | claimed (best_bf16 done for all six; eager_fp32 pending) | 2026-10-25 | dbef2e1 | best_bf16: every part of every model on the memory side of the ridge except N1.5's lm_head (92 % of bf16 peak); expert steps 49–80 % of peak BW; coverage 100 %, 0 join mismatches |
-| [T007](tasks/T007_timelines_and_phase_bounds.md) | timelines and phase bounds (E5, E4g C1/C2) — deliverable 3a | P1 | todo | | | |
+| [T007](tasks/T007_timelines_and_phase_bounds.md) | timelines and phase bounds (E5, E4g C1/C2) — deliverable 3a | P1 | claimed (best_bf16: timelines + C1 for all six done; eager_fp32, C2, root-cause chains pending) | 2026-10-25 | faa72ed | best_bf16 C1 at 100 % coverage for all six: every part memory- or latency-bound on long_scoreboard (no part compute-bound); π0/π0.5 expert idle 27/25 % → 7 % after kv_shallow |
 | [T008](tasks/T008_kernel_bottlenecks.md) | per-kernel bottlenecks (E5b, E4h, E5c) — deliverable 3b | P1 | todo | | | |
 | [T009](tasks/T009_core_synthesis.md) | core synthesis, Thor vs Orin | P1 | todo | | | |
 | [T010](tasks/T010_power_energy.md) | power and energy (E7, E7v) | P2 | todo | | | |
@@ -33,23 +33,19 @@ closed the task.
 (deliverable 1, `results/20261024_E4i_summary`); (2) the ncu work for those optimised configurations (T006, T007
 `best_bf16`) — **T006 done, T007 running**; (3) the rest, step by step.
 
-**Done and pushed:** T005 deliverable 1 (six `best_bf16` confirmed; updated 2026-10-25: π0 / π0.5 `kv_shallow` by the
-owner's decision, N1.7 vision compiled; `results/20261025_E4i_summary`); T006 `best_bf16` for SmolVLA, N1.6, N1.5
-(`results/20261024_E6_*`; the GR00T floor fix applied); T007 timelines for the 2026-10-24 configurations and C1 for SmolVLA;
-`results/20261025_E4_cpu_overhead_diag`.
+**Done and pushed:** T005 deliverable 1 (six `best_bf16` confirmed; 2026-10-25: π0 / π0.5 `kv_shallow` by the owner's
+decision, N1.7 vision compiled; `results/20261025_E4i_summary`); T006 `best_bf16` for all six (`results/2026102[45]_E6_*`,
+GR00T floor fix applied); T007 `best_bf16` timelines and C1 for all six (`results/20261025_E4g_c1_summary`,
+`reports/E4g_c1_c2_bottlenecks.md`, `reports/E5_timeline.md`); `results/20261025_E4_cpu_overhead_diag`.
 
 **Next steps, in order:**
-1. **Running (`scratch/run_t006_t007.sh`, log `scratch/t006_t007.log`):** T006 `best_bf16` for π0, π0.5, N1.7 at the new
-   configurations (`--date 20261025`), their timelines, then T007 C1 for π0, π0.5, N1.7 (`--e5-date 20261025`) and
-   N1.6, N1.5 (`--e5-date 20261024`). Re-run the same commands with `--skip-done` to resume. Then mark the superseded
-   `20261024_E5/E6/timeline` directories of π0, π0.5, N1.7 (SUPERSEDED.md) and regenerate `make_e6_reports.py`,
-   `make_e5_report.py`.
-2. T007 C2 / root-cause chains / `reports/E4g_c1_c2_bottlenecks.md` (needs `eager_fp32` C1 too).
-3. **Rest of T005:** the π0 N = 4 control (`bench/opt_ladder.py --model pi0 --n 4 --out results/<date>_E4c_pi0_opt_ladder_N4`,
-   rungs from `bench/queues/t005_ladders.sh`), Part A (`bash bench/queues/t005_part_a.sh <date>`), the close.
-4. **`eager_fp32`:** `bench/t006_run.py --date <date> --modes eager_fp32`, `bench/t007_run.py --what timeline` and C1
-   with `--modes eager_fp32`, `--finalise-dims`, the reports; the T006 independent review; close T006.
-5. **Then** T008 (best_bf16 first) → T015 (`~/.claude/plans/sunny-dazzling-cocoa.md`).
+1. **Rest of T005:** the π0 N = 4 control (`bench/opt_ladder.py --model pi0 --n 4 --out results/<date>_E4c_pi0_opt_ladder_N4`,
+   rungs from `bench/queues/t005_ladders.sh` + `best_bf16`), Part A (`bash bench/queues/t005_part_a.sh <date>`), the close.
+2. **`eager_fp32` ncu work:** `bench/t006_run.py --date <date> --modes eager_fp32`, `bench/t006_run.py --date <date> --finalise-dims`,
+   `bench/t007_run.py --date <date> --e5-date <date> --what timeline --modes eager_fp32`, then C1 `--modes eager_fp32`; then
+   `make_e6_reports.py`, `make_e5_report.py`, `make_e4g_report.py --date <date>` (C2 deltas appear), root-cause chains;
+   the T006 independent review; close T006 and T007.
+3. **Then** T008 (best_bf16 first) → T015 (`~/.claude/plans/sunny-dazzling-cocoa.md`).
 
 **Operating notes:**
 - Gate before each GPU job (`bench/gate.py`; the device is shared with another user).
@@ -68,17 +64,17 @@ and FLOP counters validated (T003): `results/20261022_E1_peak/validation.csv` ·
 | model | mode | latency: vision / prefix / expert (T005) | roofline: parts + every kernel (T006) | bottleneck: ncu per part (T007) + SASS of dominant kernels (T008) |
 |---|---|---|---|---|
 | π0 | `eager_fp32` | [x] `20261022_E4c_pi0_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| π0 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_kvs`: `20261025_E4i_pi0_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_pi0_best_bf16` | [ ] ncu · [ ] SASS |
+| π0 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_kvs`: `20261025_E4i_pi0_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_pi0_best_bf16` | [x] ncu `20261025_E4g_c1_pi0_best_bf16` · [ ] SASS |
 | π0.5 | `eager_fp32` | [x] `20261022_E4c_pi05_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| π0.5 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands_kvs`: `20261025_E4i_pi05_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_pi05_best_bf16` | [ ] ncu · [ ] SASS |
+| π0.5 | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands_kvs`: `20261025_E4i_pi05_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_pi05_best_bf16` | [x] ncu `20261025_E4g_c1_pi05_best_bf16` · [ ] SASS |
 | SmolVLA | `eager_fp32` | [x] `20261022_E4c_smolvla_opt_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
 | SmolVLA | `best_bf16` | [x] `bf16_mpad_graphs_ae_at_islands`: `20261024_E4i_smolvla_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261024_E6_smolvla_best_bf16_v2` | [x] ncu `20261024_E4g_c1_smolvla_best_bf16` · [ ] SASS |
 | GR00T N1.7 | `eager_fp32` | [x] `20261022_E4d_groot_n17_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.7 | `best_bf16` | [x] `vis_fa_at_ae_at`: `20261025_E4i_groot_n17_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_groot_n17_best_bf16` | [ ] ncu · [ ] SASS |
+| GR00T N1.7 | `best_bf16` | [x] `vis_fa_at_ae_at`: `20261025_E4i_groot_n17_best_confirm` (+ `20261025_E4i_summary`) | [x] `20261025_E6_groot_n17_best_bf16` | [x] ncu `20261025_E4g_c1_groot_n17_best_bf16` · [ ] SASS |
 | GR00T N1.6 | `eager_fp32` | [x] `20261022_E4d_groot_n16_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.6 | `best_bf16` | [x] `all_compile_ae_vis_at`: `20261024_E4i_groot_n16_best_confirm` (+ `20261024_E4i_summary`) | [x] `20261024_E6_groot_n16_best_bf16` | [ ] ncu · [ ] SASS |
+| GR00T N1.6 | `best_bf16` | [x] `all_compile_ae_vis_at`: `20261024_E4i_groot_n16_best_confirm` (+ `20261024_E4i_summary`) | [x] `20261024_E6_groot_n16_best_bf16` | [x] ncu `20261025_E4g_c1_groot_n16_best_bf16` · [ ] SASS |
 | GR00T N1.5 | `eager_fp32` | [x] `20261022_E4d_groot_n15_ladder` (+ `20261024_E4i_summary/phase_balance.csv`) | [ ] | [ ] ncu · [ ] SASS |
-| GR00T N1.5 | `best_bf16` | [x] `ae_at_mpad`: `20261024_E4i_groot_n15_best_confirm2` (+ `20261024_E4i_summary`) | [x] `20261024_E6_groot_n15_best_bf16` | [ ] ncu · [ ] SASS |
+| GR00T N1.5 | `best_bf16` | [x] `ae_at_mpad`: `20261024_E4i_groot_n15_best_confirm2` (+ `20261024_E4i_summary`) | [x] `20261024_E6_groot_n15_best_bf16` | [x] ncu `20261025_E4g_c1_groot_n15_best_bf16` · [ ] SASS |
 
 **Remaining Orin jobs:** [ ] E7 power per rail and part (T010) · [ ] E8 / E8s LIBERO (T011) · [ ] E11
 `model_inputs.csv` × 6 (T012) · [ ] E12 / E12b co-run (T013) · [ ] E13 / E14 / E14b (T014) · [ ] `SYNTHESIS_thor.md`
