@@ -165,6 +165,12 @@ def main():
             # parameters outside the steps (state / action encoders) once; the hand-over (VLM features) once per step.
             once = acc["param_bytes"]["ae_total"] - acc["param_bytes"][steps[0]]
             B = sum(acc["param_bytes"][s] for s in steps) + once + len(steps) * sum(acc["kv_bytes"].values())
+        ncall = int(acc.get("calls", {}).get(part, 1) or 1)
+        l2 = json.load(open(a.hw)).get("l2_bytes", 0)
+        if part != "ae_total" and ncall > 1 and acc["param_bytes"].get(part, 0) > l2:
+            # Fix 2026-10-26: a region entered several times per inference (π0 / π0.5 / SmolVLA: embed_image once per
+            # camera) streams its weights from DRAM at every call when they do not fit in L2; the floor counts each call.
+            B = acc["param_bytes"][part] * ncall + (sum(acc["kv_bytes"].values()) if part.startswith("ae_step") else 0)
         if part == "backbone_lm_head" and not B:
             # Fix 2026-10-26: the accounting hook ran the lm_head with vlm_backbone innermost on its stack, so its weight
             # bytes were never attributed to backbone_lm_head (its FLOPs were). Take them from the C3 dims row of the
