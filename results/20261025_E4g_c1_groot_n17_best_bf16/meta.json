@@ -1,0 +1,1144 @@
+{
+  "date_utc": "2026-10-25T01:51:44Z",
+  "task": "T007",
+  "experiment": "E4g C1: ncu --set full + stall breakdown per part",
+  "model": "groot_n17",
+  "rung": "best_bf16 = vis_fa_at_ae_at",
+  "precision": "{\"float32_matmul_precision\": \"high\", \"cuda_matmul_allow_tf32\": true, \"cudnn_allow_tf32\": true}",
+  "compile_mode": "Gr00tN1d7ActionHead.get_action@max-autotune+clone; Qwen3VLModel.get_image_features@max-autotune-no-cudagraphs",
+  "variant": "vision flash-attn varlen: max_seqlen = total vision tokens (static upper bound) instead of a CUDA tensor",
+  "num_denoise_steps": 4,
+  "action_horizon": 40,
+  "prefix_tokens": 273,
+  "suffix_tokens": 41,
+  "batch": 1,
+  "n_warmup": "until no new graph (profile_target.py)",
+  "n_timed": "1 inference per ncu run",
+  "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+  "bench_commit": "06a57b5",
+  "command": "bench/t007_c1.py --model groot_n17 --mode best_bf16 --part <vision,vlm_prefix,ae_total>",
+  "throttled": "n/a: profiled run",
+  "nsys_version": "n/a",
+  "ncu_version": "2025.3.0.0",
+  "ncu_set": "full",
+  "ncu_filter": "--nvtx --nvtx-include <part>/ --profile-from-start off --target-processes application-only, -s/-c windows",
+  "ncu_metrics": "the 17 smsp__average_warps_issue_stalled_*_per_issue_active, sm__pipe_tensor*, T003 counters (bench/t007_c1.py)",
+  "ncu_sm_frequency_hz": "locked by jetson_clocks; --clock-control none",
+  "cuobjdump_version": "n/a",
+  "model_repo": "see the T005 row's provenance",
+  "model_commit": "see the T005 row's provenance",
+  "checkpoint": "see the T005 row's provenance",
+  "checkpoint_revision": "see the T005 row's provenance",
+  "inductor_cache": {
+    "TORCHINDUCTOR_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261025_E4i_groot_n17_best_confirm/vis_fa_at_ae_at/inductor",
+    "TRITON_CACHE_DIR": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/scratch/t005/cache/20261025_E4i_groot_n17_best_confirm/vis_fa_at_ae_at/triton"
+  },
+  "e5_capture": "results/20261025_E5_groot_n17_best_bf16_nsys",
+  "c1_gates_all_ok": true,
+  "power_mode": {
+    "id": "0",
+    "name": "MAXN",
+    "raw": "NV Power Mode: MAXN\n0"
+  },
+  "jetson_clocks": {
+    "applied_gpu_locked": true,
+    "show": "SOC family:tegra264  Machine:NVIDIA Jetson AGX Thor Developer Kit\nOnline CPUs: 0-13, Offline CPUs: \ncpu0:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu1:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu2:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu3:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu4:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu5:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu6:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu7:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu8:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu9:  Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu10: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu11: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu12: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ncpu13: Governor=schedutil MinFreq=2601000 MaxFreq=2601000 CurrentFreq=2601000 IdleStates: WFI=0 cc7=0 \ngpu-gpc-0 MinFreq=1575000000 MaxFreq=1575000000 CurrentFreq=1575000000\ngpu-nvd-0 MinFreq=1692000000 MaxFreq=1692000000 CurrentFreq=1692000000\nEMC MinFreq=665600000 MaxFreq=4266000000 CurrentFreq=4266000000 FreqOverride=1\nPVA0_VPS0: Online=0 MinFreq=0 MaxFreq=1215000000 CurrentFreq=1215000000\nPVA0_AXI:  Online=0 MinFreq=0 MaxFreq=909000000 CurrentFreq=909000000\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1=73\nFAN Dynamic Speed Control=nvfancontrol hwmon1_pwm1_enable=1\nNV Power Mode: MAXN"
+  },
+  "sm_count": 20,
+  "gpu_hz": 1575000000,
+  "gpu_hz_source": "/sys/class/devfreq/gpu-gpc-0/cur_freq",
+  "emc_hz": 4266000000,
+  "emc_hz_source": "/sys/kernel/debug/bpmp/debug/clk/emc/rate (via env/rootdo.sh)",
+  "gpu_arch": "sm_110",
+  "l4t": "# R38 (release), REVISION: 2.2, GCID: 42205042, BOARD: generic, EABI: aarch64, DATE: Thu Sep 25 22:47:11 UTC 2025",
+  "jetpack": "nvidia-l4t-core=38.2.2-20250925153837",
+  "cuda": "torch.version.cuda=13.0; toolkit=Build cuda_13.0.r13.0/compiler.36260728_0",
+  "driver": "NVRM version: NVIDIA UNIX Open Kernel Module for aarch64  TempVersion  Release Build  (bugfix_main)  (buildbrain@b93eb89d-1ffc-4b76-8cef-fa02a33b010d-s7bv-ff8js)  Thu Sep 25 15:33:42 PDT 2025",
+  "python": "3.12.3",
+  "torch": "2.10.0+cu130",
+  "torchvision": "0.25.0+cu130",
+  "triton": "3.6.0",
+  "kernel": "6.8.12-tegra",
+  "thermal_zones_mC": {
+    "tj-thermal": "45000",
+    "gpu-thermal": "44656",
+    "cpu-thermal": "45000",
+    "soc012-thermal": "43187",
+    "soc345-thermal": "43437"
+  },
+  "swap": "Swap:              0           0           0",
+  "raw_files": [
+    {
+      "path": "raw/c1_ae_total_windows.json",
+      "sha256": "5612dad714e38d2657270233fcb75ee85e64297f71ea19a1749f75fa26829dd7",
+      "bytes": 2599,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s0.json",
+      "sha256": "ea03994eda81b75da4c3b77c4f11686320985801c2faf93538142f42e8f973c2",
+      "bytes": 170,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s1050.json",
+      "sha256": "880a94b29c8c63e1e7484dd543919693c1f5ca49314bd5e8fd567601f754214e",
+      "bytes": 173,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s1200.json",
+      "sha256": "3deecc52c31753a4ea6c325e7ef40aad431492f26ba9408484dc47e0d3b0f1a7",
+      "bytes": 173,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s150.json",
+      "sha256": "791e36a2b0af10d7d1068789bd11af800399339cad486264d4824cc2fd759e6e",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s300.json",
+      "sha256": "c041ab1b2ab88fa842c0a9f2ced4f859a3b67e4fc9fc4eb56776ad3bdc9e7ca2",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s450.json",
+      "sha256": "5ac7f189aa3bb7a8ca4cc01f23ed8d6ed5a281155475ba682bf7952a8d225d85",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s600.json",
+      "sha256": "8a62084a2da29e81a3f31a8e7dce4dc3334a47f0845fb670a9762870512cc0fb",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s750.json",
+      "sha256": "1add972ac491547c0c9c8c5a54dbbc5851971def12ea38d7a0e3c2325b32b9f4",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_ae_total_s900.json",
+      "sha256": "667b0cfc4a3f1c1e75c0357ca0140c65cc5c6494e64bb8bd755bb4614bdaa3c4",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vision_s0.json",
+      "sha256": "d892650cb7b93978ad4e1713e9b4f2e1392392ef8c2da72c4d5f656bb37c6372",
+      "bytes": 168,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vision_s150.json",
+      "sha256": "70b67ae06250c2b0e4a3585525c5a99b7ef692369b9b6c7be1be91020f9a97a9",
+      "bytes": 170,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vision_s300.json",
+      "sha256": "7641ba3254fd4dbe30645d88fd2e2bae8309758425f8377dd451961067faed77",
+      "bytes": 167,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s0.json",
+      "sha256": "ed681df908839f44e708d4be0f157e2599b3fcf4013f505971ac0a1e2faab0d0",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s1050.json",
+      "sha256": "58fac97a0e7c21e615869ef0467a6d85546cca77e3adfb66577db2fa4ee7ad6c",
+      "bytes": 175,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s1200.json",
+      "sha256": "c9dc560ba95e84d4f5aaf8dc936ceba6f67dec310f5b176ba1b9c32e89766627",
+      "bytes": 172,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s150.json",
+      "sha256": "9a1097a6c5509723190bc31b2a60d37c89773955c3b43edb33249ef4e22626c9",
+      "bytes": 174,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s300.json",
+      "sha256": "680c5a8cb2b61eb5efd2912c1f4fc09681934edf0b1739eecba78d394bc0c08f",
+      "bytes": 174,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s450.json",
+      "sha256": "3fb460a1bb15f4be0bde23401442a9bbe39749a116dbffbdc9196e523843d74f",
+      "bytes": 174,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s600.json",
+      "sha256": "b72bce00692ea66508f88b3b027c50c769487aec1e4145e4f35e48410707f07a",
+      "bytes": 174,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s750.json",
+      "sha256": "8e1d7fd2136ac35228064e0b5c75bf1e11819772d8475f3eafd3ce91296aa30c",
+      "bytes": 174,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_gate_vlm_prefix_s900.json",
+      "sha256": "2955c32936382128bfa97db663330bcec66365703ba4b75734155aa96efb8f13",
+      "bytes": 174,
+      "kind": "other",
+      "produced_by": "bench/t007_c1.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_tables.log",
+      "sha256": "8f608150124845038aba9e8d8e967e72e046e46c52daa370c9f1f12d95b19f2d",
+      "bytes": 615,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_vision_windows.json",
+      "sha256": "8ad5dfcbe0e73cf7995e19fae6c7085e55e3fd7280198fd7d342f18f9b450403",
+      "bytes": 2594,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/c1_vlm_prefix_windows.json",
+      "sha256": "bc1c625ddbba25b62bc8dc62428968260fe576ab2900675f6030038fd9213214",
+      "bytes": 2603,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/meta_fields.json",
+      "sha256": "64f4e1bbd97bb4cd4f77933fa13b7465918f475313466c3bb3703735f44dc7ef",
+      "bytes": 4527,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s0.log",
+      "sha256": "133f0947712fb11fcc71326aeeec182f974fb426ce77e8860cb0a12214308622",
+      "bytes": 18358,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s1050.log",
+      "sha256": "b95141b5f939351ae823d49a6e747903b6e2b7630ec8c60a54526ef7fd2bd752",
+      "bytes": 18560,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s1200.log",
+      "sha256": "67f5e0c8bd5b2c30b608fd2301cae3dce83dde663069a61da5fdb915a597ba5f",
+      "bytes": 16758,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s150.log",
+      "sha256": "d884d31ec295633fe99e13b67ac86644aa03d80cd249454a0828edd54ed06127",
+      "bytes": 18559,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s300.log",
+      "sha256": "1d99f8b56e3185067863da312d516065cfcd67e52b6bceeff3c76517f24a6fde",
+      "bytes": 18568,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s450.log",
+      "sha256": "cf9276da3015ba08240e311d65f144677b3318be624d638cf656491d37c8ee11",
+      "bytes": 18559,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s600.log",
+      "sha256": "d9419bac6011d614f9cab915d31df63e6d92d6a935fa2ad0c457b72a13c3e8c0",
+      "bytes": 18568,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s750.log",
+      "sha256": "fe654abe151d32e4d5f18b2a5a580a92eb440f8dfb2424934505d9dbea9c7edf",
+      "bytes": 18559,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_ae_total_s900.log",
+      "sha256": "c2ba2f251e606ab20c0b0b59d4a263d50c0a035e198a9f6a64f9296a7723fd67",
+      "bytes": 18568,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vision_s0.log",
+      "sha256": "5bd9c2be154348d8ed1baa89ad83165304399ec4ef016cb6ada486d440da53f9",
+      "bytes": 17919,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vision_s150.log",
+      "sha256": "b458fbf51312b39d7559e8df5bf72290a69c9676af04de5e1ccd59615dbcaac9",
+      "bytes": 18391,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vision_s300.log",
+      "sha256": "ba4af4ef6db0bdf29efbc98756ba95635adc139f40717e70189ad6967aa5ab79",
+      "bytes": 7616,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s0.log",
+      "sha256": "0746910553594d6656d87663fb6fbd04b1a4fce3e17e708b6da1df6ae4e33de8",
+      "bytes": 17403,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s1050.log",
+      "sha256": "47010b77b7d5077a646f9431a0279e20c45abc0337e75b3b4ff1c5b6f49c9ec9",
+      "bytes": 17458,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s1200.log",
+      "sha256": "8af7336cff84bd33c4818b79af369b8d5e132aaa7b4ad7c8a6e1124b73ba62d5",
+      "bytes": 5975,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s150.log",
+      "sha256": "761f27ec17e709401d796a66f12d3e9d2127b21014b1bb26a9eedcf6d9f7cf28",
+      "bytes": 17486,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s300.log",
+      "sha256": "a4460e5d8d789e4dbfac7949c7e50d4fb63ddb86014e9492e169ca8c6d863ddd",
+      "bytes": 17442,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s450.log",
+      "sha256": "78b24e914152fd65cb423e405883c3727dcce1b4d51fba3288cb3a54811adef0",
+      "bytes": 17449,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s600.log",
+      "sha256": "ce29e94c1d3efe2db81e30d93c586f601240ed38ab41c2f23d657dc85e5d5f13",
+      "bytes": 17458,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s750.log",
+      "sha256": "99026b2bfdb7d880a9277f8939b35ed5eeeaeab65a02f92d7b9bfc5b47fa84f5",
+      "bytes": 17461,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/ncu_vlm_prefix_s900.log",
+      "sha256": "01a788f29c117a951e4b1d2537cc700d84b28d19fa07ca18705750065ade1d53",
+      "bytes": 17470,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/secrets_scan.csv",
+      "sha256": "37370686e7e02de8af3d937310138659ef98eb5a5cf469c4f411c245dbb98659",
+      "bytes": 238416,
+      "kind": "other",
+      "produced_by": "",
+      "secrets_scan": "n/a"
+    },
+    {
+      "path": "raw/target_info_ae_total_s0.json",
+      "sha256": "d4bed293dc899004e72b6d740451c5084988d36c2bc532906c1f4083ff531578",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s1050.json",
+      "sha256": "fc5ad150dfc6d9ce1f90c7c9aac2587c689e77c5359153f40b0d75188dbf6fe3",
+      "bytes": 1519,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s1200.json",
+      "sha256": "64882b79e2c63758cc4829173877b54e793379f30f605612e542d030a824a0f9",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s150.json",
+      "sha256": "e037c154ceb953ac8d1fc72db96e42bf478ab92168b1bf191bb9b39fc97410bb",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s300.json",
+      "sha256": "0598264fbea607a63a2577630c0af964416666748388147184c39a4e0368f85a",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s450.json",
+      "sha256": "32a525f25c8fc210b2cfcff4682eecb65eb38f8734280ebf8baecf2794fca3d0",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s600.json",
+      "sha256": "66814520724a41b4a46c05191f0c0174a0bcd9a0c4b10d1c6c1cf65c628c00c8",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s750.json",
+      "sha256": "0d41c30a8703a9e86af95f2896f15fe09b7f9ebd0e77ddfdcee523055d368344",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_ae_total_s900.json",
+      "sha256": "b0fbe47ef7409d7403538c97a5fc025911d2aca91fd3a706149e04630d837b2d",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vision_s0.json",
+      "sha256": "3553f9d7cb73d7617b2f9d610b72a8b23e806f078f18c8ab0b6410a765bd2d80",
+      "bytes": 1521,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vision_s150.json",
+      "sha256": "09929d212c95b9004e705fc353658fc80366f9997354a66cd77a894084a84d58",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vision_s300.json",
+      "sha256": "888d1d07faa0694827f86d8e21436eff4d02b342d69e451b3f7169706690dbc3",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s0.json",
+      "sha256": "0a4ff1dc1531ed38d242dedad24e97c01df551dde51385e6b132b69b7c99e02d",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s1050.json",
+      "sha256": "6fe8805fad1e5016e78c811fff0d6508cbb378dd037362fc13366622fb000074",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s1200.json",
+      "sha256": "7506c5874c30cb8f267f143621538979ba5305177b03ecc3fe54a89d0dc9723e",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s150.json",
+      "sha256": "a1c987f728fe6bae3dd45bfaae2a5d03f1f52fb9c4899688776f2b2fa83f710e",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s300.json",
+      "sha256": "def62dc5e5e1e875c5a89de93b23d3f6744faed3812fe6442206e4cfb94ce876",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s450.json",
+      "sha256": "cbab8dc973eca19bfe75f29f3ab1ba759995b493227ff90e8200e95f1889f80c",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s600.json",
+      "sha256": "ab8a2ffa152e13e18e30745bd481c12c93ba768ba5ac4f2c05c2f721dafad5b0",
+      "bytes": 1521,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s750.json",
+      "sha256": "6f84d428cd4a0a9d561d8e3a2f017e4b8ff71b1cb960cec00aa6583a15b225b5",
+      "bytes": 1521,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "raw/target_info_vlm_prefix_s900.json",
+      "sha256": "74485ad18380f978adebd9d41a228cd07e747597deea509d24c221f0eaf11312",
+      "bytes": 1520,
+      "kind": "other",
+      "produced_by": "bench/profile_target.py",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s1050.ncu-rep.zst",
+      "sha256": "15e6736fc2dd5557231167e4c9c4f536f76457014d3dfcc733f562f43b815b90",
+      "bytes": 5508370,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s750_raw.csv.zst",
+      "sha256": "3d9b7449819796da66e8867d336cc5defb57b3c1a98f0679f48874620959ab46",
+      "bytes": 277443,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s600.ncu-rep.zst",
+      "sha256": "29a53fa0436e50968ea1ffa3d8e52824d3a28859ad94100afbbb86279aa2c131",
+      "bytes": 2314652,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s600_raw.csv.zst",
+      "sha256": "f16f798d0f9c319fa965c69fe764188fc2610c8d869f933235e0909aeb866e8a",
+      "bytes": 276409,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s0_details.csv.zst",
+      "sha256": "ff8f404df13fa145a2dbd568cd6bd592c9c0f5c9787f7058a769ec58209a1878",
+      "bytes": 189948,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s750_details.csv.zst",
+      "sha256": "003a03f8d25bac708e962096f6ca8d7184ac393b95974a3d912db84225f9a7b2",
+      "bytes": 190678,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s300_raw.csv.zst",
+      "sha256": "93575bbaba51cb306ffc6f92e27c4241543e53ad9aa3caed438db3f4e889d786",
+      "bytes": 314882,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s750_details.csv.zst",
+      "sha256": "8b82e8f3057154aee2060b90b166999fe95d56dcf944705dbd9c9bb2301acb9c",
+      "bytes": 156903,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s900_raw.csv.zst",
+      "sha256": "7a9630ab57e71effce63de31d475af5b16d791c7b5bedfacdbf68ba95e170bf5",
+      "bytes": 274916,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s150_details.csv.zst",
+      "sha256": "19c3286c39ed640e7ad14378220d4627443e6ba895339a382dfe107a3c4b07a1",
+      "bytes": 157726,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s750.ncu-rep.zst",
+      "sha256": "e23f765428822bfed0503f424fe5eda63a240239d638429992704631be3c427e",
+      "bytes": 5514777,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s1200_raw.csv.zst",
+      "sha256": "edc5667c14b5c8ba6c54648c618f4eaf57ed99a8b54913a84e977301a468e12e",
+      "bytes": 276753,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s600_details.csv.zst",
+      "sha256": "e70f6d9776323f8bb39e767753a01787548cda8c5fa2d2137cb9ac3201a3eda2",
+      "bytes": 162509,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s300_details.csv.zst",
+      "sha256": "f15f29d4f5e404d032a0d45bedc54016f2742d39074f399a3c7f644a0ef7a133",
+      "bytes": 164297,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/region_utilisation.csv",
+      "sha256": "581afe899bde039236ab764e6fcbccf872e4d867b405b0b6369af3c3302f622b",
+      "bytes": 711,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s0_raw.csv.zst",
+      "sha256": "c1559d090b7d0c6d1ea85bbf737b0bb18dcfa0a9e92e3d8ab9c314c48964d707",
+      "bytes": 315117,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s0.ncu-rep.zst",
+      "sha256": "b18605558c661eecc7d0ffc6107b65a794de3719cc56bae9204c52fbe3f8a735",
+      "bytes": 6697502,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s150.ncu-rep.zst",
+      "sha256": "6f02329aede06e84ffde26a7b766dc9f8be04ebb6c1ef536b03bb62cf39fc586",
+      "bytes": 2397613,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s150_raw.csv.zst",
+      "sha256": "046a90e26d77820402104e3b34dc0f361ef112084cbdb2a286c6f9d513b6b3fc",
+      "bytes": 278266,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s300_raw.csv",
+      "sha256": "02c2387a603e89ca35f2b85e8f694834b7ffc463bd7e9b45e0e37d6a6b176df8",
+      "bytes": 971238,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s300_details.csv.zst",
+      "sha256": "4fa6c20ebc894136b9d365c3ce3d355fdd08d110cf3e399f6428507997f0053e",
+      "bytes": 52383,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s450_details.csv.zst",
+      "sha256": "a08052849ce7291321469b841afe9ff96df260de78ecd0423248b8c19d655193",
+      "bytes": 157510,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s0.ncu-rep.zst",
+      "sha256": "f3acb8ab16926abaa828e45bc702e89b596498eec9cd37478cbc8c6094fa22b4",
+      "bytes": 2703313,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s1200.ncu-rep.zst",
+      "sha256": "8f12f6f41abd08bff9a0834abd6a1c9d8e12b642a0104a00165b4bb4e0504dfa",
+      "bytes": 2067898,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s0_details.csv.zst",
+      "sha256": "e5bcb136cf8dd184d188846cf9c1e3383feb0a65cf28f2f238d16db23bb7c93a",
+      "bytes": 166885,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s0_raw.csv.zst",
+      "sha256": "1bec0d7e83277aa73abbec90bb7190d991c91814e8587c3e374f19ede0508482",
+      "bytes": 258546,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s300.ncu-rep.zst",
+      "sha256": "d9f20842b96efb7eb77ddfe99be3e04e1d3a26a4400bcd781812498a97c9160b",
+      "bytes": 2324162,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/kernels.csv",
+      "sha256": "101d2027369117e55a9269089af6b79445ac02d77be006e0e73ac20808d21158",
+      "bytes": 1086743,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s1200_raw.csv",
+      "sha256": "bae2ee6b4f6fde986489b7974269a6b90989fc2897df9a6ebef0b768a1545e6b",
+      "bytes": 631348,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s0_details.csv.zst",
+      "sha256": "6cc33420ff9f6aa985a18b4ef436c906f45933b8c56a108d113fc98cb1db92ab",
+      "bytes": 171116,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s300.ncu-rep.zst",
+      "sha256": "92f3b36ee936bc543e60d526bf51e6c0622e653d0cacbcc3054d01f023af403c",
+      "bytes": 1491511,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s150.ncu-rep.zst",
+      "sha256": "81f1d50d7ee7912ace2b0501938dc47e029b9e14226d2d22e525a92c86fdb1f3",
+      "bytes": 5890994,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s600_raw.csv.zst",
+      "sha256": "530a375191a8bbb1fa097ba689a973a9334a33bf880225056863efe119206454",
+      "bytes": 314137,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s300_raw.csv.zst",
+      "sha256": "20094eb9b2616838198f8634825d1abc57017b3581153068271dc26a34994b37",
+      "bytes": 279178,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s150_raw.csv.zst",
+      "sha256": "bcf3e927a01a543456662c7274c96b9288b25f01e58b45e47f38895827d4d262",
+      "bytes": 314766,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s450.ncu-rep.zst",
+      "sha256": "6de723adf3c7a11536d5dbc2a1d6c96807913fd9d38d10896a1a2372d8ea12c8",
+      "bytes": 5167017,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s900_raw.csv.zst",
+      "sha256": "53e0cd75cc2ec35f4c0916a3e928c786ba5865f62e3c4bd824faeb849f9ce302",
+      "bytes": 313333,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s1050_details.csv.zst",
+      "sha256": "db0d63b2c03284c4ab4c60a6ef522101a286b61d2ea2a8c9873d2cc7e41736df",
+      "bytes": 192482,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s600.ncu-rep.zst",
+      "sha256": "b3fa0a9b0b5027360ac21ae134bc41141b6bc12adb365f3876fd4ae1bd871e02",
+      "bytes": 5508939,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s1200_details.csv.zst",
+      "sha256": "de16245f16f22eab87d6eb9cfc5fd4c6a6865a95542a9b72a2dce0ec803161f3",
+      "bytes": 37443,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s300_details.csv.zst",
+      "sha256": "66d9a7eb5b847712936ed29aa44949445b16b92dbba26b811beb6782f61e6cc9",
+      "bytes": 191993,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s1050_raw.csv.zst",
+      "sha256": "190b88aa6ab26496d340f6a24f3d577e569877f3f1ee90452708256c38de5ca4",
+      "bytes": 277624,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s1200.ncu-rep.zst",
+      "sha256": "fa23fc2e3e38aaf96ffe63ea168c3f681528943d6354e97d3615f2a68063246c",
+      "bytes": 2463428,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s300.ncu-rep.zst",
+      "sha256": "2d1f42547ff86958d0cb14aef0f83792849ce00aa6dfae4ab3d10f2c61648411",
+      "bytes": 5120423,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s1050_raw.csv.zst",
+      "sha256": "4555c0365ba1761a7aa54e1b03a523fb0e355d03dba3c815989bf13739d8b2f5",
+      "bytes": 310728,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s0_raw.csv.zst",
+      "sha256": "af3d9faa55c06f11d86b23b4f51540996bda9ac5fc081494a2fd4d32c6eab046",
+      "bytes": 281081,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s900_details.csv.zst",
+      "sha256": "16ff216d6bfa78fcf2df9196bc5fc0c43110941206df0c3d1ab1ebe0ffbd34d6",
+      "bytes": 191430,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s900.ncu-rep.zst",
+      "sha256": "26f6c196dc243c6b0b8a993a4e6b8c747ce1a5bfb7ce2b639cb3cc41cc0a5b27",
+      "bytes": 2330639,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s1050.ncu-rep.zst",
+      "sha256": "b3740b99c3bf196d792771e8df463cc633d73c746b5e9f4cfeb9a5d4d1437a1e",
+      "bytes": 2144390,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s1050_details.csv.zst",
+      "sha256": "375abed77698829043d548e52a3bd653cd0f17da8e1a6cd4404074de7ab19509",
+      "bytes": 157200,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s900.ncu-rep.zst",
+      "sha256": "1ffcca34b4df868149b743383b62fe57496dd71499308b4fe195c9643aa912bb",
+      "bytes": 5535578,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s150.ncu-rep.zst",
+      "sha256": "0c806f85b95f9a0a5a8240922d3e8df0987c3475f1e960edb68f59ce333661b9",
+      "bytes": 2147296,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s150_details.csv.zst",
+      "sha256": "e4b9d24c1758b582640301c8b087434c78af06deb34b785b116b7b8329098cf2",
+      "bytes": 190043,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s450.ncu-rep.zst",
+      "sha256": "e21434b46746705f15256719849c071eda3ed0b9e2fcba92aa91892d878ed341",
+      "bytes": 2134087,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s0.ncu-rep.zst",
+      "sha256": "c0b718fc0fc6aa3d5136236fd53966d33e6f2ae7602ef8f84ecac512f97d6187",
+      "bytes": 4387374,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s900_details.csv.zst",
+      "sha256": "71f569e743c27ec75fc195186735a51ae15ff5cc9452f15fe42a9b5caea7fe61",
+      "bytes": 164060,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s750.ncu-rep.zst",
+      "sha256": "5f3bbc5ece2e561c5dfb6f9269e006957899e4bcef02fd78d3bc8de5f3fa3877",
+      "bytes": 2141896,
+      "kind": "ncu-rep",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vision_s150_details.csv.zst",
+      "sha256": "800005be10d68a8c9f3f1a1960fa4e859c28214a88857645547b8bcb44f398f3",
+      "bytes": 159208,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s450_details.csv.zst",
+      "sha256": "195f08d12f88aa7905864c78b46ca8a77ef8ff2ef64f73287c4f443d48fb2c29",
+      "bytes": 190991,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s600_details.csv.zst",
+      "sha256": "9674cf78478ccbdc80939fda1e867a86ecfa9ffbbc5c779ab6d2583137a395fb",
+      "bytes": 191066,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s450_raw.csv.zst",
+      "sha256": "d76734f55be7c5ce3cb856e143a28e8d9c12903e2fcdcf80b9bbc070353432f9",
+      "bytes": 309254,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s1200_details.csv.zst",
+      "sha256": "4ea2e6c46a0b1b5b2dbca72356092cdf73f5189f8d7bae8d3c3fdc0006740c49",
+      "bytes": 141179,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/vlm_prefix_s450_raw.csv.zst",
+      "sha256": "8eb65416713d0f2e6e560cc0b8575393199ac6bae59a449a3e72d585dbeafce2",
+      "bytes": 277553,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s150_raw.csv.zst",
+      "sha256": "21ea52a2ff9fdc07042618a2360c9013fdd5afa186c6fe9dae7c3bb306eb4d14",
+      "bytes": 309392,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    },
+    {
+      "path": "ncu/ae_total_s750_raw.csv.zst",
+      "sha256": "41760a46a45b5f37cc087a3ba4e2a6786a2099bba53fb47e4d14e9a20bbb537e",
+      "bytes": 307649,
+      "kind": "other",
+      "produced_by": "ncu --import --csv",
+      "secrets_scan": "clean"
+    }
+  ]
+}
