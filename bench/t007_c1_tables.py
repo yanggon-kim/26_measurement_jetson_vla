@@ -1,5 +1,6 @@
 """T007 steps 2-3: C1 tables from the ncu --set full captures of one model x mode (bench/t007_c1.py), joined to the
-nsys capture of the same configuration (bench/t006_capture.py, kernels.csv) on launch order + kernel base name.
+nsys capture of the same configuration (bench/t006_capture.py, kernels.csv) on launch order + kernel base name + grid
++ block (bench/t006_roofline.join: ±8 positions; a row matching by name only is not counted in coverage).
 
 Per kernel (ncu/kernels.csv): nsys duration (time), SM throughput %, on-chip memory throughput % (onchip_mem_pct =
 gpu__compute_memory_throughput: the max of the memory units' throughputs; this chip exposes no dram__ counters (T001), so
@@ -30,7 +31,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from t006_roofline import norm, num  # noqa: E402
+from t006_roofline import dim3, join, norm, num  # noqa: E402
 from t007_c1 import STALLS  # noqa: E402
 
 PEAK_BW_GBPS = float(json.load(open(os.path.join(os.path.dirname(HERE), "results", "20261022_E1_peak", "hw_constants.json")))["measured_bw_GBps"]["best"]["value"])
@@ -73,12 +74,14 @@ def main():
         gaps = [s2 - e1 for e1, s2 in zip(ends[:-1], starts[1:]) if s2 > e1]
         gap_med = statistics.median(gaps) if gaps else 0
         tot = sum(int(r["duration_ns"]) for r in ns)
-        joined, mism = 0, 0
-        for i, d in enumerate(ncu):
-            nsr = ns[i] if i < len(ns) else None
+        joined, mism, name_only = 0, 0, 0
+        for i, j, kind in join(ncu, ns):
+            d = ncu[i]
+            nsr = ns[j] if j is not None else None
             name = d.get("Kernel Name", "")
-            ok = nsr is not None and norm(nsr["name"]) == norm(name)
-            mism += 0 if ok else 1
+            ok = kind == "strict"
+            mism += 1 if kind == "none" else 0
+            name_only += 1 if kind == "name_only" else 0
             dur = int(nsr["duration_ns"]) if ok else 0
             joined += dur
             sm = num(d.get("sm__throughput.avg.pct_of_peak_sustained_elapsed"))
@@ -96,7 +99,8 @@ def main():
                 verdict = "memory-bound"
             else:
                 verdict = f"latency-bound ({top})"
-            krows.append({"model": a.model, "mode": a.mode, "part": part, "idx": i, "kernel": name[:200], "joined": ok,
+            krows.append({"model": a.model, "mode": a.mode, "part": part, "idx": i, "launch_idx": nsr["launch_order"] if nsr else "",
+                          "join": kind, "kernel": name[:200], "joined": ok,
                           "nsys_ns": dur, "sm_pct": sm, "onchip_mem_pct": mem, "dram_pct_peak_bw": round(dram_pct, 2),
                           "occupancy_pct": num(d.get("sm__warps_active.avg.pct_of_peak_sustained_active")),
                           "tensor_pipe_pct": num(d.get("sm__pipe_tensor_cycles_active.avg.pct_of_peak_sustained_active")),
@@ -115,6 +119,7 @@ def main():
         dram = sum((k["dram_GBps"] or 0) * k["nsys_ns"] for k in ks) / w if ks else 0
         ev = region_ms.get(part)
         bounds.append({"model": a.model, "mode": a.mode, "part": part, "n_kernels": len(ns), "n_ncu": len(ncu), "name_mismatches": mism,
+                       "join_name_only": name_only,
                        "coverage": round(joined / tot, 4) if tot else 0, "kernel_ms": round(tot / 1e6, 4),
                        "idle_frac": round(1 - (tot / 1e6) / ev, 4) if ev else "", "sm_pct": round(wavg("sm_pct"), 2),
                        "onchip_mem_pct": round(wavg("onchip_mem_pct"), 2), "occupancy_pct": round(wavg("occupancy_pct"), 2),

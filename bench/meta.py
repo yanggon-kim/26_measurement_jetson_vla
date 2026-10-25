@@ -13,6 +13,7 @@ Root-only reads (EMC rate, jetson_clocks --show) go through env/rootdo.sh.
 import argparse
 import datetime
 import hashlib
+import glob
 import json
 import os
 import re
@@ -24,7 +25,10 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOTDO = os.path.join(REPO, "env", "rootdo.sh")
 GPU_DEVFREQ = "/sys/class/devfreq/gpu-gpc-0"
 KIND_BY_EXT = [(".ncu-rep", "ncu-rep"), (".nsys-rep", "nsys-rep"), (".sqlite", "nsys-sqlite"), (".sass", "sass"),
-               (".ptx", "ptx"), (".cubin", "cubin"), (".stdout.log", "stdout"), ("tegrastats", "tegrastats")]
+               (".ptx", "ptx"), (".cubin", "cubin"), (".stdout.log", "stdout"), ("tegrastats", "tegrastats"),
+               ("_raw.csv", "ncu-csv"), ("_details.csv", "ncu-csv"), ("torch_kernels.csv", "torch-profiler-csv"),
+               ("_cuda_gpu_", "nsys-csv"), ("_cuda_api_", "nsys-csv"), ("_nvtx_", "nsys-csv"), ("_osrt_", "nsys-csv"),
+               (".log", "stdout"), ("device_during.json", "device-state"), ("target_info", "config")]
 POWER_LOG_PREFIXES = ("power_idle", "idle_power", "power_sample", "power.csv")
 
 
@@ -149,10 +153,19 @@ def finalise(run_dir, fields, scan_status):
             else:
                 e = raw_entry(p, run_dir, kind_of(fn), pb, scan_status.get(fn, "n/a"))
             entries.append(e)
+    comp = {}                                 # compression records written by the capture scripts (<sub>/compressed.json)
+    for cj in glob.glob(os.path.join(run_dir, "*", "compressed.json")):
+        for c in json.load(open(cj)):
+            comp[os.path.join(os.path.dirname(cj), c["file"])] = c
     for rel in fields.pop("also_raw", []):   # per-sample files kept at the top level of the run (protocol §3.5)
         p = os.path.join(run_dir, rel)
-        entries.append(raw_entry(p, run_dir, kind_of(p), next((v for k, v in produced.items() if k in rel), ""),
-                                 scan_status.get(os.path.basename(p), "n/a")))
+        e = raw_entry(p, run_dir, kind_of(p), next((v for k, v in produced.items() if k in rel), ""),
+                      scan_status.get(os.path.basename(p), "n/a"))
+        c = comp.get(os.path.abspath(p))
+        if c:
+            e["compression"] = {"tool": "zstd", "level": 19, "command": c.get("command", "")}
+            e["original"] = c.get("original")
+        entries.append(e)
     entries += extra_uncommitted
     meta = {"date_utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     meta.update(fields)

@@ -29,6 +29,9 @@ def main():
     ap.add_argument("--warmup", type=int, default=20)
     ap.add_argument("--warmup-max", type=int, default=80)
     ap.add_argument("--info", default="", help="write the resolved configuration here (json)")
+    ap.add_argument("--torch-profile", default="", help="run the profiled inference(s) under torch.profiler(record_shapes) "
+                    "and write every kernel with its launching aten op and input shapes to this CSV")
+    ap.add_argument("--torch-trace", default="", help="where the chrome trace goes (scratch/)")
     a = ap.parse_args()
     import torch
     from torch._dynamo.utils import counters
@@ -68,16 +71,24 @@ def main():
             break
     torch.cuda.synchronize()
     g0 = ug()
+    import contextlib
+    tp = contextlib.nullcontext()
+    if a.torch_profile:
+        from torch.profiler import ProfilerActivity, profile
+        tp = profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True)
     torch.cuda.profiler.start()
-    for i in range(a.inferences):
-        rec.reset()
-        rec.start()
-        mark()
-        with torch.cuda.nvtx.range(f"inference_{i}"):
-            ad.iteration()
-        rec.stop()
-    torch.cuda.synchronize()
+    with tp as prof:
+        for i in range(a.inferences):
+            rec.reset()
+            rec.start()
+            mark()
+            with torch.cuda.nvtx.range(f"inference_{i}"):
+                ad.iteration()
+            rec.stop()
+        torch.cuda.synchronize()
     torch.cuda.profiler.stop()
+    if a.torch_profile:
+        write_torch_kernels(prof, a.torch_profile, a.torch_trace)
     info = {"model": a.model, "rung_requested": a.rung, "rung": rung, "best_bf16_source": src,
             "mpad_table_replayed": bool(table), "rung_desc": desc, "warmup_iters": it,
             "graphs_compiled_in_profiled_window": ug() - g0, "region_calls": dict(rec.counts),
@@ -88,6 +99,36 @@ def main():
                      default=str), flush=True)
     if a.info:
         json.dump(info, open(a.info, "w"), indent=1, default=str)
+
+
+def write_torch_kernels(prof, csv_path, trace_path):
+    """Every GPU kernel of the profiled window in start order, with the aten op that launched it (Kineto's External id
+    link: the op on top of the CPU stack at the launch) and that op's input shapes and dtypes. Kernels replayed from a
+    CUDA graph link to the op that launched the graph (no shapes)."""
+    import csv as _csv
+    trace_path = trace_path or csv_path + ".trace.json"
+    os.makedirs(os.path.dirname(os.path.abspath(trace_path)), exist_ok=True)
+    prof.export_chrome_trace(trace_path)
+    ev = json.load(open(trace_path))["traceEvents"]
+    ops = {}
+    for e in ev:
+        if e.get("cat") == "cpu_op" and "External id" in e.get("args", {}):
+            ops[e["args"]["External id"]] = e
+    rows = []
+    for e in sorted((e for e in ev if e.get("cat") == "kernel"), key=lambda e: e["ts"]):
+        op = ops.get(e.get("args", {}).get("External id"), {})
+        oa = op.get("args", {})
+        rows.append({"k_order": len(rows), "kernel": e["name"], "grid": ",".join(str(x) for x in e["args"].get("grid", [])),
+                     "block": ",".join(str(x) for x in e["args"].get("block", [])), "dur_us": e.get("dur"),
+                     "op": op.get("name", ""), "input_dims": json.dumps(oa.get("Input Dims", [])),
+                     "input_types": json.dumps(oa.get("Input type", [])),
+                     "graph_launched": "graph node" in json.dumps(e.get("args", {})).lower() or "graph" in str(e["args"].get("graph id", ""))})
+    os.makedirs(os.path.dirname(os.path.abspath(csv_path)), exist_ok=True)
+    with open(csv_path, "w", newline="") as f:
+        w = _csv.DictWriter(f, fieldnames=list(rows[0]) if rows else ["k_order"])
+        w.writeheader()
+        w.writerows(rows)
+    print(f"torch.profiler: {len(rows)} kernels, {sum(1 for r in rows if r['op'])} linked to an op -> {csv_path}", flush=True)
 
 
 if __name__ == "__main__":

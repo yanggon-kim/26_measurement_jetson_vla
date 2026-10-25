@@ -8,6 +8,7 @@ committed T006 / T007 results of that configuration (latest non-superseded direc
 
 Gap of a part = CUDA-event time - analytic floor (floor.csv), split exactly into:
   host / idle      event time - Σ kernel durations of the part (nsys, one inference)
+  kernels without strict ncu counters   their nsys time (no floor: their counters came from another launch configuration)
   <class> excess   Σ over the class's kernels of (duration - own floor), own floor = max(bytes / BW, FLOPs / dtype peak)
                    at the measured ceilings; classes as bench/t007_timeline.kclass
   serialisation    Σ per-kernel floors - max(Σ bytes / BW, Σ FLOPs / peak): the part-level floor assumes compute and memory
@@ -52,44 +53,49 @@ def one(m, mode):
     e6 = latest(f"*_E6_{m}_{mode}*")
     c1 = latest(f"*_E4g_c1_{m}_{mode}")
     tl = latest(f"*_E5_{m}_{mode}_timeline")
+    e5 = latest(f"*_E5_{m}_{mode}_nsys*")
+    nsk = [r for r in csv.DictReader(open(os.path.join(e5, "kernels.csv"))) if r["inference"] == "inference_0"] if e5 else []
     if not e6:
         return []
     dims_p = os.path.join(REPO, "results", f"{os.path.basename(e6)[:8]}_E6_dims", "raw", f"{m}_{mode}", "dims.csv")
     dims = list(csv.DictReader(open(dims_p))) if os.path.exists(dims_p) else []
     hw = json.load(open(os.path.join(REPO, "results", "20261022_E1_peak", "hw_constants.json")))
     bw = float(hw["measured_bw_GBps"]["best"]["value"])
-    event = {r["part"]: float(r["time_ms"]) for r in csv.DictReader(open(os.path.join(e6, "roofline.csv")))
-             if r["source"].startswith("ncu, time = CUDA") and r["time_ms"]}
-    floor = {r["part"]: r for r in csv.DictReader(open(os.path.join(e6, "floor.csv")))}
-    kr = [k for k in csv.DictReader(open(os.path.join(e6, "kernel_roofline.csv"))) if k["nsys_duration_ns"]]
+    event = {r["part"]: float(r["ms"]) for r in csv.DictReader(open(os.path.join(e6, "roofline.csv")))
+             if r["source"] == "analytic" and r["time_source"] == "region_cuda_event" and r["ms"]}
+    floor = {r["region"]: dict(r, bytes=r["bytes_read"]) for r in csv.DictReader(open(os.path.join(e6, "floor.csv")))
+             if r["peak_source"] == "measured"}
+    kr = [k for k in csv.DictReader(open(os.path.join(e6, "kernel_roofline.csv"))) if k["ms_nsys"] and k["join"] == "strict"]
     c1k = {}
     if c1:
         for k in csv.DictReader(open(os.path.join(c1, "ncu", "kernels.csv"))):
-            c1k[(k["part"], int(k["idx"]))] = k
+            c1k[(k["part"], int(k["idx"]))] = k                # C1's ncu order = E6's ncu order (same NVTX range, launch order)
     tls = list(csv.DictReader(open(os.path.join(tl, "timeline_summary.csv")))) if tl else []
     out = []
     for part, ev in event.items():
-        if part not in floor:
+        if part not in floor or floor[part].get("gap_ratio") in (None, "n/a"):
             continue
         fl = float(floor[part]["floor_ms"])
         ks = [k for k in kr if k["part"] == part]
         if not ks:
             continue
-        ksum = sum(int(k["nsys_duration_ns"]) for k in ks) / 1e6
+        ksum = sum(float(k["ms_nsys"]) for k in ks)                       # strictly joined kernels
+        kall = sum(int(r["duration_ns"]) for r in nsk if r["region"] == part) / 1e6 or ksum
         terms = collections.defaultdict(float)
         cls_k = collections.defaultdict(list)
         own_sum, sum_b, sum_fc = 0.0, 0.0, 0.0
         for k in ks:
-            t = int(k["nsys_duration_ns"]) / 1e6
-            byt = float(k["dram_read_B"] or 0) + float(k["dram_write_B"] or 0)
-            fk = max(byt / (bw * 1e9), float(k["flops"] or 0) / (float(k["ceiling_TFLOPps"] or 1) * 1e12)) * 1e3
+            t = float(k["ms_nsys"])
+            byt = float(k["bytes_ncu"] or 0)
+            fk = max(byt / (bw * 1e9), float(k["flops_ncu"] or 0) / (float(k["ceiling_TFLOPps"] or 1) * 1e12)) * 1e3
             own_sum += fk
             sum_b += byt
-            sum_fc += float(k["flops"] or 0) / (float(k["ceiling_TFLOPps"] or 1) * 1e12) * 1e3
+            sum_fc += float(k["flops_ncu"] or 0) / (float(k["ceiling_TFLOPps"] or 1) * 1e12) * 1e3
             c = kclass(k["kernel"])
             terms[f"{c} excess"] += t - fk
             cls_k[c].append((k, t, fk, byt))
-        terms["host / idle"] = ev - ksum
+        terms["host / idle"] = ev - kall
+        terms["kernels without strict ncu counters"] = kall - ksum
         meas_floor = max(sum_b / (bw * 1e9) * 1e3, sum_fc)
         terms["serialisation"] = own_sum - meas_floor          # >= 0: Σ max ≥ max Σ
         terms["measured > analytic"] = meas_floor - fl
@@ -106,8 +112,8 @@ def one(m, mode):
         if top == "host / idle":
             reg = [r for r in tls if r["region"] == part or (part.startswith("ae_step") and r["region"].startswith("ae_step["))]
             mean = lambda k: statistics.mean(float(r[k]) for r in reg if r.get(k) not in ("", None)) if reg else float("nan")  # noqa: E731
-            chain += [("why 1", f"the GPU executes kernels for only {ksum:.2f} of the {ev:.2f} ms; {ev - ksum:.2f} ms "
-                                f"({(ev - ksum) / gap * 100:.0f} % of the gap) no kernel runs",
+            chain += [("why 1", f"the GPU executes kernels for only {kall:.2f} of the {ev:.2f} ms; {ev - kall:.2f} ms "
+                                f"({(ev - kall) / gap * 100:.0f} % of the gap) no kernel runs",
                        f"`{src_e6}/kernel_roofline.csv` (Σ nsys durations), floor.csv"),
                       ("why 2", f"{mean('starved_frac_of_gaps') * 100:.0f} % of the idle gap time is CPU-starved: the next kernel's "
                                 f"launch call returned only after the previous kernel had finished",
@@ -123,12 +129,12 @@ def one(m, mode):
             t_c = sum(t for _, t, _, _ in kk)
             b_c = sum(b for _, _, _, b in kk)
             gbps = b_c / (t_c / 1e3) / 1e9 if t_c else 0
-            joined = [(k, t) for k, t, _, _ in kk if (part, int(k["idx_in_part"])) in c1k]
+            joined = [(k, t) for k, t, _, _ in kk if (part, int(k["ncu_idx"])) in c1k]
             w = sum(t for _, t in joined) or 1
-            occ = sum(float(c1k[(part, int(k["idx_in_part"]))]["occupancy_pct"] or 0) * t for k, t in joined) / w
+            occ = sum(float(c1k[(part, int(k["ncu_idx"]))]["occupancy_pct"] or 0) * t for k, t in joined) / w
             st = collections.Counter()
             for k, t in joined:
-                r = c1k[(part, int(k["idx_in_part"]))]
+                r = c1k[(part, int(k["ncu_idx"]))]
                 for key, v in r.items():
                     if key.startswith("stall_") and v not in ("", None):
                         st[key[6:]] += float(v) * t
@@ -160,9 +166,16 @@ def one(m, mode):
                                       "leave most warp slots empty, so memory latency is exposed and DRAM runs below its peak")
                                      if c == "GEMM" else
                                      f"the {c} kernels run far below the device's ceilings (small, latency-exposed launches)", "")]
+        elif top == "kernels without strict ncu counters":
+            chain += [("why 1", f"{kall - ksum:.2f} ms ({terms[top] / gap * 100:.0f} % of the gap) is spent in kernels whose ncu row "
+                                "matched by name but not by grid / block, so their counters cannot be used", f"`{src_e6}/coverage.json`"),
+                      ("why 2", "the profiled process re-tuned those Inductor kernels and launched them with another block size",
+                       f"`{src_e6}/kernel_roofline.csv` (join = name_only)"),
+                      ("why 3", "Inductor's runtime autotuning results were not reused by the profiling process", "Inductor cache"),
+                      ("root cause", "a measurement gap, not a model property: re-capture with the timed run's tuned configs", "")]
         elif top == "serialisation":
-            mem_t = sum(int(k["nsys_duration_ns"]) for k in ks if k["bound_by_intensity"] == "memory") / 1e6
-            cmp_t = sum(int(k["nsys_duration_ns"]) for k in ks if k["bound_by_intensity"] == "compute") / 1e6
+            mem_t = sum(float(k["ms_nsys"]) for k in ks if k["bound_by_intensity"] == "memory")
+            cmp_t = sum(float(k["ms_nsys"]) for k in ks if k["bound_by_intensity"] == "compute")
             chain += [("why 1", f"each kernel's own floor, summed, is {own_sum:.2f} ms, but the part's totals would allow "
                                 f"{meas_floor:.2f} ms if compute and memory work overlapped: {terms[top]:.2f} ms "
                                 f"({terms[top] / gap * 100:.0f} % of the gap)", f"`{src_e6}/kernel_roofline.csv`"),
@@ -176,7 +189,7 @@ def one(m, mode):
         else:
             fl_r = floor[part]
             b_an, f_an = float(fl_r["bytes"]), float(fl_r["flops"])
-            f_meas = sum(float(k["flops"] or 0) for k in ks)
+            f_meas = sum(float(k["flops_ncu"] or 0) for k in ks)
             regs = {part} if part != "ae_total" else {r["region"] for r in dims if r["region"].startswith(("ae_step", "ae_dit"))}
             nrep = 1 if part != "ae_total" else len([k for k in floor if k.startswith("ae_step[")]) or 4
             act_b = sum((int(r["act_bytes"]) + int(r["out_bytes"])) * int(r["calls_per_inference"]) for r in dims
