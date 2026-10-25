@@ -4,10 +4,10 @@
 section; the log at the bottom is one line per event.*
 
 ## Now
-**The owner's first two priorities are done.** `best_bf16` with its latency breakdown is confirmed for all six
-(`results/20261025_E4i_summary`); its ncu work is complete: T006 roofline (100 % coverage) and T007 C1 with stalls
-(`reports/E4g_c1_c2_bottlenecks.md`). Next: the rest of T005 (Part A, π0 N = 4), then `eager_fp32` for T006 / T007,
-then T008 onwards. Resume point: `PROGRESS.md`.
+**Paused by the owner (2026-10-26 ≈ 03:45 UTC); nothing of ours is running.** Done: `best_bf16` + breakdown for all six
+(`results/20261025_E4i_summary`), its T006 roofline and T007 timelines / C1 / root-cause chains, T005 Part A and the π0 N = 4
+control. The T006 independent review found join, floor and schema issues; the code fixes are committed (bf0d4d5) and need
+GPU validation and a re-capture. Resume point: `PROGRESS.md`.
 
 **How root works here:** the agent has no sudo. The owner chose docker instead of a sudoers file: `env/rootdo.sh`
 runs allow-listed commands (`jetson_clocks`, `nvpmodel -q`, `tegrastats`, `cat /sys/kernel/debug/*`,
@@ -105,3 +105,4 @@ loose) · 780 files under `results/` · largest committed files: `env/tool_help/
 - 2026-10-24 T006 best_bf16 done for all six (E5 nsys + E6 roofline, 100 % coverage, 0 join mismatches); E6 reports generated; T007 C1 smoke test started (SmolVLA).
 - 2026-10-25 T007 timeline found host stalls in π0/π0.5 expert steps (per-step KV deepcopy) and N1.7's eager vision/prefix; N1.7 vision made compilable (vis_fa_static): stage 3 best vis_fa_at_ae_at 120.8 vs 131.9 ms (confirmation queued); owner put kv_shallow into best_bf16 for π0/π0.5 (stage 4 queued). T006 GR00T expert floor bug fixed (weights per step): gap 1.43/1.47/1.94x.
 - 2026-10-26 T006 re-captured for π0/π0.5/N1.7 at the new best_bf16; T007 C1 done for all six best_bf16 (100 % coverage, all gates ok); no part compute-bound, top stall long_scoreboard everywhere.
+- 2026-10-26 T005 Part A and π0 N = 4 done; T006 independent review: strict join, in-sequence bytes, §5/§9 schemas, unpadded floors (code fixed, re-capture pending); paused by the owner.

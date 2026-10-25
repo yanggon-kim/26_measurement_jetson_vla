@@ -38,13 +38,18 @@ decision, N1.7 vision compiled; `results/20261025_E4i_summary`); T006 `best_bf16
 GR00T floor fix applied); T007 `best_bf16` timelines and C1 for all six (`results/20261025_E4g_c1_summary`,
 `reports/E4g_c1_c2_bottlenecks.md`, `reports/E5_timeline.md`); `results/20261025_E4_cpu_overhead_diag`.
 
-**Next steps, in order:**
-1. **Rest of T005:** the π0 N = 4 control (`bench/opt_ladder.py --model pi0 --n 4 --out results/<date>_E4c_pi0_opt_ladder_N4`,
-   rungs from `bench/queues/t005_ladders.sh` + `best_bf16`), Part A (`bash bench/queues/t005_part_a.sh <date>`), the close.
-2. **`eager_fp32` ncu work:** `bench/t006_run.py --date <date> --modes eager_fp32`, `bench/t006_run.py --date <date> --finalise-dims`,
-   `bench/t007_run.py --date <date> --e5-date <date> --what timeline --modes eager_fp32`, then C1 `--modes eager_fp32`; then
-   `make_e6_reports.py`, `make_e5_report.py`, `make_e4g_report.py --date <date>` (C2 deltas appear), root-cause chains;
-   the T006 independent review; close T006 and T007.
+**Paused by the owner 2026-10-26 ≈ 03:45 UTC; nothing of ours is running. Next steps, in order:**
+1. **T005:** re-time `bf16_vision` at N = 4 (`~/venvs/lerobot/bin/python bench/opt_ladder.py --model pi0 --n 4 --out
+   results/20261026_E4c_pi0_opt_ladder_N4 --rungs bf16_vision --redo`; its three attempts were disturbed by another user's job),
+   re-finalise (`bench/t005_finalise.py --run <dir> --ref-dir <dir> ...`); regenerate the E4d report (`bench/e4i_summary.py
+   --out results/20261025_E4i_summary --report reports/E4d_phase_balance.md`, which now writes §5 Part A and §6 N = 4);
+   independent review of the additions since the first review; status block; close T005.
+2. **T006 review fixes (code committed, bf0d4d5) need GPU validation before any new capture:**
+   - `bash scratch/cachetest.sh`: does the root ncu process re-tune Inductor kernels (name-only join rows: the profiled
+     process launched Triton reduction / pointwise kernels with half the block size of the nsys process)? Fix accordingly.
+   - test `bench/t006_capture.py ncu-range` (range replay, in-sequence bytes) and `torchprof` on π0 best_bf16.
+   - then re-capture T006 best_bf16 for all six (new metrics, range replay, torch linkage; new date), regenerate E6 reports,
+     re-run `bench/t007_root_cause.py`, second review pass; then `eager_fp32` T006 / T007 (`scratch/run_eager.sh` pattern).
 3. **Then** T008 (best_bf16 first) → T015 (`~/.claude/plans/sunny-dazzling-cocoa.md`).
 
 **Operating notes:**
