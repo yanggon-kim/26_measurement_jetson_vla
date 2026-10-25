@@ -5,10 +5,10 @@
 | model | mode | part | ms | intensity | % peak compute | % peak BW | side | gap × floor | coverage |
 |---|---|---|---|---|---|---|---|---|---|
 | π0 | best_bf16 | `ae_step[0]` | 5.26 | 53.8 | 7.2 % | 67.2 % | memory | 2.09 | 100.0 % |
-| π0 | best_bf16 | `vision` | 20.56 | 166.9 | 27.1 % | 81.8 % | memory | 4.04 | 100.0 % |
+| π0 | best_bf16 | `vision` | 20.56 | 166.9 | 27.1 % | 81.8 % | memory | 2.13 | 100.0 % |
 | π0 | best_bf16 | `vlm_prefix` | 54.97 | 350.2 | 56.0 % | 80.3 % | memory | 1.86 | 100.0 % |
 | π0.5 | best_bf16 | `ae_step[0]` | 6.04 | 44.3 | 6.4 % | 72.8 % | memory | 1.78 | 100.0 % |
-| π0.5 | best_bf16 | `vision` | 20.33 | 166.8 | 27.4 % | 82.7 % | memory | 4.00 | 100.0 % |
+| π0.5 | best_bf16 | `vision` | 20.33 | 166.8 | 27.4 % | 82.7 % | memory | 2.11 | 100.0 % |
 | π0.5 | best_bf16 | `vlm_prefix` | 59.98 | 348.9 | 55.2 % | 79.5 % | memory | 1.93 | 100.0 % |
 | SmolVLA | best_bf16 | `ae_step[0]` | 2.77 | 43.9 | 4.3 % | 48.8 % | memory | 3.52 | 100.0 % |
 | SmolVLA | best_bf16 | `vision` | 15.21 | 219.8 | 22.5 % | 51.5 % | memory | 4.58 | 100.0 % |

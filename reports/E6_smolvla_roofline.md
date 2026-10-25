@@ -7,7 +7,7 @@
 | part | time ms (CUDA event) | FLOPs (ncu) | DRAM bytes (ncu) | intensity FLOP/B | TFLOP/s | GB/s | % peak compute | % peak BW | side of the ridge | analytic bytes | measured ÷ analytic bytes | floor ms | gap × floor | coverage |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `ae_step[0]` | 2.77 | 1.531e+10 | 3.486e+08 | 43.9 | 5.53 | 125.9 | 4.3 % | 48.8 % | memory (ridge 503) | 2.033e+08 | 1.71 | 0.787 | 3.52 | 100.0 % |
-| `vision` | 15.21 | 4.447e+11 | 2.023e+09 | 219.8 | 29.23 | 133.0 | 22.5 % | 51.5 % | memory (ridge 503) | 1.980e+08 | 10.22 | 3.318 | 4.58 | 100.0 % |
+| `vision` | 15.21 | 4.447e+11 | 2.023e+09 | 219.8 | 29.23 | 133.0 | 22.5 % | 51.5 % | memory (ridge 503) | 3.961e+08 | 5.11 | 3.318 | 4.58 | 100.0 % |
 | `vlm_prefix` | 4.29 | 7.642e+10 | 8.016e+08 | 95.3 | 17.83 | 187.0 | 13.7 % | 72.4 % | memory (ridge 503) | 3.146e+08 | 2.55 | 1.218 | 3.52 | 100.0 % |
 
 Five heaviest kernels per part (best_bf16, by nsys time). `roof` = the ceiling the kernel is judged against: the tensor-core rate of the dtype it executes, or the fp32 SIMT rate for a kernel with no tensor instructions.
