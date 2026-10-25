@@ -14,11 +14,11 @@
 | SmolVLA | best_bf16 | `vision` | 15.21 | 219.8 | 22.5 % | 51.5 % | memory | 4.58 | 100.0 % |
 | SmolVLA | best_bf16 | `vlm_prefix` | 4.29 | 95.3 | 13.7 % | 72.4 % | memory | 3.52 | 100.0 % |
 | GR00T N1.7 | best_bf16 | `ae_total` | 50.73 | 81.5 | 12.9 % | 79.3 % | memory | 1.42 | 100.0 % |
-| GR00T N1.7 | best_bf16 | `backbone_lm_head` | 3.26 | 254.0 | 42.4 % | 83.9 % | memory | 2.49 | 100.0 % |
+| GR00T N1.7 | best_bf16 | `backbone_lm_head` | 3.26 | 254.0 | 42.4 % | 83.9 % | memory | 1.19 | 100.0 % |
 | GR00T N1.7 | best_bf16 | `vision` | 19.22 | 246.4 | 30.4 % | 62.0 % | memory | 3.57 | 100.0 % |
 | GR00T N1.7 | best_bf16 | `vlm_prefix` | 25.07 | 126.7 | 15.5 % | 61.3 % | memory | 4.02 | 100.0 % |
 | GR00T N1.6 | best_bf16 | `ae_total` | 50.15 | 70.5 | 10.9 % | 78.1 % | memory | 1.47 | 100.0 % |
-| GR00T N1.6 | best_bf16 | `backbone_lm_head` | 4.14 | 252.5 | 33.3 % | 66.3 % | memory | 3.05 | 100.0 % |
+| GR00T N1.6 | best_bf16 | `backbone_lm_head` | 4.14 | 252.5 | 33.3 % | 66.3 % | memory | 1.51 | 100.0 % |
 | GR00T N1.6 | best_bf16 | `vision` | 17.25 | 286.2 | 41.7 % | 73.2 % | memory | 2.65 | 100.0 % |
 | GR00T N1.6 | best_bf16 | `vlm_prefix` | 15.02 | 204.9 | 25.8 % | 63.2 % | memory | 2.41 | 100.0 % |
 | GR00T N1.5 | best_bf16 | `ae_total` | 36.84 | 157.5 | 24.7 % | 79.0 % | memory | 1.94 | 100.0 % |
