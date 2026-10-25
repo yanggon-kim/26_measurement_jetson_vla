@@ -1,0 +1,59 @@
+{
+ "model": "pi05",
+ "rung_requested": "best_bf16",
+ "rung": "bf16_mpad_graphs_ae_at_islands_kvs",
+ "best_bf16_source": "/home/jameskimh/dir_yg/26_measurement_jetson_vla/results/20261025_E4i_summary/best_bf16.json",
+ "mpad_table_replayed": true,
+ "rung_desc": {
+  "rung": "bf16_mpad_graphs_ae_at_islands_kvs",
+  "label": "bf16 casts + mpad + graphs everywhere; GEMM autotuning on ae only + remaining fp32 Linears to bf16 + kv_shallow (no per-step deepcopy of the prefix KV cache)",
+  "precision_flags": {
+   "float32_matmul_precision": "high",
+   "cuda_matmul_allow_tf32": true,
+   "cudnn_allow_tf32": true
+  },
+  "preps": [
+   "paligemma_with_expert.to_bfloat16_for_selected_params('bfloat16') (LeRobot's keep-list stays fp32); vision_tower + multi_modal_projector -> bf16; embed_image's fp32 cast removed; 37 layer-norm modules -> bf16 (own parameters only)",
+   "linear_mpad(lm_expert, replayed from the recorded best_bf16 table): 36 Linear modules padded; shapes padded: {'M=968 K=2048 N=2048 torch.bfloat16': {'pad_to': 1144, 'ms_at_M': nan, 'ms_at_pad': nan}}",
+   "bf16_islands: 41 fp32 Linear modules (474.7 MB) -> bf16, input cast to bf16, output cast back",
+   "lerobot.policies.pi05.modeling_pi05.copy.deepcopy(past_key_values) -> shallow cache copy (prefix K/V tensors shared, never written)"
+  ],
+  "compiled": [
+   "PI05Pytorch.denoise_step@max-autotune",
+   "PaliGemmaWithExpertModel.embed_image@reduce-overhead+clone",
+   "PaliGemmaWithExpertModel.forward@reduce-overhead+clone"
+  ],
+  "autotune": "is_big_gpu forced True; backends ATEN,TRITON; GEMM autotuning only where mode = max-autotune*",
+  "regions": true,
+  "note": "",
+  "compile_wrap_s": 0.7004458570008865,
+  "ae_compiled": true
+ },
+ "warmup_iters": 20,
+ "graphs_compiled_in_profiled_window": 0,
+ "region_calls": {
+  "vision": 3,
+  "vlm_prefix": 1,
+  "ae_step[0]": 1,
+  "ae_step[1]": 1,
+  "ae_step[2]": 1,
+  "ae_step[3]": 1,
+  "ae_step[4]": 1,
+  "ae_step[5]": 1,
+  "ae_step[6]": 1,
+  "ae_step[7]": 1,
+  "ae_step[8]": 1,
+  "ae_step[9]": 1
+ },
+ "n_default": 10,
+ "tokens": {
+  "prefix_tokens_P": 968,
+  "prefix_tokens_valid": 574,
+  "suffix_tokens_S": 50,
+  "suffix_tokens_valid": 50,
+  "n_images": 3,
+  "language_tokens": 200,
+  "language_tokens_valid": 62,
+  "chunk_size": 50
+ }
+}
