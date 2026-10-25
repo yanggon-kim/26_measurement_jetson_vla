@@ -1,0 +1,146 @@
+{
+ "experiment": "E4c pi0 N = 4 control (T005)",
+ "task": "T005",
+ "model": "pi0",
+ "model_repo": "https://github.com/huggingface/lerobot",
+ "model_commit": "f0d2b37bebddf7e8852cb624712da0ad564601b6",
+ "checkpoint": "lerobot/pi0_libero_finetuned_v044",
+ "checkpoint_revision": "45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f",
+ "precision": "per rung: raw/rows/<rung>_N<N>.json rung_desc.precision_flags and param_dtype_bytes",
+ "rung": "per row: ae_compile, ae_graphs, bf16_base, bf16_both, bf16_both_graphs, bf16_mpad_graphs_ae_at_kvs, bf16_norms, bf16_vision, eager_bf16, eager_fp32, eager_tf32, vis_compile, vis_graphs, vis_static_pos, vlm_compile, vlm_compile_nvg, vlm_graphs, whole_graphs",
+ "compile_mode": "per rung: rung_desc.compiled (bench/rungs.py)",
+ "variant": "n/a: ladder rungs as defined in bench/rungs.py",
+ "num_denoise_steps": "4 (extra N per rung for the slope: by_N in the row files)",
+ "action_horizon": 50,
+ "prefix_tokens": 816,
+ "suffix_tokens": 51,
+ "batch": 1,
+ "n_warmup": ">= 20 and until no new graph for 5 inferences (warmup_iters per row)",
+ "n_timed": 100,
+ "hw_constants_source": "results/20261022_E1_peak/hw_constants.json",
+ "bench_commit": "['0b4d665', '43bf21e', '9e1f268', 'bf0d4d5'] (run code: opt_ladder.py, rungs.py identical across these heads per bench_provenance.files_sha256)",
+ "command": "scratch/run_t005_rest.sh: bench/opt_ladder.py --model pi0 --n 4 --out results/20261026_E4c_pi0_opt_ladder_N4 --rungs <t005_ladders.sh LR> --slope-steps 2,6 --slope-rungs whole_graphs; then --rung best_bf16",
+ "throttled": {
+  "ae_compile_N4": {
+   "4": true
+  },
+  "ae_graphs_N4": {
+   "4": false
+  },
+  "bf16_base_N4": {},
+  "bf16_both_N4": {
+   "4": false
+  },
+  "bf16_both_graphs_N4": {
+   "4": false
+  },
+  "bf16_mpad_graphs_ae_at_kvs_N4": {
+   "4": false
+  },
+  "bf16_norms_N4": {
+   "4": false
+  },
+  "bf16_vision_N4": {
+   "4": false
+  },
+  "eager_bf16_N4": {
+   "4": false
+  },
+  "eager_fp32_N4": {
+   "4": false
+  },
+  "eager_tf32_N4": {
+   "4": false
+  },
+  "vis_compile_N4": {
+   "4": false
+  },
+  "vis_graphs_N4": {
+   "4": false
+  },
+  "vis_static_pos_N4": {},
+  "vlm_compile_N4": {
+   "4": false
+  },
+  "vlm_compile_nvg_N4": {
+   "4": false
+  },
+  "vlm_graphs_N4": {
+   "4": false
+  },
+  "whole_graphs_N4": {
+   "4": false,
+   "2": false,
+   "6": false
+  }
+ },
+ "memory_path_state": {
+  "ae_compile_N4": {
+   "4": "normal->normal"
+  },
+  "ae_graphs_N4": {
+   "4": "normal->normal"
+  },
+  "bf16_base_N4": {},
+  "bf16_both_N4": {
+   "4": "normal->normal"
+  },
+  "bf16_both_graphs_N4": {
+   "4": "normal->normal"
+  },
+  "bf16_mpad_graphs_ae_at_kvs_N4": {
+   "4": "normal->normal"
+  },
+  "bf16_norms_N4": {
+   "4": "normal->normal"
+  },
+  "bf16_vision_N4": {
+   "4": "normal->normal"
+  },
+  "eager_bf16_N4": {
+   "4": "normal->normal"
+  },
+  "eager_fp32_N4": {
+   "4": "normal->normal"
+  },
+  "eager_tf32_N4": {
+   "4": "normal->normal"
+  },
+  "vis_compile_N4": {
+   "4": "normal->normal"
+  },
+  "vis_graphs_N4": {
+   "4": "normal->normal"
+  },
+  "vis_static_pos_N4": {},
+  "vlm_compile_N4": {
+   "4": "normal->normal"
+  },
+  "vlm_compile_nvg_N4": {
+   "4": "normal->normal"
+  },
+  "vlm_graphs_N4": {
+   "4": "normal->normal"
+  },
+  "whole_graphs_N4": {
+   "4": "normal->normal",
+   "2": "normal->normal",
+   "6": "normal->normal"
+  }
+ },
+ "produced_by": {
+  "_N": "bench/opt_ladder.py (child)",
+  ".log": "bench/opt_ladder.py child stdout with TORCH_LOGS=recompiles,graph_breaks",
+  "traceback_": "bench/opt_ladder.py",
+  "secrets_scan": "bench/secrets_scan.py"
+ },
+ "also_raw": [],
+ "nsys_version": "n/a",
+ "ncu_version": "n/a",
+ "ncu_set": "n/a",
+ "ncu_filter": "n/a",
+ "ncu_metrics": "n/a",
+ "cuobjdump_version": "n/a",
+ "ncu_sm_frequency_hz": "n/a",
+ "notes": "One process per rung; regions after compilation (bench/regions.py); warm-up until torch._dynamo's unique_graphs counter is stable; graphs_compiled_during_timed must be 0. Every timed block began in the normal memory-path state (T003). Equivalence in equivalence.csv."
+}

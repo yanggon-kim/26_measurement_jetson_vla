@@ -1,0 +1,48 @@
+gate: GPU busy [0, 0, 96, 44, 0, 0, 0, 8, 80, 30]; waiting 60 s
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph break in user code at /home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py:919
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] Graph Break Reason: Encountered graph break when attempting to trace CALL: a function call, e.g. f(x, y):
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] copy.deepcopy()
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Explanation: Dynamo does not support copy.deepcopy()
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: Avoid calling copy.deepcopy()
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   Developer debug context: copy.deepcopy(UserDefinedObjectVariable(DynamicCache))
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]  For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0179.html
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] User code traceback:
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 388, in <module>
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     raise SystemExit(main())
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 382, in main
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return child(a)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 158, in child
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     one()
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/opt_ladder.py", line 148, in one
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return ad.iteration()
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/run_e3.py", line 93, in iteration
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     act = self.policy.predict_action_chunk(b)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 1271, in predict_action_chunk
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     actions = self.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, **kwargs)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/venvs/lerobot/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return func(*args, **kwargs)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 885, in sample_actions
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     v_t = denoise_step_partial_call(x_t)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 863, in denoise_step_partial_call
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return self.denoise_step(
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/dir_yg/26_measurement_jetson_vla/bench/regions.py", line 276, in denoise_step
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     return _orig(*a, **kw)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]   File "/home/jameskimh/src/lerobot/src/lerobot/policies/pi0/modeling_pi0.py", line 919, in denoise_step
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks]     past_key_values = copy.deepcopy(past_key_values)
+V1025 12:27:35.150000 1295893 torch/_dynamo/symbolic_convert.py:4275] [0/0] [__graph_breaks] 
+W1025 12:27:36.723000 1295893 torch/_inductor/utils.py:1679] [0/0_1] Not enough SMs to use max_autotune_gemm mode
+The PI0 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /home/jameskimh/.cache/huggingface/hub/models--lerobot--pi0_libero_finetuned_v044/snapshots/45dcc8fc0e02601c8ccf0554fbd1d26a55070c1f
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+bf16_norms N=4: e2e 222.36 | vision 55.63 | prefix 129.97 | ae 33.32 | graphs during timed 0 | throttled False | state normal->normal
