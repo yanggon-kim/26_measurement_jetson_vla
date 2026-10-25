@@ -351,7 +351,68 @@ def write_report(path, sections, pb_rows, orin_rungs, orin_best):
                      f"{f2(part(r, 'vision'))} | {f2(part(r, 'vlm_prefix'))} | {f2(part(r, 'ae_total'))} | {f2(part(r, 'other'))} | "
                      f"{'yes' if not r['_why'] else 'no: ' + '; '.join(r['_why'])[:150]} |")
         L.append("")
+    L += extra_sections(orin_rungs)
     open(path, "w").write("\n".join(L) + "\n")
+
+
+def _rows_in(pattern, n):
+    out = {}
+    for d in sorted(glob.glob(os.path.join(REPO, pattern))):
+        for f in sorted(glob.glob(os.path.join(d, "raw", "rows", f"*_N{n}.json"))):
+            r = json.load(open(f))
+            r["_dir"] = os.path.relpath(d, REPO)
+            out[r["rung"]] = r
+    return out
+
+
+def extra_sections(orin_rungs):
+    """§5 Part A (the published characterisation's configuration, eager + TF32 at the model's own N, and its fp32 control;
+    results/*_E4a_<m>_paper_config) and §6 π0's N = 4 control (results/*_E4c_pi0_opt_ladder_N4), each beside the Orin's
+    rows of the same rung and N (parsed from its E4d report)."""
+    L = ["## 5. Part A: the published characterisation's configuration and its fp32 control", "",
+         "`eager_tf32` = the paper's configuration (eager, TF32 matmuls, the model's own N); `eager_fp32` = its control. Each "
+         "arm in its own process (`bench/queues/t005_part_a.sh`); a cross-process repeat of the ladder's two eager rungs.", "",
+         "| model | N | rung | e2e | vision | prefix | expert | other | AE % | Orin e2e / vision / prefix / expert | Thor ÷ Orin e2e | dir |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    any_a = False
+    for m in ("pi0", "pi05", "smolvla"):
+        rows = _rows_in(f"results/*_E4a_{m}_paper_config", N_DEFAULT[m])
+        for rung in ("eager_tf32", "eager_fp32"):
+            r = rows.get(rung)
+            if not r or r.get("status") != "measured":
+                continue
+            any_a = True
+            o = orin_rungs.get((m, N_DEFAULT[m]), {}).get(rung) or {}
+            e2e, ae = part(r, "e2e_wall"), part(r, "ae_total")
+            orin = " / ".join(f2(o.get(k)) for k in ("e2e", "vision", "prefix", "expert")) + " (Orin)" if o else "—"
+            ratio = f"{e2e / o['e2e']:.3f}" if o.get("e2e") else "—"
+            L.append(f"| {NAMES[m]} | {r['N']} | `{rung}` | {f2(e2e)} | {f2(part(r, 'vision'))} | {f2(part(r, 'vlm_prefix'))} | "
+                     f"{f2(ae)} | {f2(part(r, 'other'))} | {ae / e2e * 100:.1f} | {orin} | {ratio} | `{os.path.basename(r['_dir'])}` |")
+    if not any_a:
+        L.append("| not measured yet | | | | | | | | | | | |")
+    L += ["", "## 6. π0 at N = 4 (control on N; `results/*_E4c_pi0_opt_ladder_N4`)", "",
+          "| rung | e2e | vision | prefix | expert | other | AE % | Orin N = 4, same rung: e2e / expert (AE %) |", "|---|---|---|---|---|---|---|---|"]
+    rows = _rows_in("results/*_E4c_pi0_opt_ladder_N4", 4)
+    orin4 = orin_rungs.get(("pi0", 4), {})
+    for rung, r in sorted(rows.items(), key=lambda x: (part(x[1], "e2e_wall") is None, part(x[1], "e2e_wall") or 0)):
+        e2e, ae = part(r, "e2e_wall"), part(r, "ae_total")
+        o = orin4.get(rung) or {}
+        oo = (f"{f2(o.get('e2e'))} / {f2(o.get('expert'))} ({o['expert'] / o['e2e'] * 100:.1f} %)"
+              if o.get("e2e") and o.get("expert") else "—")
+        if r.get("status") != "measured":
+            L.append(f"| `{rung}` | {r.get('status')}: {str(r.get('reason_or_error') or r.get('error') or '')[:80]} | | | | | | {oo} |")
+            continue
+        L.append(f"| `{rung}` | {f2(e2e)} | {f2(part(r, 'vision'))} | {f2(part(r, 'vlm_prefix'))} | {f2(ae)} | "
+                 f"{f2(part(r, 'other'))} | {ae / e2e * 100:.1f} | {oo} |" if ae and e2e else
+                 f"| `{rung}` | {f2(e2e)} | — | — | — | — | — (no per-part split) | {oo} |")
+    if not rows:
+        L.append("| not measured yet | | | | | | | |")
+    txt = open(os.path.join(REPO, "reference/orin/reports/E4d_phase_balance.md")).read()
+    mm = re.search(r"\| N = 4 \| ([\d.]+) ms \| ([\d.]+) % \| `([^`]+)` ([\d.]+) ms \| ([\d.]+) % \|", txt)
+    if mm:
+        L += ["", f"Orin π0 at N = 4 (parsed from `reference/orin/reports/E4d_phase_balance.md`, its N-control table): eager "
+              f"{mm.group(1)} ms (AE {mm.group(2)} %), best with a split `{mm.group(3)}` {mm.group(4)} ms (AE {mm.group(5)} %)."]
+    return L + [""]
 
 
 if __name__ == "__main__":
