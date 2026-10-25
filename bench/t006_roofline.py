@@ -165,6 +165,14 @@ def main():
             # parameters outside the steps (state / action encoders) once; the hand-over (VLM features) once per step.
             once = acc["param_bytes"]["ae_total"] - acc["param_bytes"][steps[0]]
             B = sum(acc["param_bytes"][s] for s in steps) + once + len(steps) * sum(acc["kv_bytes"].values())
+        if part == "backbone_lm_head" and not B:
+            # Fix 2026-10-26: the accounting hook ran the lm_head with vlm_backbone innermost on its stack, so its weight
+            # bytes were never attributed to backbone_lm_head (its FLOPs were). Take them from the C3 dims row of the
+            # lm_head module: weights + activation in + logits out.
+            dp = os.path.join(a.analytic, "dims.csv")
+            lm = [r for r in csv.DictReader(open(dp)) if r["module"].endswith("lm_head")] if os.path.exists(dp) else []
+            B = sum(int(r["weight_bytes"]) + int(r["act_bytes"]) + int(r["out_bytes"]) for r in lm)
+            by = {r["weight_dtype"]: int(r["weight_bytes"]) for r in lm}
         dom = max(by, key=by.get) if by else "torch.bfloat16"
         key = {"torch.bfloat16": "bf16", "torch.float16": "fp16", "torch.float32": "fp32"}.get(dom, "bf16")
         peak = tf[key]
